@@ -1,0 +1,1 @@
+- If a test is ran which is not found in the Odroid data, the result of the test closest to it (in Euclidean distance) is returned. Does this make sense?
