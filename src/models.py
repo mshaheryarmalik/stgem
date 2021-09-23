@@ -84,6 +84,7 @@ class GAN(Model):
       # outputs.
       D_loss = self.loss(self.modelD(dataX), dataY)
       self.optimizerD.zero_grad()
+      D_loss.backward()
       self.optimizerD.step()
 
       # Visualize the computational graph.
