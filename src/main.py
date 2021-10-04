@@ -21,8 +21,8 @@ if __name__ == "__main__":
   """
   Here we begin to sample new tests from the input space and begin the
   generation of new tests. The SUT methods return numpy arrays, but we convert
-  the tests to lists of tuples (which are hashable) and maintain a dictionary of
-  used tests for efficiency.
+  the tests to lists of tuples (which are hashable) and maintain a dictionary
+  of used tests for efficiency.
   """
 
   # Generate initial tests randomly.
@@ -75,13 +75,15 @@ if __name__ == "__main__":
 
     # Add the new test to our test suite.
     test_inputs.append(tuple(new_test[0,:]))
+    test_visited[tuple(new_test[0,:])] = True
     # Actually run the new test on the SUT.
     test_outputs.append(model.sut.execute_test(new_test)[0,0])
-    test_visited[tuple(new_test[0,:])] = True
     #print(test_inputs[-1], rounds)
 
     # Train the model with the new test.
-    model.train_with_batch(new_test, np.array(test_outputs[-1]).reshape(1, 1))
+    # Set use_final = 1 to train with the new test only, not with the whole
+    # test suite generated so far.
+    model.train_with_batch(np.array(test_inputs), np.array(test_outputs).reshape(len(test_outputs), 1), discriminator_epochs=100, use_final=-1)
 
   # Evaluate the generated tests.
   # ---------------------------------------------------------------------------
