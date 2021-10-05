@@ -19,7 +19,7 @@ class Model:
   def __init__(self):
     pass
 
-  def train_with_batch(self, dataX, dataY, epochs=1):
+  def train_with_batch(self, dataX, dataY, epochs=1, discriminator_epochs=1, use_final=-1):
     raise NotImplementedError()
 
   def generate_test(self, N=1):
@@ -50,21 +50,30 @@ class GAN(Model):
     # Loss functions.
     # TODO: figure out a reasonable default and make configurable.
     self.loss = nn.BCELoss() # binary cross entropy
+    #self.loss = nn.MSELoss() # mean square error
 
     # Optimizers.
     # TODO: figure out reasonable defaults and make configurable.
     lr = 0.001
+    #self.optimizerD = torch.optim.RMSprop(self.modelD.parameters(), lr=lr)
+    #self.optimizerG = torch.optim.RMSprop(self.modelG.parameters(), lr=lr)
     self.optimizerD = torch.optim.Adam(self.modelD.parameters(), lr=lr)
     self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=lr)
 
-  def train_with_batch(self, dataX, dataY, epochs=1):
+  def train_with_batch(self, dataX, dataY, epochs=1, discriminator_epochs=1, use_final=-1):
     """
     Train the GAN with a new batch of learning data.
 
     Args:
-      dataX (np.ndarray): Array of tests of shape (N, self.sut.ndimensions).
-      dataY (np.ndarray): Array of test outputs of shape (N, 1).
-      epochs (int):       The number of epochs.
+      dataX (np.ndarray):         Array of tests of shape
+                                  (N, self.sut.ndimensions).
+      dataY (np.ndarray):         Array of test outputs of shape (N, 1).
+      epochs (int):               Number of epochs (total training over the
+                                  complete data).
+      discriminator_epochs (int): Number of epochs for the training of the
+                                  discriminator (this many rounds per epoch).
+      use_final (int):            Use only this many training samples from the
+                                  end. If < 0, then use all samples.
     """
 
     if len(dataX.shape) != 2 or dataX.shape[1] != self.sut.ndimensions:
@@ -73,18 +82,23 @@ class GAN(Model):
       raise ValueError("Output array should have at least as many elements as there are tests.")
     if epochs <= 0:
       raise ValueError("The number of epochs should be positive.")
+    if discriminator_epochs <= 0:
+      raise ValueError("The number of discriminator epochs should be positive.")
 
-    dataX = torch.from_numpy(dataX).float().to(self.device)
-    dataY = torch.from_numpy(dataY).float().to(self.device)
+    start = 0 if use_final < 0 else dataX.shape[0] - use_final
+    dataX = torch.from_numpy(dataX[start:dataX.shape[0],:]).float().to(self.device)
+    dataY = torch.from_numpy(dataY[start:dataY.shape[0],:]).float().to(self.device)
 
     for n in range(epochs):
       # Train the discriminator.
       # -----------------------------------------------------------------------
       # We want the discriminator to learn the mapping from tests to test
       # outputs.
-      D_loss = self.loss(self.modelD(dataX), dataY)
-      self.optimizerD.zero_grad()
-      self.optimizerD.step()
+      for m in range(discriminator_epochs):
+        D_loss = self.loss(self.modelD(dataX), dataY)
+        self.optimizerD.zero_grad()
+        D_loss.backward()
+        self.optimizerD.step()
 
       # Visualize the computational graph.
       #print(make_dot(D_loss, params=dict(self.modelD.named_parameters())))
@@ -162,7 +176,7 @@ class RandomGenerator(Model):
     self.sut = sut
     self.device = device
 
-  def train_with_batch(self, dataX, dataY, epochs=1):
+  def train_with_batch(self, dataX, dataY, epochs=1, discriminator_epochs=1, use_final=-1):
     pass
 
   def generate_test(self, N=1):
