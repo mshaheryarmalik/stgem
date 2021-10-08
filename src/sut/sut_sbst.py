@@ -45,7 +45,7 @@ class SBSTSUT_beamng(SUT):
       - The level files (directory levels) are hardcoded to be at
         os.path.join(os.environ["USERPROFILE"], "Documents/BeamNG.research/levels")
       - While the beamng_user parameter of BeamNGBrewer can be anything, it
-        makes sense to set it to be the parent directory the above as it is
+        makes sense to set it to be the parent directory of the above as it is
         used anyway.
       - The levels_template folder (from the competition GitHub) should be in
         the directory where the code is run from, i.e., it is set to be
@@ -79,7 +79,7 @@ class SBSTSUT_beamng(SUT):
     # This variable is essentially where (some) files created during the
     # simulation are placed and it is freely selectable. Due to some choices in
     # the competition code, we hard code it as follows (see explanation in
-    # docstring).
+    # the docstring).
     self.beamng_user = os.path.join(os.environ["USERPROFILE"], "Documents/BeamNG.research")
     self.map_size = map_size
     self.ndimensions = curvature_points

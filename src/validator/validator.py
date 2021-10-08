@@ -32,9 +32,10 @@ class Validator:
     self.device = device
 
     # This is the learned proxy for the black box function.
-    self.modelV = ValidatorNetwork(self.sut.ndimensions, 128)
+    self.modelV = ValidatorNetwork(self.sut.ndimensions, 64)
     # Loss functions.
-    self.loss = nn.BCELoss() # binary cross entropy
+    #self.loss = nn.BCELoss() # binary cross entropy
+    self.loss = nn.MSELoss() # mean squared error
     # Optimizers.
     lr = 0.001
     self.optimizerV = torch.optim.Adam(self.modelV.parameters(), lr=lr)
@@ -50,8 +51,8 @@ class Validator:
       result (np.ndarray): Array of shape (N, 1).
     """
 
-    if len(tests.shape) != 2 or tests.shape[1] != self.ndimensions:
-      raise ValueError("Input array expected to have shape (N, {}).".format(self.ndimensions))
+    if len(tests.shape) != 2 or tests.shape[1] != self.sut.ndimensions:
+      raise ValueError("Input array expected to have shape (N, {}).".format(self.sut.ndimensions))
 
     result = np.zeros(shape=(tests.shape[0], 1))
     for n, test in enumerate(tests):
@@ -70,8 +71,8 @@ class Validator:
       result (np.ndarray): Array of shape (N, 1).
     """
 
-    if len(tests.shape) != 2 or tests.shape[1] != self.ndimensions:
-      raise ValueError("Input array expected to have shape (N, {}).".format(self.ndimensions))
+    if len(tests.shape) != 2 or tests.shape[1] != self.sut.ndimensions:
+      raise ValueError("Input array expected to have shape (N, {}).".format(self.sut.ndimensions))
 
     return self.modelV(torch.from_numpy(tests).float().to(self.device)).detach().numpy()
 
@@ -111,9 +112,15 @@ class Validator:
     if epochs <= 0:
       raise ValueError("The number of epochs should be positive.")
 
+    dataX = torch.from_numpy(dataX).float().to(self.device)
+    dataY = torch.from_numpy(dataY).float().to(self.device)
     for n in range(epochs):
-      V_loss = self.loss(self.modelV(dataX), dataY)
+      output = self.modelV(dataX)
+      V_loss = self.loss(output, dataY)
       self.optimizerV.zero_grad()
       V_loss.backward()
       self.optimizerV.step()
+
+      acc = ((output > 0.5) == dataY).float().sum() / dataY.shape[0]
+      #print("Epoch {}/{}, Loss: {}, Accuracy: {}".format(n+1, epochs, V_loss, acc))
 
