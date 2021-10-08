@@ -9,29 +9,51 @@ import torch.nn as nn
 # For visualizing the computational graphs.
 #from torchviz import make_dot
 
-from neural_networks import GeneratorNetwork, DiscriminatorNetwork
+from neural_networks.generator import GeneratorNetwork
+from neural_networks.discriminator import DiscriminatorNetwork
+from neural_networks.validator import ValidatorNetwork
 
 class Model:
   """
   Base class for all models.
   """
 
-  def __init__(self):
-    pass
+  def __init__(self, validator=None):
+    self.validator = validator
 
-  def train_with_batch(self, dataX, dataY, epochs=1, discriminator_epochs=1, use_final=-1):
+  def train_with_batch(self, dataX, dataY, epochs=1, validator_epochs=1, discriminator_epochs=1, use_final=-1):
     raise NotImplementedError()
 
   def generate_test(self, N=1):
     raise NotImplementedError()
+
+  def valid(self, tests):
+    """
+    Checks if the given test is valid.
+
+    Args:
+      tests (np.ndarray): Array of shape (N, self.sut.ndimensions).
+
+    Returns:
+      output (np.ndarray): Array of shape (N, 1).
+    """
+
+    if self.validator is None:
+      result = np.ones(shape=(tests.shape[0], 1))
+    else:
+      result = self.validator(tests)
+
+    return result
 
 class GAN(Model):
   """
   Implements the GAN model.
   """
 
-  def __init__(self, sut, device):
-    super().__init__()
+  def __init__(self, sut, validator=None, device):
+    # TODO: describe the arguments
+
+    super().__init__(validator)
 
     self.sut = sut
     self.device = device
@@ -60,7 +82,7 @@ class GAN(Model):
     self.optimizerD = torch.optim.Adam(self.modelD.parameters(), lr=lr)
     self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=lr)
 
-  def train_with_batch(self, dataX, dataY, epochs=1, discriminator_epochs=1, use_final=-1):
+  def train_with_batch(self, dataX, dataY, epochs=1, validator_epochs=1, discriminator_epochs=1, use_final=-1):
     """
     Train the GAN with a new batch of learning data.
 
@@ -70,6 +92,8 @@ class GAN(Model):
       dataY (np.ndarray):         Array of test outputs of shape (N, 1).
       epochs (int):               Number of epochs (total training over the
                                   complete data).
+      validator_epochs (int):     Number of epochs for the training of the
+                                  validator (this many rounds per epoch).
       discriminator_epochs (int): Number of epochs for the training of the
                                   discriminator (this many rounds per epoch).
       use_final (int):            Use only this many training samples from the
@@ -82,6 +106,8 @@ class GAN(Model):
       raise ValueError("Output array should have at least as many elements as there are tests.")
     if epochs <= 0:
       raise ValueError("The number of epochs should be positive.")
+    if validator_epochs <= 0:
+      raise ValueError("The number of validator epochs should be positive.")
     if discriminator_epochs <= 0:
       raise ValueError("The number of discriminator epochs should be positive.")
 
@@ -103,11 +129,26 @@ class GAN(Model):
       # Visualize the computational graph.
       #print(make_dot(D_loss, params=dict(self.modelD.named_parameters())))
 
-      # Train the generator.
+      # Train the generator on the validator.
       # -----------------------------------------------------------------------
-      # We generate noise and label it to have output 1. Training the generator
-      # in this way should shift it to generate examples with high output
-      # values (high fitness).
+      # We generate noise and label it to have output 1 (valid). Training the
+      # generator in this way should shift it to generate more valid tests.
+      if self.validator is not None:
+        noise_tests = 8 # TODO: make configurable
+        noise = ((torch.rand(size=(noise_tests, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+        outputs = self.validator(self.modelG(noise))
+        fake_label = torch.ones(size=(noise_tests, 1)).to(self.device)
+
+        G_loss = self.loss(outputs, fake_label)
+        self.optimizerG.zero_grad()
+        G_loss.backward()
+        self.optimizerG.step()
+
+      # Train the generator on the discriminator.
+      # -----------------------------------------------------------------------
+      # We generate noise and label it to have output 1 (high fitness).
+      # Training the generator in this way should shift it to generate tests
+      # with high output values (high fitness).
       noise_tests = 8 # TODO: make configurable
       noise = ((torch.rand(size=(noise_tests, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
       outputs = self.modelD(self.modelG(noise))
@@ -170,13 +211,16 @@ class RandomGenerator(Model):
   Implements the random test generator.
   """
 
-  def __init__(self, sut, device):
-    super().__init__()
+  def __init__(self, sut, validator, device):
+    # TODO: describe the arguments
+
+    super().__init__(validator)
 
     self.sut = sut
+    self.validator = validator
     self.device = device
 
-  def train_with_batch(self, dataX, dataY, epochs=1, discriminator_epochs=1, use_final=-1):
+  def train_with_batch(self, dataX, dataY, epochs=1, validator_epochs=1, discriminator_epochs=1, use_final=-1):
     pass
 
   def generate_test(self, N=1):

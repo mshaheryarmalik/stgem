@@ -4,19 +4,29 @@
 import numpy as np
 import torch
 
-from sut import OdroidSUT
+from sut.sut_odroid import OdroidSUT
 from models import GAN, RandomGenerator
 
 if __name__ == "__main__":
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-  # Initialize the system under test. Which is Odroid for now.
+  # Initialize the system under test.
+  # ---------------------------------------------------------------------------
+  # We use Odroid for now.
   output_data = 1
   fitness_threshold = 6.0
   sut = OdroidSUT(output_data, fitness_threshold)
+
+  # Initialize the validator.
+  # ---------------------------------------------------------------------------
+  # For now we assume that there exists an efficient and perfect validator
+  # independent of the SUT.
+  validator = None
+
   # Initialize the model.
-  model = GAN(sut, device)
-  #model = RandomGenerator(sut, device)
+  # ---------------------------------------------------------------------------
+  model = GAN(sut, validator, device)
+  #model = RandomGenerator(sut, validator, device)
 
   """
   Here we begin to sample new tests from the input space and begin the
@@ -51,18 +61,21 @@ if __name__ == "__main__":
   # How many tests are generated.
   N = 200 # TODO: put to config/parameter
   while len(test_inputs) < N:
-    # Generate a new test with high fitness and decrease target fitness as per
-    # execution of the loop.
+    # Generate a new valid test with high fitness and decrease target fitness
+    # as per execution of the loop.
     target_fitness = 1
     rounds = 0
     while True:
-      # Generate a new test (from noise), but do not use a test that has
+      # Generate a new valid test (from noise), but do not use a test that has
       # already been used.
       new_test = model.generate_test()
       # TODO: in order to traverse the test space more completely, we probably
       #       should exclude tests that are "too close" to tests already
       #       generated. Ivan's code does this.
       if tuple(new_test[0,:]) in test_visited: continue
+
+      # Check if the test is valid.
+      if model.valid(new_test)[0] == 0: continue
 
       # Predict the fitness of the new test.
       new_fitness = model.predict_fitness(new_test)[0,0]
