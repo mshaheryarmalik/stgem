@@ -12,10 +12,17 @@ if __name__ == "__main__":
 
   # Initialize the system under test.
   # ---------------------------------------------------------------------------
-  # We use Odroid for now.
+  # Odroid.
+  """
   output_data = 1
   fitness_threshold = 6.0
   sut = OdroidSUT(output_data, fitness_threshold)
+  """
+  # SBST competetition.
+  beamng_home = "C:\\Users\\japel\\dev\\BeamNG"
+  sut = SBSTSUT_beamng(beamng_home, map_size=200, curvature_points=5)
+  validator = Validator(sut, lambda t: sbst_validate_test(t, sut), device=device)
+  test_to_image = lambda t: _test_to_image(test, sut)
 
   # Initialize the validator.
   # ---------------------------------------------------------------------------
@@ -44,7 +51,7 @@ if __name__ == "__main__":
   test_outputs = []
   test_visited = {}
 
-  _dataX, _dataY = sut.execute_random_tests(random_init)
+  _dataX, _dataY = sut.execute_random_test(random_init)
   for n, test in enumerate(_dataX):
     test_inputs.append(tuple(test))
     test_outputs.append(_dataY[n,0])

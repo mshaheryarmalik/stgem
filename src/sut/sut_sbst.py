@@ -297,7 +297,9 @@ class SBSTSUT_beamng(SUT):
     if N <= 0:
       raise ValueError("The number of tests should be positive.")
 
-    return self.execute_test(self.sample_input_space(N))
+    dataX = sample_input_space(N)
+    dataY = self.execute_test(dataX)
+    return dataX, dataY
 
   def sample_input_space(self, N=1):
     """

@@ -50,7 +50,7 @@ class GAN(Model):
   Implements the GAN model.
   """
 
-  def __init__(self, sut, validator=None, device):
+  def __init__(self, sut, validator, device):
     # TODO: describe the arguments
 
     super().__init__(validator)
