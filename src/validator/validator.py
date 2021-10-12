@@ -40,6 +40,15 @@ class Validator:
     lr = 0.001
     self.optimizerV = torch.optim.Adam(self.modelV.parameters(), lr=lr)
 
+  def load(self, file_name):
+    """
+    Load a pretrained neural network for the proxy validator.
+    """
+
+    # TODO: check that file_name exists.
+    self.modelV.load_state_dict(torch.load(file_name))
+    self.modelV.eval()
+
   def validity(self, tests):
     """
     Validate the given test using the true validator.

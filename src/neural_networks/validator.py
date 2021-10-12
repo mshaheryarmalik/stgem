@@ -19,14 +19,18 @@ class ValidatorNetwork(nn.Module):
     self.neurons = neurons
 
     # We use three fully connected layers with self.neurons many neurons.
-    self.dlayer1 = nn.Linear(self.input_shape, self.neurons)
-    self.dlayer2 = nn.Linear(self.neurons, self.neurons)
-    self.dlayer3 = nn.Linear(self.neurons, 1)
+    self.vlayer1 = nn.Linear(self.input_shape, self.neurons)
+    self.vlayer2 = nn.Linear(self.neurons, self.neurons)
+    self.vlayer3 = nn.Linear(self.neurons, 1)
+    self.bn1 = nn.BatchNorm1d(self.input_shape)
+    self.bn2 = nn.BatchNorm1d(self.neurons)
+    self.bn3 = nn.BatchNorm1d(self.neurons)
 
   def forward(self, x):
-    x = F.relu(self.dlayer1(x))
-    x = F.relu(self.dlayer2(x))
-    x = torch.sigmoid(self.dlayer3(x))
+    x = self.bn1(x)
+    x = F.relu(self.bn2(self.vlayer1(x)))
+    x = F.relu(self.bn3(self.vlayer2(x)))
+    x = torch.sigmoid(self.vlayer3(x))
 
     return x
 

@@ -4,31 +4,34 @@
 import numpy as np
 import torch
 
+from config import *
 from sut.sut_odroid import OdroidSUT
+from sut.sut_sbst import SBSTSUT_beamng, sbst_validate_test
+from validator.validator import Validator
 from models import GAN, RandomGenerator
+
+def log(msg):
+  print(msg)
 
 if __name__ == "__main__":
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-  # Initialize the system under test.
+  # Initialize the system under test and validator.
   # ---------------------------------------------------------------------------
+  # We assume that there exists an efficient and perfect validator oracle. This
+  # oracle is used mainly for test validation, and the trained proxy for it is
+  # only used for training.
+  #
   # Odroid.
   """
   output_data = 1
   fitness_threshold = 6.0
   sut = OdroidSUT(output_data, fitness_threshold)
+  validator = None
   """
   # SBST competetition.
-  beamng_home = "C:\\Users\\japel\\dev\\BeamNG"
-  sut = SBSTSUT_beamng(beamng_home, map_size=200, curvature_points=5)
+  sut = SBSTSUT_beamng(config["sbst"]["beamng_home"], map_size=200, curvature_points=5)
   validator = Validator(sut, lambda t: sbst_validate_test(t, sut), device=device)
-  test_to_image = lambda t: _test_to_image(test, sut)
-
-  # Initialize the validator.
-  # ---------------------------------------------------------------------------
-  # For now we assume that there exists an efficient and perfect validator
-  # independent of the SUT.
-  validator = None
 
   # Initialize the model.
   # ---------------------------------------------------------------------------
@@ -45,22 +48,23 @@ if __name__ == "__main__":
   # Generate initial tests randomly.
   # ---------------------------------------------------------------------------
   random_init = 50 # TODO: put to config
-  # TODO: In principle we should check here that no test is obtained twice.
-  #       Currently the implementation ensures that this does not happen.
+  # TODO: We should check that no test is obtained twice.
   test_inputs = []
   test_outputs = []
   test_visited = {}
 
-  _dataX, _dataY = sut.execute_random_test(random_init)
-  for n, test in enumerate(_dataX):
-    test_inputs.append(tuple(test))
-    test_outputs.append(_dataY[n,0])
-    test_visited[tuple(test)] = True
-  del _dataX, _dataY
+  log("Generating and running {} random valid tests.".format(random_init))
+  while len(test_inputs) < random_init:
+    test = sut.sample_input_space()
+    if model.validity(test)[0,0] == 0.0: continue
+    test_inputs.append(tuple(test[0,:]))
+    test_outputs.append(sut.execute_test(test))
+    test_visited[tuple(test[0,:])] = True
 
   # Train the model with initial tests.
   # ---------------------------------------------------------------------------
   # TODO: epochs? Now it's 10 without any specific reason.
+  log("Training model...")
   model.train_with_batch(np.array(test_inputs), np.array(test_outputs).reshape(len(test_outputs), 1), epochs=10)
 
   # Begin the main loop for new test generation and training.
@@ -70,8 +74,10 @@ if __name__ == "__main__":
   while len(test_inputs) < N:
     # Generate a new valid test with high fitness and decrease target fitness
     # as per execution of the loop.
+    log("Starting to generate a new test.")
     target_fitness = 1
     rounds = 0
+    invalid = 0
     while True:
       # Generate a new valid test (from noise), but do not use a test that has
       # already been used.
@@ -82,7 +88,9 @@ if __name__ == "__main__":
       if tuple(new_test[0,:]) in test_visited: continue
 
       # Check if the test is valid.
-      if model.valid(new_test)[0] == 0: continue
+      if model.validity(new_test)[0,0] == 0:
+        invalid += 1
+        continue
 
       # Predict the fitness of the new test.
       new_fitness = model.predict_fitness(new_test)[0,0]
@@ -93,26 +101,29 @@ if __name__ == "__main__":
       if new_fitness >= target_fitness: break
       rounds += 1
 
+    log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(test, new_fitness, rounds, invalid))
+
     # Add the new test to our test suite.
     test_inputs.append(tuple(new_test[0,:]))
     test_visited[tuple(new_test[0,:])] = True
     # Actually run the new test on the SUT.
     test_outputs.append(model.sut.execute_test(new_test)[0,0])
-    #print(test_inputs[-1], rounds)
+    log("The actual fitness {} for the generated test.".format(test_outputs[-1]))
 
     # Train the model with the new test.
     # Set use_final = 1 to train with the new test only, not with the whole
     # test suite generated so far.
+    log("Training the model...")
     model.train_with_batch(np.array(test_inputs), np.array(test_outputs).reshape(len(test_outputs), 1), discriminator_epochs=100, use_final=-1)
 
   # Evaluate the generated tests.
   # ---------------------------------------------------------------------------
   total = len(test_inputs)
-  print("Generated total {} tests.".format(total))
+  log("Generated total {} tests.".format(total))
 
   total_positive = sum(1 for output in test_outputs if output >= sut.target)
-  print("{}/{} ({} %) are positive.".format(total_positive, total, round(total_positive/total*100, 1)))
+  log("{}/{} ({} %) are positive.".format(total_positive, total, round(total_positive/total*100, 1)))
 
   fitness = model.predict_fitness(np.array(test_inputs))
   total_predicted_positive = sum(fitness >= target_fitness)[0]
-  print("{}/{} ({} %) are predicted to be positive".format(total_predicted_positive, total, round(total_predicted_positive/total*100, 1)))
+  log("{}/{} ({} %) are predicted to be positive".format(total_predicted_positive, total, round(total_predicted_positive/total*100, 1)))

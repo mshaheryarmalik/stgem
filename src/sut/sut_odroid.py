@@ -44,7 +44,7 @@ class OdroidSUT(SUT):
     if not (1 <= output <= 3):
       raise Exception("Argument 'output' should be 1, 2 or 3.")
 
-    file_name = config["odroid_file_base"] + ".npy"
+    file_name = config["odroid"]["file_base"] + ".npy"
 
     if not os.path.exists(file_name):
       preprocess_data.generate_odroid_data()
@@ -170,7 +170,7 @@ def generate_odroid_data():
     return encoding[s]
 
   data = []
-  with open(config["odroid_file_base"] + ".csv", mode="r") as f:
+  with open(config["odroid"]["file_base"] + ".csv", mode="r") as f:
     c = 0
     skip = 1
     while True:
@@ -201,5 +201,5 @@ def generate_odroid_data():
 
       data.append(new)
 
-  np.save(config["odroid_file_base"] + ".npy", data)
+  np.save(config["odroid"]["file_base"] + ".npy", data)
 

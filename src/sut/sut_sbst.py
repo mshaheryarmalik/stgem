@@ -14,6 +14,8 @@ from self_driving.simulation_data_collector import SimulationDataCollector
 from self_driving.utils import get_node_coords, points_distance
 from self_driving.vehicle_state_reader import VehicleStateReader
 from code_pipeline.tests_generation import RoadTestFactory
+from code_pipeline.validation import TestValidator
+from code_pipeline.visualization import RoadTestVisualizer
 
 from shapely.geometry import Point
 
@@ -89,6 +91,9 @@ class SBSTSUT_beamng(SUT):
     # Check for activation key.
     if not os.path.exists(os.path.join(self.beamng_user, "research.key")):
       raise Exception("The activation key 'research.key' must be in the directory {}.".format(self.beamng_user))
+
+    # For validating the executed roads.
+    self.validator = TestValidator(map_size=self.map_size)
 
     # The code below is from the SBST competition.
 
@@ -180,6 +185,13 @@ class SBSTSUT_beamng(SUT):
     # This code is mainly from https://github.com/se2p/tool-competition-av/code_pipeline/beamng_executor.py
     # Some initialization parts are moved to __init__.
     the_test = RoadTestFactory.create_road_test(self.test_to_road_points(test))
+
+    # Check if the test is really valid.
+    valid, msg = self.validator.validate_test(the_test)
+    if not valid:
+      #print("Invalid test, not run on SUT.")
+      return 0.0
+
     # For the execution we need the interpolated points
     nodes = the_test.interpolated_points
 
@@ -297,7 +309,7 @@ class SBSTSUT_beamng(SUT):
     if N <= 0:
       raise ValueError("The number of tests should be positive.")
 
-    dataX = sample_input_space(N)
+    dataX = self.sample_input_space(N)
     dataY = self.execute_test(dataX)
     return dataX, dataY
 
@@ -322,4 +334,26 @@ class SBSTSUT_beamng(SUT):
       result[n,0] = 30 + np.random.randint(-5, 6)
       result[n,1:self.ndimensions] = np.random.uniform(-0.07, 0.07, size=(1, self.ndimensions-1))
     return result
+
+def sbst_test_to_image(test, sut):
+  """
+  Visualizes the road (described as points in the plane).
+  """
+
+  # TODO: describe arguments
+  V = RoadTestVisualizer(map_size=200)
+  V.visualize_road_test(RoadTestFactory.create_road_test(sut.test_to_road_points(test)))
+
+def sbst_validate_test(test, sut):
+  """
+  Tests if the road (described as points in the plane) is valid.
+  """
+
+  # TODO: describe arguments
+  V = TestValidator(map_size=sut.map_size)
+  the_test = RoadTestFactory.create_road_test(sut.test_to_road_points(test))
+  valid, msg = V.validate_test(the_test)
+  #print(msg)
+  return 1 if valid else 0
+
 

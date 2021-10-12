@@ -18,7 +18,9 @@ class Model:
   Base class for all models.
   """
 
-  def __init__(self, validator=None):
+  def __init__(self, sut, validator, device):
+    self.sut = sut
+    self.device = device
     self.validator = validator
 
   def train_with_batch(self, dataX, dataY, epochs=1, validator_epochs=1, discriminator_epochs=1, use_final=-1):
@@ -27,9 +29,9 @@ class Model:
   def generate_test(self, N=1):
     raise NotImplementedError()
 
-  def valid(self, tests):
+  def validity(self, tests):
     """
-    Checks if the given test is valid.
+    Validate the given test using the true validator.
 
     Args:
       tests (np.ndarray): Array of shape (N, self.sut.ndimensions).
@@ -38,10 +40,34 @@ class Model:
       output (np.ndarray): Array of shape (N, 1).
     """
 
+    if len(tests.shape) != 2 or tests.shape[1] != self.sut.ndimensions:
+      raise ValueError("Input array expected to have shape (N, {}).".format(self.sut.ndimensions))
+
     if self.validator is None:
       result = np.ones(shape=(tests.shape[0], 1))
     else:
-      result = self.validator(tests)
+      result = self.validator.validity(tests)
+
+    return result
+
+  def predict_validity(self, tests):
+    """
+    Validate the given test using the learned proxy validator.
+
+    Args:
+      tests (np.ndarray): Array of N tests with shape (N, self.sut.ndimensions).
+
+    Returns:
+      result (np.ndarray): Array of shape (N, 1).
+    """
+
+    if len(tests.shape) != 2 or tests.shape[1] != self.sut.ndimensions:
+      raise ValueError("Input array expected to have shape (N, {}).".format(self.sut.ndimensions))
+
+    if self.validator is None:
+      result = np.ones(shape=(tests.shape[0], 1))
+    else:
+      result = self.validator.predict_validity(tests)
 
     return result
 
@@ -52,11 +78,7 @@ class GAN(Model):
 
   def __init__(self, sut, validator, device):
     # TODO: describe the arguments
-
-    super().__init__(validator)
-
-    self.sut = sut
-    self.device = device
+    super().__init__(sut, validator, device)
 
     self.modelG = None
     self.modelD = None
@@ -136,7 +158,7 @@ class GAN(Model):
       if self.validator is not None:
         noise_tests = 8 # TODO: make configurable
         noise = ((torch.rand(size=(noise_tests, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
-        outputs = self.validator(self.modelG(noise))
+        outputs = self.validator.modelV(self.modelG(noise))
         fake_label = torch.ones(size=(noise_tests, 1)).to(self.device)
 
         G_loss = self.loss(outputs, fake_label)
@@ -213,12 +235,7 @@ class RandomGenerator(Model):
 
   def __init__(self, sut, validator, device):
     # TODO: describe the arguments
-
-    super().__init__(validator)
-
-    self.sut = sut
-    self.validator = validator
-    self.device = device
+    super().__init__(sut, validator, device)
 
   def train_with_batch(self, dataX, dataY, epochs=1, validator_epochs=1, discriminator_epochs=1, use_final=-1):
     pass
