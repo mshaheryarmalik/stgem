@@ -350,9 +350,18 @@ def sbst_validate_test(test, sut):
   """
 
   # TODO: describe arguments
+
   V = TestValidator(map_size=sut.map_size)
-  the_test = RoadTestFactory.create_road_test(sut.test_to_road_points(test))
-  valid, msg = V.validate_test(the_test)
+  # Sometimes strange errors occur, and we work around them by declaring the
+  # test as invalid.
+  try:
+    the_test = RoadTestFactory.create_road_test(sut.test_to_road_points(test))
+    valid, msg = V.validate_test(the_test)
+  except ValueError as e:
+    if e.args[0] == "GEOSGeom_createLinearRing_r returned a NULL pointer":
+      return 0
+    raise
+
   #print(msg)
   return 1 if valid else 0
 
