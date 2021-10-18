@@ -22,14 +22,12 @@ class ValidatorNetwork(nn.Module):
     self.vlayer1 = nn.Linear(self.input_shape, self.neurons)
     self.vlayer2 = nn.Linear(self.neurons, self.neurons)
     self.vlayer3 = nn.Linear(self.neurons, 1)
-    self.bn1 = nn.BatchNorm1d(self.input_shape)
+    self.bn1 = nn.BatchNorm1d(self.neurons)
     self.bn2 = nn.BatchNorm1d(self.neurons)
-    self.bn3 = nn.BatchNorm1d(self.neurons)
 
   def forward(self, x):
-    x = self.bn1(x)
-    x = F.relu(self.bn2(self.vlayer1(x)))
-    x = F.relu(self.bn3(self.vlayer2(x)))
+    x = self.bn1(F.relu(self.vlayer1(x)))
+    x = self.bn2(F.relu(self.vlayer2(x)))
     x = torch.sigmoid(self.vlayer3(x))
 
     return x

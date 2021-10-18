@@ -19,19 +19,90 @@ from code_pipeline.visualization import RoadTestVisualizer
 
 from shapely.geometry import Point
 
-class SBSTSUT_stub(SUT):
+class SBSTSUT(SUT):
   """
-  Implements a stub system under test for the BeamNG simulator.
+  Implements a base class for SBST based systems under test.
   """
 
-  def __init__(self):
+  def __init__(self, map_size):
     """
-    Initialize the class.
+    Args:
+      map_size (int): Map size in pixels (total map size map_size*map_size).
     """
+
+    if map_size <= 0:
+      raise ValueError("The map size must be positive.")
 
     super().__init__()
+    self.map_size = map_size
 
-class SBSTSUT_beamng(SUT):
+  def test_to_road_points(self, test):
+    """
+    Converts a test instance to road points.
+
+    Args:
+      test (list): List of length self.ndimensions of floats in [-1, 1].
+
+    Returns:
+      output (list): List of length self.ndimensions of coordinate tuples.
+    """
+
+    # This is the same code as in the Frenetic algorithm.
+    # https://github.com/ERATOMMSD/frenetic-sbst21/blob/main/src/generators/base_frenet_generator.py
+    # We integrate curvature (acceleratation) to get an angle (speed) and then
+    # we move one step to this direction to get position. The intregration is
+    # done using the trapezoid rule with step given by the first component of
+    # the test. We need to undo the normalization of the first coordinate back
+    # to the interval [25, 35].
+    step = 5*test[0] + 30
+    curvature = test[1:]
+
+    # The initial point is the bottom center of the map. The initial angle is
+    # 90 degrees.
+    points = [(self.map_size/2, 10)] # 10 is margin for not being out of bounds
+    angles = [np.math.pi/2]
+    # Add the second point.
+    points.append((points[-1][0] + step*np.cos(angles[-1]), points[-1][1] + step*np.sin(angles[-1])))
+    # Find the remaining points.
+    for i in range(curvature.shape[0] - 1):
+      angles.append(angles[-1] + step*(curvature[i+1] - curvature[i])/2)
+      x = points[-1][0] + step*np.cos(angles[-1])
+      y = points[-1][1] + step*np.sin(angles[-1])
+      points.append((x, y))
+
+    return points
+
+  def _sample_input_space(self, N, curvature_points):
+    """
+    Return n samples (tests) from the input space.
+
+    Args:
+      N (int):                The number of tests to be sampled.
+      curvature_points (int): Number of points on a road (test).
+
+    Returns:
+      tests (np.ndarray): Array of shape (N, curvature_points).
+    """
+
+    if N <= 0:
+      raise ValueError("The number of tests should be positive.")
+    if curvature_points < 2:
+      raise ValueError("The roads must have at least two points.")
+
+    # The first component of a test is segment length for the road between two
+    # curvature points. It is modeled as a number in the interval [25, 35]
+    # arbitrary choice. The remaining components are curvature values which are
+    # currently set to be in [-0.07, 0.07]. The generator is expected to output
+    # values in the interval [-1, 1], so the generated tests are normalized to
+    # this interval.
+    # self.ndimensions-1 curvature values in the range [-0.07, 0.07].
+    result = np.zeros(shape=(N, curvature_points))
+    for n in range(N):
+      result[n,0] = np.random.uniform(-1, 1)
+      result[n,1:self.ndimensions] = np.random.uniform(-0.07, 0.07, size=(1, curvature_points-1))
+    return result
+
+class SBSTSUT_beamng(SBSTSUT):
   """
   Implements the system under test for the BeamNG simulator.
   """
@@ -63,8 +134,6 @@ class SBSTSUT_beamng(SUT):
       max_speed (float):      Maximum speed for the vehicle during the simulation.
     """
 
-    super().__init__()
-
     if map_size <= 0:
       raise ValueError("The map size must be positive.")
     if curvature_points < 2:
@@ -73,6 +142,8 @@ class SBSTSUT_beamng(SUT):
       raise ValueError("The oob_tolerance must be between 0.0 and 1.0.")
     if max_speed <= 0:
       raise ValueError("The maximum speed should be positive.")
+
+    super().__init__(map_size)
 
     # TODO: Some constants and the first coordinate of the test instance
     #       should be proportional to map_size in some sense.
@@ -86,6 +157,7 @@ class SBSTSUT_beamng(SUT):
     self.map_size = map_size
     self.ndimensions = curvature_points
     self.oob_tolerance = oob_tolerance
+    self.target = self.oob_tolerance
     self.maxspeed = max_speed
 
     # Check for activation key.
@@ -116,42 +188,6 @@ class SBSTSUT_beamng(SUT):
     maps.beamng_map = maps.beamng_levels.get_map('tig')
     # maps.print_paths()
     maps.install_map_if_needed()
-
-  def test_to_road_points(self, test):
-    """
-    Converts a test instance to road points.
-
-    Args:
-      test (list): List of length self.ndimensions whose first element is a
-                   positive integer and remaining elements are floats.
-
-    Returns:
-      output (list): List of length self.ndimensions of coordinate tuples.
-    """
-
-    # This is the same code as in the Frenetic algorithm.
-    # https://github.com/ERATOMMSD/frenetic-sbst21/blob/main/src/generators/base_frenet_generator.py
-    # We integrate curvature (acceleratation) to get an angle (speed) and then
-    # we move one step to this direction to get position. The intregration is
-    # done using the trapezoid rule with step given by the first component of
-    # the test.
-    step = test[0]
-    curvature = test[1:]
-
-    # The initial point is the bottom center of the map. The initial angle is
-    # 90 degrees.
-    points = [(self.map_size/2, 10)] # 10 is margin for not being out of bounds
-    angles = [np.math.pi/2]
-    # Add the second point.
-    points.append((points[-1][0] + step*np.cos(angles[-1]), points[-1][1] + step*np.sin(angles[-1])))
-    # Find the remaining points.
-    for i in range(curvature.shape[0] - 1):
-      angles.append(angles[-1] + step*(curvature[i+1] - curvature[i])/2)
-      x = points[-1][0] + step*np.cos(angles[-1])
-      y = points[-1][1] + step*np.sin(angles[-1])
-      points.append((x, y))
-
-    return points
 
   def _is_the_car_moving(self, last_state):
     """
@@ -327,13 +363,66 @@ class SBSTSUT_beamng(SUT):
     if N <= 0:
       raise ValueError("The number of tests should be positive.")
 
-    # We simply return a random segment length in 10 + [-5, 5] and
-    # self.ndimensions-1 curvature values in the range [-0.07, 0.07].
-    result = np.zeros(shape=(N, self.ndimensions))
-    for n in range(N):
-      result[n,0] = 30 + np.random.randint(-5, 6)
-      result[n,1:self.ndimensions] = np.random.uniform(-0.07, 0.07, size=(1, self.ndimensions-1))
+    return self._sample_input_space(N, self.ndimensions)
+
+class SBSTSUT_validator(SBSTSUT):
+
+  def __init__(self, map_size, curvature_points, validator_bb):
+    """
+    Args:
+      map_size (int):          Map size in pixels (total map size
+                               map_size*map_size).
+      curvature_points (int):  How many road points are generated.
+      validator_bb (function): A black box function which takes a test as an
+                               input and returns 0 (invalid) or 1 (valid).
+    """
+
+    if map_size <= 0:
+      raise ValueError("The map size must be positive.")
+    if curvature_points < 2:
+      raise ValueError("The roads must have at least two points.")
+
+    super().__init__(map_size)
+
+    self.ndimensions = curvature_points
+    self.validator_bb = validator_bb
+    self.target = 1
+
+  def execute_test(self, tests):
+    """
+    Execute the given tests on the SUT.
+
+    Args:
+      tests (np.ndarray): Array of N tests with shape (N, self.ndimensions).
+
+    Returns:
+      result (np.ndarray): Array of shape (N, 1).
+    """
+
+    if len(tests.shape) != 2 or tests.shape[1] != self.ndimensions:
+      raise ValueError("Input array expected to have shape (N, {}).".format(self.ndimensions))
+
+    result = np.zeros(shape=(tests.shape[0], 1))
+    for n, test in enumerate(tests):
+      result[n,0] = self.validator_bb.validity(test.reshape(1, test.shape[0]))[0,0]
+
     return result
+
+  def sample_input_space(self, N=1):
+    """
+    Return n samples (tests) from the input space.
+
+    Args:
+      N (int): The number of tests to be sampled.
+
+    Returns:
+      tests (np.ndarray): Array of shape (N, curvature_points).
+    """
+
+    if N <= 0:
+      raise ValueError("The number of tests should be positive.")
+
+    return self._sample_input_space(N, self.ndimensions)
 
 def sbst_test_to_image(test, sut):
   """
@@ -364,5 +453,4 @@ def sbst_validate_test(test, sut):
 
   #print(msg)
   return 1 if valid else 0
-
 

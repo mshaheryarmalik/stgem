@@ -31,4 +31,3 @@ class GeneratorNetwork(nn.Module):
     x = torch.tanh(self.glayer3(x)) # Squash the output values to [-1, 1].
 
     return x
-
