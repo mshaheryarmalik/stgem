@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+
 from time import sleep
 
 import numpy as np
@@ -8,7 +10,7 @@ import torch
 
 from config import *
 from sut.sut_odroid import OdroidSUT
-#from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_validate_test
+#from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
 from validator.validator import Validator
 from models import GAN, RandomGenerator
 
@@ -35,6 +37,13 @@ def collect_initial_training_data(model, N, file_name, append=True):
 
   np.save(file_name, data)
 
+def _test_to_image(sut, test, file_name=None):
+  plt = sbst_test_to_image(test, sut)
+  if file_name is None:
+    plt.show()
+  else:
+    plt.savefig(file_name)
+
 if __name__ == "__main__":
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -45,27 +54,22 @@ if __name__ == "__main__":
   # only used for training.
   #
   # Odroid.
-  # ---------------------------------------------------------------------------
   output_data = 1
   fitness_threshold = 6.0
   sut = OdroidSUT(output_data, fitness_threshold)
   validator = None
-  # ---------------------------------------------------------------------------
   # SBST competition validator.
-  # ---------------------------------------------------------------------------
   """
   validator_bb = Validator(input_size=5, validator_bb=lambda t: sbst_validate_test(t, sut), device=device)
   sut = SBSTSUT_validator(map_size=200, curvature_points=validator_bb.ndimensions, validator_bb=validator_bb)
+  test_to_image = lambda t, file_name=None: _test_to_image(sut, t.reshape(sut.ndimensions), file_name)
   validator = None
   """
-  # ---------------------------------------------------------------------------
   # SBST competetition.
-  # ---------------------------------------------------------------------------
   """
   sut = SBSTSUT_beamng(config["sbst"]["beamng_home"], map_size=200, curvature_points=5)
   validator = Validator(sut.ndimensions, lambda t: sbst_validate_test(t, sut), device=device)
   """
-  # ---------------------------------------------------------------------------
 
   # Initialize the model.
   # ---------------------------------------------------------------------------
@@ -160,6 +164,7 @@ if __name__ == "__main__":
       rounds += 1
 
     log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(new_test, new_fitness, rounds + 1, invalid))
+    test_to_image(new_test.reshape((sut.ndimensions)), os.path.join("tmp", "tmp_{}.jpg".format(len(test_inputs))))
 
     # Add the new test to our test suite.
     test_inputs.append(tuple(new_test[0,:]))
@@ -174,9 +179,9 @@ if __name__ == "__main__":
     model.train_with_batch(np.array(test_inputs),
                            np.array(test_outputs).reshape(len(test_outputs), 1),
                            epochs=3,
-                           generator_epochs=10,
+                           generator_epochs=2,
                            validator_epochs=1,
-                           discriminator_epochs=3,
+                           discriminator_epochs=15,
                            validator_data_size=10,
                            discriminator_data_size=10,
                            use_final=-1)
@@ -193,3 +198,6 @@ if __name__ == "__main__":
   total_predicted_positive = sum(fitness >= target_fitness)[0]
   log("{}/{} ({} %) are predicted to be positive".format(total_predicted_positive, total, round(total_predicted_positive/total*100, 1)))
 
+  # Generate new samples to assess quality visually.
+  for n, test in enumerate(model.generate_test(30)):
+    test_to_image(test.reshape((sut.ndimensions)), os.path.join("tmp", "new_{}.jpg".format(n+1)))

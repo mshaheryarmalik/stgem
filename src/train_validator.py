@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
   sut = SBSTSUT_beamng(config["sbst"]["beamng_home"], map_size=200, curvature_points=5)
   validator = Validator(sut, lambda t: sbst_validate_test(t, sut), device=device)
-  test_to_image = lambda t: sbst_test_to_image(test, sut)
+  test_to_image = lambda t: sbst_test_to_image(t, sut)
 
   #sample_and_visualize(10, sut, validator)
   #generate_validator_training_data(2000, sut, validator, append=True)

@@ -83,7 +83,7 @@ class GAN(Model):
     self.modelG = None
     self.modelD = None
     # Input dimension for the noise inputted to the generator.
-    self.noise_dim = 3
+    self.noise_dim = 100
     # Number of neurons per layer in the neural networks.
     self.neurons = 128
 
@@ -166,6 +166,9 @@ class GAN(Model):
       # outputs.
       self.modelD.train(True)
       for m in range(discriminator_epochs):
+        # We the values from [0, 1] to \R using a logit transformation so that
+        # MSE loss works better. Since logit is undefined in 0 and 1, we
+        # actually first transform the values to the interval [0.01, 0.99].
         D_loss = self.lossD(torch.logit(self.modelD(0.98*dataX + 0.01)), torch.logit(0.98*dataY + 0.01))
         self.optimizerD.zero_grad()
         D_loss.backward()
