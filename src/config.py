@@ -7,16 +7,17 @@ config = {}
 config["data_path"] = os.path.join("..", "data")
 config["test_save_path"] = os.path.join("..", "simulations")
 
-# Config common to all systems under test.
-for sut_id in ["odroid", "sbst_validator", "sbst"]:
-  config[sut_id] = {}
-  config[sut_id]["data_directory"] = os.path.join(config["data_path"], sut_id)
-  config[sut_id]["pregenerated_initial_data"] = os.path.join(config[sut_id]["data_directory"], "pregenerated_initial_data.npy")
+for model in ["ogan", "wgan"]:
+  # Config common to all systems under test.
+  for sut_id in ["odroid_{}".format(model), "sbst_validator_{}".format(model), "sbst_{}".format(model)]:
+    config[sut_id] = {}
+    config[sut_id]["data_directory"] = os.path.join(config["data_path"], sut_id)
+    config[sut_id]["pregenerated_initial_data"] = os.path.join(config[sut_id]["data_directory"], "pregenerated_initial_data.npy")
 
-# SUT specific configs.
-config["odroid"] = {"file_base": os.path.join(config["data_path"], "odroid", "odroid")}
+  # SUT specific configs.
+  config["odroid_{}".format(model)] = {"file_base": os.path.join(config["data_path"], "odroid", "odroid")}
 
-config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
+  config["sbst_{}".format(model)]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 
 def convert(test):
   """

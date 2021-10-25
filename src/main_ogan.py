@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
+import os, datetime
+
+import imageio
 
 import numpy as np
 import torch
@@ -15,8 +17,8 @@ def log(msg):
 
 if __name__ == "__main__":
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  # odroid, sbst_validator, sbst
-  sut_id = "odroid"
+  # odroid_ogan, sbst_validator_ogan, sbst_ogan
+  sut_id = "odroid_ogan"
 
   enable_log = True
   enable_view = True
@@ -27,7 +29,7 @@ if __name__ == "__main__":
   # We assume that there exists an efficient and perfect validator oracle. This
   # oracle is used mainly for test validation, and the trained proxy for it is
   # only used for training.
-  if sut_id == "odroid":
+  if sut_id == "odroid_ogan":
     from sut.sut_odroid import OdroidSUT
 
     random_init = 50
@@ -51,10 +53,10 @@ if __name__ == "__main__":
     def _view_test(test):
       pass
 
-    def _save_test(test, file_name):
+    def _save_test(test, session, file_name):
       pass
 
-  elif sut_id == "sbst_validator":
+  elif sut_id == "sbst_validator_ogan":
     from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
 
     random_init = 50
@@ -81,11 +83,11 @@ if __name__ == "__main__":
       plt = sbst_test_to_image(convert(test), sut)
       plt.show()
 
-    def _save_test(test, file_name):
+    def _save_test(test, session, file_name):
       plt = sbst_test_to_image(convert(test), sut)
-      plt.savefig(os.path.join(config["test_save_path"], sut_id, file_name + ".jpg"))
+      plt.savefig(os.path.join(config["test_save_path"], sut_id, session, file_name + ".jpg"))
 
-  elif sut_id == "sbst":
+  elif sut_id == "sbst_ogan":
     from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
 
     random_init = 50
@@ -110,16 +112,19 @@ if __name__ == "__main__":
       plt = sbst_test_to_image(convert(test), sut)
       plt.show()
 
-    def _save_test(test, file_name):
+    def _save_test(test, session, file_name):
       plt = sbst_test_to_image(convert(test), sut)
-      plt.savefig(os.path.join(config["test_save_path"], sut_id, file_name + ".jpg"))
+      plt.savefig(os.path.join(config["test_save_path"], sut_id, session, file_name + ".jpg"))
 
   else:
     print("No SUT specified.")
     raise SystemExit
 
+  session = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
   view_test = lambda t: _view_test(t) if enable_view else None
-  save_test = lambda t, f: _save_test(t, f) if enable_save else None
+  save_test = lambda t, f: _save_test(t, session, f) if enable_save else None
+
+  os.makedirs(os.path.join(config["test_save_path"], sut_id, session), exist_ok=True)
 
   # Initialize the model.
   # ---------------------------------------------------------------------------
@@ -139,6 +144,26 @@ if __name__ == "__main__":
   test_inputs = []
   test_outputs = []
   test_visited = {}
+  roads_similarity_tolerance = 0.05
+
+  def detect_similar_roads(test_n):
+
+    for test_v in test_visited:
+      # distance compare option 1
+      difference = np.sqrt(np.sum((np.array(test_v) - np.array(test_n)) ** 2))
+
+      # distance compare option 2
+      # difference = np.sqrt(np.sum(np.abs((np.array(test_v) - np.array(test_n)))))
+
+      # distance compare option 3
+      # difference = np.max(np.abs(np.array(test_v) - np.array(test_n)))
+
+      if difference <= roads_similarity_tolerance:
+        # print('too similar -----------------------------------------------------------', difference)
+        return True
+
+      else:
+        continue
 
   load = False
   if load:
@@ -188,7 +213,10 @@ if __name__ == "__main__":
       # TODO: in order to traverse the test space more completely, we probably
       #       should exclude tests that are "too close" to tests already
       #       generated. Ivan's code does this.
-      if tuple(new_test[0,:]) in test_visited: continue
+      #if tuple(new_test[0,:]) in test_visited: continue
+
+      if detect_similar_roads(tuple(new_test[0,:])):
+        continue
 
       # Check if the test is valid.
       if model.validity(new_test)[0,0] == 0:
@@ -235,8 +263,22 @@ if __name__ == "__main__":
   log("{}/{} ({} %) are predicted to be positive".format(total_predicted_positive, total, round(total_predicted_positive/total*100, 1)))
 
   # Generate new samples to assess quality visually.
-  """
   for n, test in enumerate(model.generate_test(30)):
     view_test(test)
     save_test(test, "eval_{}".format(n + 1))
-  """
+
+  # Create an animation out of the generated roads.
+  if sut_id in ["sbst_validator_ogan", "sbst_ogan"]:
+    session_directory = os.path.join(config["test_save_path"], sut_id, session)
+    training_images = []
+    eval_images = []
+    for filename in os.listdir(session_directory):
+      data = imageio.imread(os.path.join(session_directory, filename))
+      if filename.startswith("init") or filename.startswith("test"):
+        training_images.append(data)
+      elif filename.startswith("eval"):
+        eval_images.append(data)
+
+    imageio.mimsave(os.path.join(session_directory, "training_clip.gif"), training_images)
+    imageio.mimsave(os.path.join(session_directory, "eval_clip.gif"), eval_images)
+
