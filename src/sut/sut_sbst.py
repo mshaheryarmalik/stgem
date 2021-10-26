@@ -57,12 +57,14 @@ class SBSTSUT(SUT):
     # This is the same code as in the Frenetic algorithm.
     # https://github.com/ERATOMMSD/frenetic-sbst21/blob/main/src/generators/base_frenet_generator.py
     # We integrate curvature (acceleratation) to get an angle (speed) and then
-    # we move one step to this direction to get position. The intregration is
+    # we move one step to this direction to get position. The integration is
     # done using the trapezoid rule with step given by the first component of
     # the test. We need to undo the normalization of the first coordinate back
     # to the interval [25, 35].
     step = 5*test[0] + 30
-    curvature = test[1:]
+    # We also undo the normalization of the curvatures from [-1, 1] to
+    # [-0.07, 0.07] as in the Frenetic algorithm.
+    curvature = 0.07*test[1:]
 
     # The initial point is the bottom center of the map. The initial angle is
     # 90 degrees.
@@ -102,12 +104,7 @@ class SBSTSUT(SUT):
     # currently set to be in [-0.07, 0.07]. The generator is expected to output
     # values in the interval [-1, 1], so the generated tests are normalized to
     # this interval.
-    # self.ndimensions-1 curvature values in the range [-0.07, 0.07].
-    result = np.zeros(shape=(N, curvature_points))
-    for n in range(N):
-      result[n,0] = np.random.uniform(-1, 1)
-      result[n,1:self.ndimensions] = np.random.uniform(-0.07, 0.07, size=(1, curvature_points-1))
-    return result
+    return np.random.uniform(-1, 1, size=(N, curvature_points))
 
 class SBSTSUT_beamng(SBSTSUT):
   """
