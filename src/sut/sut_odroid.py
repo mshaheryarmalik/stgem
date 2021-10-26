@@ -44,7 +44,7 @@ class OdroidSUT(SUT):
     if not (1 <= output <= 3):
       raise Exception("Argument 'output' should be 1, 2 or 3.")
 
-    file_name = config["odroid_ogan"]["file_base"] + ".npy"
+    file_name = config["odroid"]["file_base"] + ".npy"
 
     if not os.path.exists(file_name):
       preprocess_data.generate_odroid_data()

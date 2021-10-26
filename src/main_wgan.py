@@ -1,201 +1,123 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
+import os, datetime
 
 import numpy as np
 import torch
 
-from config import *
-from validator.validator import Validator
-from models import WGAN
+from config import config, get_model
 
-def log(msg):
-  print(msg)
+class Logger:
+
+  def __init__(self, quiet=False):
+    self.quiet = quiet
+
+    self.total_log = ""
+
+  def log(self, msg, quiet=None):
+    self.total_log += msg + "\n"
+    if (quiet is not None and not quiet) or not self.quiet:
+      print(msg)
+
+  def save(self, file_name):
+    with open(file_name, mode="w") as f:
+      f.write(self.total_log)
 
 if __name__ == "__main__":
-  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  # odroid_wgan, sbst_validator_wgan, sbst_wgan
-  sut_id = "sbst_validator_wgan"
+  model_id = "wgan"
+  sut_id = "sbst" # odroid, sbst_validator, sbst
 
-  enable_log = True
+  enable_log_printout = True
   enable_view = True
   enable_save = True
 
-  # Initialize the system under test and validator.
+  # Initialize the model and viewing and saving mechanisms.
   # ---------------------------------------------------------------------------
-  # We assume that there exists an efficient and perfect validator oracle. This
-  # oracle is used mainly for test validation, and the trained proxy for it is
-  # only used for training.
-  if sut_id == "odroid_wgan":
-    from sut.sut_odroid import OdroidSUT
+  model, _view_test, _save_test = get_model(sut_id, model_id)
 
-    random_init = 50
-    N = 200
-
-    output_data = 1
-    fitness_threshold = 6.0
-
-    sut = OdroidSUT(output_data, fitness_threshold)
-    validator = None
-
-    epoch_settings_init = {"epochs": 2,
-                           "analyzer_epochs": 20,
-                           "critic_epochs": 5,
-                           "generator_epochs": 1}
-    epoch_settings = {"epochs": 1,
-                      "analyzer_epochs": 5,
-                      "critic_epochs": 5,
-                      "generator_epochs": 1}
-
-    def _view_test(test):
-      pass
-
-    def _save_test(test, file_name):
-      pass
-
-  elif sut_id == "sbst_validator_wgan":
-    from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
-
-    random_init = 50
-    N = 200
-
-    map_size = 200
-    curvature_points = 5
-
-    validator_bb = Validator(input_size=curvature_points, validator_bb=lambda t: sbst_validate_test(t, sut))
-    sut = SBSTSUT_validator(map_size=map_size, curvature_points=validator_bb.ndimensions, validator_bb=validator_bb)
-    test_to_image = lambda t, file_name=None: _test_to_image(sut, t.reshape(sut.ndimensions), file_name)
-    validator = None
-
-    epoch_settings_init = {"epochs": 2,
-                           "analyzer_epochs": 20,
-                           "critic_epochs": 5,
-                           "generator_epochs": 1}
-    epoch_settings = {"epochs": 1,
-                      "analyzer_epochs": 10,
-                      "critic_epochs": 5,
-                      "generator_epochs": 1}
-
-    def _view_test(test):
-      plt = sbst_test_to_image(convert(test), sut)
-      plt.show()
-
-    def _save_test(test, file_name):
-      plt = sbst_test_to_image(convert(test), sut)
-      plt.savefig(os.path.join(config["test_save_path"], sut_id, file_name + ".jpg"))
-
-  elif sut_id == "sbst_wgan":
-    from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
-
-    random_init = 50
-    N = 200
-
-    map_size = 200
-    curvature_points = 5
-
-    sut = SBSTSUT_beamng(config["sbst"]["beamng_home"], map_size=map_size, curvature_points=curvature_points)
-    validator = Validator(sut.ndimensions, lambda t: sbst_validate_test(t, sut), device=device)
-
-    def _view_test(test):
-      plt = sbst_test_to_image(convert(test), sut)
-      plt.show()
-
-    def _save_test(test, file_name):
-      plt = sbst_test_to_image(convert(test), sut)
-      plt.savefig(os.path.join(config["test_save_path"], sut_id, file_name + ".jpg"))
-
-  else:
-    print("No SUT specified.")
-    raise SystemExit
-
-  view_test = lambda t: _view_test(convert(t)) if enable_view else None
-  save_test = lambda t, f: _save_test(convert(t), f) if enable_save else None
-
-  # Initialize the model.
-  # ---------------------------------------------------------------------------
-  model = WGAN(sut, validator, device)
-
-  """
-  Here we begin to sample new tests from the input space and begin the
-  generation of new tests. The SUT methods return numpy arrays, but we convert
-  the tests to lists of tuples (which are hashable) and maintain a dictionary
-  of used tests for efficiency.
-  """
+  session = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
+  session_directory = os.path.join(config[sut_id][model_id]["test_save_path"], session)
+  view_test = lambda t: _view_test(t) if enable_view else None
+  save_test = lambda t, f: _save_test(t, session, f) if enable_save else None
+  os.makedirs(os.path.join(config[sut_id][model_id]["test_save_path"], session), exist_ok=True)
+  logger = Logger(quiet=not enable_log_printout)
 
   # Generate initial tests randomly.
   # ---------------------------------------------------------------------------
-  # TODO: figure out an efficient way to handle the data
-  test_inputs = []
-  test_outputs = []
-  test_critic_training = []
+  test_inputs = np.zeros(shape=(model.N_tests, model.sut.ndimensions)) # array to hold all generated tests
+  test_outputs = np.zeros(shape=(model.N_tests, 1))                    # array to hold test outputs
+  tests_generated = 0                                                  # how many tests are generated so far
+  test_critic_training = []                                            # list which indicates which rows of test_inputs belong to the critic training data
 
   load = False
   if load:
-    log("Loading pregenerated initial tests.")
-    data = np.load(config[sut_id]["pregenerated_initial_data"]).tolist()
-    for test in data:
-      test_inputs.append(tuple(test[:-1]))
-      test_outputs.append(test[-1])
-    del data
+    logger.log("Loading pregenerated initial tests.")
+    with open(config[sut_id][model_id]["pregenerated_initial_data"], mode="br") as f:
+      test_inputs[:data.shape[0],:] = np.load(f)
+      test_outputs[:data.shape[0],:] = np.load(f)
   else:
-    log("Generating and running {} random valid tests.".format(random_init))
-    while len(test_inputs) < random_init:
-      test = sut.sample_input_space()
+    logger.log("Generating and running {} random valid tests.".format(model.random_init))
+    while tests_generated < model.random_init:
+      test = model.sut.sample_input_space()
       if model.validity(test)[0,0] == 0: continue
-      test_inputs.append(tuple(test[0,:]))
+      test_inputs[tests_generated,:] = test
+      tests_generated += 1
 
       # TODO: add mechanism for selecting test which is in some sense different
       #       from previous tests
 
       view_test(test)
-      save_test(test, "init_{}".format(len(test_inputs)))
+      # TODO: add initial zeros
+      save_test(test, "init_{}".format(tests_generated))
 
-      log("Executing {} ({}/{})".format(test, len(test_inputs), random_init))
-      test_outputs.append(sut.execute_test(test)[0,0])
-      log("Result: {}".format(test_outputs[-1]))
+      logger.log("Executing {} ({}/{})".format(test, tests_generated, model.random_init))
+      test_outputs[tests_generated - 1,:] = model.sut.execute_test(test)
+      logger.log("Result: {}".format(test_outputs[tests_generated - 1,0]))
 
   init_threshold = 0.1 # TODO: make configurable
   # Use the tests whose fitness exceeds init_threshold as training data for the
   # critic.
-  test_critic_training = [n for n, o in enumerate(test_outputs) if o >= init_threshold]
   # TODO: What if the number of samples in the training data is very low? What
   #       if it's zero?
+  test_critic_training = [n for n in range(tests_generated) if test_outputs[n,0] >= init_threshold]
+  # TODO: We are now exiting in case we have nothing to traing with. Should we
+  #       redo the initial phase if the number of samples is too low?
+  if len(test_critic_training) == 0:
+    logger.log("No training samples found for the critic.")
+    raise SystemExit
 
   # TODO: Place this somewhere else.
   def report_critic():
     global test_inputs
     global test_outputs
+    global tests_generated
     global test_critic_training
 
-    data = np.array(test_outputs).reshape(len(test_outputs), 1)[test_critic_training,:]
+    data = test_outputs[test_critic_training,:]
     mu = data.mean(0)[0]
     sigma = data.std(0)[0]
-    log("Critic training data has {} samples with mean {} and std {}.".format(len(test_critic_training), mu, sigma))
+    logger.log("Critic training data has {} samples with mean {} and std {}.".format(len(test_critic_training), mu, sigma))
 
   report_critic()
 
   # Train the model with initial tests.
   # ---------------------------------------------------------------------------
-  log("Training model...")
-  inputs_A = np.array(test_inputs)
-  outputs_A = np.array(test_outputs).reshape(len(test_outputs), 1)
-  model.train_with_batch(inputs_A,
-                         outputs_A,
-                         inputs_A[test_critic_training,:],
-                         outputs_A[test_critic_training,:],
-                         epoch_settings=epoch_settings_init)
-  del inputs_A
-  del outputs_A
+  logger.log("Training model...")
+  model.train_with_batch(test_inputs[:tests_generated,:],
+                         test_outputs[:tests_generated,:],
+                         test_inputs[test_critic_training,:],
+                         test_outputs[test_critic_training,:],
+                         epoch_settings=model.epoch_settings_init)
 
   # Begin the main loop for new test generation and training.
   # ---------------------------------------------------------------------------
   # How many tests are generated.
-  while len(test_inputs) < N:
+  while tests_generated < model.N_tests:
     # Generate a new valid test with high fitness and decrease target fitness
     # as per execution of the loop.
     # -------------------------------------------------------------------------
-    #log("Starting to generate a new test.")
+    logger.log("Starting to generate a new test.")
     target_fitness = 1
     rounds = 0
     invalid = 0
@@ -219,68 +141,83 @@ if __name__ == "__main__":
       if new_fitness >= target_fitness: break
       rounds += 1
 
-    log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(new_test, new_fitness, rounds + 1, invalid))
-    view_test(new_test)
-    save_test(new_test, "test_{}".format(len(test_inputs) + 1))
-
     # Add the new test to our test suite.
     # -------------------------------------------------------------------------
-    test_inputs.append(tuple(new_test[0,:]))
+    test_inputs[tests_generated,:] = new_test
+    tests_generated += 1
+
+    logger.log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(new_test, new_fitness, rounds + 1, invalid))
+    view_test(new_test)
+    save_test(new_test, "test_{}".format(tests_generated))
+
     # Actually run the new test on the SUT.
-    #log("Executing the test...")
-    test_outputs.append(model.sut.execute_test(new_test)[0,0])
-    log("The actual fitness {} for the generated test.".format(test_outputs[-1]))
+    logger.log("Executing the test...")
+
+    test_outputs[tests_generated - 1,:] = model.sut.execute_test(new_test)
+
+    logger.log("The actual fitness {} for the generated test.".format(test_outputs[tests_generated - 1,0]))
 
     # Update critic training data.
     # -------------------------------------------------------------------------
-    # Now we simply add the new test if it is below one standard deviation of
-    # the mean.
-    data = np.array(test_outputs).reshape(len(test_outputs), 1)[test_critic_training,:]
+    # Now we simply add the new test if it is above the mean minus one standard
+    # deviation.
+    data = test_outputs[test_critic_training,:]
     mu = data.mean(0)[0]
     sigma = data.std(0)[0]
-    if new_fitness >= mu or mu - new_fitness <= sigma:
-      log("Added the new test to the critic training data.")
-      test_critic_training.append(len(test_inputs) - 1)
+    o = test_outputs[tests_generated - 1,0]
+    if o >= mu or mu - o <= sigma:
+      logger.log("Added the new test to the critic training data.")
+      test_critic_training.append(tests_generated - 1)
       
       # Consider if we should remove the test with the lowest fitness from the
       # training data.
       if np.random.random() <= 0.25:
         i = np.argmin(data)
-        o = test_outputs[test_critic_training[i]]
+        o = test_outputs[test_critic_training[i],0]
         if np.abs(o - mu) >= 0.1:
-          log("Removing test {} with fitness {}.".format(test_inputs[test_critic_training[i]], test_outputs[test_critic_training[i]]))
+          logger.log("Removing test {} with fitness {}.".format(test_inputs[test_critic_training[i],:], o))
           test_critic_training.pop(i)
     else:
-      log("Didn't add the new test to the critic training data.")
+      logger.log("Didn't add the new test to the critic training data.")
 
     report_critic()
 
     # Train the model.
     # -------------------------------------------------------------------------
-    log("Training the model...")
-    inputs_A = np.array(test_inputs)
-    outputs_A = np.array(test_outputs).reshape(len(test_outputs), 1)
-    model.train_with_batch(inputs_A,
-                           outputs_A,
-                           inputs_A[test_critic_training,:],
-                           outputs_A[test_critic_training,:],
-                           epoch_settings=epoch_settings)
-    del inputs_A
-    del outputs_A
+    logger.log("Training the model...")
+    model.train_with_batch(test_inputs[:tests_generated,:],
+                         test_outputs[:tests_generated,:],
+                         test_inputs[test_critic_training,:],
+                         test_outputs[test_critic_training,:],
+                         epoch_settings=model.epoch_settings)
+
+  # Train the model on the complete collected data.
+  # ---------------------------------------------------------------------------
+  # TODO
 
   # Evaluate the generated tests.
   # ---------------------------------------------------------------------------
-  total = len(test_inputs)
-  log("Generated total {} tests.".format(total))
+  total = tests_generated
+  logger.log("Generated total {} tests.".format(total))
 
-  total_positive = sum(1 for output in test_outputs if output >= sut.target)
-  log("{}/{} ({} %) are positive.".format(total_positive, total, round(total_positive/total*100, 1)))
+  total_positive = sum(1 for n in range(tests_generated) if test_outputs[n,0] >= model.sut.target)
+  logger.log("{}/{} ({} %) are positive.".format(total_positive, total, round(total_positive/total*100, 1)))
 
-  fitness = model.predict_fitness(np.array(test_inputs))
+  fitness = model.predict_fitness(test_inputs)
   total_predicted_positive = sum(fitness >= target_fitness)[0]
-  log("{}/{} ({} %) are predicted to be positive".format(total_predicted_positive, total, round(total_predicted_positive/total*100, 1)))
+  logger.log("{}/{} ({} %) are predicted to be positive".format(total_predicted_positive, total, round(total_predicted_positive/total*100, 1)))
 
-  # Generate new samples to assess quality visually.
-  for n, test in enumerate(model.generate_test(30)):
-    view_test(test)
-    save_test(test, "eval_{}".format(n + 1))
+  # Save the final model, training data, log, etc.
+  # ---------------------------------------------------------------------------
+  # Save training data.
+  with open(os.path.join(session_directory, "training_data.npy"), mode="wb") as f:
+    np.save(f, test_inputs)
+    np.save(f, test_outputs)
+    np.save(f, np.array(test_critic_training))
+
+  # Save the trained model.
+  model.save(session_directory)
+
+  # Save the log.
+  logger.save(os.path.join(session_directory, "session.log"))
+

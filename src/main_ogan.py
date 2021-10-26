@@ -17,8 +17,8 @@ def log(msg):
 
 if __name__ == "__main__":
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  # odroid_ogan, sbst_validator_ogan, sbst_ogan
-  sut_id = "odroid_ogan"
+  model_id = "ogan"
+  sut_id = "odroid" # odroid, sbst_validator, sbst
 
   enable_log = True
   enable_view = True
@@ -29,7 +29,7 @@ if __name__ == "__main__":
   # We assume that there exists an efficient and perfect validator oracle. This
   # oracle is used mainly for test validation, and the trained proxy for it is
   # only used for training.
-  if sut_id == "odroid_ogan":
+  if sut_id == "odroid":
     from sut.sut_odroid import OdroidSUT
 
     random_init = 50
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     def _save_test(test, session, file_name):
       pass
 
-  elif sut_id == "sbst_validator_ogan":
+  elif sut_id == "sbst_validator":
     from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
 
     random_init = 50
@@ -85,9 +85,9 @@ if __name__ == "__main__":
 
     def _save_test(test, session, file_name):
       plt = sbst_test_to_image(convert(test), sut)
-      plt.savefig(os.path.join(config["test_save_path"], sut_id, session, file_name + ".jpg"))
+      plt.savefig(os.path.join(config[sut_id][model_id]["test_save_path"], session, file_name + ".jpg"))
 
-  elif sut_id == "sbst_ogan":
+  elif sut_id == "sbst":
     from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
 
     random_init = 50
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     def _save_test(test, session, file_name):
       plt = sbst_test_to_image(convert(test), sut)
-      plt.savefig(os.path.join(config["test_save_path"], sut_id, session, file_name + ".jpg"))
+      plt.savefig(os.path.join(config[sut_id][model_id]["test_save_path"], session, file_name + ".jpg"))
 
   else:
     print("No SUT specified.")
@@ -124,7 +124,7 @@ if __name__ == "__main__":
   view_test = lambda t: _view_test(t) if enable_view else None
   save_test = lambda t, f: _save_test(t, session, f) if enable_save else None
 
-  os.makedirs(os.path.join(config["test_save_path"], sut_id, session), exist_ok=True)
+  os.makedirs(os.path.join(config[sut_id][model_id]["test_save_path"], session), exist_ok=True)
 
   # Initialize the model.
   # ---------------------------------------------------------------------------
@@ -168,7 +168,7 @@ if __name__ == "__main__":
   load = False
   if load:
     log("Loading pregenerated initial tests.")
-    data = np.load(config[sut_id]["pregenerated_initial_data"]).tolist()
+    data = np.load(config[sut_id][model_id]["pregenerated_initial_data"]).tolist()
     for test in data:
       test_inputs.append(tuple(test[:-1]))
       test_outputs.append(test[-1])
@@ -268,8 +268,8 @@ if __name__ == "__main__":
     save_test(test, "eval_{}".format(n + 1))
 
   # Create an animation out of the generated roads.
-  if sut_id in ["sbst_validator_ogan", "sbst_ogan"]:
-    session_directory = os.path.join(config["test_save_path"], sut_id, session)
+  if sut_id in ["sbst_validator", "sbst"]:
+    session_directory = os.path.join(config[sut_id][model_id]["test_save_path"], session)
     training_images = []
     eval_images = []
     for filename in os.listdir(session_directory):

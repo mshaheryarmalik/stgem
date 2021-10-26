@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+
 import numpy as np
 
 import torch
@@ -26,10 +28,22 @@ class Model:
     self.device = device
     self.validator = validator
 
-  def train_with_batch(self, dataX, dataY, epochs=1, validator_epochs=1, discriminator_epochs=1, use_final=-1):
+    # Settings for training. These are set externally.
+    self.epoch_settings_init = None
+    self.epoch_settings = None
+    self.random_init = None
+    self.N_tests = None
+
+  def train_with_batch(self, dataX, dataY, epoch_settings):
     raise NotImplementedError()
 
   def generate_test(self, N=1):
+    raise NotImplementedError()
+
+  def save(self, path):
+    raise NotImplementedError()
+
+  def load(self, path):
     raise NotImplementedError()
 
   def validity(self, tests):
@@ -108,6 +122,31 @@ class OGAN(Model):
     #self.optimizerG = torch.optim.RMSprop(self.modelG.parameters(), lr=lr)
     self.optimizerD = torch.optim.Adam(self.modelD.parameters(), lr=lr)
     self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=lr)
+
+  def save(self, path):
+    """
+    Save the model to the given path. Files discriminator and generator are
+    created in the directory.
+    """
+
+    torch.save(self.modelD.state_dict(), os.path.join(path, "discriminator"))
+    torch.save(self.modelG.state_dict(), os.path.join(path, "generator"))
+
+  def load(self, path):
+    """
+    Load the model from path. Files discriminator and analyzer are expected to
+    exist.
+    """
+
+    if not os.path.exists(os.path.join(path, "discriminator")):
+      raise Exception("File 'discriminator' does not exist in {}.".format(path))
+    if not os.path.exists(os.path.join(path, "generator")):
+      raise Exception("File 'generator' does not exist in {}.".format(path))
+
+    self.modelD = torch.load(os.path.join(path, "discriminator"))
+    self.modelG = torch.load(os.path.join(path, "generator"))
+    self.modelD.eval()
+    self.modelG.eval()
 
   def train_with_batch(self, dataX, dataY, epoch_settings):
     """
@@ -297,6 +336,36 @@ class WGAN(Model):
     self.optimizerG = torch.optim.RMSprop(self.modelG.parameters(), lr=lr) # RMSprop with clipping
     self.optimizerC = torch.optim.RMSprop(self.modelC.parameters(), lr=lr) # RMSprop with clipping
     self.optimizerA = torch.optim.Adam(self.modelA.parameters(), lr=lr)
+
+  def save(self, path):
+    """
+    Save the model to the given path. Files critic, generator, and analyzer are
+    created in the directory.
+    """
+
+    torch.save(self.modelC.state_dict(), os.path.join(path, "critic"))
+    torch.save(self.modelG.state_dict(), os.path.join(path, "generator"))
+    torch.save(self.modelA.state_dict(), os.path.join(path, "analyzer"))
+
+  def load(self, path):
+    """
+    Load the model from path. Files critic, generator, and analyzer are
+    expected to exist.
+    """
+
+    if not os.path.exists(os.path.join(path, "critic")):
+      raise Exception("File 'critic' does not exist in {}.".format(path))
+    if not os.path.exists(os.path.join(path, "generator")):
+      raise Exception("File 'generator' does not exist in {}.".format(path))
+    if not os.path.exists(os.path.join(path, "analyzer")):
+      raise Exception("File 'analyzer' does not exist in {}.".format(path))
+
+    self.modelC = torch.load(os.path.join(path, "critic"))
+    self.modelG = torch.load(os.path.join(path, "generator"))
+    self.modelA = torch.load(os.path.join(path, "analyzer"))
+    self.modelC.eval()
+    self.modelG.eval()
+    self.modelA.eval()
 
   def train_with_batch(self, data_A_X, data_A_Y, data_C_X, data_C_Y, epoch_settings):
     """
