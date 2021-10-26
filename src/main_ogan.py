@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(new_test, new_fitness, rounds + 1, invalid))
     view_test(new_test)
-    save_test(test, "test_{}".format(len(test_inputs) + 1))
+    save_test(new_test, "test_{}".format(len(test_inputs) + 1))
 
     # Add the new test to our test suite.
     test_inputs.append(tuple(new_test[0,:]))
