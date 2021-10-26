@@ -4,25 +4,9 @@
 import os, datetime
 
 import numpy as np
-import torch
 
 from config import config, get_model
-
-class Logger:
-
-  def __init__(self, quiet=False):
-    self.quiet = quiet
-
-    self.total_log = ""
-
-  def log(self, msg, quiet=None):
-    self.total_log += msg + "\n"
-    if (quiet is not None and not quiet) or not self.quiet:
-      print(msg)
-
-  def save(self, file_name):
-    with open(file_name, mode="w") as f:
-      f.write(self.total_log)
+from logger import Logger
 
 if __name__ == "__main__":
   model_id = "wgan"
@@ -112,7 +96,6 @@ if __name__ == "__main__":
 
   # Begin the main loop for new test generation and training.
   # ---------------------------------------------------------------------------
-  # How many tests are generated.
   while tests_generated < model.N_tests:
     # Generate a new valid test with high fitness and decrease target fitness
     # as per execution of the loop.
@@ -123,6 +106,7 @@ if __name__ == "__main__":
     invalid = 0
     while True:
       new_test = model.generate_test()
+      rounds += 1
 
       # Check if the test is valid.
       if model.validity(new_test)[0,0] == 0:
@@ -139,7 +123,6 @@ if __name__ == "__main__":
 
       # Check if the new test has high enough fitness.
       if new_fitness >= target_fitness: break
-      rounds += 1
 
     # Add the new test to our test suite.
     # -------------------------------------------------------------------------
