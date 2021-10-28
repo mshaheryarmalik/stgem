@@ -62,7 +62,7 @@ def convert(test):
     else:
       raise ValueError("The input must have shape (1, N) or (N).")
 
-def get_model(sut_id, model_id):
+def get_model(sut_id, model_id, logger=None):
   """
   Return a complete initialized model based on SUT id and model id.
   """
@@ -92,6 +92,8 @@ def get_model(sut_id, model_id):
 
     random_init = config["sbst"]["random_init"]
     N_tests = config["sbst"]["N_tests"]
+    if N_tests < random_init:
+      raise ValueError("The total number of tests should be larger than the number of random initial tests.")
 
     def _view_test(test, sut):
       plt = sbst_test_to_image(convert(test), sut)
@@ -136,7 +138,7 @@ def get_model(sut_id, model_id):
 
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-  model = C(sut, validator, device)
+  model = C(sut, validator, device, logger)
 
   # Set training parameters.
   model.random_init = random_init

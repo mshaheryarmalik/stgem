@@ -20,14 +20,14 @@ if __name__ == "__main__":
 
   # Initialize the system under test and validator.
   # ---------------------------------------------------------------------------
-  model, _view_test, _save_test = get_model(sut_id, model_id)
+  logger = Logger(quiet=not enable_log_printout)
+  model, _view_test, _save_test = get_model(sut_id, model_id, logger)
 
   session = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
   session_directory = os.path.join(config[sut_id][model_id]["test_save_path"], session)
   view_test = lambda t: _view_test(t) if enable_view else None
   save_test = lambda t, f: _save_test(t, session, f) if enable_save else None
   os.makedirs(os.path.join(config[sut_id][model_id]["test_save_path"], session), exist_ok=True)
-  logger = Logger(quiet=not enable_log_printout)
 
   # Generate initial tests randomly.
   # ---------------------------------------------------------------------------
@@ -60,8 +60,9 @@ if __name__ == "__main__":
   if load:
     logger.log("Loading pregenerated initial tests.")
     with open(config[sut_id][model_id]["pregenerated_initial_data"], mode="br") as f:
-      test_inputs[:data.shape[0],:] = np.load(f)
-      test_outputs[:data.shape[0],:] = np.load(f)
+      test_inputs[:model.random_init,:] = np.load(f)[:model.random_init,:]
+      test_outputs[:model.random_init,:] = np.load(f)[:model.random_init,:]
+      tests_generated = model.random_init
   else:
     logger.log("Generating and running {} random valid tests.".format(model.random_init))
     while tests_generated < model.random_init:
@@ -155,6 +156,10 @@ if __name__ == "__main__":
 
   # Save the final model, training data, log, etc.
   # ---------------------------------------------------------------------------
+  # Save training parameters.
+  with open(os.path.join(session_directory, "parameters"), mode="w") as f:
+    f.write(json.dumps(model.parameters))
+
   # Save training data.
   with open(os.path.join(session_directory, "training_data.npy"), mode="wb") as f:
     np.save(f, test_inputs)

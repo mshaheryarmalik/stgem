@@ -23,10 +23,11 @@ class Model:
   Base class for all models.
   """
 
-  def __init__(self, sut, validator, device):
+  def __init__(self, sut, validator, device, logger=None):
     self.sut = sut
     self.device = device
     self.validator = validator
+    self.log = lambda t: logger.log(t) if logger is not None else None
 
     # Settings for training. These are set externally.
     self.epoch_settings_init = None
@@ -34,7 +35,11 @@ class Model:
     self.random_init = None
     self.N_tests = None
 
-  def train_with_batch(self, dataX, dataY, epoch_settings):
+  @property
+  def parameters(self):
+    return {k:getattr(self, k) for k in ["random_init", "N_tests", "epoch_settings", "epoch_settings_init"]}
+
+  def train_with_batch(self, dataX, dataY, epoch_settings, log=False):
     raise NotImplementedError()
 
   def generate_test(self, N=1):
@@ -93,9 +98,9 @@ class OGAN(Model):
   Implements the OGAN model.
   """
 
-  def __init__(self, sut, validator, device):
+  def __init__(self, sut, validator, device, logger=None):
     # TODO: describe the arguments
-    super().__init__(sut, validator, device)
+    super().__init__(sut, validator, device, logger)
 
     self.modelG = None
     self.modelD = None
@@ -143,12 +148,12 @@ class OGAN(Model):
     if not os.path.exists(os.path.join(path, "generator")):
       raise Exception("File 'generator' does not exist in {}.".format(path))
 
-    self.modelD = torch.load(os.path.join(path, "discriminator"))
-    self.modelG = torch.load(os.path.join(path, "generator"))
+    self.modelD.load_state_dict(torch.load(os.path.join(path, "discriminator")))
+    self.modelG.load_state_dict(torch.load(os.path.join(path, "generator")))
     self.modelD.eval()
     self.modelG.eval()
 
-  def train_with_batch(self, dataX, dataY, epoch_settings):
+  def train_with_batch(self, dataX, dataY, epoch_settings, log=False):
     """
     Train the OGAN with a new batch of learning data.
 
@@ -171,6 +176,7 @@ class OGAN(Model):
 
                              The default for each missing key is 1. Keys not
                              found above are ignored.
+      log (bool):            Log additional information on epochs and losses.
     """
 
     if len(dataX.shape) != 2 or dataX.shape[1] != self.sut.ndimensions:
@@ -190,8 +196,6 @@ class OGAN(Model):
     training_D = self.modelD.training
     training_G = self.modelG.training
  
-    quiet = True
-
     for n in range(epochs):
       # Train the discriminator.
       # -----------------------------------------------------------------------
@@ -207,8 +211,8 @@ class OGAN(Model):
         D_loss.backward()
         self.optimizerD.step()
 
-        if not quiet:
-          print("Epoch {}/{}, Discriminator epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, discriminator_epochs, D_loss))
+        if log:
+          self.log("Epoch {}/{}, Discriminator epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, discriminator_epochs, D_loss))
 
       self.modelD.train(False)
 
@@ -258,8 +262,8 @@ class OGAN(Model):
         self.optimizerG.zero_grad()
         G_loss.backward()
         self.optimizerG.step()
-        if not quiet:
-          print("Epoch {}/{}, Generator epoch: {}/{}, Loss: {}".format(n + 1, epochs, k + 1, generator_epochs, G_loss))
+        if log:
+          self.log("Epoch {}/{}, Generator epoch: {}/{}, Loss: {}".format(n + 1, epochs, k + 1, generator_epochs, G_loss))
 
       self.modelG.train(False)
 
@@ -310,9 +314,9 @@ class WGAN(Model):
   Implements the WGAN model.
   """
 
-  def __init__(self, sut, validator, device):
+  def __init__(self, sut, validator, device, logger=None):
     # TODO: describe the arguments
-    super().__init__(sut, validator, device)
+    super().__init__(sut, validator, device, logger)
 
     self.modelG = None
     self.modelC = None
@@ -360,14 +364,14 @@ class WGAN(Model):
     if not os.path.exists(os.path.join(path, "analyzer")):
       raise Exception("File 'analyzer' does not exist in {}.".format(path))
 
-    self.modelC = torch.load(os.path.join(path, "critic"))
-    self.modelG = torch.load(os.path.join(path, "generator"))
-    self.modelA = torch.load(os.path.join(path, "analyzer"))
+    self.modelC.load_state_dict(torch.load(os.path.join(path, "critic")))
+    self.modelG.load_state_dict(torch.load(os.path.join(path, "generator")))
+    self.modelA.load_state_dict(torch.load(os.path.join(path, "analyzer")))
     self.modelC.eval()
     self.modelG.eval()
     self.modelA.eval()
 
-  def train_with_batch(self, data_A_X, data_A_Y, data_C_X, data_C_Y, epoch_settings):
+  def train_with_batch(self, data_A_X, data_A_Y, data_C_X, data_C_Y, epoch_settings, log=False):
     """
     Train the WGAN with a new batch of learning data.
 
@@ -394,6 +398,7 @@ class WGAN(Model):
 
                              The default for each missing key is 1. Keys not
                              found above are ignored.
+      log (bool):            Log additional information on epochs and losses.
     """
 
     if len(data_A_X.shape) != 2 or data_A_X.shape[1] != self.sut.ndimensions:
@@ -422,8 +427,6 @@ class WGAN(Model):
     training_C = self.modelC.training
     training_G = self.modelG.training
 
-    quiet = True
-
     for n in range(epochs):
       # Train the analyzer.
       # -----------------------------------------------------------------------
@@ -438,8 +441,8 @@ class WGAN(Model):
         A_loss.backward()
         self.optimizerA.step()
 
-        if not quiet:
-          print("Epoch {}/{}, Analyzer epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, analyzer_epochs, A_loss))
+        if log:
+          self.log("Epoch {}/{}, Analyzer epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, analyzer_epochs, A_loss))
 
       self.modelA.train(False)
 
@@ -450,12 +453,14 @@ class WGAN(Model):
       # -----------------------------------------------------------------------
       self.modelC.train(True)
       for m in range(critic_epochs):
+        # Loss on real data.
         real_inputs = data_C_X
         real_outputs = self.modelC(real_inputs)
         real_loss = real_outputs.mean(0)
 
-        # TODO: put size into parameter
-        noise = ((torch.rand(size=(10, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+        # Loss on generated data.
+        # For now we use as much generated data as we have real data.
+        noise = ((torch.rand(size=(real_inputs.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
         fake_inputs = self.modelG(noise)
         fake_outputs = self.modelC(fake_inputs)
         fake_loss = fake_outputs.mean(0)
@@ -471,8 +476,8 @@ class WGAN(Model):
         for p in self.modelC.parameters():
           p.data.clamp_(-c, c)
 
-        if not quiet:
-          print("Epoch {}/{}, Critic epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, critic_epochs, C_loss[0]))
+        if log:
+          self.log("Epoch {}/{}, Critic epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, critic_epochs, C_loss[0]))
 
       self.modelC.train(True)
 
@@ -482,8 +487,8 @@ class WGAN(Model):
       # Train the generator.
       # -----------------------------------------------------------------------
       for m in range(generator_epochs):
-        # TODO: put size into parameter
-        noise = ((torch.rand(size=(10, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+        # For now we use as much generated data as we have real data.
+        noise = ((torch.rand(size=(data_C_X.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
         outputs = self.modelC(self.modelG(noise))
 
         G_loss = -outputs.mean(0)
@@ -491,13 +496,27 @@ class WGAN(Model):
         G_loss.backward()
         self.optimizerG.step()
 
-        if not quiet:
-          print("Epoch {}/{}, Generator epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, generator_epochs, G_loss[0]))
+        if log:
+          self.log("Epoch {}/{}, Generator epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, generator_epochs, G_loss[0]))
+
+      if log:
+        # Same as above in critic training.
+        real_inputs = data_C_X
+        real_outputs = self.modelC(real_inputs)
+        real_loss = real_outputs.mean(0)
+
+        # TODO: put size into parameter
+        noise = ((torch.rand(size=(10, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+        fake_inputs = self.modelG(noise)
+        fake_outputs = self.modelC(fake_inputs)
+        fake_loss = fake_outputs.mean(0)
+
+        W_distance = -1*(real_loss - fake_loss)
+
+        self.log("Epoch {}/{}, W. distance: {}".format(n + 1, epochs, W_distance[0]))
 
       # Visualize the computational graph.
       #print(make_dot(G_loss, params=dict(self.modelG.named_parameters())))
-
-      # TODO: add here some sort of saving mechanism
 
     # Restore the training modes.
     self.modelA.train(training_A)
@@ -544,11 +563,11 @@ class RandomGenerator(Model):
   Implements the random test generator.
   """
 
-  def __init__(self, sut, validator, device):
+  def __init__(self, sut, validator, device, logger=None):
     # TODO: describe the arguments
-    super().__init__(sut, validator, device)
+    super().__init__(sut, validator, device, logger)
 
-  def train_with_batch(self, dataX, dataY, epochs=1, validator_epochs=1, discriminator_epochs=1, use_final=-1):
+  def train_with_batch(self, dataX, dataY, epoch_settings, log=False):
     pass
 
   def generate_test(self, N=1):

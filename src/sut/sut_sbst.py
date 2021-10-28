@@ -292,7 +292,7 @@ class SBSTSUT_beamng(SBSTSUT):
       sim_data_collector.save()
       # An assertion that trigger is still a successful test execution, otherwise it will count as ERROR
       sim_data_collector.get_simulation_data().end(success=True, exception=aex)
-      traceback.print_exception(type(aex), aex, aex.__traceback__)
+      #traceback.print_exception(type(aex), aex, aex.__traceback__)
     except Exception as ex:
       sim_data_collector.save()
       sim_data_collector.get_simulation_data().end(success=False, exception=ex)
