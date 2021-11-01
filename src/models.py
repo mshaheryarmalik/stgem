@@ -318,6 +318,9 @@ class WGAN(Model):
     # TODO: describe the arguments
     super().__init__(sut, validator, device, logger)
 
+    # The coefficient for the loss gradient penalty term.
+    self.gp_coefficient = None
+
     self.modelG = None
     self.modelC = None
     self.modelA = None
@@ -336,10 +339,13 @@ class WGAN(Model):
 
     # Optimizers.
     # TODO: figure out reasonable defaults and make configurable.
-    lr = 0.001
-    self.optimizerG = torch.optim.RMSprop(self.modelG.parameters(), lr=lr) # RMSprop with clipping
-    self.optimizerC = torch.optim.RMSprop(self.modelC.parameters(), lr=lr) # RMSprop with clipping
-    self.optimizerA = torch.optim.Adam(self.modelA.parameters(), lr=lr)
+    lr_wgan = 0.00005
+    #self.optimizerG = torch.optim.RMSprop(self.modelG.parameters(), lr=lr_wgan) # RMSprop with clipping
+    #self.optimizerC = torch.optim.RMSprop(self.modelC.parameters(), lr=lr_wgan) # RMSprop with clipping
+    self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=lr_wgan, betas=(0, 0.9))
+    self.optimizerC = torch.optim.Adam(self.modelC.parameters(), lr=lr_wgan, betas=(0, 0.9))
+    lr_a = 0.01
+    self.optimizerA = torch.optim.Adam(self.modelA.parameters(), lr=lr_a)
 
   def save(self, path):
     """
@@ -436,7 +442,15 @@ class WGAN(Model):
         # We map the values from [0, 1] to \R using a logit transformation so
         # that MSE loss works better. Since logit is undefined in 0 and 1, we
         # actually first transform the values to the interval [0.01, 0.99].
-        A_loss = self.lossA(torch.logit(0.98*self.modelA(data_A_X) + 0.01), torch.logit(0.98*data_A_Y + 0.01))
+        model_loss = self.lossA(torch.logit(0.98*self.modelA(data_A_X) + 0.01), torch.logit(0.98*data_A_Y + 0.01))
+        # Compute L2 regularization.
+        l2_regularization = 0
+        for parameter in self.modelA.parameters():
+          l2_regularization += torch.sum(torch.square(parameter))
+
+        # TODO: make configurable
+        A_loss = model_loss + 0.01*l2_regularization
+
         self.optimizerA.zero_grad()
         A_loss.backward()
         self.optimizerA.step()
@@ -453,6 +467,10 @@ class WGAN(Model):
       # -----------------------------------------------------------------------
       self.modelC.train(True)
       for m in range(critic_epochs):
+        # Here the mini batch size of the WGAN-GP is set to be the number of
+        # training samples for the critic
+        M = data_C_X.shape[0]
+
         # Loss on real data.
         real_inputs = data_C_X
         real_outputs = self.modelC(real_inputs)
@@ -460,32 +478,48 @@ class WGAN(Model):
 
         # Loss on generated data.
         # For now we use as much generated data as we have real data.
-        noise = ((torch.rand(size=(real_inputs.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+        noise = ((torch.rand(size=(M, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
         fake_inputs = self.modelG(noise)
         fake_outputs = self.modelC(fake_inputs)
         fake_loss = fake_outputs.mean(0)
 
-        C_loss = -1*(real_loss - fake_loss) # In fact, we do gradient ascent.
+        # Gradient penalty.
+        # Compute interpolated data.
+        e = torch.rand(size=(M, 1)).to(self.device)
+        interpolated_inputs = e*real_inputs + (1-e)*fake_inputs
+        # Get critic output on interpolated data.
+        interpolated_outputs = self.modelC(interpolated_inputs)
+        # Compute the gradients wrt to the interpolated inputs.
+        # Warning: Showing the validity of the following line requires some pen
+        #          and paper calculations.
+        gradients = torch.autograd.grad(inputs=interpolated_inputs,
+                                        outputs=interpolated_outputs,
+                                        grad_outputs=torch.ones_like(interpolated_outputs).to(self.device),
+                                        create_graph=True,
+                                        retain_graph=True)[0]
+
+        # We add epsilon for stability.
+        epsilon = 0.000001
+        gradients_norms = torch.sqrt(torch.sum(gradients**2, dim=1) + epsilon)
+        gradient_penalty = gradients_norms.mean()
+        #gradient_penalty = ((torch.linalg.norm(gradients, dim=1) - 1)**2).mean()
+
+        C_loss = fake_loss - real_loss + self.gp_coefficient*gradient_penalty
         self.optimizerC.zero_grad()
         C_loss.backward()
         self.optimizerC.step()
 
-        # Clip the weights to the range [-c, c] where c is set below.
-        # TODO: make clipping configurable / use gradient penalty
-        c = 0.01
-        for p in self.modelC.parameters():
-          p.data.clamp_(-c, c)
-
         if log:
-          self.log("Epoch {}/{}, Critic epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, critic_epochs, C_loss[0]))
+          self.log("Epoch {}/{}, Critic epoch {}/{}, Loss: {}, GP: {}".format(n + 1, epochs, m + 1, critic_epochs, C_loss[0], self.gp_coefficient*gradient_penalty))
 
-      self.modelC.train(True)
+      self.modelC.train(False)
 
       # Visualize the computational graph.
       #print(make_dot(C_loss, params=dict(self.modelC.named_parameters())))
 
       # Train the generator.
       # -----------------------------------------------------------------------
+      self.modelG.train(True)
       for m in range(generator_epochs):
         # For now we use as much generated data as we have real data.
         noise = ((torch.rand(size=(data_C_X.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
@@ -499,19 +533,21 @@ class WGAN(Model):
         if log:
           self.log("Epoch {}/{}, Generator epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, generator_epochs, G_loss[0]))
 
+      self.modelG.train(False)
+
       if log:
         # Same as above in critic training.
         real_inputs = data_C_X
         real_outputs = self.modelC(real_inputs)
         real_loss = real_outputs.mean(0)
 
-        # TODO: put size into parameter
-        noise = ((torch.rand(size=(10, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+        # For now we use as much generated data as we have real data.
+        noise = ((torch.rand(size=(real_inputs.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
         fake_inputs = self.modelG(noise)
         fake_outputs = self.modelC(fake_inputs)
         fake_loss = fake_outputs.mean(0)
 
-        W_distance = -1*(real_loss - fake_loss)
+        W_distance = real_loss - fake_loss
 
         self.log("Epoch {}/{}, W. distance: {}".format(n + 1, epochs, W_distance[0]))
 
@@ -521,7 +557,8 @@ class WGAN(Model):
     # Restore the training modes.
     self.modelA.train(training_A)
     self.modelC.train(training_C)
-    self.modelG.train(training_G)
+    # TODO: figure setting out this properly with batch normalization
+    #self.modelG.train(training_G)
 
   def generate_test(self, N=1):
     """

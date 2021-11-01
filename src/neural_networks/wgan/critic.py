@@ -22,6 +22,8 @@ class CriticNetwork(nn.Module):
     self.clayer1 = nn.Linear(self.input_shape, self.neurons)
     self.clayer2 = nn.Linear(self.neurons, self.neurons)
     self.clayer3 = nn.Linear(self.neurons, 1)
+    #self.ln1 = nn.LayerNorm(self.neurons)
+    #self.ln2 = nn.LayerNorm(self.neurons)
 
   def forward(self, x):
     x = F.leaky_relu(self.clayer1(x), negative_slope=0.1) # LeakyReLU recommended in the literature for GAN discriminators.

@@ -24,11 +24,14 @@ class GeneratorNetwork(nn.Module):
     self.glayer1 = nn.Linear(self.input_shape, self.neurons)
     self.glayer2 = nn.Linear(self.neurons, self.neurons)
     self.glayer3 = nn.Linear(self.neurons, self.output_shape)
+    self.bn1 = nn.BatchNorm1d(self.neurons)
+    self.bn2 = nn.BatchNorm1d(self.neurons)
+    self.bn3 = nn.BatchNorm1d(self.output_shape)
 
   def forward(self, x):
-    x = F.relu(self.glayer1(x))
-    x = F.relu(self.glayer2(x))
-    x = torch.tanh(self.glayer3(x)) # Squash the values to [-1, 1].
+    x = F.relu(self.bn1(self.glayer1(x)))
+    x = F.relu(self.bn2(self.glayer2(x)))
+    x = torch.tanh(self.bn3(self.glayer3(x))) # Squash the values to [-1, 1].
 
     return x
 
