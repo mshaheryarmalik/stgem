@@ -15,6 +15,7 @@ for sut_id in ["odroid", "sbst_validator", "sbst"]:
   config[sut_id] = {}
   # Common config to all models.
   config[sut_id]["data_directory"] = os.path.join(config["data_path"], sut_id)
+  config[sut_id]["gp_coefficient"] = 10
   # Model-specific config.
   for model_id in ["ogan", "wgan"]:
     config[sut_id][model_id] = {}
@@ -36,6 +37,12 @@ for sut_id in ["odroid", "sbst_validator", "sbst"]:
                                               "analyzer_epochs": 5,
                                               "critic_epochs": 5,
                                               "generator_epochs": 1}
+
+config["sbst"]["wgan"]["epoch_settings_init"]["epochs"] = 3
+config["sbst"]["wgan"]["epoch_settings_init"]["analyzer_epochs"] = 20
+config["sbst"]["wgan"]["epoch_settings_init"]["critic_epochs"] = 10
+config["sbst"]["wgan"]["epoch_settings_init"]["generator_epochs"] = 1
+config["sbst"]["wgan"]["epoch_settings"]["analyzer_epochs"] = 10
 
 # SUT-specific configs.
 config["odroid"]["file_base"] = os.path.join(config["odroid"]["data_directory"], "odroid")
@@ -149,8 +156,13 @@ def get_model(sut_id, model_id, logger=None):
   # Set training parameters.
   model.random_init = random_init
   model.N_tests = N_tests
+  if random_init > N_tests:
+    raise ValueError("The number of initial tests {} should be less than the total number of tests {}.".format(random_init, N_tests))
   model.epoch_settings_init = config[sut_id][model_id]["epoch_settings_init"]
   model.epoch_settings = config[sut_id][model_id]["epoch_settings"]
+
+  if model_id == "wgan":
+    model.gp_coefficient = config[sut_id]["gp_coefficient"]
 
   return model, lambda t: _view_test(t, sut), lambda t, s, f: _save_test(t, s, f, sut)
 
