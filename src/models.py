@@ -558,6 +558,7 @@ class WGAN(Model):
     self.modelA.train(training_A)
     self.modelC.train(training_C)
     # TODO: figure setting out this properly with batch normalization
+    self.modelG.train(False)
     #self.modelG.train(training_G)
 
   def generate_test(self, N=1):

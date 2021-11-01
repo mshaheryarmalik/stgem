@@ -52,8 +52,8 @@ if __name__ == "__main__":
       # TODO: add mechanism for selecting test which is in some sense different
       #       from previous tests
 
-      view_test(test)
       # TODO: add initial zeros
+      view_test(test)
       save_test(test, "init_{}".format(tests_generated))
 
       logger.log("Executing {} ({}/{})".format(test, tests_generated, model.random_init))
@@ -71,6 +71,11 @@ if __name__ == "__main__":
   if len(test_critic_training) == 0:
     logger.log("No training samples found for the critic.")
     raise SystemExit
+
+  """
+  for i in test_critic_training:
+    save_test(test_inputs[i,:], "critic_{}".format(i))
+  """
 
   # TODO: Place this somewhere else.
   def report_critic():
@@ -94,7 +99,16 @@ if __name__ == "__main__":
                          test_inputs[test_critic_training,:],
                          test_outputs[test_critic_training,:],
                          epoch_settings=model.epoch_settings_init,
-                         log=False)
+                         log=True)
+
+  """
+  N = 30
+  new_tests = model.generate_test(N)
+  for n in range(N):
+    save_test(new_tests[n,:], "eval_{}".format(n + 1))
+
+  raise SystemExit
+  """
 
   # Begin the main loop for new test generation and training.
   # ---------------------------------------------------------------------------
@@ -125,6 +139,8 @@ if __name__ == "__main__":
 
       # Check if the new test has high enough fitness.
       if new_fitness >= target_fitness: break
+
+      #save_test(new_test, "failed_{}_{}".format(tests_generated, rounds))
 
     # Add the new test to our test suite.
     # -------------------------------------------------------------------------

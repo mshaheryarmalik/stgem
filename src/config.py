@@ -38,6 +38,12 @@ for sut_id in ["odroid", "sbst_validator", "sbst"]:
                                               "critic_epochs": 5,
                                               "generator_epochs": 1}
 
+config["sbst_validator"]["wgan"]["epoch_settings_init"]["epochs"] = 50
+config["sbst_validator"]["wgan"]["epoch_settings_init"]["analyzer_epochs"] = 20
+config["sbst_validator"]["wgan"]["epoch_settings_init"]["critic_epochs"] = 10
+config["sbst_validator"]["wgan"]["epoch_settings_init"]["generator_epochs"] = 1
+config["sbst_validator"]["wgan"]["epoch_settings"]["analyzer_epochs"] = 10
+
 config["sbst"]["wgan"]["epoch_settings_init"]["epochs"] = 3
 config["sbst"]["wgan"]["epoch_settings_init"]["analyzer_epochs"] = 20
 config["sbst"]["wgan"]["epoch_settings_init"]["critic_epochs"] = 10
