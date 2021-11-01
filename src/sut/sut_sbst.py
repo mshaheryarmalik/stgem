@@ -504,7 +504,7 @@ def sbst_test_to_image(test, sut):
   plt.suptitle(title_string, fontsize=14)
   plt.draw()
 
-  return plt
+  return plt.gcf()
 
 def sbst_validate_test(test, sut):
   """

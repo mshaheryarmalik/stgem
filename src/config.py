@@ -3,6 +3,8 @@
 
 import os
 
+from matplotlib import pyplot as plt
+
 import torch
 
 config = {}
@@ -96,12 +98,14 @@ def get_model(sut_id, model_id, logger=None):
       raise ValueError("The total number of tests should be larger than the number of random initial tests.")
 
     def _view_test(test, sut):
-      plt = sbst_test_to_image(convert(test), sut)
-      plt.show()
+      fig = sbst_test_to_image(convert(test), sut)
+      fig.show()
+      plt.close(fig)
 
     def _save_test(test, session, file_name, sut):
-      plt = sbst_test_to_image(convert(test), sut)
-      plt.savefig(os.path.join(config[sut_id][model_id]["test_save_path"], session, file_name + ".jpg"))
+      fig = sbst_test_to_image(convert(test), sut)
+      fig.savefig(os.path.join(config[sut_id][model_id]["test_save_path"], session, file_name + ".jpg"))
+      plt.close(fig)
 
   elif sut_id == "sbst":
     from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
@@ -114,12 +118,14 @@ def get_model(sut_id, model_id, logger=None):
     N_tests = config["sbst"]["N_tests"]
 
     def _view_test(test, sut):
-      plt = sbst_test_to_image(convert(test), sut)
-      plt.show()
+      fig = sbst_test_to_image(convert(test), sut)
+      fig.show()
+      plt.close(fig)
 
     def _save_test(test, session, file_name, sut):
-      plt = sbst_test_to_image(convert(test), sut)
-      plt.savefig(os.path.join(config[sut_id][model_id]["test_save_path"], session, file_name + ".jpg"))
+      fig = sbst_test_to_image(convert(test), sut)
+      fig.savefig(os.path.join(config[sut_id][model_id]["test_save_path"], session, file_name + ".jpg"))
+      plt.close(fig)
 
   else:
     raise Exception("Unknown sut id '{}'.".format(sut_id))
