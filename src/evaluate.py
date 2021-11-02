@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import sys, os, json
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     raise ValueError("The model_id '{}' is invalid.".format(model_id))
 
   session_directory = sys.argv[3]
-  session = os.path.dirname(os.path.basename(session_directory))
+  session = os.path.basename(os.path.normpath(session_directory))
 
   if not os.path.exists(session_directory):
     print("Directory '{}' does not exist.".format(session_directory))

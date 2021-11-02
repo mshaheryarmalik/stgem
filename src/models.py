@@ -11,12 +11,12 @@ import torch.nn as nn
 # For visualizing the computational graphs.
 #from torchviz import make_dot
 
-from neural_networks.ogan.generator import GeneratorNetwork
-from neural_networks.ogan.discriminator import DiscriminatorNetwork
+import neural_networks.ogan.generator
+import neural_networks.ogan.discriminator
 
-from neural_networks.wgan.analyzer import AnalyzerNetwork
-from neural_networks.wgan.generator import GeneratorNetwork
-from neural_networks.wgan.critic import CriticNetwork
+import neural_networks.wgan.analyzer
+import neural_networks.wgan.generator
+import neural_networks.wgan.critic
 
 class Model:
   """
@@ -27,6 +27,7 @@ class Model:
     self.sut = sut
     self.device = device
     self.validator = validator
+    self.logger = logger
     self.log = lambda t: logger.log(t) if logger is not None else None
 
     # Settings for training. These are set externally.
@@ -110,8 +111,8 @@ class OGAN(Model):
     self.neurons = 128
 
     # Initialize neural network models.
-    self.modelG = GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
-    self.modelD = DiscriminatorNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
+    self.modelG = neural_networks.ogan.generator.GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
+    self.modelD = neural_networks.ogan.discriminator.DiscriminatorNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
 
     # Loss functions.
     # TODO: figure out a reasonable default and make configurable.
@@ -330,9 +331,9 @@ class WGAN(Model):
     self.neurons = 128
 
     # Initialize neural network models.
-    self.modelG = GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
-    self.modelC = CriticNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
-    self.modelA = AnalyzerNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
+    self.modelG = neural_networks.wgan.generator.GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
+    self.modelC = neural_networks.wgan.critic.CriticNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
+    self.modelA = neural_networks.wgan.analyzer.AnalyzerNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
 
     # Loss functions.
     self.lossA = nn.MSELoss()
@@ -557,9 +558,7 @@ class WGAN(Model):
     # Restore the training modes.
     self.modelA.train(training_A)
     self.modelC.train(training_C)
-    # TODO: figure setting out this properly with batch normalization
-    self.modelG.train(False)
-    #self.modelG.train(training_G)
+    self.modelG.train(training_G)
 
   def generate_test(self, N=1):
     """
@@ -575,9 +574,13 @@ class WGAN(Model):
     if N <= 0:
       raise ValueError("The number of tests should be positive.")
 
+    training_G = self.modelG.training
     # Generate uniform noise in [-1, 1].
     noise = ((torch.rand(size=(N, self.noise_dim)) - 0.5)/0.5).to(self.device)
-    return self.modelG(noise).cpu().detach().numpy()
+    self.modelG.train(False)
+    result = self.modelG(noise).cpu().detach().numpy()
+    self.modelG.train(training_G)
+    return result
 
   def predict_fitness(self, test):
     """
@@ -606,6 +609,12 @@ class RandomGenerator(Model):
     super().__init__(sut, validator, device, logger)
 
   def train_with_batch(self, dataX, dataY, epoch_settings, log=False):
+    pass
+
+  def save(self, path):
+    pass
+
+  def load(self, path):
     pass
 
   def generate_test(self, N=1):

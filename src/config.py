@@ -9,7 +9,7 @@ import torch
 
 config = {}
 config["available_sut"] = ["odroid", "sbst_validator", "sbst"]
-config["available_model"] = ["ogan", "wgan"]
+config["available_model"] = ["ogan", "wgan", "random"]
 config["data_path"] = os.path.join("..", "data")
 config["test_save_path"] = os.path.join("..", "simulations")
 
@@ -23,6 +23,8 @@ for sut_id in config["available_sut"]:
     config[sut_id][model_id] = {}
     config[sut_id][model_id]["pregenerated_initial_data"] = os.path.join(config[sut_id]["data_directory"], "pregenerated_initial_data_{}.npy".format(model_id))
     config[sut_id][model_id]["test_save_path"] = os.path.join(config["test_save_path"], "{}_{}".format(sut_id, model_id))
+    config[sut_id][model_id]["epoch_settings_init"] = {}
+    config[sut_id][model_id]["epoch_settings"] = {}
 
   config[sut_id]["ogan"]["epoch_settings_init"] = {"epochs": 2,
                                                    "discriminator_epochs": 20,
