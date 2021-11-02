@@ -13,9 +13,15 @@ if __name__ == "__main__":
     raise SystemExit
 
   sut_id = sys.argv[1]
+  if not sut_id in config["available_sut"]:
+    raise ValueError("The sut_id '{}' is invalid.".format(sut_id))
+
   model_id = sys.argv[2]
+  if not model_id in config["available_model"]:
+    raise ValueError("The model_id '{}' is invalid.".format(model_id))
+
   session_directory = sys.argv[3]
-  session = os.path.basename(session_directory)
+  session = os.path.dirname(os.path.basename(session_directory))
 
   if not os.path.exists(session_directory):
     print("Directory '{}' does not exist.".format(session_directory))

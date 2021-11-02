@@ -8,16 +8,18 @@ from matplotlib import pyplot as plt
 import torch
 
 config = {}
+config["available_sut"] = ["odroid", "sbst_validator", "sbst"]
+config["available_model"] = ["ogan", "wgan"]
 config["data_path"] = os.path.join("..", "data")
 config["test_save_path"] = os.path.join("..", "simulations")
 
-for sut_id in ["odroid", "sbst_validator", "sbst"]:
+for sut_id in config["available_sut"]:
   config[sut_id] = {}
   # Common config to all models.
   config[sut_id]["data_directory"] = os.path.join(config["data_path"], sut_id)
   config[sut_id]["gp_coefficient"] = 10
   # Model-specific config.
-  for model_id in ["ogan", "wgan"]:
+  for model_id in config["available_model"]:
     config[sut_id][model_id] = {}
     config[sut_id][model_id]["pregenerated_initial_data"] = os.path.join(config[sut_id]["data_directory"], "pregenerated_initial_data_{}.npy".format(model_id))
     config[sut_id][model_id]["test_save_path"] = os.path.join(config["test_save_path"], "{}_{}".format(sut_id, model_id))
