@@ -398,13 +398,17 @@ class WGAN(Model):
     bins = 10
     bin_freq = torch.zeros(bins)
     for n in range(data_X.shape[0]):
-      bin_freq[int(data_Y[n,0]*bins)] += 1
+      i = int(data_Y[n, 0]*bins)
+      if i == bins: i -= 1
+      bin_freq[i] += 1
     bin_freq = bin_freq / data_X.shape[0]
     # Compute a weight vector for the training data.
     # TODO: is there a more efficient way to compute this?
     weights = torch.zeros_like(data_Y)
     for n in range(data_X.shape[0]):
-      weights[n,0] = 1/bin_freq[int(data_Y[n,0]*bins)]
+      i = int(data_Y[n,0]*bins)
+      if i == bins: i -= 1
+      weights[n,0] = 1/bin_freq[i]
 
     # Train the analyzer.
     # -----------------------------------------------------------------------
