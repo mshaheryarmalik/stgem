@@ -305,7 +305,7 @@ def main_wgan(model_id, sut_id, model, session, session_directory, view_test, sa
     test_inputs[tests_generated,:] = new_test
     tests_generated += 1
 
-    model.log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(new_test, new_fitness, rounds + 1, invalid))
+    model.log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(new_test, new_fitness, rounds, invalid))
     view_test(new_test)
     save_test(new_test, zeros("test_", tests_generated))
 
