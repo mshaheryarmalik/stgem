@@ -347,7 +347,7 @@ def main_wgan(model_id, sut_id, model, session, session_directory, view_test, sa
     model.log("Training the model...")
     model.train_analyzer_with_batch(test_inputs[:tests_generated,:],
                                     test_outputs[:tests_generated,:],
-                                    epoch_settings=model.epoch_setting,
+                                    epoch_settings=model.epoch_settings,
                                     log=True)
     model.train_with_batch(test_inputs[test_critic_training,:],
                            test_outputs[test_critic_training,:],
