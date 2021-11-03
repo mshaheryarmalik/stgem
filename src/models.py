@@ -317,9 +317,6 @@ class WGAN(Model):
     self.modelC = neural_networks.wgan.critic.CriticNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
     self.modelA = neural_networks.wgan.analyzer.AnalyzerNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
 
-    # Loss functions.
-    self.lossA = nn.MSELoss()
-
     # Optimizers.
     # TODO: figure out reasonable defaults and make configurable.
     lr_wgan = 0.00005
@@ -397,15 +394,28 @@ class WGAN(Model):
     # Save the training modes for later restoring.
     training_A = self.modelA.training
 
+    # Bin the training samples, and compute bin frequencies.
+    bins = 10
+    bin_freq = torch.zeros(bins)
+    for n in range(data_X.shape[0]):
+      bin_freq[int(data_Y[n,0]*bins)] += 1
+    bin_freq = bin_freq / data_X.shape[0]
+    # Compute a weight vector for the training data.
+    # TODO: is there a more efficient way to compute this?
+    weights = torch.zeros_like(data_Y)
+    for n in range(data_X.shape[0]):
+      weights[n,0] = 1/bin_freq[int(data_Y[n,0]*bins)]
+
     # Train the analyzer.
     # -----------------------------------------------------------------------
     # We want the analyzer to learn the mapping from tests to test outputs.
     self.modelA.train(True)
     for m in range(analyzer_epochs):
       # We map the values from [0, 1] to \R using a logit transformation so
-      # that MSE loss works better. Since logit is undefined in 0 and 1, we
-      # actually first transform the values to the interval [0.01, 0.99].
-      model_loss = self.lossA(torch.logit(0.98*self.modelA(data_X) + 0.01), torch.logit(0.98*data_Y + 0.01))
+      # that weighted MSE loss works better. Since logit is undefined in 0 and
+      # 1, we actually first transform the values to the interval [0.01, 0.99].
+      model_loss = (weights*(torch.logit(0.98*self.modelA(data_X) + 0.01) + 0.01 - torch.logit(0.98*data_Y + 0.01))**2).mean()
+
       # Compute L2 regularization.
       l2_regularization = 0
       for parameter in self.modelA.parameters():
