@@ -73,27 +73,6 @@ class Model:
 
     return result
 
-  def predict_validity(self, tests):
-    """
-    Validate the given test using the learned proxy validator.
-
-    Args:
-      tests (np.ndarray): Array of N tests with shape (N, self.sut.ndimensions).
-
-    Returns:
-      result (np.ndarray): Array of shape (N, 1).
-    """
-
-    if len(tests.shape) != 2 or tests.shape[1] != self.sut.ndimensions:
-      raise ValueError("Input array expected to have shape (N, {}).".format(self.sut.ndimensions))
-
-    if self.validator is None:
-      result = np.ones(shape=(tests.shape[0], 1))
-    else:
-      result = self.validator.predict_validity(tests)
-
-    return result
-
 class OGAN(Model):
   """
   Implements the OGAN model.
@@ -129,34 +108,37 @@ class OGAN(Model):
     self.optimizerD = torch.optim.Adam(self.modelD.parameters(), lr=lr)
     self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=lr)
 
-  def save(self, path):
+  def save(self, identifier, path):
     """
     Save the model to the given path. Files discriminator and generator are
     created in the directory.
     """
 
-    torch.save(self.modelD.state_dict(), os.path.join(path, "discriminator"))
-    torch.save(self.modelG.state_dict(), os.path.join(path, "generator"))
+    torch.save(self.modelD.state_dict(), os.path.join(path, "discriminator_{}".format(identifier)))
+    torch.save(self.modelG.state_dict(), os.path.join(path, "generator_{}".format(identifier)))
 
-  def load(self, path):
+  def load(self, identifier, path):
     """
     Load the model from path. Files discriminator and analyzer are expected to
     exist.
     """
 
-    if not os.path.exists(os.path.join(path, "discriminator")):
-      raise Exception("File 'discriminator' does not exist in {}.".format(path))
-    if not os.path.exists(os.path.join(path, "generator")):
-      raise Exception("File 'generator' does not exist in {}.".format(path))
+    d_file_name = os.path.join(path, "discriminator_{}".format(identifier))
+    g_file_name = os.path.join(path, "generator_{}".format(identifier))
 
-    self.modelD.load_state_dict(torch.load(os.path.join(path, "discriminator")))
-    self.modelG.load_state_dict(torch.load(os.path.join(path, "generator")))
+    if not os.path.exists(d_file_name):
+      raise Exception("File '{}' does not exist in {}.".format(d_file_name, path))
+    if not os.path.exists(os.path.join(path, "generator")):
+      raise Exception("File '{}' does not exist in {}.".format(g_file_name, path))
+
+    self.modelD.load_state_dict(torch.load(d_file_name))
+    self.modelG.load_state_dict(torch.load(g_file_name))
     self.modelD.eval()
     self.modelG.eval()
 
   def train_with_batch(self, dataX, dataY, epoch_settings, log=False):
     """
-    Train the OGAN with a new batch of learning data.
+    Train the OGAN with a batch of training data.
 
     Args:
       dataX (np.ndarray):             Array of tests of shape
@@ -348,54 +330,115 @@ class WGAN(Model):
     lr_a = 0.01
     self.optimizerA = torch.optim.Adam(self.modelA.parameters(), lr=lr_a)
 
-  def save(self, path):
+  def save(self, identifier, path):
     """
     Save the model to the given path. Files critic, generator, and analyzer are
     created in the directory.
     """
 
-    torch.save(self.modelC.state_dict(), os.path.join(path, "critic"))
-    torch.save(self.modelG.state_dict(), os.path.join(path, "generator"))
-    torch.save(self.modelA.state_dict(), os.path.join(path, "analyzer"))
+    torch.save(self.modelC.state_dict(), os.path.join(path, "critic_{}".format(identifier)))
+    torch.save(self.modelG.state_dict(), os.path.join(path, "generator_{}".format(identifier)))
+    torch.save(self.modelA.state_dict(), os.path.join(path, "analyzer_{}".format(identifier)))
 
-  def load(self, path):
+  def load(self, identifier, path):
     """
     Load the model from path. Files critic, generator, and analyzer are
     expected to exist.
     """
 
-    if not os.path.exists(os.path.join(path, "critic")):
-      raise Exception("File 'critic' does not exist in {}.".format(path))
-    if not os.path.exists(os.path.join(path, "generator")):
-      raise Exception("File 'generator' does not exist in {}.".format(path))
-    if not os.path.exists(os.path.join(path, "analyzer")):
-      raise Exception("File 'analyzer' does not exist in {}.".format(path))
+    c_file_name = os.path.join(path, "critic_{}".format(identifier))
+    g_file_name = os.path.join(path, "generator_{}".format(identifier))
+    a_file_name = os.path.join(path, "analyzer_{}".format(identifier))
 
-    self.modelC.load_state_dict(torch.load(os.path.join(path, "critic")))
-    self.modelG.load_state_dict(torch.load(os.path.join(path, "generator")))
-    self.modelA.load_state_dict(torch.load(os.path.join(path, "analyzer")))
+    if not os.path.exists(c_file_name):
+      raise Exception("File '{}' does not exist in {}.".format(c_file_name, path))
+    if not os.path.exists(g_file_name):
+      raise Exception("File '{}' does not exist in {}.".format(g_file_name, path))
+    if not os.path.exists(a_file_name):
+      raise Exception("File '{}' does not exist in {}.".format(a_file_name, path))
+
+    self.modelC.load_state_dict(torch.load(c_file_name))
+    self.modelG.load_state_dict(torch.load(g_file_name))
+    self.modelA.load_state_dict(torch.load(a_file_name))
     self.modelC.eval()
     self.modelG.eval()
     self.modelA.eval()
 
-  def train_with_batch(self, data_A_X, data_A_Y, data_C_X, data_C_Y, epoch_settings, log=False):
+  def train_analyzer_with_batch(self, data_X, data_Y, epoch_settings, log=False):
     """
-    Train the WGAN with a new batch of learning data.
+    Train the analyzer part of the model with a batch of training data.
 
     Args:
-      data_A_X (np.ndarray): Array of tests of shape (N, self.sut.ndimensions).
-      data_A_Y (np.ndarray): Array of test outputs of shape (N, 1).
-      data_C_X (np.ndarray): Array of tests of shape (M, self.sut.ndimensions).
-      data_C_Y (np.ndarray): Array of test outputs of shape (M, 1).
+      data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
+      data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
+      epoch_settings (dict): A dictionary setting up the number of training
+                             epochs for various parts of the model. The keys
+                             are as follows:
+
+                               analyzer_epochs: How many total runs are made
+                               with the given training data.
+
+                             The default for each missing key is 1. Keys not
+                             found above are ignored.
+      log (bool):            Log additional information on epochs and losses.
+    """
+
+    if len(data_X.shape) != 2 or data_X.shape[1] != self.sut.ndimensions:
+      raise ValueError("Array data_X expected to have shape (N, {}).".format(self.ndimensions))
+    if len(data_Y.shape) != 2 or data_Y.shape[0] < data_X.shape[0]:
+      raise ValueError("Array data_Y array should have at least as many elements as there are tests.")
+
+    data_X = torch.from_numpy(data_X).float().to(self.device)
+    data_Y = torch.from_numpy(data_Y).float().to(self.device)
+
+    # Unpack values from the epochs dictionary.
+    analyzer_epochs = epoch_settings["analyzer_epochs"] if "analyzer_epochs" in epoch_settings else 1
+
+    # Save the training modes for later restoring.
+    training_A = self.modelA.training
+
+    # Train the analyzer.
+    # -----------------------------------------------------------------------
+    # We want the analyzer to learn the mapping from tests to test outputs.
+    self.modelA.train(True)
+    for m in range(analyzer_epochs):
+      # We map the values from [0, 1] to \R using a logit transformation so
+      # that MSE loss works better. Since logit is undefined in 0 and 1, we
+      # actually first transform the values to the interval [0.01, 0.99].
+      model_loss = self.lossA(torch.logit(0.98*self.modelA(data_X) + 0.01), torch.logit(0.98*data_Y + 0.01))
+      # Compute L2 regularization.
+      l2_regularization = 0
+      for parameter in self.modelA.parameters():
+        l2_regularization += torch.sum(torch.square(parameter))
+
+      # TODO: make configurable
+      A_loss = model_loss + 0.01*l2_regularization
+
+      self.optimizerA.zero_grad()
+      A_loss.backward()
+      self.optimizerA.step()
+
+      if log:
+        self.log("Analyzer epoch {}/{}, Loss: {}".format(m + 1, analyzer_epochs, A_loss))
+
+    # Visualize the computational graph.
+    #print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
+
+    self.modelA.train(training_A)
+
+  def train_with_batch(self, data_X, data_Y, epoch_settings, log=False):
+    """
+    Train the WGAN with a batch of training data.
+
+    Args:
+      data_X (np.ndarray):   Array of tests of shape (M, self.sut.ndimensions).
+      data_Y (np.ndarray):   Array of test outputs of shape (M, 1).
       epoch_settings (dict): A dictionary setting up the number of training
                              epochs for various parts of the model. The keys
                              are as follows:
 
                                epochs: How many total runs are made with the
                                given training data.
-
-                               analyzer_epochs: How many times the analyzer is
-                               trained per epoch.
 
                                critic_epochs: How many times the critic is
                                trained per epoch.
@@ -408,72 +451,34 @@ class WGAN(Model):
       log (bool):            Log additional information on epochs and losses.
     """
 
-    if len(data_A_X.shape) != 2 or data_A_X.shape[1] != self.sut.ndimensions:
-      raise ValueError("Array data_A_X expected to have shape (N, {}).".format(self.ndimensions))
-    if len(data_A_Y.shape) != 2 or data_A_Y.shape[0] < data_A_X.shape[0]:
-      raise ValueError("Array data_A_Y array should have at least as many elements as there are tests.")
+    if len(data_X.shape) != 2 or data_X.shape[1] != self.sut.ndimensions:
+      raise ValueError("Array data_X expected to have shape (N, {}).".format(self.ndimensions))
+    if len(data_Y.shape) != 2 or data_Y.shape[0] < data_X.shape[0]:
+      raise ValueError("Array data_Y array should have at least as many elements as there are tests.")
 
-    if len(data_C_X.shape) != 2 or data_C_X.shape[1] != self.sut.ndimensions:
-      raise ValueError("Array data_C_X expected to have shape (N, {}).".format(self.ndimensions))
-    if len(data_C_Y.shape) != 2 or data_C_Y.shape[0] < data_C_X.shape[0]:
-      raise ValueError("Array data_C_Y array should have at least as many elements as there are tests.")
-
-    data_A_X = torch.from_numpy(data_A_X).float().to(self.device)
-    data_A_Y = torch.from_numpy(data_A_Y).float().to(self.device)
-    data_C_X = torch.from_numpy(data_C_X).float().to(self.device)
-    data_C_Y = torch.from_numpy(data_C_Y).float().to(self.device)
+    data_X = torch.from_numpy(data_X).float().to(self.device)
+    data_Y = torch.from_numpy(data_Y).float().to(self.device)
 
     # Unpack values from the epochs dictionary.
     epochs = epoch_settings["epochs"] if "epochs" in epoch_settings else 1
-    analyzer_epochs = epoch_settings["analyzer_epochs"] if "analyzer_epochs" in epoch_settings else 1
     critic_epochs = epoch_settings["critic_epochs"] if "critic_epochs" in epoch_settings else 1
     generator_epochs = epoch_settings["generator_epochs"] if "generator_epochs" in epoch_settings else 1
 
     # Save the training modes for later restoring.
-    training_A = self.modelA.training
     training_C = self.modelC.training
     training_G = self.modelG.training
 
     for n in range(epochs):
-      # Train the analyzer.
-      # -----------------------------------------------------------------------
-      # We want the analyzer to learn the mapping from tests to test outputs.
-      self.modelA.train(True)
-      for m in range(analyzer_epochs):
-        # We map the values from [0, 1] to \R using a logit transformation so
-        # that MSE loss works better. Since logit is undefined in 0 and 1, we
-        # actually first transform the values to the interval [0.01, 0.99].
-        model_loss = self.lossA(torch.logit(0.98*self.modelA(data_A_X) + 0.01), torch.logit(0.98*data_A_Y + 0.01))
-        # Compute L2 regularization.
-        l2_regularization = 0
-        for parameter in self.modelA.parameters():
-          l2_regularization += torch.sum(torch.square(parameter))
-
-        # TODO: make configurable
-        A_loss = model_loss + 0.01*l2_regularization
-
-        self.optimizerA.zero_grad()
-        A_loss.backward()
-        self.optimizerA.step()
-
-        if log:
-          self.log("Epoch {}/{}, Analyzer epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, analyzer_epochs, A_loss))
-
-      self.modelA.train(False)
-
-      # Visualize the computational graph.
-      #print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
-
       # Train the critic.
       # -----------------------------------------------------------------------
       self.modelC.train(True)
       for m in range(critic_epochs):
         # Here the mini batch size of the WGAN-GP is set to be the number of
         # training samples for the critic
-        M = data_C_X.shape[0]
+        M = data_X.shape[0]
 
         # Loss on real data.
-        real_inputs = data_C_X
+        real_inputs = data_X
         real_outputs = self.modelC(real_inputs)
         real_loss = real_outputs.mean(0)
 
@@ -523,7 +528,7 @@ class WGAN(Model):
       self.modelG.train(True)
       for m in range(generator_epochs):
         # For now we use as much generated data as we have real data.
-        noise = ((torch.rand(size=(data_C_X.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+        noise = ((torch.rand(size=(data_X.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
         outputs = self.modelC(self.modelG(noise))
 
         G_loss = -outputs.mean(0)
@@ -538,7 +543,7 @@ class WGAN(Model):
 
       if log:
         # Same as above in critic training.
-        real_inputs = data_C_X
+        real_inputs = data_X
         real_outputs = self.modelC(real_inputs)
         real_loss = real_outputs.mean(0)
 
@@ -556,7 +561,6 @@ class WGAN(Model):
       #print(make_dot(G_loss, params=dict(self.modelG.named_parameters())))
 
     # Restore the training modes.
-    self.modelA.train(training_A)
     self.modelC.train(training_C)
     self.modelG.train(training_G)
 

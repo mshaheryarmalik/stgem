@@ -123,23 +123,28 @@ def main_ogan(model_id, sut_id, model, session, session_directory, view_test, sa
                            epoch_settings=model.epoch_settings,
                            log=True)
 
-  # Train the model on the complete collected data.
+  # Save the trained models.
   # ---------------------------------------------------------------------------
-  # TODO
-
-  # Save the final model, training data, log, etc.
-  # ---------------------------------------------------------------------------
-  # Save training parameters.
-  with open(os.path.join(session_directory, "parameters"), mode="w") as f:
-    f.write(json.dumps(model.parameters))
+  model.save("init", session_directory)
 
   # Save training data.
+  # ---------------------------------------------------------------------------
   with open(os.path.join(session_directory, "training_data.npy"), mode="wb") as f:
     np.save(f, test_inputs)
     np.save(f, test_outputs)
 
-  # Save the trained model.
-  model.save(session_directory)
+  # Train the model on the complete collected data.
+  # ---------------------------------------------------------------------------
+  # TODO
+
+  # Save the final model, parameters, log, etc.
+  # ---------------------------------------------------------------------------
+  # Save the final model.
+  #model.save(session_directory)
+
+  # Save training parameters.
+  with open(os.path.join(session_directory, "parameters"), mode="w") as f:
+    f.write(json.dumps(model.parameters))
 
   # Save the log.
   model.logger.save(os.path.join(session_directory, "session.log"))
@@ -155,14 +160,17 @@ def main_wgan(model_id, sut_id, model, session, session_directory, view_test, sa
   zeros = lambda s, N: (s + "{{:0{}d}}").format(int(log10(model.N_tests)) + 1).format(N)
 
   # TODO: make configurable
-  # Include tests whose fitness exceed the threshould to the critic training
-  # data.
+  # Include tests whose fitness exceed the threshould to the initial critic
+  # training data.
   init_fitness_threshold = 0.1
+  # Include tests whose fitness exceed the threshould to the final critic
+  # training data.
+  post_fitness_threshold = 0.5
   # How much to decrease the target fitness per each round when selecting a
   # new generated test.
   fitness_coef = 0.95
   # Probability to remove a sample from the critic training data.
-  removal_probability = 0.25
+  removal_probability = 0.4
   # Do not remove critic training samples which deviate at most the following
   # from the mean fitness of critic training samples.
   removal_distance = 0.1
@@ -231,9 +239,11 @@ def main_wgan(model_id, sut_id, model, session, session_directory, view_test, sa
   # Train the model with initial tests.
   # ---------------------------------------------------------------------------
   model.log("Training model...")
-  model.train_with_batch(test_inputs[:tests_generated,:],
-                         test_outputs[:tests_generated,:],
-                         test_inputs[test_critic_training,:],
+  model.train_analyzer_with_batch(test_inputs[:tests_generated,:],
+                                  test_outputs[:tests_generated,:],
+                                  epoch_settings=model.epoch_settings_init,
+                                  log=True)
+  model.train_with_batch(test_inputs[test_critic_training,:],
                          test_outputs[test_critic_training,:],
                          epoch_settings=model.epoch_settings_init,
                          log=True)
@@ -245,6 +255,15 @@ def main_wgan(model_id, sut_id, model, session, session_directory, view_test, sa
   new_tests = model.generate_test(N)
   for n in range(N):
     save_test(new_tests[n,:], zeros("eval_", n + 1))
+  """
+
+  """
+  # Check the performance of the analyzer.
+  predicted = model.predict_fitness(test_inputs[:tests_generated])
+  model.log("Analyzer performance:")
+  model.log("Real: Predicted:")
+  for i in range(tests_generated):
+    model.log("{} {}".format(test_outputs[i,0], predicted[i,0]))
   """
 
   # Begin the main loop for new test generation and training.
@@ -300,12 +319,12 @@ def main_wgan(model_id, sut_id, model, session, session_directory, view_test, sa
     # Update critic training data.
     # -------------------------------------------------------------------------
     # Now we simply add the new test if it is above the mean minus one standard
-    # deviation.
+    # deviation times 0.2.
     data = test_outputs[test_critic_training,:]
     mu = data.mean(0)[0]
     sigma = data.std(0)[0]
     o = test_outputs[tests_generated - 1,0]
-    if o >= mu - sigma:
+    if o >= mu - 0.2*sigma:
       model.log("Added the new test to the critic training data.")
       test_critic_training.append(tests_generated - 1)
       
@@ -326,31 +345,58 @@ def main_wgan(model_id, sut_id, model, session, session_directory, view_test, sa
     # Train the model.
     # -------------------------------------------------------------------------
     model.log("Training the model...")
-    model.train_with_batch(test_inputs[:tests_generated,:],
-                         test_outputs[:tests_generated,:],
-                         test_inputs[test_critic_training,:],
-                         test_outputs[test_critic_training,:],
-                         epoch_settings=model.epoch_settings,
-                         log=True)
+    model.train_analyzer_with_batch(test_inputs[:tests_generated,:],
+                                    test_outputs[:tests_generated,:],
+                                    epoch_settings=model.epoch_setting,
+                                    log=True)
+    model.train_with_batch(test_inputs[test_critic_training,:],
+                           test_outputs[test_critic_training,:],
+                           epoch_settings=model.epoch_settings,
+                           log=True)
 
-  # Train the model on the complete collected data.
+  # Save the trained models.
   # ---------------------------------------------------------------------------
-  # TODO
+  model.save("init", session_directory)
 
-  # Save the final model, training data, log, etc.
+  # Get the final training data for the critic.
   # ---------------------------------------------------------------------------
-  # Save training parameters.
-  with open(os.path.join(session_directory, "parameters"), mode="w") as f:
-    f.write(json.dumps(model.parameters))
+  # Use the tests whose fitness exceeds post_threshold as the final training
+  # data for the critic.
+  # TODO: What if the number of samples in the training data is very low? What
+  #       if it's zero?
+  final_test_critic_training = [n for n in range(tests_generated) if test_outputs[n,0] >= post_fitness_threshold]
+  # TODO: We are now exiting in case we have nothing to traing with. Should we
+  #       redo the initial phase if the number of samples is too low?
+  if len(final_test_critic_training) == 0:
+    model.log("No training data for the final model.")
+    raise SystemExit
 
+  # Save the training data.
+  # ---------------------------------------------------------------------------
   # Save training data.
   with open(os.path.join(session_directory, "training_data.npy"), mode="wb") as f:
     np.save(f, test_inputs)
     np.save(f, test_outputs)
     np.save(f, np.array(test_critic_training))
+    np.save(f, np.array(final_test_critic_training))
 
-  # Save the trained model.
-  model.save(session_directory)
+  # Train the model on the complete collected data.
+  # ---------------------------------------------------------------------------
+  model.log("Training the final model...")
+  report_critic(model, test_inputs, test_outputs, final_test_critic_training)
+  model.train_with_batch(test_inputs[final_test_critic_training,:],
+                         test_outputs[final_test_critic_training,:],
+                         epoch_settings=model.epoch_settings_post,
+                         log=True)
+
+  # Save the final model, parameters, log, etc.
+  # ---------------------------------------------------------------------------
+  # Save the final model.
+  model.save("final", session_directory)
+
+  # Save training parameters.
+  with open(os.path.join(session_directory, "parameters"), mode="w") as f:
+    f.write(json.dumps(model.parameters))
 
   # Save the log.
   model.logger.save(os.path.join(session_directory, "session.log"))

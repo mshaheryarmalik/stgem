@@ -25,6 +25,7 @@ for sut_id in config["available_sut"]:
     config[sut_id][model_id]["test_save_path"] = os.path.join(config["test_save_path"], "{}_{}".format(sut_id, model_id))
     config[sut_id][model_id]["epoch_settings_init"] = {}
     config[sut_id][model_id]["epoch_settings"] = {}
+    config[sut_id][model_id]["epoch_settings_post"] = {}
 
   config[sut_id]["ogan"]["epoch_settings_init"] = {"epochs": 2,
                                                    "discriminator_epochs": 20,
@@ -32,6 +33,9 @@ for sut_id in config["available_sut"]:
   config[sut_id]["ogan"]["epoch_settings"] = {"epochs": 1,
                                               "discriminator_epochs": 5,
                                               "generator_epochs": 1}
+  config[sut_id]["ogan"]["epoch_settings_post"] = {"epochs": 2,
+                                                   "discriminator_epochs": 20,
+                                                   "generator_epochs": 1}
 
   config[sut_id]["wgan"]["epoch_settings_init"] = {"epochs": 2,
                                                    "analyzer_epochs": 20,
@@ -41,6 +45,10 @@ for sut_id in config["available_sut"]:
                                               "analyzer_epochs": 5,
                                               "critic_epochs": 5,
                                               "generator_epochs": 1}
+  config[sut_id]["wgan"]["epoch_settings_post"] = {"epochs": 10,
+                                                   "analyzer_epochs": 0,
+                                                   "critic_epochs": 5,
+                                                   "generator_epochs": 1}
 
 config["sbst_validator"]["wgan"]["epoch_settings_init"]["epochs"] = 50
 config["sbst_validator"]["wgan"]["epoch_settings_init"]["analyzer_epochs"] = 20
@@ -170,6 +178,7 @@ def get_model(sut_id, model_id, logger=None):
     raise ValueError("The number of initial tests {} should be less than the total number of tests {}.".format(random_init, N_tests))
   model.epoch_settings_init = config[sut_id][model_id]["epoch_settings_init"]
   model.epoch_settings = config[sut_id][model_id]["epoch_settings"]
+  model.epoch_settings_post = config[sut_id][model_id]["epoch_settings_post"]
 
   if model_id == "wgan":
     model.gp_coefficient = config[sut_id]["gp_coefficient"]

@@ -27,18 +27,22 @@ if __name__ == "__main__":
     print("Directory '{}' does not exist.".format(session_directory))
 
   model, _view_test, _save_test = get_model(sut_id, model_id)
-  model.load(session_directory)
+  model.load("final", session_directory)
 
   view_test = lambda t: _view_test(t)
   save_test = lambda t, f: _save_test(t, session, f)
 
   # Generate new samples to assess quality visually.
-  N = 1000
-  print("Generating {} new tests...".format(N))
-  new_tests = model.generate_test(N)
+  total = 1000
+  print("Generating {} new tests...".format(total))
+  new_tests = model.generate_test(total)
   print("Covariance matrix of the generated tests:")
   print(np.cov(new_tests, rowvar=False))
   for n in range(30):
     #view_test(new_tests[n,:])
     save_test(new_tests[n,:], "eval_{}".format(n + 1))
+
+  fitness = model.predict_fitness(new_tests)
+  total_predicted_positive = sum(fitness >= model.sut.target)[0]
+  print("{}/{} ({} %) are predicted to be positive".format(total_predicted_positive, total, round(total_predicted_positive/total*100, 1)))
 
