@@ -54,6 +54,9 @@ class SBSTSUT(SUT):
       output (list): List of length self.ndimensions of coordinate tuples.
     """
 
+    if len(test) != self.ndimensions:
+      raise ValueError("Input list expected to have length {}.".format(self.ndimensions))
+
     # This is the same code as in the Frenetic algorithm.
     # https://github.com/ERATOMMSD/frenetic-sbst21/blob/main/src/generators/base_frenet_generator.py
     # We integrate curvature (acceleratation) to get an angle (speed) and then

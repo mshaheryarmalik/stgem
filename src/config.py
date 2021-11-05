@@ -89,6 +89,19 @@ def convert(test):
     else:
       raise ValueError("The input must have shape (1, N) or (N).")
 
+def test_pretty_print(test):
+  """
+  Returns a fixed-length string representing the given test.
+  """
+
+  test = convert(test)
+  s = "["
+  for n in range(test.shape[0]):
+    s += "{: .2f}, ".format(test[n])
+
+  return s[:-2] + "]"
+
+
 def get_model(sut_id, model_id, logger=None):
   """
   Return a complete initialized model based on SUT id and model id.

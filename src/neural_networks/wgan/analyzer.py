@@ -22,10 +22,14 @@ class AnalyzerNetwork(nn.Module):
     self.alayer1 = nn.Linear(self.input_shape, self.neurons)
     self.alayer2 = nn.Linear(self.neurons, self.neurons)
     self.alayer3 = nn.Linear(self.neurons, 1)
+    #self.bn1 = nn.BatchNorm1d(self.neurons)
+    #self.bn2 = nn.BatchNorm1d(self.neurons)
 
   def forward(self, x):
     x = F.relu(self.alayer1(x))
     x = F.relu(self.alayer2(x))
+    #x = F.relu(self.bn1(self.alayer1(x)))
+    #x = F.relu(self.bn2(self.alayer2(x)))
     x = torch.sigmoid(self.alayer3(x))
 
     return x

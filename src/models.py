@@ -1,9 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import os
 
 import numpy as np
+
+from sklearn.ensemble import AdaBoostRegressor
 
 import torch
 import torch.nn as nn
@@ -11,10 +13,11 @@ import torch.nn as nn
 # For visualizing the computational graphs.
 #from torchviz import make_dot
 
+from analyzer import *
+
 import neural_networks.ogan.generator
 import neural_networks.ogan.discriminator
 
-import neural_networks.wgan.analyzer
 import neural_networks.wgan.generator
 import neural_networks.wgan.critic
 
@@ -306,7 +309,7 @@ class WGAN(Model):
 
     self.modelG = None
     self.modelC = None
-    self.modelA = None
+    self.analyzer = None
     # Input dimension for the noise inputted to the generator.
     self.noise_dim = 100
     # Number of neurons per layer in the neural networks.
@@ -315,7 +318,8 @@ class WGAN(Model):
     # Initialize neural network models.
     self.modelG = neural_networks.wgan.generator.GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
     self.modelC = neural_networks.wgan.critic.CriticNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
-    self.modelA = neural_networks.wgan.analyzer.AnalyzerNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
+    self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
+    #self.analyzer = Analyzer_AdaBoost(self.sut.ndimensions, self.device, self.logger)
 
     # Optimizers.
     # TODO: figure out reasonable defaults and make configurable.
@@ -324,42 +328,37 @@ class WGAN(Model):
     #self.optimizerC = torch.optim.RMSprop(self.modelC.parameters(), lr=lr_wgan) # RMSprop with clipping
     self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=lr_wgan, betas=(0, 0.9))
     self.optimizerC = torch.optim.Adam(self.modelC.parameters(), lr=lr_wgan, betas=(0, 0.9))
-    lr_a = 0.01
-    self.optimizerA = torch.optim.Adam(self.modelA.parameters(), lr=lr_a)
 
   def save(self, identifier, path):
     """
-    Save the model to the given path. Files critic, generator, and analyzer are
-    created in the directory.
+    Save the model to the given path. Files critic_{identifier},
+    generator_{identifier}, and analyzer_{identifier} are created in the
+    directory.
     """
 
     torch.save(self.modelC.state_dict(), os.path.join(path, "critic_{}".format(identifier)))
     torch.save(self.modelG.state_dict(), os.path.join(path, "generator_{}".format(identifier)))
-    torch.save(self.modelA.state_dict(), os.path.join(path, "analyzer_{}".format(identifier)))
+    self.analyzer.save(identifier, path)
 
   def load(self, identifier, path):
     """
-    Load the model from path. Files critic, generator, and analyzer are
-    expected to exist.
+    Load the model from path. Files critic_{identifier},
+    generator_{identifier}, and analyzer_{identifier} are expected to exist.
     """
 
     c_file_name = os.path.join(path, "critic_{}".format(identifier))
     g_file_name = os.path.join(path, "generator_{}".format(identifier))
-    a_file_name = os.path.join(path, "analyzer_{}".format(identifier))
 
     if not os.path.exists(c_file_name):
       raise Exception("File '{}' does not exist in {}.".format(c_file_name, path))
     if not os.path.exists(g_file_name):
       raise Exception("File '{}' does not exist in {}.".format(g_file_name, path))
-    if not os.path.exists(a_file_name):
-      raise Exception("File '{}' does not exist in {}.".format(a_file_name, path))
 
     self.modelC.load_state_dict(torch.load(c_file_name))
     self.modelG.load_state_dict(torch.load(g_file_name))
-    self.modelA.load_state_dict(torch.load(a_file_name))
     self.modelC.eval()
     self.modelG.eval()
-    self.modelA.eval()
+    self.analyzer.load(identifier, path)
 
   def train_analyzer_with_batch(self, data_X, data_Y, epoch_settings, log=False):
     """
@@ -380,65 +379,7 @@ class WGAN(Model):
       log (bool):            Log additional information on epochs and losses.
     """
 
-    if len(data_X.shape) != 2 or data_X.shape[1] != self.sut.ndimensions:
-      raise ValueError("Array data_X expected to have shape (N, {}).".format(self.ndimensions))
-    if len(data_Y.shape) != 2 or data_Y.shape[0] < data_X.shape[0]:
-      raise ValueError("Array data_Y array should have at least as many elements as there are tests.")
-
-    data_X = torch.from_numpy(data_X).float().to(self.device)
-    data_Y = torch.from_numpy(data_Y).float().to(self.device)
-
-    # Unpack values from the epochs dictionary.
-    analyzer_epochs = epoch_settings["analyzer_epochs"] if "analyzer_epochs" in epoch_settings else 1
-
-    # Save the training modes for later restoring.
-    training_A = self.modelA.training
-
-    # Bin the training samples, and compute bin frequencies.
-    bins = 10
-    bin_freq = torch.zeros(bins)
-    for n in range(data_X.shape[0]):
-      i = int(data_Y[n, 0]*bins)
-      if i == bins: i -= 1
-      bin_freq[i] += 1
-    bin_freq = bin_freq / data_X.shape[0]
-    # Compute a weight vector for the training data.
-    # TODO: is there a more efficient way to compute this?
-    weights = torch.zeros_like(data_Y)
-    for n in range(data_X.shape[0]):
-      i = int(data_Y[n,0]*bins)
-      if i == bins: i -= 1
-      weights[n,0] = 1/bin_freq[i]
-
-    # Train the analyzer.
-    # -----------------------------------------------------------------------
-    # We want the analyzer to learn the mapping from tests to test outputs.
-    self.modelA.train(True)
-    for m in range(analyzer_epochs):
-      # We map the values from [0, 1] to \R using a logit transformation so
-      # that weighted MSE loss works better. Since logit is undefined in 0 and
-      # 1, we actually first transform the values to the interval [0.01, 0.99].
-      model_loss = (weights*(torch.logit(0.98*self.modelA(data_X) + 0.01) + 0.01 - torch.logit(0.98*data_Y + 0.01))**2).mean()
-
-      # Compute L2 regularization.
-      l2_regularization = 0
-      for parameter in self.modelA.parameters():
-        l2_regularization += torch.sum(torch.square(parameter))
-
-      # TODO: make configurable
-      A_loss = model_loss + 0.01*l2_regularization
-
-      self.optimizerA.zero_grad()
-      A_loss.backward()
-      self.optimizerA.step()
-
-      if log:
-        self.log("Analyzer epoch {}/{}, Loss: {}".format(m + 1, analyzer_epochs, A_loss))
-
-    # Visualize the computational graph.
-    #print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
-
-    self.modelA.train(training_A)
+    self.analyzer.train_with_batch(data_X, data_Y, epoch_settings, log=log)
 
   def train_with_batch(self, data_X, data_Y, epoch_settings, log=False):
     """
@@ -611,11 +552,7 @@ class WGAN(Model):
       output (np.ndarray): Array of shape (N, 1).
     """
 
-    if len(test.shape) != 2 or test.shape[1] != self.sut.ndimensions:
-      raise ValueError("Input array expected to have shape (N, {}).".format(self.sut.ndimensions))
-
-    test_tensor = torch.from_numpy(test).float().to(self.device)
-    return self.modelA(test_tensor).cpu().detach().numpy()
+    return self.analyzer.predict(test)
 
 class RandomGenerator(Model):
   """
