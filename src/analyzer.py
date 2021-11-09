@@ -72,7 +72,7 @@ class Analyzer_NN(Analyzer):
     super().__init__(input_dimension, device, logger)
 
     # Number of neurons per layer in the neural networks.
-    self.neurons = 128
+    self.neurons = 32
 
     self.modelA = neural_networks.wgan.analyzer.AnalyzerNetwork(input_shape=self.ndimensions, neurons=self.neurons).to(self.device)
 
@@ -106,8 +106,10 @@ class Analyzer_NN(Analyzer):
     Computes the analyzer loss for data_X given real outputs data_Y.
     """
 
-    #model_loss = (torch.abs(self.modelA(data_X) - data_Y)).mean()
-    model_loss = ((self.modelA(data_X) - data_Y)**2).mean()
+    #model_loss = (torch.abs(self.modelA(data_X) - data_Y)).sum()
+    model_loss = (torch.abs(self.modelA(data_X) - data_Y)).mean()
+    #model_loss = ((self.modelA(data_X) - data_Y)**2).sum()
+    #model_loss = ((self.modelA(data_X) - data_Y)**2).mean()
 
     # Compute L2 regularization.
     l2_regularization = 0

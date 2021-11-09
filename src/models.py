@@ -360,26 +360,20 @@ class WGAN(Model):
     self.modelG.eval()
     self.analyzer.load(identifier, path)
 
-  def train_analyzer_with_batch(self, data_X, data_Y, epoch_settings, log=False):
+  def train_analyzer_with_batch(self, data_X, data_Y, train_settings, log=False):
     """
     Train the analyzer part of the model with a batch of training data.
 
     Args:
       data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
       data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
-      epoch_settings (dict): A dictionary setting up the number of training
-                             epochs for various parts of the model. The keys
-                             are as follows:
-
-                               analyzer_epochs: How many total runs are made
-                               with the given training data.
-
-                             The default for each missing key is 1. Keys not
-                             found above are ignored.
+      train_settings (dict): A dictionary for setting up the training. See the
+                             analyzer method train_with_batch for more
+                             information.
       log (bool):            Log additional information on epochs and losses.
     """
 
-    self.analyzer.train_with_batch(data_X, data_Y, epoch_settings, log=log)
+    self.analyzer.train_with_batch(data_X, data_Y, train_settings, log=log)
 
   def train_with_batch(self, data_X, data_Y, epoch_settings, log=False):
     """
