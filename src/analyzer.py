@@ -6,7 +6,7 @@ import os
 import torch
 
 from sklearn import svm
-from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor
+from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor, GradientBoostingRegressor
 from sklearn.neighbors import KNeighborsRegressor
 import joblib
 
@@ -386,6 +386,47 @@ class Analyzer_RandomForest(Analyzer):
 
     return self.modelA.predict(test).reshape(test.shape[0], 1)
 
+class Analyzer_GradientBoosting(Analyzer):
+  """
+  Analyzer using gradient boosted trees.
+  """
+
+  def __init__(self, input_dimension, device, logger=None):
+    super().__init__(input_dimension, device, logger)
+
+    self.modelA = GradientBoostingRegressor(loss="absolute_error",
+                                            max_depth=4)
+
+  def train_with_batch(self, data_X, data_Y, train_settings, log=False):
+    """
+    Train the analyzer part of the model with a batch of training data.
+
+    Args:
+      data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
+      data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
+      train_settings (dict): A dictionary for setting up the training.
+                             Currently all keys are ignored.
+      log (bool):            Log additional information on epochs and losses.
+    """
+
+    self.modelA.fit(data_X, data_Y.reshape(data_Y.shape[0]))
+
+  def predict(self, test):
+    """
+    Predicts the fitness of the given test.
+
+    Args:
+      test (np.ndarray): Array of shape (N, self.ndimensions).
+
+    Returns:
+      output (np.ndarray): Array of shape (N, 1).
+    """
+
+    if len(test.shape) != 2 or test.shape[1] != self.ndimensions:
+      raise ValueError("Input array expected to have shape (N, {}).".format(self.ndimensions))
+
+    return self.modelA.predict(test).reshape(test.shape[0], 1)
+
 class Analyzer_SVR(Analyzer):
   """
   Analyzer using SVR.
@@ -434,7 +475,7 @@ class Analyzer_KNN(Analyzer):
   def __init__(self, input_dimension, device, logger=None):
     super().__init__(input_dimension, device, logger)
 
-    self.modelA = KNeighborsRegressor(n_neighbors=2, weights="distance")
+    self.modelA = KNeighborsRegressor(n_neighbors=1, weights="distance")
 
   def train_with_batch(self, data_X, data_Y, train_settings, log=False):
     """

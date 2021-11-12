@@ -28,6 +28,7 @@ def experiment(analyzer_seq):
   train_settings["nnw"] = {"analyzer_epochs": 10}
   train_settings["adaboost"] = {}
   train_settings["randomforest"] = {}
+  train_settings["gbt"] = {}
   train_settings["svr"] = {}
   train_settings["knn"] = {}
 
@@ -56,6 +57,7 @@ def experiment(analyzer_seq):
                   "nnw": Analyzer_NN_weighted,
                   "adaboost": Analyzer_AdaBoost,
                   "randomforest": Analyzer_RandomForest,
+                  "gbt": Analyzer_GradientBoosting,
                   "svr": Analyzer_SVR,
                   "knn": Analyzer_KNN}
 
@@ -107,7 +109,7 @@ def experiment(analyzer_seq):
 
 if __name__ == "__main__":
   #analyzer_seq = ["nn", "nnw", "adaboost", "randomforest", "svr", "knn"]
-  analyzer_seq = ["nn", "nnw", "knn", "randomforest"]
+  analyzer_seq = ["nn", "knn", "randomforest", "gbt"]
   results = {A:[] for A in analyzer_seq}
 
   """
@@ -117,7 +119,7 @@ if __name__ == "__main__":
   """
 
   for n in range(500):
-    #print(n)
+    print(n)
     losses = experiment(analyzer_seq)
     for A in analyzer_seq:
       results[A].append(losses[A])
