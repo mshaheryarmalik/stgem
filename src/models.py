@@ -34,16 +34,16 @@ class Model:
     self.log = lambda t: logger.log(t) if logger is not None else None
 
     # Settings for training. These are set externally.
-    self.epoch_settings_init = None
-    self.epoch_settings = None
+    self.train_settings_init = None
+    self.train_settings = None
     self.random_init = None
     self.N_tests = None
 
   @property
   def parameters(self):
-    return {k:getattr(self, k) for k in ["random_init", "N_tests", "epoch_settings", "epoch_settings_init"]}
+    return {k:getattr(self, k) for k in ["train_settings", "train_settings_init"]}
 
-  def train_with_batch(self, dataX, dataY, epoch_settings, log=False):
+  def train_with_batch(self, dataX, dataY, train_settings, log=False):
     raise NotImplementedError()
 
   def generate_test(self, N=1):
@@ -139,7 +139,7 @@ class OGAN(Model):
     self.modelD.eval()
     self.modelG.eval()
 
-  def train_with_batch(self, dataX, dataY, epoch_settings, log=False):
+  def train_with_batch(self, dataX, dataY, train_settings, log=False):
     """
     Train the OGAN with a batch of training data.
 
@@ -147,7 +147,7 @@ class OGAN(Model):
       dataX (np.ndarray):             Array of tests of shape
                                       (N, self.sut.ndimensions).
       dataY (np.ndarray):             Array of test outputs of shape (N, 1).
-      epoch_settings (dict): A dictionary setting up the number of training
+      train_settings (dict): A dictionary setting up the number of training
                              epochs for various parts of the model. The keys
                              are as follows:
 
@@ -174,9 +174,9 @@ class OGAN(Model):
     dataY = torch.from_numpy(dataY).float().to(self.device)
 
     # Unpack values from the epochs dictionary.
-    epochs = epoch_settings["epochs"] if "epochs" in epoch_settings else 1
-    discriminator_epochs = epoch_settings["discriminator_epochs"] if "discriminator_epochs" in epoch_settings else 1
-    generator_epochs = epoch_settings["generator_epochs"] if "generator_epochs" in epoch_settings else 1
+    epochs = train_settings["epochs"] if "epochs" in train_settings else 1
+    discriminator_epochs = train_settings["discriminator_epochs"] if "discriminator_epochs" in train_settings else 1
+    generator_epochs = train_settings["generator_epochs"] if "generator_epochs" in train_settings else 1
 
     # Save the training modes for later restoring.
     training_D = self.modelD.training
@@ -318,8 +318,9 @@ class WGAN(Model):
     # Initialize neural network models.
     self.modelG = neural_networks.wgan.generator.GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
     self.modelC = neural_networks.wgan.critic.CriticNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
-    self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
-    #self.analyzer = Analyzer_RandomForest(self.sut.ndimensions, self.device, self.logger)
+    #self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
+    self.analyzer = Analyzer_RandomForest(self.sut.ndimensions, self.device, self.logger)
+    #self.analyzer = Analyzer_KNN(self.sut.ndimensions, self.device, self.logger)
 
     # Optimizers.
     # TODO: figure out reasonable defaults and make configurable.
@@ -367,22 +368,28 @@ class WGAN(Model):
     Args:
       data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
       data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
-      train_settings (dict): A dictionary for setting up the training. See the
-                             analyzer method train_with_batch for more
-                             information.
+      train_settings (dict): A dictionary setting up the number of training
+                             epochs for various parts of the model. The keys
+                             are as follows:
+
+                               analyzer_epochs: How many total runs are made
+                               with the given training data.
+
+                             The default for each missing key is 1. Keys not
+                             found above are ignored.
       log (bool):            Log additional information on epochs and losses.
     """
 
     self.analyzer.train_with_batch(data_X, data_Y, train_settings, log=log)
 
-  def train_with_batch(self, data_X, data_Y, epoch_settings, log=False):
+  def train_with_batch(self, data_X, data_Y, train_settings, log=False):
     """
     Train the WGAN with a batch of training data.
 
     Args:
       data_X (np.ndarray):   Array of tests of shape (M, self.sut.ndimensions).
       data_Y (np.ndarray):   Array of test outputs of shape (M, 1).
-      epoch_settings (dict): A dictionary setting up the number of training
+      train_settings (dict): A dictionary setting up the number of training
                              epochs for various parts of the model. The keys
                              are as follows:
 
@@ -409,9 +416,9 @@ class WGAN(Model):
     data_Y = torch.from_numpy(data_Y).float().to(self.device)
 
     # Unpack values from the epochs dictionary.
-    epochs = epoch_settings["epochs"] if "epochs" in epoch_settings else 1
-    critic_epochs = epoch_settings["critic_epochs"] if "critic_epochs" in epoch_settings else 1
-    generator_epochs = epoch_settings["generator_epochs"] if "generator_epochs" in epoch_settings else 1
+    epochs = train_settings["epochs"] if "epochs" in train_settings else 1
+    critic_epochs = train_settings["critic_epochs"] if "critic_epochs" in train_settings else 1
+    generator_epochs = train_settings["generator_epochs"] if "generator_epochs" in train_settings else 1
 
     # Save the training modes for later restoring.
     training_C = self.modelC.training
@@ -557,7 +564,7 @@ class RandomGenerator(Model):
     # TODO: describe the arguments
     super().__init__(sut, validator, device, logger)
 
-  def train_with_batch(self, dataX, dataY, epoch_settings, log=False):
+  def train_with_batch(self, dataX, dataY, train_settings, log=False):
     pass
 
   def save(self, path):

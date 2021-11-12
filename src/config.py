@@ -23,57 +23,53 @@ for sut_id in config["available_sut"]:
     config[sut_id][model_id] = {}
     config[sut_id][model_id]["pregenerated_initial_data"] = os.path.join(config[sut_id]["data_directory"], "pregenerated_initial_data_{}.npy".format(model_id))
     config[sut_id][model_id]["test_save_path"] = os.path.join(config["test_save_path"], "{}_{}".format(sut_id, model_id))
-    config[sut_id][model_id]["epoch_settings_init"] = {}
-    config[sut_id][model_id]["epoch_settings"] = {}
-    config[sut_id][model_id]["epoch_settings_post"] = {}
+    config[sut_id][model_id]["train_settings_init"] = {}
+    config[sut_id][model_id]["train_settings"] = {}
+    config[sut_id][model_id]["train_settings_post"] = {}
 
-  config[sut_id]["ogan"]["epoch_settings_init"] = {"epochs": 2,
+  config[sut_id]["ogan"]["train_settings_init"] = {"epochs": 2,
                                                    "discriminator_epochs": 20,
                                                    "generator_epochs": 1}
-  config[sut_id]["ogan"]["epoch_settings"] = {"epochs": 1,
+  config[sut_id]["ogan"]["train_settings"] = {"epochs": 1,
                                               "discriminator_epochs": 5,
                                               "generator_epochs": 1}
-  config[sut_id]["ogan"]["epoch_settings_post"] = {"epochs": 2,
+  config[sut_id]["ogan"]["train_settings_post"] = {"epochs": 2,
                                                    "discriminator_epochs": 20,
                                                    "generator_epochs": 1}
 
-  config[sut_id]["wgan"]["epoch_settings_init"] = {"epochs": 2,
+  config[sut_id]["wgan"]["train_settings_init"] = {"epochs": 2,
                                                    "analyzer_epochs": 20,
                                                    "critic_epochs": 5,
                                                    "generator_epochs": 1}
-  config[sut_id]["wgan"]["epoch_settings"] = {"epochs": 1,
+  config[sut_id]["wgan"]["train_settings"] = {"epochs": 1,
                                               "analyzer_epochs": 5,
                                               "critic_epochs": 5,
                                               "generator_epochs": 1}
-  config[sut_id]["wgan"]["epoch_settings_post"] = {"epochs": 10,
+  config[sut_id]["wgan"]["train_settings_post"] = {"epochs": 10,
                                                    "analyzer_epochs": 0,
                                                    "critic_epochs": 5,
                                                    "generator_epochs": 1}
 
-config["sbst_validator"]["wgan"]["epoch_settings_init"]["epochs"] = 50
-config["sbst_validator"]["wgan"]["epoch_settings_init"]["analyzer_epochs"] = 20
-config["sbst_validator"]["wgan"]["epoch_settings_init"]["critic_epochs"] = 10
-config["sbst_validator"]["wgan"]["epoch_settings_init"]["generator_epochs"] = 1
-config["sbst_validator"]["wgan"]["epoch_settings"]["analyzer_epochs"] = 10
+config["sbst_validator"]["wgan"]["train_settings_init"]["epochs"] = 50
+config["sbst_validator"]["wgan"]["train_settings_init"]["analyzer_epochs"] = 20
+config["sbst_validator"]["wgan"]["train_settings_init"]["critic_epochs"] = 10
+config["sbst_validator"]["wgan"]["train_settings_init"]["generator_epochs"] = 1
+config["sbst_validator"]["wgan"]["train_settings"]["analyzer_epochs"] = 10
 
-config["sbst"]["wgan"]["epoch_settings_init"]["epochs"] = 3
-config["sbst"]["wgan"]["epoch_settings_init"]["analyzer_epochs"] = 20
-config["sbst"]["wgan"]["epoch_settings_init"]["critic_epochs"] = 10
-config["sbst"]["wgan"]["epoch_settings_init"]["generator_epochs"] = 1
-config["sbst"]["wgan"]["epoch_settings"]["analyzer_epochs"] = 10
+config["sbst"]["wgan"]["train_settings_init"]["epochs"] = 3
+config["sbst"]["wgan"]["train_settings_init"]["analyzer_epochs"] = 20
+config["sbst"]["wgan"]["train_settings_init"]["critic_epochs"] = 10
+config["sbst"]["wgan"]["train_settings_init"]["generator_epochs"] = 1
+config["sbst"]["wgan"]["train_settings"]["analyzer_epochs"] = 10
 
 # SUT-specific configs.
 config["odroid"]["file_base"] = os.path.join(config["odroid"]["data_directory"], "odroid")
 config["odroid"]["output"] = 1
 config["odroid"]["fitness_threshold"] = 6.0
-config["odroid"]["random_init"] = 50
-config["odroid"]["N_tests"] = 200
 
 config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 config["sbst"]["map_size"] = 200
 config["sbst"]["curvature_points"] = 5
-config["sbst"]["random_init"] = 50
-config["sbst"]["N_tests"] = 200
 
 def convert(test):
   """
@@ -113,9 +109,6 @@ def get_model(sut_id, model_id, logger=None):
     sut = OdroidSUT(config["odroid"]["output"], config["odroid"]["fitness_threshold"])
     validator = None
 
-    random_init = config["odroid"]["random_init"]
-    N_tests = config["odroid"]["N_tests"]
-
     def _view_test(test, sut):
       pass
 
@@ -129,11 +122,6 @@ def get_model(sut_id, model_id, logger=None):
     validator_bb = Validator(input_size=config["sbst"]["curvature_points"], validator_bb=lambda t: sbst_validate_test(t, sut))
     sut = SBSTSUT_validator(map_size=config["sbst"]["map_size"], curvature_points=validator_bb.ndimensions, validator_bb=validator_bb)
     validator = None
-
-    random_init = config["sbst"]["random_init"]
-    N_tests = config["sbst"]["N_tests"]
-    if N_tests < random_init:
-      raise ValueError("The total number of tests should be larger than the number of random initial tests.")
 
     def _view_test(test, sut):
       fig = sbst_test_to_image(convert(test), sut)
@@ -151,9 +139,6 @@ def get_model(sut_id, model_id, logger=None):
 
     sut = SBSTSUT_beamng(config["sbst"]["beamng_home"], map_size=config["sbst"]["map_size"], curvature_points=config["sbst"]["curvature_points"])
     validator = Validator(sut.ndimensions, lambda t: sbst_validate_test(t, sut))
-
-    random_init = config["sbst"]["random_init"]
-    N_tests = config["sbst"]["N_tests"]
 
     def _view_test(test, sut):
       fig = sbst_test_to_image(convert(test), sut)
@@ -185,16 +170,11 @@ def get_model(sut_id, model_id, logger=None):
   model = C(sut, validator, device, logger)
 
   # Set training parameters.
-  model.random_init = random_init
-  model.N_tests = N_tests
-  if random_init > N_tests:
-    raise ValueError("The number of initial tests {} should be less than the total number of tests {}.".format(random_init, N_tests))
-  model.epoch_settings_init = config[sut_id][model_id]["epoch_settings_init"]
-  model.epoch_settings = config[sut_id][model_id]["epoch_settings"]
-  model.epoch_settings_post = config[sut_id][model_id]["epoch_settings_post"]
+  model.train_settings_init = config[sut_id][model_id]["train_settings_init"]
+  model.train_settings = config[sut_id][model_id]["train_settings"]
+  model.train_settings_post = config[sut_id][model_id]["train_settings_post"]
 
   if model_id == "wgan":
     model.gp_coefficient = config[sut_id]["gp_coefficient"]
 
   return model, lambda t: _view_test(t, sut), lambda t, s, f: _save_test(t, s, f, sut)
-
