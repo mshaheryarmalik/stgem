@@ -21,6 +21,7 @@ for sut_id in config["available_sut"]:
   # Model-specific config.
   for model_id in config["available_model"]:
     config[sut_id][model_id] = {}
+    config[sut_id][model_id]["algorithm_version"] = 1
     config[sut_id][model_id]["pregenerated_initial_data"] = os.path.join(config[sut_id]["data_directory"], "pregenerated_initial_data_{}.npy".format(model_id))
     config[sut_id][model_id]["test_save_path"] = os.path.join(config["test_save_path"], "{}_{}".format(sut_id, model_id))
     config[sut_id][model_id]["train_settings_init"] = {}
@@ -37,6 +38,7 @@ for sut_id in config["available_sut"]:
                                                    "discriminator_epochs": 20,
                                                    "generator_epochs": 1}
 
+  config[sut_id]["wgan"]["algorithm_version"] = 2
   config[sut_id]["wgan"]["train_settings_init"] = {"epochs": 2,
                                                    "analyzer_epochs": 20,
                                                    "critic_epochs": 5,
@@ -50,6 +52,7 @@ for sut_id in config["available_sut"]:
                                                    "critic_epochs": 5,
                                                    "generator_epochs": 1}
 
+# SUT-specific configs.
 config["sbst_validator"]["wgan"]["train_settings_init"]["epochs"] = 50
 config["sbst_validator"]["wgan"]["train_settings_init"]["analyzer_epochs"] = 20
 config["sbst_validator"]["wgan"]["train_settings_init"]["critic_epochs"] = 10
@@ -62,12 +65,12 @@ config["sbst"]["wgan"]["train_settings_init"]["critic_epochs"] = 10
 config["sbst"]["wgan"]["train_settings_init"]["generator_epochs"] = 1
 config["sbst"]["wgan"]["train_settings"]["analyzer_epochs"] = 10
 
-# SUT-specific configs.
 config["odroid"]["file_base"] = os.path.join(config["odroid"]["data_directory"], "odroid")
 config["odroid"]["output"] = 1
 config["odroid"]["fitness_threshold"] = 6.0
 
-config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
+config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
+#config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 config["sbst"]["map_size"] = 200
 config["sbst"]["curvature_points"] = 5
 
@@ -170,6 +173,7 @@ def get_model(sut_id, model_id, logger=None):
   model = C(sut, validator, device, logger)
 
   # Set training parameters.
+  model.algorithm_version = config[sut_id][model_id]["algorithm_version"]
   model.train_settings_init = config[sut_id][model_id]["train_settings_init"]
   model.train_settings = config[sut_id][model_id]["train_settings"]
   model.train_settings_post = config[sut_id][model_id]["train_settings_post"]

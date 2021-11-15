@@ -34,6 +34,7 @@ class Model:
     self.log = lambda t: logger.log(t) if logger is not None else None
 
     # Settings for training. These are set externally.
+    self.algorithm_version = None
     self.train_settings_init = None
     self.train_settings = None
     self.random_init = None
@@ -41,7 +42,7 @@ class Model:
 
   @property
   def parameters(self):
-    return {k:getattr(self, k) for k in ["train_settings", "train_settings_init"]}
+    return {k:getattr(self, k) for k in ["algorithm_version", "train_settings", "train_settings_init"]}
 
   def train_with_batch(self, dataX, dataY, train_settings, log=False):
     raise NotImplementedError()
