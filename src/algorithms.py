@@ -24,6 +24,8 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test):
                               "N_tests_generated",
                               "N_invalid_tests_generated",
                               "N_positive_tests",
+                              "fitness_avg",
+                              "fitness_std",
                               "time_total",
                               "time_training_total",
                               "time_execution_total",
@@ -170,6 +172,8 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test):
   # Record some information for saving.
   # ---------------------------------------------------------------------------
   session.N_positive_tests = int(sum(test_outputs >= model.sut.target)[0])
+  session.fitness_avg = np.mean(test_outputs)
+  session.fitness_std = np.std(test_outputs)
   session.time_total = (time.monotonic() - time_total_start)
   session.time_training_total = sum(session.time_training)
   session.time_execution_total = sum(session.time_execution)
@@ -216,9 +220,12 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
                               "removal_probability_1",
                               "removal_probability_2",
                               "load_pregenerated_data",
+                              "critic_training_data_history",
                               "N_tests_generated",
                               "N_invalid_tests_generated",
                               "N_positive_tests",
+                              "fitness_avg",
+                              "fitness_std",
                               "time_total",
                               "time_training_total",
                               "time_execution_total",
@@ -323,6 +330,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   if len(test_critic_training) == 0:
     model.log("No training samples found for the critic.")
     raise SystemExit
+  session.critic_training_data_history = [test_critic_training.copy()]
 
   """
   # Display/save the training data chosen for the critic.
@@ -437,6 +445,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
         model.log("Removing test {} with worst fitness {}.".format(test_inputs[idx, :], worst_fitness))
         test_critic_training.pop(idx)
 
+    session.critic_training_data_history.append(test_critic_training.copy())
     report_critic(model, test_inputs, test_outputs, test_critic_training)
 
     # Train the model.
@@ -477,6 +486,8 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   # Record some information for saving.
   # ---------------------------------------------------------------------------
   session.N_positive_tests = int(sum(test_outputs >= model.sut.target)[0])
+  session.fitness_avg = np.mean(test_outputs)
+  session.fitness_std = np.std(test_outputs)
   session.time_total = (time.monotonic() - time_total_start)
   session.time_training_total = sum(session.time_training)
   session.time_execution_total = sum(session.time_execution)
@@ -521,6 +532,8 @@ def main_random(model_id, sut_id, model, session, view_test, save_test):
                               "N_tests_generated",
                               "N_invalid_tests_generated",
                               "N_positive_tests",
+                              "fitness_avg",
+                              "fitness_std",
                               "time_total",
                               "time_training_total",
                               "time_execution_total",
@@ -591,6 +604,8 @@ def main_random(model_id, sut_id, model, session, view_test, save_test):
   # Record some information for saving.
   # ---------------------------------------------------------------------------
   session.N_positive_tests = int(sum(test_outputs >= model.sut.target)[0])
+  session.fitness_avg = np.mean(test_outputs)
+  session.fitness_std = np.std(test_outputs)
   session.time_total = (time.monotonic() - time_total_start)
   session.time_training_total = sum(session.time_training)
   session.time_execution_total = sum(session.time_execution)
