@@ -530,3 +530,37 @@ def sbst_validate_test(test, sut):
   #print(msg)
   return 1 if valid else 0
 
+def frechet_distance(P, Q):
+  """
+  Computes the discrete Fréchet distance between the polygonal curves defined
+  by the point sequences P and Q.
+  """
+
+  # The implementation is based on
+  # T. Eiter, H. Mannila. Computing discrete Fréchet distance.
+  # Technical report CD-TR 94/64. Technical University of Vienna (1994).
+  # http://www.kr.tuwien.ac.at/staff/eiter/et-archive/cdtr9464.pdf
+
+  def C(ca, i, j, P, Q):
+    # We use the Euclidean distance.
+    if ca[i,j] > -1:
+      return ca[i,j]
+
+    if i == 0 and j == 0:
+      m = 0
+    elif i > 0 and j == 0:
+      m = C(ca, i-1, 0, P, Q)
+    elif i == 0 and j > 0:
+      m = C(ca, 0, j-1, P, Q)
+    else:
+      m = min(C(ca, i-1, j, P, Q), C(ca, i-1, j-1, P, Q), C(ca, i, j-1, P, Q))
+
+    ca[i,j] = max(np.linalg.norm(P[i] - Q[j]), m)
+
+    return ca[i, j]
+
+  if len(P) == 0 or len(Q) == 0:
+    raise ValueError("The input sequences must be nonempty.")
+
+  ca = -1*np.ones(shape=(len(P), len(Q)))
+  return C(ca, len(P)-1, len(Q)-1, np.array(P), np.array(Q))
