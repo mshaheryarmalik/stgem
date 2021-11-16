@@ -84,6 +84,28 @@ class SBSTSUT(SUT):
 
     return points
 
+  def distance(self, X, Y):
+    """
+    Returns the discrete Fréchet distance between the road points defined by
+    the tests X and Y.
+
+    Args:
+      X (np.ndarray): Test array of shape (1, self.ndimensions) or (self.dimensions).
+      Y (np.ndarray): Test array of shape (1, self.ndimensions) or (self.dimensions).
+
+    Returns:
+      result (float): The Euclidean distance of X and Y.
+    """
+
+    if len(X.shape) > 2 or len(Y.shape) > 2:
+      raise ValueError("The tests must be 1- or 2-dimensional arrays.")
+    X = X.reshape(-1)
+    Y = Y.reshape(-1)
+    if X.shape[0] != Y.shape[0]:
+      raise ValueError("The tests must have the same dimension.")
+
+    return frechet_distance(self.test_to_road_points(X), self.test_to_road_points(Y))
+
   def _sample_input_space(self, N, curvature_points):
     """
     Return n samples (tests) from the input space.

@@ -3,6 +3,7 @@
 
 import os
 
+import numpy as np
 import torch
 
 from sklearn import svm
@@ -507,3 +508,79 @@ class Analyzer_KNN(Analyzer):
 
     return self.modelA.predict(test).reshape(test.shape[0], 1)
 
+class Analyzer_Distance(Analyzer):
+  """
+  Analyzer using a distance function.
+  """
+
+  def __init__(self, input_dimension, sut, device, logger=None):
+    super().__init__(input_dimension, device, logger)
+
+    self.sut = sut
+    self.distance = self.sut.distance
+
+    self.X = np.zeros(shape=0)
+    self.Y = np.zeros(shape=0)
+
+  def train_with_batch(self, data_X, data_Y, train_settings, log=False):
+    """
+    Train the analyzer part of the model with a batch of training data.
+
+    Args:
+      data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
+      data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
+      train_settings (dict): A dictionary for setting up the training.
+                             Currently all keys are ignored.
+      log (bool):            Log additional information on epochs and losses.
+    """
+
+    # TODO: Add checks.
+
+    self.X = data_X
+    self.Y = data_Y
+
+  def save(self, identifier, path):
+    """
+    Save the analyzer to the given path. File analyzer_{identifier} is created
+    in the directory.
+    """
+
+    with open(os.path.join(path, "analyzer_{}".format(identifier)), mode="wb") as f:
+      np.save(f, self.X)
+      np.save(f, self.Y)
+
+  def load(self, identifier, path):
+    """
+    Load the analyzer from path. File analyzer_{identifier} is expected to
+    exist.
+    """
+
+    a_file_name = os.path.join(path, "analyzer_{}".format(identifier))
+
+    if not os.path.exists(a_file_name):
+      raise Exception("File '{}' does not exist in {}.".format(a_file_name, path))
+
+    with open(file_name, mode="rb") as f:
+      self.X = np.load(f)
+      self.Y = np.save(f)
+
+  def predict(self, test):
+    """
+    Predicts the fitness of the given test.
+
+    Args:
+      test (np.ndarray): Array of shape (N, self.ndimensions).
+
+    Returns:
+      output (np.ndarray): Array of shape (N, 1).
+    """
+
+    if len(test.shape) != 2 or test.shape[1] != self.ndimensions:
+      raise ValueError("Input array expected to have shape (N, {}).".format(self.ndimensions))
+
+    result = np.zeros(shape=(test.shape[0], 1))
+    for n in range(test.shape[0]):
+      idx = np.argmin(np.apply_along_axis(lambda t: self.distance(t, test[n]), 1, self.X))
+      result[n,0] = self.Y[idx]
+
+    return result

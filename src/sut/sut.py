@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import numpy as np
+
 class SUT:
   """
   Base class implementing a system under test.
@@ -11,6 +13,28 @@ class SUT:
     self.dataX = None
     self.dataY = None
     self.target = 1.0
+
+  def distance(self, X, Y):
+    """
+    Returns the distance between two tests. This might not make sense for
+    arbitrary system under test; we return Euclidean distance by default.
+
+    Args:
+      X (np.ndarray): Test array of shape (1, self.ndimensions) or (self.dimensions).
+      Y (np.ndarray): Test array of shape (1, self.ndimensions) or (self.dimensions).
+
+    Returns:
+      result (float): The Euclidean distance of X and Y.
+    """
+
+    if len(X.shape) > 2 or len(Y.shape) > 2:
+      raise ValueError("The tests must be 1- or 2-dimensional arrays.")
+    X = X.reshape(-1)
+    Y = Y.reshape(-1)
+    if X.shape[0] != Y.shape[0]:
+      raise ValueError("The tests must have the same dimension.")
+
+    return np.linalg.norm(X - Y)
 
   def execute_test(self, tests):
     raise NotImplementedError()
