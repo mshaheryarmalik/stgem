@@ -319,8 +319,9 @@ class WGAN(Model):
     # Initialize neural network models.
     self.modelG = neural_networks.wgan.generator.GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
     self.modelC = neural_networks.wgan.critic.CriticNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
-    #self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
-    self.analyzer = Analyzer_RandomForest(self.sut.ndimensions, self.device, self.logger)
+    self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
+    #self.analyzer = Analyzer_RandomForest(self.sut.ndimensions, self.device, self.logger)
+    #self.analyzer = Analyzer_Distance(self.sut.ndimensions, sut, self.device, self.logger)
     #self.analyzer = Analyzer_KNN(self.sut.ndimensions, self.device, self.logger)
 
     # Optimizers.

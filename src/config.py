@@ -74,6 +74,57 @@ config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
 config["sbst"]["map_size"] = 200
 config["sbst"]["curvature_points"] = 5
 
+config["session_attributes"] = {}
+config["session_attributes"]["ogan"] = ["N_tests",
+                                        "random_init",
+                                        "fitness_coef",
+                                        "load_pregenerated_data",
+                                        "N_tests_generated",
+                                        "N_invalid_tests_generated",
+                                        "N_positive_tests",
+                                        "fitness_avg",
+                                        "fitness_std",
+                                        "time_total",
+                                        "time_training_total",
+                                        "time_execution_total",
+                                        "time_training",
+                                        "time_generation",
+                                        "time_execution"]
+config["session_attributes"]["wgan"] = ["N_tests",
+                                        "random_init",
+                                        "fitness_coef",
+                                        "init_fitness_threshold",
+                                        "post_fitness_threshold",
+                                        "N_candidate_tests",
+                                        "removal_probability_1",
+                                        "removal_probability_2",
+                                        "load_pregenerated_data",
+                                        "critic_training_data_history",
+                                        "N_tests_generated",
+                                        "N_invalid_tests_generated",
+                                        "N_positive_tests",
+                                        "fitness_avg",
+                                        "fitness_std",
+                                        "time_total",
+                                        "time_training_total",
+                                        "time_execution_total",
+                                        "time_training",
+                                        "time_generation",
+                                        "time_execution"]
+config["session_attributes"]["random"] = ["N_tests",
+                                          "random_init",
+                                          "N_tests_generated",
+                                          "N_invalid_tests_generated",
+                                          "N_positive_tests",
+                                          "fitness_avg",
+                                          "fitness_std",
+                                          "time_total",
+                                          "time_training_total",
+                                          "time_execution_total",
+                                          "time_training",
+                                          "time_generation",
+                                          "time_execution"]
+
 def convert(test):
   """
   Convenience function for converting an array of shape (1, N) or (N) to an
@@ -99,7 +150,6 @@ def test_pretty_print(test):
     s += "{: .2f}, ".format(test[n])
 
   return s[:-2] + "]"
-
 
 def get_model(sut_id, model_id, logger=None):
   """

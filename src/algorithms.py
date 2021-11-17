@@ -16,23 +16,6 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test):
   # Format (s + "{}").format(N) with enough initial zeros.
   zeros = lambda s, N: (s + "{{:0{}d}}").format(int(log10(session.N_tests)) + 1).format(N)
 
-  # Save the following parameters for the session.
-  session.add_saved_parameter("N_tests",
-                              "random_init",
-                              "fitness_coef",
-                              "load_pregenerated_data",
-                              "N_tests_generated",
-                              "N_invalid_tests_generated",
-                              "N_positive_tests",
-                              "fitness_avg",
-                              "fitness_std",
-                              "time_total",
-                              "time_training_total",
-                              "time_execution_total",
-                              "time_training",
-                              "time_generation",
-                              "time_execution")
-
   # TODO: make configurable
   # How much to decrease the target fitness per each round when selecting a
   # new generated test.
@@ -210,29 +193,6 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   # Format (s + "{}").format(N) with enough initial zeros.
   zeros = lambda s, N: (s + "{{:0{}d}}").format(int(log10(session.N_tests)) + 1).format(N)
 
-  # Save the following parameters for the session.
-  session.add_saved_parameter("N_tests",
-                              "random_init",
-                              "fitness_coef",
-                              "init_fitness_threshold",
-                              "post_fitness_threshold",
-                              "N_candidate_tests",
-                              "removal_probability_1",
-                              "removal_probability_2",
-                              "load_pregenerated_data",
-                              "critic_training_data_history",
-                              "N_tests_generated",
-                              "N_invalid_tests_generated",
-                              "N_positive_tests",
-                              "fitness_avg",
-                              "fitness_std",
-                              "time_total",
-                              "time_training_total",
-                              "time_execution_total",
-                              "time_training",
-                              "time_generation",
-                              "time_execution")
-
   # TODO: make configurable
   # How much to decrease the target fitness per each round when selecting a
   # new generated test.
@@ -244,7 +204,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   # training data.
   session.post_fitness_threshold = 0.5
   # How many candidate tests to generate per round.
-  session.N_candidate_tests = 3
+  session.N_candidate_tests = 1
   # The interval where the probability to remove a sample from the critic
   # training data lies.
   session.removal_probability_1 = 0.5
@@ -525,21 +485,6 @@ def main_random(model_id, sut_id, model, session, view_test, save_test):
 
   # Format (s + "{}").format(N) with enough initial zeros.
   zeros = lambda s, N: (s + "{{:0{}d}}").format(int(log10(session.N_tests)) + 1).format(N)
-
-  # Save the following parameters for the session.
-  session.add_saved_parameter("N_tests",
-                              "random_init",
-                              "N_tests_generated",
-                              "N_invalid_tests_generated",
-                              "N_positive_tests",
-                              "fitness_avg",
-                              "fitness_std",
-                              "time_total",
-                              "time_training_total",
-                              "time_execution_total",
-                              "time_training",
-                              "time_generation",
-                              "time_execution")
 
   # Stores execution times.
   session.time_total = 0

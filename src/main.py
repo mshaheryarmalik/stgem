@@ -9,8 +9,8 @@ from session import Session
 from algorithms import main_ogan, main_wgan, main_random
 
 if __name__ == "__main__":
-  model_id = "random" # ogan, wgan, random
-  sut_id = "odroid" # odroid, sbst_validator, sbst
+  model_id = "wgan" # ogan, wgan, random
+  sut_id = "sbst" # odroid, sbst_validator, sbst
 
   # TODO: Put to config.
   random_init = 50
@@ -32,6 +32,7 @@ if __name__ == "__main__":
   session.N_tests = N_tests
   if session.N_tests < session.random_init:
     raise ValueError("The total number of tests should be larger than the number of random initial tests.")
+  session.add_saved_parameter(*config["session_attributes"][model_id])
   view_test = lambda t: _view_test(t) if enable_view else None
   save_test = lambda t, f: _save_test(t, session.id, f) if enable_save else None
 
