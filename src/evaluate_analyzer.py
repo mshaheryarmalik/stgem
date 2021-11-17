@@ -31,13 +31,14 @@ def experiment(analyzer_seq):
   train_settings["gbt"] = {}
   train_settings["svr"] = {}
   train_settings["knn"] = {}
+  train_settings["knn_d"] = {}
 
   # Select training and validation sets randomly.
   random_sampling = True
   # How much is used for training.
-  training_tests = 150
+  training_tests = 500
   # How much is used for validation.
-  validation_tests = 50
+  validation_tests = 100
 
   def loss(RY, PY):
     """
@@ -61,7 +62,11 @@ def experiment(analyzer_seq):
                   "svr": Analyzer_SVR,
                   "knn": Analyzer_KNN}
 
-  analyzers = [analyzer_map[A](model.sut.ndimensions, model.device, logger) for A in analyzer_seq]
+  analyzers = [analyzer_map[A](model.sut.ndimensions, model.device, logger) for A in analyzer_seq if A not in ["knn_d"]]
+  # TODO: knn_d needs different type of initialization, do this in a generic way.
+  if "knn_d" in analyzer_seq:
+    analyzers.append(Analyzer_Distance(model.sut.ndimensions, model.sut, model.device, logger))
+
   for n in range(len(analyzer_seq)):
     if analyzer_seq[n] == "nn" or analyzer_seq[n] == "nnw":
       analyzers[n].modelA.train(False)
@@ -108,8 +113,10 @@ def experiment(analyzer_seq):
   return losses
 
 if __name__ == "__main__":
-  #analyzer_seq = ["nn", "nnw", "adaboost", "randomforest", "svr", "knn"]
-  analyzer_seq = ["nn", "knn", "randomforest", "gbt"]
+  #analyzer_seq = ["nn", "nnw", "adaboost", "randomforest", "svr", "knn", "knn_d"]
+  analyzer_seq = ["nn", "nnw", "adaboost", "randomforest", "svr", "knn"]
+  #analyzer_seq = ["nn", "knn_d", "randomforest"]
+  analyzer_seq = ["knn_d"]
   results = {A:[] for A in analyzer_seq}
 
   """
