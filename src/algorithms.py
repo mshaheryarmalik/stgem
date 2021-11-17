@@ -93,7 +93,7 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test):
     # Generate a new valid test with high fitness and decrease target fitness
     # as per execution of the loop.
     # -------------------------------------------------------------------------
-    model.log("Starting to generate a new test.")
+    model.log("Starting to generate test {}.".format(tests_generated + 1))
     time_generation_start = time.monotonic()
     target_fitness = 1
     rounds = 0
@@ -209,6 +209,8 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   # training data lies.
   session.removal_probability_1 = 0.5
   session.removal_probability_2 = 0.8
+  # We do not remove a test if its distance to mean is lower than this.
+  session.removal_distance = 0.1
   # Stores execution times.
   session.time_total = 0
   session.time_training_total = 0
@@ -330,7 +332,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
     # Generate a new valid test with high fitness and decrease target fitness
     # as per execution of the loop.
     # -------------------------------------------------------------------------
-    model.log("Starting to generate a new test.")
+    model.log("Starting to generate test {}.".format(tests_generated + 1))
     time_generation_start = time.monotonic()
     target_fitness = 1
     rounds = 0
@@ -401,7 +403,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
       # to prevent removing tests with fitness 1 when the fitness is binary
       # with values 0 and 1.
       mean = test_outputs[test_critic_training,:].mean()
-      if mean - worst_fitness > 0.1:
+      if mean - worst_fitness > session.removal_distance:
         model.log("Removing test {} with worst fitness {}.".format(test_inputs[idx, :], worst_fitness))
         test_critic_training.pop(idx)
 
@@ -509,7 +511,7 @@ def main_random(model_id, sut_id, model, session, view_test, save_test):
   # Begin the main loop for new test generation.
   # ---------------------------------------------------------------------------
   while tests_generated < session.N_tests:
-    model.log("Starting to generate a new test.")
+    model.log("Starting to generate test {}.".format(tests_generated + 1))
     time_generation_start = time.monotonic()
     rounds = 0
     invalid = 0

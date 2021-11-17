@@ -136,7 +136,7 @@ class SBSTSUT_beamng(SBSTSUT):
   Implements the system under test for the BeamNG simulator.
   """
 
-  def __init__(self, beamng_home, map_size, curvature_points, oob_tolerance=0.95, max_speed=70):
+  def __init__(self, beamng_home, map_size, curvature_points, oob_tolerance, max_speed):
     """
     Initialize the class.
 
@@ -415,7 +415,7 @@ class SBSTSUT_validator(SBSTSUT):
 
     self.ndimensions = curvature_points
     self.validator_bb = validator_bb
-    self.target = 1
+    self.target = 1.0
 
   def execute_test(self, tests):
     """

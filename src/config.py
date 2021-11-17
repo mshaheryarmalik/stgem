@@ -13,11 +13,12 @@ config["available_model"] = ["ogan", "wgan", "random"]
 config["data_path"] = os.path.join("..", "data")
 config["test_save_path"] = os.path.join("..", "simulations")
 
+# Config for all SUT's.
+# ----------------------------------------------------------------------------
 for sut_id in config["available_sut"]:
   config[sut_id] = {}
   # Common config to all models.
   config[sut_id]["data_directory"] = os.path.join(config["data_path"], sut_id)
-  config[sut_id]["gp_coefficient"] = 10
   # Model-specific config.
   for model_id in config["available_model"]:
     config[sut_id][model_id] = {}
@@ -28,6 +29,10 @@ for sut_id in config["available_sut"]:
     config[sut_id][model_id]["train_settings"] = {}
     config[sut_id][model_id]["train_settings_post"] = {}
 
+  # OGAN defaults.
+  config[sut_id]["ogan"]["noise_dim"] = 100
+  config[sut_id]["ogan"]["gan_neurons"] = 128
+  config[sut_id]["wgan"]["gan_learning_rate"] = 0.001
   config[sut_id]["ogan"]["train_settings_init"] = {"epochs": 2,
                                                    "discriminator_epochs": 20,
                                                    "generator_epochs": 1}
@@ -38,7 +43,12 @@ for sut_id in config["available_sut"]:
                                                    "discriminator_epochs": 20,
                                                    "generator_epochs": 1}
 
+  # WGAN defaults.
   config[sut_id]["wgan"]["algorithm_version"] = 2
+  config[sut_id]["wgan"]["noise_dim"] = 100
+  config[sut_id]["wgan"]["gan_neurons"] = 128
+  config[sut_id]["wgan"]["gan_learning_rate"] = 0.00005
+  config[sut_id]["wgan"]["gp_coefficient"] = 10
   config[sut_id]["wgan"]["train_settings_init"] = {"epochs": 2,
                                                    "analyzer_epochs": 20,
                                                    "critic_epochs": 5,
@@ -53,11 +63,22 @@ for sut_id in config["available_sut"]:
                                                    "generator_epochs": 1}
 
 # SUT-specific configs.
-config["sbst_validator"]["wgan"]["train_settings_init"]["epochs"] = 50
-config["sbst_validator"]["wgan"]["train_settings_init"]["analyzer_epochs"] = 20
-config["sbst_validator"]["wgan"]["train_settings_init"]["critic_epochs"] = 10
-config["sbst_validator"]["wgan"]["train_settings_init"]["generator_epochs"] = 1
-config["sbst_validator"]["wgan"]["train_settings"]["analyzer_epochs"] = 10
+# ----------------------------------------------------------------------------
+config["odroid"]["file_base"] = os.path.join(config["odroid"]["data_directory"], "odroid")
+config["odroid"]["output"] = 1
+config["odroid"]["fitness_threshold"] = 6.0
+
+config["sbst_validator"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
+#config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
+config["sbst_validator"]["map_size"] = 200
+config["sbst_validator"]["curvature_points"] = 5
+
+config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
+#config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
+config["sbst"]["map_size"] = 200
+config["sbst"]["curvature_points"] = 5
+config["sbst"]["fitness_threshold"] = 0.95
+config["sbst"]["max_speed"] = 70
 
 config["sbst"]["wgan"]["train_settings_init"]["epochs"] = 3
 config["sbst"]["wgan"]["train_settings_init"]["analyzer_epochs"] = 20
@@ -65,15 +86,8 @@ config["sbst"]["wgan"]["train_settings_init"]["critic_epochs"] = 10
 config["sbst"]["wgan"]["train_settings_init"]["generator_epochs"] = 1
 config["sbst"]["wgan"]["train_settings"]["analyzer_epochs"] = 10
 
-config["odroid"]["file_base"] = os.path.join(config["odroid"]["data_directory"], "odroid")
-config["odroid"]["output"] = 1
-config["odroid"]["fitness_threshold"] = 6.0
-
-config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
-#config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
-config["sbst"]["map_size"] = 200
-config["sbst"]["curvature_points"] = 5
-
+# Session configs.
+# ----------------------------------------------------------------------------
 config["session_attributes"] = {}
 config["session_attributes"]["ogan"] = ["N_tests",
                                         "random_init",
@@ -98,6 +112,7 @@ config["session_attributes"]["wgan"] = ["N_tests",
                                         "N_candidate_tests",
                                         "removal_probability_1",
                                         "removal_probability_2",
+                                        "removal_distance",
                                         "load_pregenerated_data",
                                         "critic_training_data_history",
                                         "N_tests_generated",
@@ -172,8 +187,8 @@ def get_model(sut_id, model_id, logger=None):
     from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
     from validator.validator import Validator
 
-    validator_bb = Validator(input_size=config["sbst"]["curvature_points"], validator_bb=lambda t: sbst_validate_test(t, sut))
-    sut = SBSTSUT_validator(map_size=config["sbst"]["map_size"], curvature_points=validator_bb.ndimensions, validator_bb=validator_bb)
+    validator_bb = Validator(input_size=config[sut_id]["curvature_points"], validator_bb=lambda t: sbst_validate_test(t, sut))
+    sut = SBSTSUT_validator(map_size=config[sut_id]["map_size"], curvature_points=validator_bb.ndimensions, validator_bb=validator_bb)
     validator = None
 
     def _view_test(test, sut):
@@ -190,7 +205,11 @@ def get_model(sut_id, model_id, logger=None):
     from sut.sut_sbst import SBSTSUT_beamng, SBSTSUT_validator, sbst_test_to_image, sbst_validate_test
     from validator.validator import Validator
 
-    sut = SBSTSUT_beamng(config["sbst"]["beamng_home"], map_size=config["sbst"]["map_size"], curvature_points=config["sbst"]["curvature_points"])
+    sut = SBSTSUT_beamng(config[sut_id]["beamng_home"],
+                         map_size=config[sut_id]["map_size"],
+                         curvature_points=config[sut_id]["curvature_points"],
+                         oob_tolerance=config[sut_id]["fitness_threshold"],
+                         max_speed=config[sut_id]["max_speed"])
     validator = Validator(sut.ndimensions, lambda t: sbst_validate_test(t, sut))
 
     def _view_test(test, sut):
@@ -228,7 +247,15 @@ def get_model(sut_id, model_id, logger=None):
   model.train_settings = config[sut_id][model_id]["train_settings"]
   model.train_settings_post = config[sut_id][model_id]["train_settings_post"]
 
+  if model_id in ["ogan", "wgan"]:
+    model.noise_dim = config[sut_id][model_id]["noise_dim"]
+    model.gan_neurons = config[sut_id][model_id]["gan_neurons"]
+    model.gan_learning_rate = config[sut_id][model_id]["gan_learning_rate"]
+
   if model_id == "wgan":
-    model.gp_coefficient = config[sut_id]["gp_coefficient"]
+    model.gp_coefficient = config[sut_id][model_id]["gp_coefficient"]
+
+  model.initialize()
 
   return model, lambda t: _view_test(t, sut), lambda t, s, f: _save_test(t, s, f, sut)
+

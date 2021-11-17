@@ -33,6 +33,8 @@ class Model:
     self.logger = logger
     self.log = lambda t: logger.log(t) if logger is not None else None
 
+    self.saved_parameters = ["algorithm_version", "train_settings", "train_settings_init"]
+
     # Settings for training. These are set externally.
     self.algorithm_version = None
     self.train_settings_init = None
@@ -40,9 +42,12 @@ class Model:
     self.random_init = None
     self.N_tests = None
 
+  def initialize(self):
+    pass
+
   @property
   def parameters(self):
-    return {k:getattr(self, k) for k in ["algorithm_version", "train_settings", "train_settings_init"]}
+    return {k:getattr(self, k) for k in self.saved_parameters}
 
   def train_with_batch(self, dataX, dataY, train_settings, log=False):
     raise NotImplementedError()
@@ -86,16 +91,23 @@ class OGAN(Model):
     # TODO: describe the arguments
     super().__init__(sut, validator, device, logger)
 
-    self.modelG = None
-    self.modelD = None
+    # These parameters are set externally.
+    self.saved_parameters += ["noise_dim", "gan_neurons", "gan_learning_rate"]
     # Input dimension for the noise inputted to the generator.
-    self.noise_dim = 100
+    self.noise_dim = None
     # Number of neurons per layer in the neural networks.
-    self.neurons = 128
+    self.gan_neurons = None
+    # Learning rate for WGAN optimizers.
+    self.gan_learning_rate = None
+
+  def initialize(self):
+    """
+    Initialize the class.
+    """
 
     # Initialize neural network models.
-    self.modelG = neural_networks.ogan.generator.GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
-    self.modelD = neural_networks.ogan.discriminator.DiscriminatorNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
+    self.modelG = neural_networks.ogan.generator.GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.gan_neurons).to(self.device)
+    self.modelD = neural_networks.ogan.discriminator.DiscriminatorNetwork(input_shape=self.sut.ndimensions, neurons=self.gan_neurons).to(self.device)
 
     # Loss functions.
     # TODO: figure out a reasonable default and make configurable.
@@ -105,12 +117,10 @@ class OGAN(Model):
     self.lossD = nn.MSELoss() # mean square error
 
     # Optimizers.
-    # TODO: figure out reasonable defaults and make configurable.
-    lr = 0.001
-    #self.optimizerD = torch.optim.RMSprop(self.modelD.parameters(), lr=lr)
-    #self.optimizerG = torch.optim.RMSprop(self.modelG.parameters(), lr=lr)
-    self.optimizerD = torch.optim.Adam(self.modelD.parameters(), lr=lr)
-    self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=lr)
+    #self.optimizerD = torch.optim.RMSprop(self.modelD.parameters(), lr=self.gan_learning_rate)
+    #self.optimizerG = torch.optim.RMSprop(self.modelG.parameters(), lr=self.gan_learning_rate)
+    self.optimizerD = torch.optim.Adam(self.modelD.parameters(), lr=self.gan_learning_rate)
+    self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=self.gan_learning_rate)
 
   def save(self, identifier, path):
     """
@@ -305,32 +315,38 @@ class WGAN(Model):
     # TODO: describe the arguments
     super().__init__(sut, validator, device, logger)
 
+    # These parameters are set externally.
+    self.saved_parameters += ["noise_dim", "gan_neurons", "gp_coefficient", "gan_learning_rate"]
+    # Input dimension for the noise inputted to the generator.
+    self.noise_dim = None
+    # Number of neurons per layer in the neural networks.
+    self.gan_neurons = None
     # The coefficient for the loss gradient penalty term.
     self.gp_coefficient = None
+    # Learning rate for WGAN optimizers.
+    self.gan_learning_rate = None
 
-    self.modelG = None
-    self.modelC = None
-    self.analyzer = None
-    # Input dimension for the noise inputted to the generator.
-    self.noise_dim = 100
-    # Number of neurons per layer in the neural networks.
-    self.neurons = 128
+  def initialize(self):
+    """
+    Initialize the class.
+    """
 
     # Initialize neural network models.
-    self.modelG = neural_networks.wgan.generator.GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
-    self.modelC = neural_networks.wgan.critic.CriticNetwork(input_shape=self.sut.ndimensions, neurons=self.neurons).to(self.device)
+    self.modelG = neural_networks.wgan.generator.GeneratorNetwork(input_shape=self.noise_dim, output_shape=self.sut.ndimensions, neurons=self.gan_neurons).to(self.device)
+    self.modelC = neural_networks.wgan.critic.CriticNetwork(input_shape=self.sut.ndimensions, neurons=self.gan_neurons).to(self.device)
+
+    # Initialize the analyzer.
     self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
     #self.analyzer = Analyzer_RandomForest(self.sut.ndimensions, self.device, self.logger)
     #self.analyzer = Analyzer_Distance(self.sut.ndimensions, sut, self.device, self.logger)
     #self.analyzer = Analyzer_KNN(self.sut.ndimensions, self.device, self.logger)
 
     # Optimizers.
-    # TODO: figure out reasonable defaults and make configurable.
-    lr_wgan = 0.00005
-    #self.optimizerG = torch.optim.RMSprop(self.modelG.parameters(), lr=lr_wgan) # RMSprop with clipping
-    #self.optimizerC = torch.optim.RMSprop(self.modelC.parameters(), lr=lr_wgan) # RMSprop with clipping
-    self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=lr_wgan, betas=(0, 0.9))
-    self.optimizerC = torch.optim.Adam(self.modelC.parameters(), lr=lr_wgan, betas=(0, 0.9))
+    # TODO: Make additional parameters configurable.
+    #self.optimizerG = torch.optim.RMSprop(self.modelG.parameters(), lr=self.gan_learning_rate) # RMSprop with clipping
+    #self.optimizerC = torch.optim.RMSprop(self.modelC.parameters(), lr=self.gan_learning_rate) # RMSprop with clipping
+    self.optimizerG = torch.optim.Adam(self.modelG.parameters(), lr=self.gan_learning_rate, betas=(0, 0.9))
+    self.optimizerC = torch.optim.Adam(self.modelC.parameters(), lr=self.gan_learning_rate, betas=(0, 0.9))
 
   def save(self, identifier, path):
     """
