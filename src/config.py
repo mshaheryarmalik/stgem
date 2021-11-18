@@ -44,11 +44,13 @@ for sut_id in config["available_sut"]:
                                                    "generator_epochs": 1}
 
   # WGAN defaults.
-  config[sut_id]["wgan"]["algorithm_version"] = 2
+  # 1 = something, 2 = increasing removal probability, 3 = WGAN weighted sampling
+  config[sut_id]["wgan"]["algorithm_version"] = 3
   config[sut_id]["wgan"]["noise_dim"] = 100
   config[sut_id]["wgan"]["gan_neurons"] = 128
   config[sut_id]["wgan"]["gan_learning_rate"] = 0.00005
   config[sut_id]["wgan"]["gp_coefficient"] = 10
+  config[sut_id]["wgan"]["batch_size"] = 32
   config[sut_id]["wgan"]["train_settings_init"] = {"epochs": 2,
                                                    "analyzer_epochs": 20,
                                                    "critic_epochs": 5,
@@ -254,6 +256,7 @@ def get_model(sut_id, model_id, logger=None):
 
   if model_id == "wgan":
     model.gp_coefficient = config[sut_id][model_id]["gp_coefficient"]
+    model.batch_size = config[sut_id][model_id]["batch_size"]
 
   model.initialize()
 

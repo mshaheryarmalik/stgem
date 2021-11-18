@@ -336,7 +336,8 @@ class WGAN(Model):
     self.modelC = neural_networks.wgan.critic.CriticNetwork(input_shape=self.sut.ndimensions, neurons=self.gan_neurons).to(self.device)
 
     # Initialize the analyzer.
-    self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
+    #self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
+    self.analyzer = Analyzer_NN_weighted(self.sut.ndimensions, self.device, self.logger)
     #self.analyzer = Analyzer_RandomForest(self.sut.ndimensions, self.device, self.logger)
     #self.analyzer = Analyzer_Distance(self.sut.ndimensions, sut, self.device, self.logger)
     #self.analyzer = Analyzer_KNN(self.sut.ndimensions, self.device, self.logger)

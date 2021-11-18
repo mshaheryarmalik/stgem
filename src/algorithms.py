@@ -240,6 +240,20 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   beta = 2 - session.random_init * alpha - (2 - (-1))*(0.9/0.2)
   R = lambda x: session.removal_probability_1 + (session.removal_probability_2 - session.removal_probability_1) * S(alpha * x + beta)
 
+  # Define the function which samples a training set according to
+  # probabilities computed from the training outputs (higher output leads to
+  # higher probability).
+  def training_sample(N, X, Y):
+    # We now use a simple linear function which gives weight 1 to 0 and weight
+    # K to 1.
+    K = 10
+    h = lambda x: (K-1)*x + 1
+    #h = lambda x: 1
+    weights = np.apply_along_axis(h, 1, Y)
+    weights = (weights / np.sum(weights)).reshape(-1)
+    idx = np.random.choice(list(range(X.shape[0])), N, p=weights)
+    return X[idx,:], Y[idx,:]
+
   def report_critic(model, test_inputs, test_outputs, test_critic_training):
     """
     Report some statistics on the critic training data.
@@ -307,12 +321,15 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   # ---------------------------------------------------------------------------
   model.log("Training model...")
   time_training_start = time.monotonic()
+  # Train the analyzer.
   model.train_analyzer_with_batch(test_inputs[:tests_generated,:],
                                   test_outputs[:tests_generated,:],
                                   train_settings=model.train_settings_init,
                                   log=True)
-  model.train_with_batch(test_inputs[test_critic_training,:],
-                         test_outputs[test_critic_training,:],
+  # Train the WGAN.
+  train_X, train_Y = training_sample(model.batch_size, test_inputs[test_critic_training,:], test_outputs[test_critic_training,:])
+  model.train_with_batch(train_X,
+                         train_Y,
                          train_settings=model.train_settings_init,
                          log=True)
   session.time_training.append(time.monotonic() - time_training_start)
@@ -414,12 +431,15 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
     # -------------------------------------------------------------------------
     model.log("Training the model...")
     time_training_start = time.monotonic()
+    # Train the analyzer.
     model.train_analyzer_with_batch(test_inputs[:tests_generated,:],
                                     test_outputs[:tests_generated,:],
                                     train_settings=model.train_settings,
                                     log=True)
-    model.train_with_batch(test_inputs[test_critic_training,:],
-                           test_outputs[test_critic_training,:],
+    # Train the WGAN.
+    train_X, train_Y = training_sample(model.batch_size, test_inputs[test_critic_training,:], test_outputs[test_critic_training,:])
+    model.train_with_batch(train_X,
+                           train_Y,
                            train_settings=model.train_settings,
                            log=True)
     session.time_training.append(time.monotonic() - time_training_start)

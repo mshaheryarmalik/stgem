@@ -586,3 +586,4 @@ def frechet_distance(P, Q):
 
   ca = -1*np.ones(shape=(len(P), len(Q)))
   return C(ca, len(P)-1, len(Q)-1, np.array(P), np.array(Q))
+
