@@ -79,24 +79,6 @@ def update_session_dataset(data):
         if header not in new_test_data.keys():
             new_test_data.update({header: []})
 
-    '''
-    # create columns according to the amount of road points
-    if len(new_test_data['ROAD_POINTS']) > 1:
-        road_points_headers = []
-        for p, i in zip(new_test_data['ROAD_POINTS'], range(1, len(new_test_data['ROAD_POINTS']) + 1)):
-            rp_header_x = 'P{}X'.format(str(i))
-            rp_header_y = 'P{}Y'.format(str(i))
-            new_test_data.update({rp_header_x: p[0]})
-            new_test_data.update({rp_header_y: p[1]})
-            road_points_headers.append(rp_header_x)
-            road_points_headers.append(rp_header_y)
-
-        rp_index = columns.index('ROAD_POINTS')
-        new_column_headers = columns[: rp_index] + road_points_headers + columns[rp_index:]
-        new_column_headers.remove('ROAD_POINTS')
-        del new_test_data['ROAD_POINTS']
-    '''
-
     # if the session exists the code will update the hard dataset with a new entry on current data
     if not curr_sess_is_new:
         new_test_data.update({'TESTSUITE_ID': curr_sess_data_file['testsuite_id']})
