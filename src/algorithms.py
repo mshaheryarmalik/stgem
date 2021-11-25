@@ -196,21 +196,11 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   # TODO: make configurable
   # How much to decrease the target fitness per each round when selecting a
   # new generated test.
-  session.fitness_coef = 0.95
-  # Include tests whose fitness exceed the threshould to the initial critic
-  # training data.
-  session.init_fitness_threshold = 0.1
-  # Include tests whose fitness exceed the threshould to the final critic
-  # training data.
-  session.post_fitness_threshold = 0.5
+  session.fitness_coef = 0.80
   # How many candidate tests to generate per round.
   session.N_candidate_tests = 1
-  # The interval where the probability to remove a sample from the critic
-  # training data lies.
-  session.removal_probability_1 = 0.5
-  session.removal_probability_2 = 0.8
-  # We do not remove a test if its distance to mean is lower than this.
-  session.removal_distance = 0.1
+  # How many buckets are used.
+  session.buckets = 10
   # Stores execution times.
   session.time_total = 0
   session.time_training_total = 0
@@ -225,34 +215,64 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   # How many positive tests were generated.
   session.N_positive_tests = 0
 
-  # Define the function which returns the removal probability from critic
-  # training data.
-  # Currently the idea is to multiply the difference
-  # removal_probability_2 - removal_probability_1 by a sigmoid value which is
-  # computed from the current number of tests generated as follows:
-  #   - the mapping is linear,
-  #   - when 70 % of the tests after the initial tests have are generated, the
-  #   - sigmoid value is -2,
-  #   - when 70 % of the tests after the initial tests have are generated, the
-  #   - sigmoid value is 1,
-  S = lambda x: 1 / (1 + np.exp(-x))
-  alpha = (2 - (-1)) / (0.2 * (session.N_tests - session.random_init))
-  beta = 2 - session.random_init * alpha - (2 - (-1))*(0.9/0.2)
-  R = lambda x: session.removal_probability_1 + (session.removal_probability_2 - session.removal_probability_1) * S(alpha * x + beta)
+  # The weighting function S used to sample training data, we increase the
+  # number a linearly according to the function R.
+  alpha = (6-1)/(session.N_tests - session.random_init) # increase from 1 to 6
+  beta = 6 - alpha*session.N_tests
+  R = lambda x: alpha*x + beta
+  a = R(session.random_init)
+  S = lambda x: 1 / (1 + np.exp(-a*x))
 
-  # Define the function which samples a training set according to
-  # probabilities computed from the training outputs (higher output leads to
-  # higher probability).
-  def training_sample(N, X, Y):
-    # We now use a simple linear function which gives weight 1 to 0 and weight
-    # K to 1.
-    K = 10
-    h = lambda x: (K-1)*x + 1
-    #h = lambda x: 1
-    weights = np.apply_along_axis(h, 1, Y)
-    weights = (weights / np.sum(weights)).reshape(-1)
-    idx = np.random.choice(list(range(X.shape[0])), N, p=weights)
-    return X[idx,:], Y[idx,:]
+  def bucket_sample(N, S):
+    """
+    Samples N bucket indices. The distribution on the indices is defined as
+    follows. Suppose that S is a nonnegative function satisfying
+    S(-x) = 1 - x for all x. Place the middle bucket on 0 and the remaining
+    buckets symmetrically around 0 with first bucket corresponding to -1 and
+    final bucket to 1. Then the weight of the bucket is S(x) where x is its
+    location in [-1, 1].
+    """
+
+    # If the number of buckets is odd, then the middle point of the middle
+    # bucket interval is mapped to 0 and otherwise the point common to the two
+    # middle bucket intervals is mapped to 0.
+    if session.buckets % 2 == 0:
+      h = lambda x: x - (int(session.buckets/2) + 0.0)*(1/session.buckets)
+    else:
+      h = lambda x: x - (int(session.buckets/2) + 0.5)*(1/session.buckets)
+
+    # We basically take the middle point of a bucket interval, map it to
+    # [-1, 1] and apply S on the resulting point to find the
+    # unnormalized bucket weight.
+    weights = np.zeros(shape=(session.buckets))
+    for n in range(session.buckets):
+      weights[n] = S(h((n + 0.5)*(1/session.buckets)))
+    # Normalize weights.
+    weights = (weights / np.sum(weights))
+
+    idx = np.random.choice(list(range(session.buckets)), N, p=weights)
+    return idx
+
+  def training_sample(N, X, Y, B, S):
+    """
+    Samples N elements from X and corresponding values of Y. The sampling is
+    done by picking a bucket and uniformly randomly selecting a test from the
+    bucket. The probability of picking each bucket is computed via the function
+    bucket_sample.
+    """
+
+    sample_X = np.zeros_like(X)
+    sample_Y = np.zeros_like(Y)
+    for n, bucket_idx in enumerate(bucket_sample(N, S)):
+      # If a bucket is empty, try one lower bucket.
+      while len(B[bucket_idx]) == 0:
+        bucket_idx -= 1
+        bucket_idx = bucket_idx % session.buckets
+      idx = np.random.choice(B[bucket_idx])
+      sample_X[n] = X[idx]
+      sample_Y[n] = Y[idx]
+
+    return sample_X, sample_Y
 
   def report_critic(model, test_inputs, test_outputs, test_critic_training):
     """
@@ -270,15 +290,20 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   # ---------------------------------------------------------------------------
   test_inputs = np.zeros(shape=(session.N_tests, model.sut.ndimensions)) # array to hold all generated tests
   test_outputs = np.zeros(shape=(session.N_tests, 1))                    # array to hold test outputs
-  tests_generated = 0                                                  # how many tests are generated so far
-  test_critic_training = []                                            # list which indicates which rows of test_inputs belong to the critic training data
+  test_buckets = {i:[] for i in range(session.buckets)}                  # a dictionary to tell which test is in which bucket
+  tests_generated = 0                                                    # how many tests are generated so far
 
   if session.load_pregenerated_data:
     model.log("Loading pregenerated initial tests.")
     with open(config[sut_id][model_id]["pregenerated_initial_data"], mode="br") as f:
-      test_inputs[:session.random_init,:] = np.load(f)[:session.random_init,:]
-      test_outputs[:session.random_init,:] = np.load(f)[:session.random_init,:]
-      tests_generated = session.random_init
+      data_X = np.load(f)
+      data_Y = np.load(f)
+    idx = np.random.choice(data_X.shape[0], session.random_init)
+    test_inputs[:session.random_init,:] = data_X[idx,:]
+    test_outputs[:session.random_init,:] = data_Y[idx,:]
+    tests_generated = session.random_init
+    del data_X
+    del data_Y
   else:
     model.log("Generating and running {} random valid tests.".format(session.random_init))
     while tests_generated < session.random_init:
@@ -294,19 +319,10 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
       test_outputs[tests_generated - 1,:] = model.sut.execute_test(test)
       model.log("Result: {}".format(test_outputs[tests_generated - 1,0]))
 
-  # TODO: Report the quality of the initial data to session object.
-
-  # Use the tests whose fitness exceeds init_threshold as training data for the
-  # critic.
-  # TODO: What if the number of samples in the training data is very low? What
-  #       if it's zero?
-  test_critic_training = [n for n in range(tests_generated) if test_outputs[n,0] >= session.init_fitness_threshold]
-  # TODO: We are now exiting in case we have nothing to traing with. Should we
-  #       redo the initial phase if the number of samples is too low?
-  if len(test_critic_training) == 0:
-    model.log("No training samples found for the critic.")
-    raise SystemExit
-  session.critic_training_data_history = [test_critic_training.copy()]
+  # Assign the initial tests to buckets.
+  get_bucket = lambda x: int(x*session.buckets) if x < 1.0 else session.buckets-1
+  for n in range(session.random_init):
+    test_buckets[get_bucket(test_outputs[n,0])].append(n)
 
   """
   # Display/save the training data chosen for the critic.
@@ -315,7 +331,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
     save_test(test_inputs[i,:], zeros("critic_", i))
   """
 
-  report_critic(model, test_inputs, test_outputs, test_critic_training)
+  #report_critic(model, test_inputs, test_outputs, test_critic_training)
 
   # Train the model with initial tests.
   # ---------------------------------------------------------------------------
@@ -327,7 +343,11 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
                                   train_settings=model.train_settings_init,
                                   log=True)
   # Train the WGAN.
-  train_X, train_Y = training_sample(model.batch_size, test_inputs[test_critic_training,:], test_outputs[test_critic_training,:])
+  train_X, train_Y = training_sample(model.batch_size,
+                                     test_inputs[:tests_generated,:],
+                                     test_outputs[:tests_generated,:],
+                                     test_buckets,
+                                     S)
   model.train_with_batch(train_X,
                          train_Y,
                          train_settings=model.train_settings_init,
@@ -396,36 +416,9 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
     time_execution_start = time.monotonic()
     test_outputs[tests_generated - 1,:] = model.sut.execute_test(new_test)
     session.time_execution.append(time.monotonic() - time_execution_start)
+    test_buckets[get_bucket(test_outputs[tests_generated - 1,0])].append(tests_generated - 1)
 
     model.log("The actual fitness {} for the generated test.".format(test_outputs[tests_generated - 1,0]))
-
-    # Update critic training data.
-    # -------------------------------------------------------------------------
-    # We always add the new test to critic training data if it is better than
-    # the worst test.
-    idx = np.argmin(test_outputs[test_critic_training,:])
-    worst_fitness = test_outputs[test_critic_training,:][idx][0]
-    if test_outputs[tests_generated - 1,0] >= worst_fitness:
-      model.log("Added the new test to the critic training data.")
-      test_critic_training.append(tests_generated - 1)
-    else:
-      model.log("Didn't add the new test to the critic training data.")
-
-    # Consider if we should remove the worst test.
-    removal_probability = R(tests_generated)
-    model.log("Current removal probability: {}".format(removal_probability))
-    if np.random.random() >= removal_probability:
-      # We do not remove the worst test if its fitness deviates less that 0.1
-      # from the mean of the tests in the critic training data. This is mainly
-      # to prevent removing tests with fitness 1 when the fitness is binary
-      # with values 0 and 1.
-      mean = test_outputs[test_critic_training,:].mean()
-      if mean - worst_fitness > session.removal_distance:
-        model.log("Removing test {} with worst fitness {}.".format(test_inputs[idx, :], worst_fitness))
-        test_critic_training.pop(idx)
-
-    session.critic_training_data_history.append(test_critic_training.copy())
-    report_critic(model, test_inputs, test_outputs, test_critic_training)
 
     # Train the model.
     # -------------------------------------------------------------------------
@@ -437,33 +430,22 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
                                     train_settings=model.train_settings,
                                     log=True)
     # Train the WGAN.
-    train_X, train_Y = training_sample(model.batch_size, test_inputs[test_critic_training,:], test_outputs[test_critic_training,:])
+    a = R(tests_generated)
+    train_X, train_Y = training_sample(model.batch_size,
+                                       test_inputs[:tests_generated, :],
+                                       test_outputs[:tests_generated, :],
+                                       test_buckets,
+                                       S)
     model.train_with_batch(train_X,
                            train_Y,
                            train_settings=model.train_settings,
                            log=True)
     session.time_training.append(time.monotonic() - time_training_start)
 
-  # Get the final training data for the critic.
-  # ---------------------------------------------------------------------------
-  # Use the tests whose fitness exceeds post_threshold as the final training
-  # data for the critic.
-  # TODO: What if the number of samples in the training data is very low? What
-  #       if it's zero?
-  final_test_critic_training = [n for n in range(tests_generated) if test_outputs[n,0] >= session.post_fitness_threshold]
-  # TODO: We are now exiting in case we have nothing to traing with. Should we
-  #       redo the initial phase if the number of samples is too low?
-  if len(final_test_critic_training) == 0:
-    model.log("No training data for the final model.")
-
-  # Train the model on the complete collected data.
-  # ---------------------------------------------------------------------------
-  model.log("Training the final model...")
-  report_critic(model, test_inputs, test_outputs, final_test_critic_training)
-  model.train_with_batch(test_inputs[final_test_critic_training,:],
-                         test_outputs[final_test_critic_training,:],
-                         train_settings=model.train_settings_post,
-                         log=True)
+    # Save a model snapshot if required.
+    session.save_snapshot = True
+    if session.save_snapshot:
+      model.save(zeros("model_snapshot_", tests_generated), session.session_directory)
 
   # Record some information for saving.
   # ---------------------------------------------------------------------------
@@ -478,14 +460,11 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   # ---------------------------------------------------------------------------
   # Save the trained models.
   model.save("init", session.session_directory)
-  model.save("final", session.session_directory)
 
   # Save the training data.
   with open(os.path.join(session.session_directory, "training_data.npy"), mode="wb") as f:
     np.save(f, test_inputs)
     np.save(f, test_outputs)
-    np.save(f, np.array(test_critic_training))
-    np.save(f, np.array(final_test_critic_training))
 
   # Save training parameters.
   with open(os.path.join(session.session_directory, "parameters"), mode="w") as f:

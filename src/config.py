@@ -44,8 +44,8 @@ for sut_id in config["available_sut"]:
                                                    "generator_epochs": 1}
 
   # WGAN defaults.
-  # 1 = something, 2 = increasing removal probability, 3 = WGAN weighted sampling
-  config[sut_id]["wgan"]["algorithm_version"] = 3
+  # 1 = something, 2 = increasing removal probability, 3 = WGAN weighted sampling, 4 = buckets
+  config[sut_id]["wgan"]["algorithm_version"] = 4
   config[sut_id]["wgan"]["noise_dim"] = 100
   config[sut_id]["wgan"]["gan_neurons"] = 128
   config[sut_id]["wgan"]["gan_learning_rate"] = 0.00005
@@ -70,12 +70,14 @@ config["odroid"]["file_base"] = os.path.join(config["odroid"]["data_directory"],
 config["odroid"]["output"] = 1
 config["odroid"]["fitness_threshold"] = 6.0
 
-config["sbst_validator"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
-#config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
+#config["sbst_validator"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
+config["sbst_validator"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.research.v1.7.0.1"
+#config["sbst_validator"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 config["sbst_validator"]["map_size"] = 200
 config["sbst_validator"]["curvature_points"] = 5
 
-config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
+#config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
+config["sbst"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.research.v1.7.0.1"
 #config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 config["sbst"]["map_size"] = 200
 config["sbst"]["curvature_points"] = 5
@@ -109,14 +111,8 @@ config["session_attributes"]["ogan"] = ["N_tests",
 config["session_attributes"]["wgan"] = ["N_tests",
                                         "random_init",
                                         "fitness_coef",
-                                        "init_fitness_threshold",
-                                        "post_fitness_threshold",
                                         "N_candidate_tests",
-                                        "removal_probability_1",
-                                        "removal_probability_2",
-                                        "removal_distance",
                                         "load_pregenerated_data",
-                                        "critic_training_data_history",
                                         "N_tests_generated",
                                         "N_invalid_tests_generated",
                                         "N_positive_tests",
