@@ -19,12 +19,13 @@ if __name__ == "__main__":
   enable_log_printout = True
   enable_view = False
   enable_save = True
+  model_snapshot = True
   load_pregenerated_data = False
 
   # Initialize the model and viewing and saving mechanisms.
   # ---------------------------------------------------------------------------
   logger = Logger(quiet=not enable_log_printout)
-  model, _view_test, _save_test = get_model(sut_id, model_id, logger)
+  model, _view_test, _save_test = get_model(sut_id, model_id, logger, model_snapshot)
 
   session = Session(model_id, sut_id)
   session.load_pregenerated_data = load_pregenerated_data

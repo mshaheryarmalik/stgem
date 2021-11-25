@@ -8,7 +8,7 @@ import numpy as np
 
 from config import config
 
-def main_ogan(model_id, sut_id, model, session, view_test, save_test):
+def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snapshot=False):
   """
   The OGAN algorithm for generating a test suite.
   """
@@ -45,9 +45,14 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test):
   if session.load_pregenerated_data:
     model.log("Loading pregenerated initial tests.")
     with open(config[sut_id][model_id]["pregenerated_initial_data"], mode="br") as f:
-      test_inputs[:session.random_init,:] = np.load(f)[:session.random_init,:]
-      test_outputs[:session.random_init,:] = np.load(f)[:session.random_init,:]
-      tests_generated = session.random_init
+      data_X = np.load(f)
+      data_Y = np.load(f)
+    idx = np.random.choice(data_X.shape[0], session.random_init)
+    test_inputs[:session.random_init,:] = data_X[idx,:]
+    test_outputs[:session.random_init,:] = data_Y[idx,:]
+    tests_generated = session.random_init
+    del data_X
+    del data_Y
   else:
     model.log("Generating and running {} random valid tests.".format(session.random_init))
     while tests_generated < session.random_init:
@@ -148,9 +153,9 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test):
                            log=True)
     session.time_training.append(time.monotonic() - time_training_start)
 
-  # Train the model on the complete collected data.
-  # ---------------------------------------------------------------------------
-  # TODO
+    # Save a model snapshot if required.
+    if save_snapshot:
+      model.save(zeros("model_snapshot_", tests_generated), session.session_directory)
 
   # Record some information for saving.
   # ---------------------------------------------------------------------------
@@ -185,7 +190,7 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test):
 
   return test_inputs, test_outputs
 
-def main_wgan(model_id, sut_id, model, session, view_test, save_test):
+def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snapshot=False):
   """
   The WGAN algorithm for generating a test suite.
   """
@@ -274,16 +279,6 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
 
     return sample_X, sample_Y
 
-  def report_critic(model, test_inputs, test_outputs, test_critic_training):
-    """
-    Report some statistics on the critic training data.
-    """
-
-    data = test_outputs[test_critic_training,:]
-    mu = data.mean(0)[0]
-    sigma = data.std(0)[0]
-    model.log("Critic training data has {} samples with mean {} and std {}.".format(len(test_critic_training), mu, sigma))
-
   time_total_start = time.monotonic()
 
   # Generate initial tests randomly.
@@ -323,15 +318,6 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
   get_bucket = lambda x: int(x*session.buckets) if x < 1.0 else session.buckets-1
   for n in range(session.random_init):
     test_buckets[get_bucket(test_outputs[n,0])].append(n)
-
-  """
-  # Display/save the training data chosen for the critic.
-  for i in test_critic_training:
-    #view_test(test_inputs[i,:])
-    save_test(test_inputs[i,:], zeros("critic_", i))
-  """
-
-  #report_critic(model, test_inputs, test_outputs, test_critic_training)
 
   # Train the model with initial tests.
   # ---------------------------------------------------------------------------
@@ -443,8 +429,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
     session.time_training.append(time.monotonic() - time_training_start)
 
     # Save a model snapshot if required.
-    session.save_snapshot = True
-    if session.save_snapshot:
+    if save_snapshot:
       model.save(zeros("model_snapshot_", tests_generated), session.session_directory)
 
   # Record some information for saving.
@@ -479,7 +464,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test):
 
   return test_inputs, test_outputs
 
-def main_random(model_id, sut_id, model, session, view_test, save_test):
+def main_random(model_id, sut_id, model, session, view_test, save_test, model_snapshot=False):
   """
   Baseline random algorithm for generating a test suite.
   """

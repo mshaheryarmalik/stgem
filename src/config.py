@@ -86,8 +86,6 @@ config["sbst"]["max_speed"] = 70
 
 config["sbst"]["wgan"]["train_settings_init"]["epochs"] = 3
 config["sbst"]["wgan"]["train_settings_init"]["analyzer_epochs"] = 20
-config["sbst"]["wgan"]["train_settings_init"]["critic_epochs"] = 10
-config["sbst"]["wgan"]["train_settings_init"]["generator_epochs"] = 1
 config["sbst"]["wgan"]["train_settings"]["analyzer_epochs"] = 10
 
 # Session configs.

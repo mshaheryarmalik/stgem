@@ -97,7 +97,7 @@ class OGAN(Model):
     self.noise_dim = None
     # Number of neurons per layer in the neural networks.
     self.gan_neurons = None
-    # Learning rate for WGAN optimizers.
+    # Learning rate for OGAN optimizers.
     self.gan_learning_rate = None
 
   def initialize(self):
