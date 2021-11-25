@@ -20,12 +20,12 @@ if __name__ == "__main__":
   enable_view = False
   enable_save = True
   model_snapshot = True
-  load_pregenerated_data = False
+  load_pregenerated_data = True
 
   # Initialize the model and viewing and saving mechanisms.
   # ---------------------------------------------------------------------------
   logger = Logger(quiet=not enable_log_printout)
-  model, _view_test, _save_test = get_model(sut_id, model_id, logger, model_snapshot)
+  model, _view_test, _save_test = get_model(sut_id, model_id, logger)
 
   session = Session(model_id, sut_id)
   session.load_pregenerated_data = load_pregenerated_data
@@ -42,7 +42,7 @@ if __name__ == "__main__":
   call_dict = {"ogan":main_ogan,
                "wgan":main_wgan,
                "random":main_random}
-  test_inputs, test_outputs = call_dict[model_id](model_id, sut_id, model, session, view_test, save_test)
+  test_inputs, test_outputs = call_dict[model_id](model_id, sut_id, model, session, view_test, save_test, model_snapshot)
 
   # Evaluate the generated tests.
   # ---------------------------------------------------------------------------

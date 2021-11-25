@@ -337,9 +337,9 @@ class WGAN(Model):
 
     # Initialize the analyzer.
     #self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
-    self.analyzer = Analyzer_NN_weighted(self.sut.ndimensions, self.device, self.logger)
+    #self.analyzer = Analyzer_NN_weighted(self.sut.ndimensions, self.device, self.logger)
     #self.analyzer = Analyzer_RandomForest(self.sut.ndimensions, self.device, self.logger)
-    #self.analyzer = Analyzer_Distance(self.sut.ndimensions, sut, self.device, self.logger)
+    self.analyzer = Analyzer_Distance(self.sut.ndimensions, self.sut, self.device, self.logger)
     #self.analyzer = Analyzer_KNN(self.sut.ndimensions, self.device, self.logger)
 
     # Optimizers.
