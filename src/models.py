@@ -337,9 +337,9 @@ class WGAN(Model):
 
     # Initialize the analyzer.
     #self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
-    #self.analyzer = Analyzer_NN_weighted(self.sut.ndimensions, self.device, self.logger)
+    self.analyzer = Analyzer_NN_weighted(self.sut.ndimensions, self.device, self.logger)
     #self.analyzer = Analyzer_RandomForest(self.sut.ndimensions, self.device, self.logger)
-    self.analyzer = Analyzer_Distance(self.sut.ndimensions, self.sut, self.device, self.logger)
+    #self.analyzer = Analyzer_Distance(self.sut.ndimensions, self.sut, self.device, self.logger)
     #self.analyzer = Analyzer_KNN(self.sut.ndimensions, self.device, self.logger)
 
     # Optimizers.
@@ -482,7 +482,7 @@ class WGAN(Model):
         # We add epsilon for stability.
         epsilon = 0.000001
         gradients_norms = torch.sqrt(torch.sum(gradients**2, dim=1) + epsilon)
-        gradient_penalty = gradients_norms.mean()
+        gradient_penalty = ((gradients_norms - 1)**2).mean()
         #gradient_penalty = ((torch.linalg.norm(gradients, dim=1) - 1)**2).mean()
 
         C_loss = fake_loss - real_loss + self.gp_coefficient*gradient_penalty

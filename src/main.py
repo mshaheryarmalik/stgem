@@ -20,7 +20,7 @@ if __name__ == "__main__":
   enable_view = False
   enable_save = True
   model_snapshot = True
-  load_pregenerated_data = True
+  load_pregenerated_data = False
 
   # Initialize the model and viewing and saving mechanisms.
   # ---------------------------------------------------------------------------
