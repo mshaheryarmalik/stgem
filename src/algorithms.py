@@ -154,7 +154,7 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snap
     session.time_training.append(time.monotonic() - time_training_start)
 
     # Save a model snapshot if required.
-    if save_snapshot:
+    if model_snapshot:
       model.save(zeros("model_snapshot_", tests_generated), session.session_directory)
 
   # Record some information for saving.
@@ -429,8 +429,8 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
     session.time_training.append(time.monotonic() - time_training_start)
 
     # Save a model snapshot if required.
-    if save_snapshot:
-      model.save(zeros("model_snapshot_", tests_generated), session.session_directory)
+    if model_snapshot:
+        model.save(zeros("model_snapshot_", tests_generated), session.session_directory)
 
   # Record some information for saving.
   # ---------------------------------------------------------------------------
