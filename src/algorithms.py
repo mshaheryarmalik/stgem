@@ -220,22 +220,25 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
   # How many positive tests were generated.
   session.N_positive_tests = 0
 
-  # The weighting function S used to sample training data, we increase the
-  # number a linearly according to the function R.
-  alpha = (6-1)/(session.N_tests - session.random_init) # increase from 1 to 6
-  beta = 6 - alpha*session.N_tests
+  # The shift for sampling training data. We increase the number a linearly
+  # according to the function R.
+  a0 = 0 # initial value
+  a1 = 3.0 # final value
+  alpha = (a1-a0)/(session.N_tests - session.random_init)
+  beta = a1 - alpha*session.N_tests
   R = lambda x: alpha*x + beta
-  a = R(session.random_init)
-  S = lambda x: 1 / (1 + np.exp(-a*x))
+  S = lambda x: 1 / (1 + np.exp(-5*x))
 
-  def bucket_sample(N, S):
+  def bucket_sample(N, S, shift):
     """
     Samples N bucket indices. The distribution on the indices is defined as
     follows. Suppose that S is a nonnegative function satisfying
-    S(-x) = 1 - x for all x. Place the middle bucket on 0 and the remaining
-    buckets symmetrically around 0 with first bucket corresponding to -1 and
-    final bucket to 1. Then the weight of the bucket is S(x) where x is its
-    location in [-1, 1].
+    S(-x) = 1 - x for all x. Consider the middle points of the buckets. We map
+    the middle point of the middle bucket to 0 and the remaining middle points
+    symmetrically around 0 with first middle point corresponding to -1 and the
+    final to 1. We then shift these mapped middle points to the left by the
+    given amount. The weight of the bucket will is S(x) where x is the mapped
+    and shifted middle point.
     """
 
     # If the number of buckets is odd, then the middle point of the middle
@@ -251,14 +254,14 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
     # unnormalized bucket weight.
     weights = np.zeros(shape=(session.buckets))
     for n in range(session.buckets):
-      weights[n] = S(h((n + 0.5)*(1/session.buckets)))
+      weights[n] = S(h((n + 0.5)*(1/session.buckets)) - shift)
     # Normalize weights.
     weights = (weights / np.sum(weights))
 
     idx = np.random.choice(list(range(session.buckets)), N, p=weights)
     return idx
 
-  def training_sample(N, X, Y, B, S):
+  def training_sample(N, X, Y, B, S, shift):
     """
     Samples N elements from X and corresponding values of Y. The sampling is
     done by picking a bucket and uniformly randomly selecting a test from the
@@ -268,7 +271,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
 
     sample_X = np.zeros_like(X)
     sample_Y = np.zeros_like(Y)
-    for n, bucket_idx in enumerate(bucket_sample(N, S)):
+    for n, bucket_idx in enumerate(bucket_sample(N, S, shift)):
       # If a bucket is empty, try one lower bucket.
       while len(B[bucket_idx]) == 0:
         bucket_idx -= 1
@@ -333,7 +336,8 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
                                      test_inputs[:tests_generated,:],
                                      test_outputs[:tests_generated,:],
                                      test_buckets,
-                                     S)
+                                     S,
+                                     R(tests_generated))
   model.train_with_batch(train_X,
                          train_Y,
                          train_settings=model.train_settings_init,
@@ -416,12 +420,12 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
                                     train_settings=model.train_settings,
                                     log=True)
     # Train the WGAN.
-    a = R(tests_generated)
     train_X, train_Y = training_sample(model.batch_size,
                                        test_inputs[:tests_generated, :],
                                        test_outputs[:tests_generated, :],
                                        test_buckets,
-                                       S)
+                                       S,
+                                       R(tests_generated))
     model.train_with_batch(train_X,
                            train_Y,
                            train_settings=model.train_settings,
