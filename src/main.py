@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
   enable_log_printout = True
   enable_view = False
-  enable_save = True
+  enable_save = False
   model_snapshot = True
   load_pregenerated_data = False
 

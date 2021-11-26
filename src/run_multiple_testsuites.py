@@ -2,7 +2,7 @@ import os
 import subprocess, sys
 import pathlib
 
-command = 'python main.py'
+command = 'C:\\Users\\japeltom\\AppData\\Local\\Programs\\Python\\Python39\\python.exe main.py'
 
 
 def run_on_powershell(scpt):
@@ -13,5 +13,5 @@ def run_on_powershell(scpt):
     p.communicate()
 
 
-for i in range(30):
+for i in range(5):
     run_on_powershell(command)
