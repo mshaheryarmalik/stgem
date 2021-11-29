@@ -47,7 +47,7 @@ class Model:
 
   @property
   def parameters(self):
-    return {k:getattr(self, k) for k in self.saved_parameters}
+    return {k:getattr(self, k) for k in self.saved_parameters if hasattr(self, k)}
 
   def train_with_batch(self, dataX, dataY, train_settings, log=False):
     raise NotImplementedError()

@@ -34,6 +34,23 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snap
   # How many positive tests were generated.
   session.N_positive_tests = 0
 
+  def save_progress():
+    # Save the training data.
+    with open(os.path.join(session.session_directory, "training_data.npy"), mode="wb") as f:
+      np.save(f, test_inputs)
+      np.save(f, test_outputs)
+
+    # Save training parameters.
+    with open(os.path.join(session.session_directory, "parameters"), mode="w") as f:
+      f.write(json.dumps(model.parameters))
+
+    # Save session parameters.
+    with open(os.path.join(session.session_directory, "session_parameters"), mode="w") as f:
+      f.write(json.dumps(session.parameters))
+
+    # Save the log.
+    model.logger.save(os.path.join(session.session_directory, "session.log"))
+
   time_total_start = time.monotonic()
 
   # Generate initial tests randomly.
@@ -153,6 +170,8 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snap
                            log=True)
     session.time_training.append(time.monotonic() - time_training_start)
 
+    # Save partial training data, logs, etc.
+    save_progress()
     # Save a model snapshot if required.
     if model_snapshot:
       model.save(zeros("model_snapshot_", tests_generated), session.session_directory)
@@ -168,25 +187,8 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snap
 
   # Save everything
   # ---------------------------------------------------------------------------
-  # Save the trained models.
-  model.save("init", session.session_directory)
-  #model.save("final", session.session_directory)
-
-  # Save the training data.
-  with open(os.path.join(session.session_directory, "training_data.npy"), mode="wb") as f:
-    np.save(f, test_inputs)
-    np.save(f, test_outputs)
-
-  # Save training parameters.
-  with open(os.path.join(session.session_directory, "parameters"), mode="w") as f:
-    f.write(json.dumps(model.parameters))
-
-  # Save session parameters.
-  with open(os.path.join(session.session_directory, "session_parameters"), mode="w") as f:
-    f.write(json.dumps(session.parameters))
-
-  # Save the log.
-  model.logger.save(os.path.join(session.session_directory, "session.log"))
+  model.save("final", session.session_directory)
+  save_progress()
 
   return test_inputs, test_outputs
 
@@ -281,6 +283,23 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
       sample_Y[n] = Y[idx]
 
     return sample_X, sample_Y
+
+  def save_progress():
+    # Save the training data.
+    with open(os.path.join(session.session_directory, "training_data.npy"), mode="wb") as f:
+      np.save(f, test_inputs)
+      np.save(f, test_outputs)
+
+    # Save training parameters.
+    with open(os.path.join(session.session_directory, "parameters"), mode="w") as f:
+      f.write(json.dumps(model.parameters))
+
+    # Save session parameters.
+    with open(os.path.join(session.session_directory, "session_parameters"), mode="w") as f:
+      f.write(json.dumps(session.parameters))
+
+    # Save the log.
+    model.logger.save(os.path.join(session.session_directory, "session.log"))
 
   time_total_start = time.monotonic()
 
@@ -432,6 +451,9 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
                            log=True)
     session.time_training.append(time.monotonic() - time_training_start)
 
+    # Save partial training data, logs, etc.
+    save_progress()
+
     # Save a model snapshot if required.
     if model_snapshot:
         model.save(zeros("model_snapshot_", tests_generated), session.session_directory)
@@ -447,24 +469,8 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
 
   # Save everything
   # ---------------------------------------------------------------------------
-  # Save the trained models.
-  model.save("init", session.session_directory)
-
-  # Save the training data.
-  with open(os.path.join(session.session_directory, "training_data.npy"), mode="wb") as f:
-    np.save(f, test_inputs)
-    np.save(f, test_outputs)
-
-  # Save training parameters.
-  with open(os.path.join(session.session_directory, "parameters"), mode="w") as f:
-    f.write(json.dumps(model.parameters))
-
-  # Save session parameters.
-  with open(os.path.join(session.session_directory, "session_parameters"), mode="w") as f:
-    f.write(json.dumps(session.parameters))
-
-  # Save the log.
-  model.logger.save(os.path.join(session.session_directory, "session.log"))
+  model.save("final", session.session_directory)
+  save_progress()
 
   return test_inputs, test_outputs
 
@@ -489,6 +495,23 @@ def main_random(model_id, sut_id, model, session, view_test, save_test, model_sn
   session.N_invalid_tests_generated = []
   # How many positive tests were generated.
   session.N_positive_tests = 0
+
+  def save_progress():
+    # Save training data.
+    with open(os.path.join(session.session_directory, "training_data.npy"), mode="wb") as f:
+      np.save(f, test_inputs)
+      np.save(f, test_outputs)
+
+    # Save training parameters.
+    with open(os.path.join(session.session_directory, "parameters"), mode="w") as f:
+      f.write(json.dumps(model.parameters))
+
+    # Save session parameters.
+    with open(os.path.join(session.session_directory, "session_parameters"), mode="w") as f:
+      f.write(json.dumps(session.parameters))
+
+    # Save the log.
+    model.logger.save(os.path.join(session.session_directory, "session.log"))
 
   time_total_start = time.monotonic()
 
@@ -536,6 +559,9 @@ def main_random(model_id, sut_id, model, session, view_test, save_test, model_sn
 
     model.log("The actual fitness {} for the generated test.".format(test_outputs[tests_generated - 1,0]))
 
+    # Save partial training data, logs, etc.
+    save_progress()
+
   # Record some information for saving.
   # ---------------------------------------------------------------------------
   session.N_positive_tests = int(sum(test_outputs >= model.sut.target)[0])
@@ -547,21 +573,7 @@ def main_random(model_id, sut_id, model, session, view_test, save_test, model_sn
  
   # Save everything
   # ---------------------------------------------------------------------------
-  # Save training data.
-  with open(os.path.join(session.session_directory, "training_data.npy"), mode="wb") as f:
-    np.save(f, test_inputs)
-    np.save(f, test_outputs)
-
-  # Save training parameters.
-  with open(os.path.join(session.session_directory, "parameters"), mode="w") as f:
-    f.write(json.dumps(model.parameters))
-
-  # Save session parameters.
-  with open(os.path.join(session.session_directory, "session_parameters"), mode="w") as f:
-    f.write(json.dumps(session.parameters))
-
-  # Save the log.
-  model.logger.save(os.path.join(session.session_directory, "session.log"))
+  save_progress()
 
   return test_inputs, test_outputs
 
