@@ -13,5 +13,5 @@ def run_on_powershell(scpt):
     p.communicate()
 
 
-for i in range(5):
+for i in range(30):
     run_on_powershell(command)

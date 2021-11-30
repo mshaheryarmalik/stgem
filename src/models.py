@@ -92,7 +92,7 @@ class OGAN(Model):
     super().__init__(sut, validator, device, logger)
 
     # These parameters are set externally.
-    self.saved_parameters += ["noise_dim", "gan_neurons", "gan_learning_rate"]
+    self.saved_parameters += ["noise_dim", "gan_neurons", "gan_learning_rate", "analyzer_learning_rate", "analyzer_neurons"]
     # Input dimension for the noise inputted to the generator.
     self.noise_dim = None
     # Number of neurons per layer in the neural networks.
@@ -316,7 +316,7 @@ class WGAN(Model):
     super().__init__(sut, validator, device, logger)
 
     # These parameters are set externally.
-    self.saved_parameters += ["noise_dim", "gan_neurons", "gp_coefficient", "gan_learning_rate"]
+    self.saved_parameters += ["noise_dim", "gan_neurons", "gp_coefficient", "gan_learning_rate", "analyzer_learning_rate", "analyzer_neurons"]
     # Input dimension for the noise inputted to the generator.
     self.noise_dim = None
     # Number of neurons per layer in the neural networks.
@@ -325,6 +325,8 @@ class WGAN(Model):
     self.gp_coefficient = None
     # Learning rate for WGAN optimizers.
     self.gan_learning_rate = None
+    # Learning rate for the analyzer optimizer.
+    self.analyzer_learning_rate = None
 
   def initialize(self):
     """
@@ -337,10 +339,13 @@ class WGAN(Model):
 
     # Initialize the analyzer.
     #self.analyzer = Analyzer_NN(self.sut.ndimensions, self.device, self.logger)
-    self.analyzer = Analyzer_NN_weighted(self.sut.ndimensions, self.device, self.logger)
+    self.analyzer = Analyzer_NN_weighted_new(self.sut.ndimensions, self.device, self.logger)
     #self.analyzer = Analyzer_RandomForest(self.sut.ndimensions, self.device, self.logger)
     #self.analyzer = Analyzer_Distance(self.sut.ndimensions, self.sut, self.device, self.logger)
     #self.analyzer = Analyzer_KNN(self.sut.ndimensions, self.device, self.logger)
+    self.analyzer.learning_rate = self.analyzer_learning_rate
+    self.analyzer.neurons = self.analyzer_neurons
+    self.analyzer.initialize()
 
     # Optimizers.
     # TODO: Make additional parameters configurable.

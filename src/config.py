@@ -32,7 +32,9 @@ for sut_id in config["available_sut"]:
   # OGAN defaults.
   config[sut_id]["ogan"]["noise_dim"] = 100
   config[sut_id]["ogan"]["gan_neurons"] = 128
-  config[sut_id]["wgan"]["gan_learning_rate"] = 0.001
+  config[sut_id]["ogan"]["gan_learning_rate"] = 0.001
+  config[sut_id]["ogan"]["analyzer_learning_rate"] = 0.001
+  config[sut_id]["ogan"]["analyzer_neurons"] = 32
   config[sut_id]["ogan"]["train_settings_init"] = {"epochs": 2,
                                                    "discriminator_epochs": 20,
                                                    "generator_epochs": 1}
@@ -49,6 +51,8 @@ for sut_id in config["available_sut"]:
   config[sut_id]["wgan"]["noise_dim"] = 100
   config[sut_id]["wgan"]["gan_neurons"] = 128
   config[sut_id]["wgan"]["gan_learning_rate"] = 0.00005
+  config[sut_id]["wgan"]["analyzer_learning_rate"] = 0.001
+  config[sut_id]["wgan"]["analyzer_neurons"] = 32
   config[sut_id]["wgan"]["gp_coefficient"] = 10
   config[sut_id]["wgan"]["batch_size"] = 32
   config[sut_id]["wgan"]["train_settings_init"] = {"epochs": 2,
@@ -247,6 +251,8 @@ def get_model(sut_id, model_id, logger=None):
     model.noise_dim = config[sut_id][model_id]["noise_dim"]
     model.gan_neurons = config[sut_id][model_id]["gan_neurons"]
     model.gan_learning_rate = config[sut_id][model_id]["gan_learning_rate"]
+    model.analyzer_learning_rate = config[sut_id][model_id]["analyzer_learning_rate"]
+    model.analyzer_neurons = config[sut_id][model_id]["analyzer_neurons"]
 
   if model_id == "wgan":
     model.gp_coefficient = config[sut_id][model_id]["gp_coefficient"]
