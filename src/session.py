@@ -23,7 +23,7 @@ class Session:
 
   @property
   def parameters(self):
-    return {k:getattr(self, k) for k in self.saved_parameters}
+    return {k:getattr(self, k) for k in self.saved_parameters if hasattr(self, k)}
 
   def add_saved_parameter(self, *parameters):
     for parameter in parameters:
