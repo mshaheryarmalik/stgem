@@ -211,8 +211,8 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   session.fitness_coef = 0.95
   # How many candidate tests to generate per round.
   session.N_candidate_tests = 1
-  # How many buckets are used.
-  session.buckets = 10
+  # How many bins are used.
+  session.bins = 10
   # Stores execution times.
   session.time_total = 0
   session.time_training_total = 0
@@ -236,54 +236,53 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   R = lambda x: alpha*x + beta
   S = lambda x: 1 / (1 + np.exp(-5*x))
 
-  def bucket_sample(N, S, shift):
+  def bin_sample(N, S, shift):
     """
-    Samples N bucket indices. The distribution on the indices is defined as
+    Samples N bin indices. The distribution on the indices is defined as
     follows. Suppose that S is a nonnegative function satisfying
-    S(-x) = 1 - x for all x. Consider the middle points of the buckets. We map
-    the middle point of the middle bucket to 0 and the remaining middle points
+    S(-x) = 1 - x for all x. Consider the middle points of the bins. We map
+    the middle point of the middle bin to 0 and the remaining middle points
     symmetrically around 0 with first middle point corresponding to -1 and the
     final to 1. We then shift these mapped middle points to the left by the
-    given amount. The weight of the bucket will is S(x) where x is the mapped
+    given amount. The weight of the bin will is S(x) where x is the mapped
     and shifted middle point.
     """
 
-    # If the number of buckets is odd, then the middle point of the middle
-    # bucket interval is mapped to 0 and otherwise the point common to the two
-    # middle bucket intervals is mapped to 0.
-    if session.buckets % 2 == 0:
-      h = lambda x: x - (int(session.buckets/2) + 0.0)*(1/session.buckets)
+    # If the number of bins is odd, then the middle point of the middle bin
+    # interval is mapped to 0 and otherwise the point common to the two middle
+    # bin intervals is mapped to 0.
+    if session.bins % 2 == 0:
+      h = lambda x: x - (int(session.bins/2) + 0.0)*(1/session.bins)
     else:
-      h = lambda x: x - (int(session.buckets/2) + 0.5)*(1/session.buckets)
+      h = lambda x: x - (int(session.bins/2) + 0.5)*(1/session.bins)
 
-    # We basically take the middle point of a bucket interval, map it to
-    # [-1, 1] and apply S on the resulting point to find the
-    # unnormalized bucket weight.
-    weights = np.zeros(shape=(session.buckets))
-    for n in range(session.buckets):
-      weights[n] = S(h((n + 0.5)*(1/session.buckets)) - shift)
+    # We basically take the middle point of a bin interval, map it to [-1, 1]
+    # and apply S on the resulting point to find the unnormalized bin weight.
+    weights = np.zeros(shape=(session.bins))
+    for n in range(session.bins):
+      weights[n] = S(h((n + 0.5)*(1/session.bins)) - shift)
     # Normalize weights.
     weights = (weights / np.sum(weights))
 
-    idx = np.random.choice(list(range(session.buckets)), N, p=weights)
+    idx = np.random.choice(list(range(session.bins)), N, p=weights)
     return idx
 
   def training_sample(N, X, Y, B, S, shift):
     """
     Samples N elements from X and corresponding values of Y. The sampling is
-    done by picking a bucket and uniformly randomly selecting a test from the
-    bucket. The probability of picking each bucket is computed via the function
-    bucket_sample.
+    done by picking a bin and uniformly randomly selecting a test from the bin.
+    The probability of picking each bin is computed via the function
+    bin_sample.
     """
 
     sample_X = np.zeros_like(X)
     sample_Y = np.zeros_like(Y)
-    for n, bucket_idx in enumerate(bucket_sample(N, S, shift)):
-      # If a bucket is empty, try one lower bucket.
-      while len(B[bucket_idx]) == 0:
-        bucket_idx -= 1
-        bucket_idx = bucket_idx % session.buckets
-      idx = np.random.choice(B[bucket_idx])
+    for n, bin_idx in enumerate(bin_sample(N, S, shift)):
+      # If a bin is empty, try one lower bin.
+      while len(B[bin_idx]) == 0:
+        bin_idx -= 1
+        bin_idx = bin_idx % session.bins
+      idx = np.random.choice(B[bin_idx])
       sample_X[n] = X[idx]
       sample_Y[n] = Y[idx]
 
@@ -320,10 +319,11 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   # ---------------------------------------------------------------------------
   test_inputs = np.zeros(shape=(session.N_tests, model.sut.ndimensions)) # array to hold all generated tests
   test_outputs = np.zeros(shape=(session.N_tests, 1))                    # array to hold test outputs
-  test_buckets = {i:[] for i in range(session.buckets)}                  # a dictionary to tell which test is in which bucket
+  test_bins = {i:[] for i in range(session.bins)}                        # a dictionary to tell which test is in which bin
   tests_generated = 0                                                    # how many tests are generated so far
 
   if session.load_pregenerated_data:
+    # TODO: It is possible that a test is selected twice. Avoid this.
     model.log("Loading pregenerated initial tests.")
     with open(config[sut_id][model_id]["pregenerated_initial_data"], mode="br") as f:
       data_X = np.load(f)
@@ -336,23 +336,37 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
     del data_Y
   else:
     model.log("Generating and running {} random valid tests.".format(session.random_init))
+    time_generation_start = time.monotonic()
+    invalid = 0
     while tests_generated < session.random_init:
       test = model.sut.sample_input_space()
-      if model.validity(test)[0,0] == 0: continue
+      if model.validity(test)[0,0] == 0:
+        invalid += 1
+        continue
       test_inputs[tests_generated,:] = test
       tests_generated += 1
+
+      # Save information on how many tests needed to be generated etc.
+      session.time_generation.append(time.monotonic() - time_generation_start)
+      session.N_tests_generated.append(invalid + 1)
+      session.N_invalid_tests_generated.append(invalid)
 
       view_test(test)
       save_test(test, zeros("init_", tests_generated))
 
       model.log("Executing {} ({}/{})".format(test, tests_generated, session.random_init))
+      time_execution_start = time.monotonic()
       test_outputs[tests_generated - 1,:] = model.sut.execute_test(test)
+      session.time_execution.append(time.monotonic() - time_execution_start)
       model.log("Result: {}".format(test_outputs[tests_generated - 1,0]))
 
-  # Assign the initial tests to buckets.
-  get_bucket = lambda x: int(x*session.buckets) if x < 1.0 else session.buckets-1
+      time_generation_start = time.monotonic()
+      invalid = 0
+
+  # Assign the initial tests to bins.
+  get_bin = lambda x: int(x*session.bins) if x < 1.0 else session.bins-1
   for n in range(session.random_init):
-    test_buckets[get_bucket(test_outputs[n,0])].append(n)
+    test_bins[get_bin(test_outputs[n,0])].append(n)
 
   # Train the model with initial tests.
   # ---------------------------------------------------------------------------
@@ -367,7 +381,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   train_X, train_Y = training_sample(model.batch_size,
                                      test_inputs[:tests_generated,:],
                                      test_outputs[:tests_generated,:],
-                                     test_buckets,
+                                     test_bins,
                                      S,
                                      R(tests_generated))
   model.train_with_batch(train_X,
@@ -443,7 +457,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
     time_execution_start = time.monotonic()
     test_outputs[tests_generated - 1,:] = model.sut.execute_test(best_test)
     session.time_execution.append(time.monotonic() - time_execution_start)
-    test_buckets[get_bucket(test_outputs[tests_generated - 1,0])].append(tests_generated - 1)
+    test_bins[get_bin(test_outputs[tests_generated - 1,0])].append(tests_generated - 1)
 
     model.log("The actual fitness {} for the generated test.".format(test_outputs[tests_generated - 1,0]))
 
@@ -460,7 +474,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
     train_X, train_Y = training_sample(model.batch_size,
                                        test_inputs[:tests_generated, :],
                                        test_outputs[:tests_generated, :],
-                                       test_buckets,
+                                       test_bins,
                                        S,
                                        R(tests_generated))
     model.train_with_batch(train_X,
