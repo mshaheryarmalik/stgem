@@ -264,8 +264,10 @@ class Analyzer_NN_weighted_new(Analyzer_NN):
     # Train the analyzer.
     # -----------------------------------------------------------------------
     self.modelA.train(True)
+    running_loss = 0.0
     for m in range(analyzer_epochs):
       A_loss = self.analyzer_loss(data_X, data_Y)
+      running_loss += A_loss
       self.optimizerA.zero_grad()
       A_loss.backward()
       self.optimizerA.step()
@@ -277,6 +279,8 @@ class Analyzer_NN_weighted_new(Analyzer_NN):
     #print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
 
     self.modelA.train(training_A)
+
+    return running_loss / analyzer_epochs
 
 class Analyzer_NN_weighted(Analyzer_NN):
   """
@@ -397,6 +401,132 @@ class Analyzer_NN_weighted(Analyzer_NN):
     #print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
 
     self.modelA.train(training_A)
+
+class Analyzer_NN_classifier(Analyzer_NN):
+  """
+  Analyzer using classification in place of regression.
+  """
+
+  def __init__(self, input_dimension, device, logger=None):
+    super().__init__(input_dimension, device, logger)
+
+    # Notice that several attributes are set by the initializer of the class
+    # Analyzer_NN.
+
+    # How many classes are used for classification.
+    self.classes = 10
+
+  def initialize(self):
+    """
+    Initialize the class.
+    """
+
+    # Initialize the neural network.
+    self.modelA = neural_networks.wgan.analyzer.AnalyzerNetwork_classifier(classes=self.classes, input_shape=self.ndimensions, neurons=self.neurons).to(self.device)
+
+    # Initialize the main loss.
+    self.loss = torch.nn.CrossEntropyLoss()
+
+    # Initialize the optimizer.
+    self.optimizerA = torch.optim.Adam(self.modelA.parameters(), lr=self.learning_rate, betas=(0, 0.9))
+
+  def put_to_class(self, Y):
+    """
+    Classifies the floats in Y.
+    """
+
+    Z = (Y*self.classes).int()
+    return (Z - (Z == self.classes).int()).long()
+
+  def analyzer_loss(self, data_X, data_Y):
+    """
+    Computes the analyzer loss for data_X given real outputs data_Y.
+    """
+
+    model_loss = self.loss(self.modelA(data_X), data_Y.reshape(-1))
+
+    # Compute L2 regularization.
+    l2_regularization = 0
+    for parameter in self.modelA.parameters():
+      l2_regularization += torch.sum(torch.square(parameter))
+
+    # TODO: make configurable
+    A_loss = model_loss + 0.01*l2_regularization
+
+    return A_loss
+
+  def train_with_batch(self, data_X, data_Y, train_settings, log=False):
+    """
+    Train the analyzer part of the model with a batch of training data.
+
+    Args:
+      data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
+      data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
+      train_settings (dict): A dictionary for setting up the training. The keys
+                             are as follows:
+
+                               analyzer_epochs: How many total runs are made
+                               with the given training data. Default is 1.
+
+                             Keys not found above are ignored.
+      log (bool):            Log additional information on epochs and losses.
+    """
+
+    if len(data_X.shape) != 2 or data_X.shape[1] != self.ndimensions:
+      raise ValueError("Array data_X expected to have shape (N, {}).".format(self.ndimensions))
+    if len(data_Y.shape) != 2 or data_Y.shape[0] < data_X.shape[0]:
+      raise ValueError("Array data_Y array should have at least as many elements as there are tests.")
+
+    data_X = torch.from_numpy(data_X).float().to(self.device)
+    data_Y = self.put_to_class(torch.from_numpy(data_Y).float().to(self.device))
+
+    # Unpack values from the epochs dictionary.
+    analyzer_epochs = train_settings["analyzer_epochs"] if "analyzer_epochs" in train_settings else 1
+
+    # Save the training modes for later restoring.
+    training_A = self.modelA.training
+
+    # Train the analyzer.
+    # -----------------------------------------------------------------------
+    self.modelA.train(True)
+    for m in range(analyzer_epochs):
+      A_loss = self.analyzer_loss(data_X, data_Y)
+      self.optimizerA.zero_grad()
+      A_loss.backward()
+      self.optimizerA.step()
+
+      if log:
+        self.log("Analyzer epoch {}/{}, Loss: {}".format(m + 1, analyzer_epochs, A_loss))
+
+    # Visualize the computational graph.
+    # print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
+
+    self.modelA.train(training_A)
+
+  def predict(self, test):
+    """
+    Predicts the fitness of the given test.
+
+    Args:
+      test (np.ndarray): Array of shape (N, self.ndimensions).
+
+    Returns:
+      output (np.ndarray): Array of shape (N, 1).
+    """
+
+    if len(test.shape) != 2 or test.shape[1] != self.ndimensions:
+      raise ValueError("Input array expected to have shape (N, {}).".format(self.ndimensions))
+
+    training_A = self.modelA.training
+    self.modelA.train(False)
+
+    test_tensor = torch.from_numpy(test).float().to(self.device)
+    p = self.modelA(test_tensor)
+    result = torch.argmax(p, dim=1)/self.classes + 1/(2*self.classes)
+
+    self.modelA.train(training_A)
+    print(result.cpu().detach().numpy().reshape(-1, 1))
+    return result.cpu().detach().numpy().reshape(-1, 1)
 
 class Analyzer_AdaBoost(Analyzer):
   """
