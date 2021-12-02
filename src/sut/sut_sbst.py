@@ -62,12 +62,12 @@ class SBSTSUT(SUT):
     # We integrate curvature (acceleratation) to get an angle (speed) and then
     # we move one step to this direction to get position. The integration is
     # done using the trapezoid rule with step given by the first component of
-    # the test. We need to undo the normalization of the first coordinate back
-    # to the interval [25, 35].
-    step = 5*test[0] + 30
-    # We also undo the normalization of the curvatures from [-1, 1] to
-    # [-0.07, 0.07] as in the Frenetic algorithm.
-    curvature = 0.07*test[1:]
+    # the test. Previously the first coordinate was normalized back to the
+    # interval [25, 35], now we simply fix the step size.
+    step = 15
+    # We undo the normalization of the curvatures from [-1, 1] to [-0.07, 0.07]
+    # as in the Frenetic algorithm.
+    curvature = 0.07*test
 
     # The initial point is the bottom center of the map. The initial angle is
     # 90 degrees.
@@ -77,7 +77,7 @@ class SBSTSUT(SUT):
     points.append((points[-1][0] + step*np.cos(angles[-1]), points[-1][1] + step*np.sin(angles[-1])))
     # Find the remaining points.
     for i in range(curvature.shape[0] - 1):
-      angles.append(angles[-1] + step*(curvature[i+1] - curvature[i])/2)
+      angles.append(angles[-1] + step*(curvature[i+1] + curvature[i])/2)
       x = points[-1][0] + step*np.cos(angles[-1])
       y = points[-1][1] + step*np.sin(angles[-1])
       points.append((x, y))
