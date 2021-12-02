@@ -8,7 +8,7 @@ import numpy as np
 
 from config import config
 
-def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snapshot=False):
+def main_ogan(model_id, sut_id, model, session, view_test, save_test, pretrained_analyzer=False, model_snapshot=False):
   """
   The OGAN algorithm for generating a test suite.
   """
@@ -117,6 +117,8 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snap
     # -------------------------------------------------------------------------
     model.log("Starting to generate test {}.".format(tests_generated + 1))
     time_generation_start = time.monotonic()
+    best_test = None
+    best_fitness = 0.0
     target_fitness = 1
     rounds = 0
     invalid = 0
@@ -131,15 +133,18 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snap
 
       # Predict the fitness of the new test.
       new_fitness = model.predict_fitness(new_test)[0,0]
+      if new_fitness > best_fitness:
+        best_test = new_test
+        best_fitness = new_fitness
 
       target_fitness *= session.fitness_coef
 
       # Check if the new test has high enough fitness.
-      if new_fitness >= target_fitness: break
+      if best_fitness >= target_fitness: break
 
     # Add the new test to our test suite.
     # -------------------------------------------------------------------------
-    test_inputs[tests_generated,:] = new_test
+    test_inputs[tests_generated,:] = best_test
     tests_generated += 1
 
     # Save information on how many tests needed to be generated etc.
@@ -147,15 +152,15 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snap
     session.N_tests_generated.append(rounds)
     session.N_invalid_tests_generated.append(invalid)
 
-    model.log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(new_test, new_fitness, rounds + 1, invalid))
-    view_test(new_test)
-    save_test(new_test, zeros("test_", tests_generated))
+    model.log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(best_test, best_fitness, rounds + 1, invalid))
+    view_test(best_test)
+    save_test(best_test, zeros("test_", tests_generated))
 
     # Actually run the new test on the SUT.
     model.log("Executing the test...")
 
     time_execution_start = time.monotonic()
-    test_outputs[tests_generated - 1,:] = model.sut.execute_test(new_test)
+    test_outputs[tests_generated - 1,:] = model.sut.execute_test(best_test)
     session.time_execution.append(time.monotonic() - time_execution_start)
 
     model.log("The actual fitness {} for the generated test.".format(test_outputs[tests_generated - 1,0]))
@@ -192,7 +197,7 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, model_snap
 
   return test_inputs, test_outputs
 
-def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snapshot=False):
+def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained_analyzer=False, model_snapshot=False):
   """
   The WGAN algorithm for generating a test suite.
   """
@@ -203,7 +208,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
   # TODO: make configurable
   # How much to decrease the target fitness per each round when selecting a
   # new generated test.
-  session.fitness_coef = 0.80
+  session.fitness_coef = 0.95
   # How many candidate tests to generate per round.
   session.N_candidate_tests = 1
   # How many buckets are used.
@@ -301,6 +306,14 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
     # Save the log.
     model.logger.save(os.path.join(session.session_directory, "session.log"))
 
+  # Load a pretrained analyzer if requested.
+  if pretrained_analyzer:
+    try:
+      model.analyzer.load("pretrained", config[sut_id]["data_directory"])
+    except Exception as E:
+      print("Could not load a pretrained analyzer.")
+      raise SystemExit
+
   time_total_start = time.monotonic()
 
   # Generate initial tests randomly.
@@ -380,6 +393,8 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
     # -------------------------------------------------------------------------
     model.log("Starting to generate test {}.".format(tests_generated + 1))
     time_generation_start = time.monotonic()
+    best_test = None
+    best_fitness = 0.0
     target_fitness = 1
     rounds = 0
     invalid = 0
@@ -399,15 +414,18 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
       idx = np.argmax(tests_predicted_fitness)
       new_test = candidate_tests[idx].reshape(1, -1)
       new_fitness = tests_predicted_fitness[idx][0]
+      if new_fitness > best_fitness:
+        best_test = new_test
+        best_fitness = new_fitness
 
       target_fitness *= session.fitness_coef
 
-      # Check if the new test has high enough fitness.
-      if new_fitness >= target_fitness: break
+      # Check if the best test has high enough fitness.
+      if best_fitness >= target_fitness: break
 
     # Add the new test to our test suite.
     # -------------------------------------------------------------------------
-    test_inputs[tests_generated,:] = new_test
+    test_inputs[tests_generated,:] = best_test
     tests_generated += 1
 
     # Save information on how many tests needed to be generated etc.
@@ -415,15 +433,15 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
     session.N_tests_generated.append(rounds*session.N_candidate_tests)
     session.N_invalid_tests_generated.append(invalid)
 
-    model.log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(new_test, new_fitness, session.N_tests_generated[-1], session.N_invalid_tests_generated[-1]))
-    view_test(new_test)
-    save_test(new_test, zeros("test_", tests_generated))
+    model.log("Chose test {} with predicted fitness {}. Generated total {} tests of which {} were invalid.".format(best_test, best_fitness, session.N_tests_generated[-1], session.N_invalid_tests_generated[-1]))
+    view_test(best_test)
+    save_test(best_test, zeros("test_", tests_generated))
 
     # Actually run the new test on the SUT.
     model.log("Executing the test...")
 
     time_execution_start = time.monotonic()
-    test_outputs[tests_generated - 1,:] = model.sut.execute_test(new_test)
+    test_outputs[tests_generated - 1,:] = model.sut.execute_test(best_test)
     session.time_execution.append(time.monotonic() - time_execution_start)
     test_buckets[get_bucket(test_outputs[tests_generated - 1,0])].append(tests_generated - 1)
 
@@ -474,7 +492,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, model_snap
 
   return test_inputs, test_outputs
 
-def main_random(model_id, sut_id, model, session, view_test, save_test, model_snapshot=False):
+def main_random(model_id, sut_id, model, session, view_test, save_test, pretrained_analyzer=False, model_snapshot=False):
   """
   Baseline random algorithm for generating a test suite.
   """
