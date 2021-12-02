@@ -9,7 +9,7 @@ from config import config
 
 if __name__ == "__main__":
   if len(sys.argv) < 5:
-    print("The command line arguments should specify sut_id, model_id, and a session directory.")
+    print("The command line arguments should specify sut_id, model_id, a session directory, and number of initial random tests.")
     raise SystemExit
 
   sut_id = sys.argv[1]
@@ -36,16 +36,20 @@ if __name__ == "__main__":
     print("The file '{}' already exists.".format(new_file_name))
     raise SystemExit
 
-  with open(config[sut_id][model_id]["pregenerated_initial_data"], mode="rb") as f:
-    X_old = np.load(f)
-    Y_old = np.load(f)
-
   with open(new_training_data_file, mode="rb") as f:
     X_new = np.load(f)
     Y_new = np.load(f)
 
-  X = np.zeros(shape=(X_old.shape[0] + N, X_old.shape[1]))
-  Y = np.zeros(shape=(X.shape[0], Y_old.shape[1]))
+  try:
+    with open(config[sut_id][model_id]["pregenerated_initial_data"], mode="rb") as f:
+      X_old = np.load(f)
+      Y_old = np.load(f)
+  except FileNotFoundError:
+    X_old = np.zeros(shape=(0, X_new.shape[1]))
+    Y_old = np.zeros(shape=(0, Y_new.shape[1]))
+
+  X = np.zeros(shape=(X_old.shape[0] + N, X_new.shape[1]))
+  Y = np.zeros(shape=(X.shape[0], Y_new.shape[1]))
 
   X[:X_old.shape[0]] = X_old
   Y[:Y_old.shape[0]] = Y_old

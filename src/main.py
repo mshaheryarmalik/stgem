@@ -19,6 +19,7 @@ if __name__ == "__main__":
   enable_log_printout = True
   enable_view = False
   enable_save = False
+  pretrained_analyzer = False
   model_snapshot = True
   load_pregenerated_data = False
 
@@ -42,7 +43,7 @@ if __name__ == "__main__":
   call_dict = {"ogan":main_ogan,
                "wgan":main_wgan,
                "random":main_random}
-  test_inputs, test_outputs = call_dict[model_id](model_id, sut_id, model, session, view_test, save_test, model_snapshot)
+  test_inputs, test_outputs = call_dict[model_id](model_id, sut_id, model, session, view_test, save_test, pretrained_analyzer, model_snapshot)
 
   # Evaluate the generated tests.
   # ---------------------------------------------------------------------------

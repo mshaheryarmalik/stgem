@@ -78,13 +78,13 @@ config["odroid"]["fitness_threshold"] = 6.0
 config["sbst_validator"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.research.v1.7.0.1"
 #config["sbst_validator"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 config["sbst_validator"]["map_size"] = 200
-config["sbst_validator"]["curvature_points"] = 5
+config["sbst_validator"]["curvature_points"] = 9
 
 #config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
 config["sbst"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.research.v1.7.0.1"
 #config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 config["sbst"]["map_size"] = 200
-config["sbst"]["curvature_points"] = 5
+config["sbst"]["curvature_points"] = 9
 config["sbst"]["fitness_threshold"] = 0.95
 config["sbst"]["max_speed"] = 70
 
