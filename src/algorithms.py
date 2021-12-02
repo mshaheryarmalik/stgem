@@ -72,21 +72,32 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, pretrained
     del data_Y
   else:
     model.log("Generating and running {} random valid tests.".format(session.random_init))
+    time_generation_start = time.monotonic()
+    invalid = 0
     while tests_generated < session.random_init:
       test = model.sut.sample_input_space()
-      if model.validity(test)[0,0] == 0: continue
+      if model.validity(test)[0,0] == 0:
+        invalid += 1
+        continue
       test_inputs[tests_generated,:] = test
       tests_generated += 1
 
-      # TODO: add mechanism for selecting test which is in some sense different
-      #       from previous tests
+      # Save information on how many tests needed to be generated etc.
+      session.time_generation.append(time.monotonic() - time_generation_start)
+      session.N_tests_generated.append(invalid + 1)
+      session.N_invalid_tests_generated.append(invalid)
 
       view_test(test)
       save_test(test, zeros("init_", tests_generated))
 
       model.log("Executing {} ({}/{})".format(test, tests_generated, session.random_init))
+      time_execution_start = time.monotonic()
       test_outputs[tests_generated - 1,:] = model.sut.execute_test(test)
+      session.time_execution.append(time.monotonic() - time_execution_start)
       model.log("Result: {}".format(test_outputs[tests_generated - 1,0]))
+
+      time_generation_start = time.monotonic()
+      invalid = 0
 
   # TODO: Report the quality of the initial data to session object.
 
