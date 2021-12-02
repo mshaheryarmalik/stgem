@@ -162,9 +162,10 @@ if __name__ == "__main__":
       session.load()
       sessions.append(session)
   else:
-    session_directory = os.path.basename(os.path.normpath(sys.argv[3]))
-    session = Session(model_id, sut_id, session_directory)
+    session_id = os.path.basename(os.path.normpath(sys.argv[3]))
+    session = Session(model_id, sut_id, session_id)
     session.add_saved_parameter(*config["session_attributes"][model_id])
+    session.session_directory = sys.argv[3]
     session.load()
     sessions.append(session)
 
