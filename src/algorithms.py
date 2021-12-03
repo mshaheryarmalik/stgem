@@ -20,6 +20,8 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, pretrained
   # How much to decrease the target fitness per each round when selecting a
   # new generated test.
   session.fitness_coef = 0.95
+  # How often to train.
+  session.train_delay = 3
   # Stores execution times.
   session.time_total = 0
   session.time_training_total = 0
@@ -103,13 +105,14 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, pretrained
 
   # Train the model with initial tests.
   # ---------------------------------------------------------------------------
-  model.log("Training model...")
-  time_training_start = time.monotonic()
-  model.train_with_batch(test_inputs[:tests_generated,:],
-                         test_outputs[:tests_generated,:],
-                         train_settings=model.train_settings_init,
-                         log=True)
-  session.time_training.append(time.monotonic() - time_training_start)
+  if (tests_generated - session.random_init) % session.train_delay == 0:
+    model.log("Training model...")
+    time_training_start = time.monotonic()
+    model.train_with_batch(test_inputs[:tests_generated,:],
+                           test_outputs[:tests_generated,:],
+                           train_settings=model.train_settings_init,
+                           log=True)
+    session.time_training.append(time.monotonic() - time_training_start)
 
   """
   # View and save N generated tests based solely on the training on initial
@@ -222,6 +225,8 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   session.fitness_coef = 0.95
   # How many candidate tests to generate per round.
   session.N_candidate_tests = 1
+  # How often to train.
+  session.train_delay = 3
   # How many bins are used.
   session.bins = 10
   # Stores execution times.
@@ -245,7 +250,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   alpha = (a1-a0)/(session.N_tests - session.random_init)
   beta = a1 - alpha*session.N_tests
   R = lambda x: alpha*x + beta
-  S = lambda x: 1 / (1 + np.exp(-5*x))
+  S = lambda x: 1 / (1 + np.exp(-1*x))
 
   def bin_sample(N, S, shift):
     """
@@ -281,19 +286,21 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   def training_sample(N, X, Y, B, S, shift):
     """
     Samples N elements from X and corresponding values of Y. The sampling is
-    done by picking a bin and uniformly randomly selecting a test from the bin.
-    The probability of picking each bin is computed via the function
-    bin_sample.
+    done by picking a bin and uniformly randomly selecting a test from the bin,
+    but we do not select the same test twice. The probability of picking each
+    bin is computed via the function bin_sample.
     """
 
-    sample_X = np.zeros_like(X)
-    sample_Y = np.zeros_like(Y)
+    sample_X = np.zeros(shape=(N, X.shape[1]))
+    sample_Y = np.zeros(shape=(N, Y.shape[1]))
+    available = {n:v.copy() for n, v in B.items()}
     for n, bin_idx in enumerate(bin_sample(N, S, shift)):
       # If a bin is empty, try one lower bin.
-      while len(B[bin_idx]) == 0:
+      while len(available[bin_idx]) == 0:
         bin_idx -= 1
         bin_idx = bin_idx % session.bins
-      idx = np.random.choice(B[bin_idx])
+      idx = np.random.choice(available[bin_idx])
+      available[bin_idx].remove(idx)
       sample_X[n] = X[idx]
       sample_Y[n] = Y[idx]
 
@@ -384,21 +391,23 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   model.log("Training model...")
   time_training_start = time.monotonic()
   # Train the analyzer.
-  model.train_analyzer_with_batch(test_inputs[:tests_generated,:],
-                                  test_outputs[:tests_generated,:],
-                                  train_settings=model.train_settings_init,
-                                  log=True)
-  # Train the WGAN.
-  train_X, train_Y = training_sample(model.batch_size,
-                                     test_inputs[:tests_generated,:],
-                                     test_outputs[:tests_generated,:],
-                                     test_bins,
-                                     S,
-                                     R(tests_generated))
-  model.train_with_batch(train_X,
-                         train_Y,
-                         train_settings=model.train_settings_init,
-                         log=True)
+  for epoch in range(model.train_settings_init["analyzer_epochs"]):
+    model.train_analyzer_with_batch(test_inputs[:tests_generated,:],
+                                    test_outputs[:tests_generated,:],
+                                    train_settings=model.train_settings_init,
+                                    log=True)
+  # Train the WGAN with different batches.
+  for epoch in range(model.train_settings_init["epochs"]):
+    train_X, train_Y = training_sample(model.batch_size,
+                                       test_inputs[:tests_generated,:],
+                                       test_outputs[:tests_generated,:],
+                                       test_bins,
+                                       S,
+                                       R(tests_generated))
+    model.train_with_batch(train_X,
+                           train_Y,
+                           train_settings=model.train_settings_init,
+                           log=True)
   session.time_training.append(time.monotonic() - time_training_start)
 
   """
@@ -474,25 +483,57 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
 
     # Train the model.
     # -------------------------------------------------------------------------
-    model.log("Training the model...")
-    time_training_start = time.monotonic()
-    # Train the analyzer.
-    model.train_analyzer_with_batch(test_inputs[:tests_generated,:],
-                                    test_outputs[:tests_generated,:],
-                                    train_settings=model.train_settings,
-                                    log=True)
-    # Train the WGAN.
-    train_X, train_Y = training_sample(model.batch_size,
-                                       test_inputs[:tests_generated, :],
-                                       test_outputs[:tests_generated, :],
-                                       test_bins,
-                                       S,
-                                       R(tests_generated))
-    model.train_with_batch(train_X,
-                           train_Y,
-                           train_settings=model.train_settings,
-                           log=True)
-    session.time_training.append(time.monotonic() - time_training_start)
+    if (tests_generated - session.random_init) % session.train_delay == 0:
+      model.log("Training the model...")
+      time_training_start = time.monotonic()
+      # Train the analyzer.
+      analyzer_batch_size = tests_generated
+      for epoch in range(model.train_settings["analyzer_epochs"]):
+        """
+        # We include the new tests and a number of previous tests randomly into
+        # the batch.
+        train_X = np.zeros(shape=(analyzer_batch_size, test_inputs.shape[1]))
+        train_Y = np.zeros(shape=(analyzer_batch_size, test_outputs.shape[1]))
+        for i in range(session.train_delay):
+          train_X[i] = test_inputs[tests_generated - i - 1]
+          train_Y[i] = test_outputs[tests_generated - i - 1]
+        idx = np.random.choice(tests_generated - session.train_delay, analyzer_batch_size - session.train_delay, replace=False)
+        train_X[session.train_delay:] = test_inputs[idx]
+        train_Y[session.train_delay:] = test_outputs[idx]
+
+        model.train_analyzer_with_batch(train_X,
+                                        train_Y,
+                                        train_settings=model.train_settings,
+                                        log=True)
+        """
+        model.train_analyzer_with_batch(test_inputs[:tests_generated],
+                                        test_outputs[:tests_generated],
+                                        train_settings=model.train_settings,
+                                        log=True)
+      # Train the WGAN.
+      for epoch in range(model.train_settings_init["epochs"]):
+        # We include the new tests to the batch with high probability if and
+        # only if they have high fitness.
+        bin_sample(1, S, R(tests_generated))
+        train_X = np.zeros(shape=(model.batch_size, test_inputs.shape[1]))
+        train_Y = np.zeros(shape=(model.batch_size, test_outputs.shape[1]))
+        c = 0
+        for i in range(session.train_delay):
+          if get_bin(test_outputs[tests_generated - i - 1]) >= bin_sample(1, S, R(tests_generated))[0]:
+            train_X[c] = test_inputs[tests_generated - i - 1]
+            train_Y[c] = test_outputs[tests_generated - i - 1]
+            c += 1
+        train_X[c:], train_Y[c:] = training_sample(model.batch_size - c,
+                                                   test_inputs[:tests_generated, :],
+                                                   test_outputs[:tests_generated, :],
+                                                   test_bins,
+                                                   S,
+                                                   R(tests_generated))
+        model.train_with_batch(train_X,
+                               train_Y,
+                               train_settings=model.train_settings,
+                               log=True)
+      session.time_training.append(time.monotonic() - time_training_start)
 
     # Save partial training data, logs, etc.
     save_progress()

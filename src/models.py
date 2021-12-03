@@ -418,9 +418,6 @@ class WGAN(Model):
                              epochs for various parts of the model. The keys
                              are as follows:
 
-                               epochs: How many total runs are made with the
-                               given training data.
-
                                critic_epochs: How many times the critic is
                                trained per epoch.
 
@@ -441,7 +438,6 @@ class WGAN(Model):
     data_Y = torch.from_numpy(data_Y).float().to(self.device)
 
     # Unpack values from the epochs dictionary.
-    epochs = train_settings["epochs"] if "epochs" in train_settings else 1
     critic_epochs = train_settings["critic_epochs"] if "critic_epochs" in train_settings else 1
     generator_epochs = train_settings["generator_epochs"] if "generator_epochs" in train_settings else 1
 
@@ -449,97 +445,96 @@ class WGAN(Model):
     training_C = self.modelC.training
     training_G = self.modelG.training
 
-    for n in range(epochs):
-      # Train the critic.
-      # -----------------------------------------------------------------------
-      self.modelC.train(True)
-      for m in range(critic_epochs):
-        # Here the mini batch size of the WGAN-GP is set to be the number of
-        # training samples for the critic
-        M = data_X.shape[0]
+    # Train the critic.
+    # -----------------------------------------------------------------------
+    self.modelC.train(True)
+    for m in range(critic_epochs):
+      # Here the mini batch size of the WGAN-GP is set to be the number of
+      # training samples for the critic
+      M = data_X.shape[0]
 
-        # Loss on real data.
-        real_inputs = data_X
-        real_outputs = self.modelC(real_inputs)
-        real_loss = real_outputs.mean(0)
+      # Loss on real data.
+      real_inputs = data_X
+      real_outputs = self.modelC(real_inputs)
+      real_loss = real_outputs.mean(0)
 
-        # Loss on generated data.
-        # For now we use as much generated data as we have real data.
-        noise = ((torch.rand(size=(M, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
-        fake_inputs = self.modelG(noise)
-        fake_outputs = self.modelC(fake_inputs)
-        fake_loss = fake_outputs.mean(0)
+      # Loss on generated data.
+      # For now we use as much generated data as we have real data.
+      noise = ((torch.rand(size=(M, self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+      fake_inputs = self.modelG(noise)
+      fake_outputs = self.modelC(fake_inputs)
+      fake_loss = fake_outputs.mean(0)
 
-        # Gradient penalty.
-        # Compute interpolated data.
-        e = torch.rand(size=(M, 1)).to(self.device)
-        interpolated_inputs = e*real_inputs + (1-e)*fake_inputs
-        # Get critic output on interpolated data.
-        interpolated_outputs = self.modelC(interpolated_inputs)
-        # Compute the gradients wrt to the interpolated inputs.
-        # Warning: Showing the validity of the following line requires some pen
-        #          and paper calculations.
-        gradients = torch.autograd.grad(inputs=interpolated_inputs,
-                                        outputs=interpolated_outputs,
-                                        grad_outputs=torch.ones_like(interpolated_outputs).to(self.device),
-                                        create_graph=True,
-                                        retain_graph=True)[0]
+      # Gradient penalty.
+      # Compute interpolated data.
+      e = torch.rand(size=(M, 1)).to(self.device)
+      interpolated_inputs = e*real_inputs + (1-e)*fake_inputs
+      # Get critic output on interpolated data.
+      interpolated_outputs = self.modelC(interpolated_inputs)
+      # Compute the gradients wrt to the interpolated inputs.
+      # Warning: Showing the validity of the following line requires some pen
+      #          and paper calculations.
+      gradients = torch.autograd.grad(inputs=interpolated_inputs,
+                                      outputs=interpolated_outputs,
+                                      grad_outputs=torch.ones_like(interpolated_outputs).to(self.device),
+                                      create_graph=True,
+                                      retain_graph=True)[0]
 
-        # We add epsilon for stability.
-        epsilon = 0.000001
-        gradients_norms = torch.sqrt(torch.sum(gradients**2, dim=1) + epsilon)
-        gradient_penalty = ((gradients_norms - 1)**2).mean()
-        #gradient_penalty = ((torch.linalg.norm(gradients, dim=1) - 1)**2).mean()
+      # We add epsilon for stability.
+      epsilon = 0.000001
+      gradients_norms = torch.sqrt(torch.sum(gradients**2, dim=1) + epsilon)
+      gradient_penalty = ((gradients_norms - 1)**2).mean()
+      #gradient_penalty = ((torch.linalg.norm(gradients, dim=1) - 1)**2).mean()
 
-        C_loss = fake_loss - real_loss + self.gp_coefficient*gradient_penalty
-        self.optimizerC.zero_grad()
-        C_loss.backward()
-        self.optimizerC.step()
-
-        if log:
-          self.log("Epoch {}/{}, Critic epoch {}/{}, Loss: {}, GP: {}".format(n + 1, epochs, m + 1, critic_epochs, C_loss[0], self.gp_coefficient*gradient_penalty))
-
-      self.modelC.train(False)
-
-      # Visualize the computational graph.
-      #print(make_dot(C_loss, params=dict(self.modelC.named_parameters())))
-
-      # Train the generator.
-      # -----------------------------------------------------------------------
-      self.modelG.train(True)
-      for m in range(generator_epochs):
-        # For now we use as much generated data as we have real data.
-        noise = ((torch.rand(size=(data_X.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
-        outputs = self.modelC(self.modelG(noise))
-
-        G_loss = -outputs.mean(0)
-        self.optimizerG.zero_grad()
-        G_loss.backward()
-        self.optimizerG.step()
-
-        if log:
-          self.log("Epoch {}/{}, Generator epoch {}/{}, Loss: {}".format(n + 1, epochs, m + 1, generator_epochs, G_loss[0]))
-
-      self.modelG.train(False)
+      C_loss = fake_loss - real_loss + self.gp_coefficient*gradient_penalty
+      self.optimizerC.zero_grad()
+      C_loss.backward()
+      self.optimizerC.step()
 
       if log:
-        # Same as above in critic training.
-        real_inputs = data_X
-        real_outputs = self.modelC(real_inputs)
-        real_loss = real_outputs.mean(0)
+        self.log("Critic epoch {}/{}, Loss: {}, GP: {}".format(m + 1, critic_epochs, C_loss[0], self.gp_coefficient*gradient_penalty))
 
-        # For now we use as much generated data as we have real data.
-        noise = ((torch.rand(size=(real_inputs.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
-        fake_inputs = self.modelG(noise)
-        fake_outputs = self.modelC(fake_inputs)
-        fake_loss = fake_outputs.mean(0)
+    self.modelC.train(False)
 
-        W_distance = real_loss - fake_loss
+    # Visualize the computational graph.
+    #print(make_dot(C_loss, params=dict(self.modelC.named_parameters())))
 
-        self.log("Epoch {}/{}, W. distance: {}".format(n + 1, epochs, W_distance[0]))
+    # Train the generator.
+    # -----------------------------------------------------------------------
+    self.modelG.train(True)
+    for m in range(generator_epochs):
+      # For now we use as much generated data as we have real data.
+      noise = ((torch.rand(size=(data_X.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+      outputs = self.modelC(self.modelG(noise))
 
-      # Visualize the computational graph.
-      #print(make_dot(G_loss, params=dict(self.modelG.named_parameters())))
+      G_loss = -outputs.mean(0)
+      self.optimizerG.zero_grad()
+      G_loss.backward()
+      self.optimizerG.step()
+
+      if log:
+        self.log("Generator epoch {}/{}, Loss: {}".format(m + 1, generator_epochs, G_loss[0]))
+
+    self.modelG.train(False)
+
+    if log:
+      # Same as above in critic training.
+      real_inputs = data_X
+      real_outputs = self.modelC(real_inputs)
+      real_loss = real_outputs.mean(0)
+
+      # For now we use as much generated data as we have real data.
+      noise = ((torch.rand(size=(real_inputs.shape[0], self.modelG.input_shape)) - 0.5)/0.5).to(self.device)
+      fake_inputs = self.modelG(noise)
+      fake_outputs = self.modelC(fake_inputs)
+      fake_loss = fake_outputs.mean(0)
+
+      W_distance = real_loss - fake_loss
+
+      self.log("Batch W. distance: {}".format(W_distance[0]))
+
+    # Visualize the computational graph.
+    #print(make_dot(G_loss, params=dict(self.modelG.named_parameters())))
 
     # Restore the training modes.
     self.modelC.train(training_C)
