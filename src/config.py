@@ -59,7 +59,7 @@ for sut_id in config["available_sut"]:
                                                    "analyzer_epochs": 20,
                                                    "critic_epochs": 5,
                                                    "generator_epochs": 1}
-  config[sut_id]["wgan"]["train_settings"] = {"epochs": 1,
+  config[sut_id]["wgan"]["train_settings"] = {"epochs": 2,
                                               "analyzer_epochs": 5,
                                               "critic_epochs": 5,
                                               "generator_epochs": 1}
@@ -114,6 +114,7 @@ config["session_attributes"]["wgan"] = ["N_tests",
                                         "random_init",
                                         "fitness_coef",
                                         "N_candidate_tests",
+                                        "train_delay",
                                         "bins",
                                         "load_pregenerated_data",
                                         "N_tests_generated",

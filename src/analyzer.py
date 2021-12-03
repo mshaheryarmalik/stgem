@@ -138,13 +138,8 @@ class Analyzer_NN(Analyzer):
     Args:
       data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
       data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
-      train_settings (dict): A dictionary for setting up the training. The keys
-                             are as follows:
-
-                               analyzer_epochs: How many total runs are made
-                               with the given training data. Default is 1.
-
-                             Keys not found above are ignored.
+      train_settings (dict): A dictionary for setting up the training.
+                             Currently all keys are ignored.
       log (bool):            Log additional information on epochs and losses.
     """
 
@@ -156,23 +151,19 @@ class Analyzer_NN(Analyzer):
     data_X = torch.from_numpy(data_X).float().to(self.device)
     data_Y = torch.from_numpy(data_Y).float().to(self.device)
 
-    # Unpack values from the epochs dictionary.
-    analyzer_epochs = train_settings["analyzer_epochs"] if "analyzer_epochs" in train_settings else 1
-
     # Save the training modes for later restoring.
     training_A = self.modelA.training
 
     # Train the analyzer.
     # -----------------------------------------------------------------------
     self.modelA.train(True)
-    for m in range(analyzer_epochs):
-      A_loss = self.analyzer_loss(data_X, data_Y)
-      self.optimizerA.zero_grad()
-      A_loss.backward()
-      self.optimizerA.step()
+    A_loss = self.analyzer_loss(data_X, data_Y)
+    self.optimizerA.zero_grad()
+    A_loss.backward()
+    self.optimizerA.step()
 
-      if log:
-        self.log("Analyzer epoch {}/{}, Loss: {}".format(m + 1, analyzer_epochs, A_loss))
+    if log:
+      self.log("Analyzer loss: {}".format(A_loss))
 
     # Visualize the computational graph.
     #print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
@@ -237,13 +228,8 @@ class Analyzer_NN_weighted_new(Analyzer_NN):
     Args:
       data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
       data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
-      train_settings (dict): A dictionary for setting up the training. The keys
-                             are as follows:
-
-                               analyzer_epochs: How many total runs are made
-                               with the given training data. Default is 1.
-
-                             Keys not found above are ignored.
+      train_settings (dict): A dictionary for setting up the training.
+                             Currently all keys are ignored.
       log (bool):            Log additional information on epochs and losses.
     """
 
@@ -255,32 +241,26 @@ class Analyzer_NN_weighted_new(Analyzer_NN):
     data_X = torch.from_numpy(data_X).float().to(self.device)
     data_Y = torch.from_numpy(data_Y).float().to(self.device)
 
-    # Unpack values from the epochs dictionary.
-    analyzer_epochs = train_settings["analyzer_epochs"] if "analyzer_epochs" in train_settings else 1
-
     # Save the training modes for later restoring.
     training_A = self.modelA.training
 
     # Train the analyzer.
     # -----------------------------------------------------------------------
     self.modelA.train(True)
-    running_loss = 0.0
-    for m in range(analyzer_epochs):
-      A_loss = self.analyzer_loss(data_X, data_Y)
-      running_loss += A_loss
-      self.optimizerA.zero_grad()
-      A_loss.backward()
-      self.optimizerA.step()
+    A_loss = self.analyzer_loss(data_X, data_Y)
+    self.optimizerA.zero_grad()
+    A_loss.backward()
+    self.optimizerA.step()
 
-      if log:
-        self.log("Analyzer epoch {}/{}, Loss: {}".format(m + 1, analyzer_epochs, A_loss))
+    if log:
+      self.log("Analyzer loss: {}".format(A_loss))
 
     # Visualize the computational graph.
     #print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
 
     self.modelA.train(training_A)
 
-    return running_loss / analyzer_epochs
+    return A_loss.item()
 
 class Analyzer_NN_weighted(Analyzer_NN):
   """
@@ -358,13 +338,8 @@ class Analyzer_NN_weighted(Analyzer_NN):
     Args:
       data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
       data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
-      train_settings (dict): A dictionary for setting up the training. The keys
-                             are as follows:
-
-                               analyzer_epochs: How many total runs are made
-                               with the given training data. Default is 1.
-
-                             Keys not found above are ignored.
+      train_settings (dict): A dictionary for setting up the training.
+                             Currently all keys are ignored.
       log (bool):            Log additional information on epochs and losses.
     """
 
@@ -376,9 +351,6 @@ class Analyzer_NN_weighted(Analyzer_NN):
     data_X = torch.from_numpy(data_X).float().to(self.device)
     data_Y = torch.from_numpy(data_Y).float().to(self.device)
 
-    # Unpack values from the epochs dictionary.
-    analyzer_epochs = train_settings["analyzer_epochs"] if "analyzer_epochs" in train_settings else 1
-
     # Save the training modes for later restoring.
     training_A = self.modelA.training
 
@@ -388,14 +360,13 @@ class Analyzer_NN_weighted(Analyzer_NN):
     # Train the analyzer.
     # -----------------------------------------------------------------------
     self.modelA.train(True)
-    for m in range(analyzer_epochs):
-      A_loss = self.analyzer_loss(data_X, data_Y, weights)
-      self.optimizerA.zero_grad()
-      A_loss.backward()
-      self.optimizerA.step()
+    A_loss = self.analyzer_loss(data_X, data_Y, weights)
+    self.optimizerA.zero_grad()
+    A_loss.backward()
+    self.optimizerA.step()
 
-      if log:
-        self.log("Analyzer epoch {}/{}, Loss: {}".format(m + 1, analyzer_epochs, A_loss))
+    if log:
+      self.log("Analyzer loss: {}".format(A_loss))
 
     # Visualize the computational graph.
     #print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
@@ -462,13 +433,8 @@ class Analyzer_NN_classifier(Analyzer_NN):
     Args:
       data_X (np.ndarray):   Array of tests of shape (N, self.sut.ndimensions).
       data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
-      train_settings (dict): A dictionary for setting up the training. The keys
-                             are as follows:
-
-                               analyzer_epochs: How many total runs are made
-                               with the given training data. Default is 1.
-
-                             Keys not found above are ignored.
+      train_settings (dict): A dictionary for setting up the training.
+                             Currently all keys are ignored.
       log (bool):            Log additional information on epochs and losses.
     """
 
@@ -480,23 +446,19 @@ class Analyzer_NN_classifier(Analyzer_NN):
     data_X = torch.from_numpy(data_X).float().to(self.device)
     data_Y = self.put_to_class(torch.from_numpy(data_Y).float().to(self.device))
 
-    # Unpack values from the epochs dictionary.
-    analyzer_epochs = train_settings["analyzer_epochs"] if "analyzer_epochs" in train_settings else 1
-
     # Save the training modes for later restoring.
     training_A = self.modelA.training
 
     # Train the analyzer.
     # -----------------------------------------------------------------------
     self.modelA.train(True)
-    for m in range(analyzer_epochs):
-      A_loss = self.analyzer_loss(data_X, data_Y)
-      self.optimizerA.zero_grad()
-      A_loss.backward()
-      self.optimizerA.step()
+    A_loss = self.analyzer_loss(data_X, data_Y)
+    self.optimizerA.zero_grad()
+    A_loss.backward()
+    self.optimizerA.step()
 
-      if log:
-        self.log("Analyzer epoch {}/{}, Loss: {}".format(m + 1, analyzer_epochs, A_loss))
+    if log:
+      self.log("Analyzer loss: {}".format(A_loss))
 
     # Visualize the computational graph.
     # print(make_dot(A_loss, params=dict(self.modelA.named_parameters())))
