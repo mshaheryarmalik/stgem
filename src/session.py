@@ -52,5 +52,7 @@ class Session:
 
     for a in self.saved_parameters:
       if not a in data:
-        raise ValueError("Attribute {} not defined in {}.".format(a, file_name))
-      setattr(self, a, data[a])
+        #raise ValueError("Attribute {} not defined in {}.".format(a, file_name))
+        setattr(self, a, None)
+      else:
+        setattr(self, a, data[a])

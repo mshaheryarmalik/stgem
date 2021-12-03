@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, time, traceback
-from math import atan2, pi, degrees
+from math import atan2, pi, degrees, sin, cos
 
 import numpy as np
 
@@ -587,3 +587,31 @@ def frechet_distance(P, Q):
   ca = -1*np.ones(shape=(len(P), len(Q)))
   return C(ca, len(P)-1, len(Q)-1, np.array(P), np.array(Q))
 
+from math import atan, sin, cos, pi
+
+def move_road(P, x0, y0):
+  """
+  Moves the sequence of points P in such a way that the initial point is
+  at (x0, y0) and the initial direction is up.
+  """
+
+  if len(P) == 1:
+    return [(x0, y0)]
+
+  # Find the translation angle.
+  angle = pi/2 - atan2(P[1][1] - P[0][1], P[1][0] - P[0][0])
+  # Translation vector to origin.
+  o_x = -P[0][0]
+  o_y = -P[0][1]
+
+  Q = []
+  for n in range(len(P)):
+    # Map to origin for rotation.
+    x = P[n][0] + o_x
+    y = P[n][1] + o_y
+    # Rotate the point and translate the resulting point back.
+    Q.append([0, 0])
+    Q[n][0] = cos(angle)*x - sin(angle)*y + x0
+    Q[n][1] = sin(angle)*x + cos(angle)*y + y0
+
+  return Q
