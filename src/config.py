@@ -41,9 +41,6 @@ for sut_id in config["available_sut"]:
   config[sut_id]["ogan"]["train_settings"] = {"epochs": 1,
                                               "discriminator_epochs": 5,
                                               "generator_epochs": 1}
-  config[sut_id]["ogan"]["train_settings_post"] = {"epochs": 2,
-                                                   "discriminator_epochs": 20,
-                                                   "generator_epochs": 1}
 
   # WGAN defaults.
   # 1 = something, 2 = increasing removal probability, 3 = WGAN weighted sampling, 4 = buckets
@@ -55,18 +52,14 @@ for sut_id in config["available_sut"]:
   config[sut_id]["wgan"]["analyzer_neurons"] = 32
   config[sut_id]["wgan"]["gp_coefficient"] = 10
   config[sut_id]["wgan"]["batch_size"] = 32
-  config[sut_id]["wgan"]["train_settings_init"] = {"epochs": 2,
+  config[sut_id]["wgan"]["train_settings_init"] = {"epochs": 3,
                                                    "analyzer_epochs": 20,
                                                    "critic_epochs": 5,
                                                    "generator_epochs": 1}
   config[sut_id]["wgan"]["train_settings"] = {"epochs": 2,
-                                              "analyzer_epochs": 5,
+                                              "analyzer_epochs": 10,
                                               "critic_epochs": 5,
                                               "generator_epochs": 1}
-  config[sut_id]["wgan"]["train_settings_post"] = {"epochs": 10,
-                                                   "analyzer_epochs": 0,
-                                                   "critic_epochs": 5,
-                                                   "generator_epochs": 1}
 
 # SUT-specific configs.
 # ----------------------------------------------------------------------------
@@ -80,17 +73,13 @@ config["sbst_validator"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.r
 config["sbst_validator"]["map_size"] = 200
 config["sbst_validator"]["curvature_points"] = 9
 
-#config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
-config["sbst"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.research.v1.7.0.1"
+config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
+#config["sbst"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.research.v1.7.0.1"
 #config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 config["sbst"]["map_size"] = 200
-config["sbst"]["curvature_points"] = 9
+config["sbst"]["curvature_points"] = 5
 config["sbst"]["fitness_threshold"] = 0.95
 config["sbst"]["max_speed"] = 70
-
-config["sbst"]["wgan"]["train_settings_init"]["epochs"] = 3
-config["sbst"]["wgan"]["train_settings_init"]["analyzer_epochs"] = 20
-config["sbst"]["wgan"]["train_settings"]["analyzer_epochs"] = 10
 
 # Session configs.
 # ----------------------------------------------------------------------------
@@ -263,4 +252,3 @@ def get_model(sut_id, model_id, logger=None):
   model.initialize()
 
   return model, lambda t: _view_test(t, sut), lambda t, s, f: _save_test(t, s, f, sut)
-
