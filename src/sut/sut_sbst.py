@@ -3,6 +3,7 @@
 
 import os, time, traceback
 from math import atan2, pi, degrees, sin, cos
+import logging
 
 import numpy as np
 
@@ -20,6 +21,7 @@ from self_driving.beamng_waypoint import BeamNGWaypoint
 from self_driving.simulation_data_collector import SimulationDataCollector
 from self_driving.utils import get_node_coords, points_distance
 from self_driving.vehicle_state_reader import VehicleStateReader
+
 from code_pipeline.tests_generation import RoadTestFactory
 from code_pipeline.validation import TestValidator
 from code_pipeline.visualization import RoadTestVisualizer
@@ -190,14 +192,16 @@ class SBSTSUT_beamng(SBSTSUT):
     self.maxspeed = max_speed
 
     # Check for activation key.
-    if not os.path.exists(os.path.join(self.beamng_user, "research.key")):
-      raise Exception("The activation key 'research.key' must be in the directory {}.".format(self.beamng_user))
+    if not os.path.exists(os.path.join(self.beamng_user, "tech.key")):
+      raise Exception("The activation key 'tech.key' must be in the directory {}.".format(self.beamng_user))
 
     # For validating the executed roads.
     self.validator = TestValidator(map_size=self.map_size)
 
-    # The code below is from the SBST competition.
+    # Disable log messages from third party code.
+    logging.StreamHandler(stream=None)
 
+    # The code below is from the SBST competition.
     # TODO This is specific to the TestSubject, we should encapsulate this better
     self.risk_value = 0.7
     # Runtime Monitor about relative movement of the car
@@ -205,18 +209,9 @@ class SBSTSUT_beamng(SBSTSUT):
     # Not sure how to set this... How far can a car move in 250 ms at 5Km/h
     self.min_delta_position = 1.0
 
-    # Setup the brewer and vehicle.
-    self.brewer = BeamNGBrewer(beamng_home=self.beamng_home, beamng_user=self.beamng_user)
-    self.vehicle = self.brewer.setup_vehicle()
-
-    # Setup maps.
-    # Notice that map and LevelsFolder are global variables from
-    # self_driving.beamng_tig_maps.
-    beamng_levels = LevelsFolder(os.path.join(self.beamng_user, 'levels'))
-    maps.beamng_levels = beamng_levels
-    maps.beamng_map = maps.beamng_levels.get_map('tig')
-    # maps.print_paths()
-    maps.install_map_if_needed()
+    # These are set in test execution.
+    self.brewer = None
+    self.vehicle = None
 
   def _is_the_car_moving(self, last_state):
     """
@@ -248,7 +243,17 @@ class SBSTSUT_beamng(SBSTSUT):
 
   def _execute_single_test(self, test):
     # This code is mainly from https://github.com/se2p/tool-competition-av/code_pipeline/beamng_executor.py
-    # Some initialization parts are moved to __init__.
+
+    if self.brewer is None:
+      self.brewer = BeamNGBrewer(beamng_home=self.beamng_home, beamng_user=self.beamng_user)
+      self.vehicle = self.brewer.setup_vehicle()
+
+      # Disable BeamNG logs.
+      for id in ["beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle"]:
+        logger = log.getLogger(id)
+        logger.setLevel(log.CRITICAL)
+        logger.disabled = True
+
     the_test = RoadTestFactory.create_road_test(self.test_to_road_points(test))
 
     # Check if the test is really valid.
@@ -265,6 +270,14 @@ class SBSTSUT_beamng(SBSTSUT):
     beamng = brewer.beamng
     waypoint_goal = BeamNGWaypoint('waypoint_goal', get_node_coords(nodes[-1]))
 
+    # Notice that maps and LevelsFolder are global variables from
+    # self_driving.beamng_tig_maps.
+    beamng_levels = LevelsFolder(os.path.join(self.beamng_user, '0.24', 'levels'))
+    maps.beamng_levels = beamng_levels
+    maps.beamng_map = maps.beamng_levels.get_map('tig')
+    # maps.print_paths()
+
+    maps.install_map_if_needed()
     maps.beamng_map.generated().write_items(brewer.decal_road.to_json() + '\n' + waypoint_goal.to_json())
 
     vehicle_state_reader = VehicleStateReader(self.vehicle, beamng, additional_sensors=None)

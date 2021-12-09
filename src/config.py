@@ -67,14 +67,14 @@ config["odroid"]["file_base"] = os.path.join(config["odroid"]["data_directory"],
 config["odroid"]["output"] = 1
 config["odroid"]["fitness_threshold"] = 6.0
 
-#config["sbst_validator"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
-config["sbst_validator"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.research.v1.7.0.1"
+#config["sbst_validator"]["beamng_home"] = "C:\\BeamNG\\BeamNG.tech.v0.24.0.1"
+config["sbst_validator"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.tech.v0.24.0.1"
 #config["sbst_validator"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 config["sbst_validator"]["map_size"] = 200
 config["sbst_validator"]["curvature_points"] = 9
 
-config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.research.v1.7.0.1"
-#config["sbst"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.research.v1.7.0.1"
+config["sbst"]["beamng_home"] = "C:\\BeamNG\\BeamNG.tech.v0.24.0.1"
+#config["sbst"]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.tech.v0.24.0.1"
 #config["sbst"]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
 config["sbst"]["map_size"] = 200
 config["sbst"]["curvature_points"] = 5
