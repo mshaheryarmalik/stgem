@@ -251,7 +251,7 @@ class SBSTSUT_beamng(SBSTSUT):
       # Disable BeamNG logs.
       for id in ["beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle"]:
         logger = logging.getLogger(id)
-        logger.setLevel(log.CRITICAL)
+        logger.setLevel(logging.CRITICAL)
         logger.disabled = True
 
     the_test = RoadTestFactory.create_road_test(self.test_to_road_points(test))
