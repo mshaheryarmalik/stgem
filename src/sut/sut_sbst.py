@@ -250,7 +250,7 @@ class SBSTSUT_beamng(SBSTSUT):
 
       # Disable BeamNG logs.
       for id in ["beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle"]:
-        logger = log.getLogger(id)
+        logger = logging.getLogger(id)
         logger.setLevel(log.CRITICAL)
         logger.disabled = True
 
