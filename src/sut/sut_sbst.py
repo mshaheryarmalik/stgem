@@ -242,6 +242,11 @@ class SBSTSUT_beamng(SBSTSUT):
           traceback.print_exception(type(ex), ex, ex.__traceback__)
 
   def _execute_single_test(self, test):
+    """
+    Execute a single test on BeamNG and return its fitness. Notice that we
+    expect the input to be a sequence of plane points.
+    """
+
     # This code is mainly from https://github.com/se2p/tool-competition-av/code_pipeline/beamng_executor.py
 
     if self.brewer is None:
@@ -254,7 +259,8 @@ class SBSTSUT_beamng(SBSTSUT):
         logger.setLevel(logging.CRITICAL)
         logger.disabled = True
 
-    the_test = RoadTestFactory.create_road_test(self.test_to_road_points(test))
+    print(test)
+    the_test = RoadTestFactory.create_road_test(test)
 
     # Check if the test is really valid.
     valid, msg = self.validator.validate_test(the_test)
@@ -368,7 +374,7 @@ class SBSTSUT_beamng(SBSTSUT):
 
     result = np.zeros(shape=(tests.shape[0], 1))
     for n, test in enumerate(tests):
-      result[n,0] = self._execute_single_test(tests[n,:])
+      result[n,0] = self._execute_single_test(self.test_to_road_points(tests[n,:]))
 
     return result
 
@@ -465,6 +471,29 @@ class SBSTSUT_validator(SBSTSUT):
       raise ValueError("The number of tests should be positive.")
 
     return self._sample_input_space(N, self.ndimensions)
+
+class SBSTSUT_plane(SBSTSUT_beamng):
+  """
+  System under test for the BeamNG simulator using plane representation for
+  tests.
+  """
+
+  def __init__(self, beamng_home, map_size, curvature_points, oob_tolerance, max_speed):
+    """
+    Initialize the class.
+
+    See the initializer of SBSTSUT_beamng for argument explanation. Here
+    curvature_points is 2n where n is the number of plane points to be used.
+    """
+
+    try:
+      super().__init__(beamng_home, map_size, curvature_points, oob_tolerance, max_speed)
+    except:
+      raise
+
+  def test_to_road_points(self, test):
+    test = (self.map_size/2)*test + self.map_size/2
+    return [(test[n], test[n+1]) for n in range(0, len(test), 2)]
 
 def sbst_test_to_image(test, sut):
   """

@@ -398,7 +398,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
                                     log=True)
   # Train the WGAN with different batches.
   for epoch in range(model.train_settings_init["epochs"]):
-    train_X, train_Y = training_sample(model.batch_size,
+    train_X, train_Y = training_sample(min(model.batch_size, session.random_init),
                                        test_inputs[:tests_generated,:],
                                        test_outputs[:tests_generated,:],
                                        test_bins,
@@ -515,15 +515,16 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
         # We include the new tests to the batch with high probability if and
         # only if they have high fitness.
         bin_sample(1, S, R(tests_generated))
-        train_X = np.zeros(shape=(model.batch_size, test_inputs.shape[1]))
-        train_Y = np.zeros(shape=(model.batch_size, test_outputs.shape[1]))
+        BS = min(model.batch_size, session.random_init)
+        train_X = np.zeros(shape=(BS, test_inputs.shape[1]))
+        train_Y = np.zeros(shape=(BS, test_outputs.shape[1]))
         c = 0
         for i in range(session.train_delay):
           if get_bin(test_outputs[tests_generated - i - 1]) >= bin_sample(1, S, R(tests_generated))[0]:
             train_X[c] = test_inputs[tests_generated - i - 1]
             train_Y[c] = test_outputs[tests_generated - i - 1]
             c += 1
-        train_X[c:], train_Y[c:] = training_sample(model.batch_size - c,
+        train_X[c:], train_Y[c:] = training_sample(BS - c,
                                                    test_inputs[:tests_generated, :],
                                                    test_outputs[:tests_generated, :],
                                                    test_bins,

@@ -10,7 +10,7 @@ from algorithms import main_ogan, main_wgan, main_random
 
 if __name__ == "__main__":
   model_id = "wgan" # ogan, wgan, random
-  sut_id = "sbst" # odroid, sbst_validator, sbst
+  sut_id = "sbst" # odroid, sbst_validator, sbst_plane, sbst
 
   # TODO: Put to config.
   random_init = 50
@@ -27,6 +27,12 @@ if __name__ == "__main__":
   # ---------------------------------------------------------------------------
   logger = Logger(quiet=not enable_log_printout)
   model, _view_test, _save_test = get_model(sut_id, model_id, logger)
+
+  if model_id in ["ogan", "wgan"] and random_init == 1:
+    print("Error: The training does not work when random_init = 1.")
+    raise SystemExit
+  if model_id == "wgan" and random_init < model.batch_size:
+    print("Warning: The training may work unexpectedly when the number of initial random tests ({}) is smaller than the batch size ({}).".format(random_init, model.batch_size))
 
   session = Session(model_id, sut_id)
   session.load_pregenerated_data = load_pregenerated_data
