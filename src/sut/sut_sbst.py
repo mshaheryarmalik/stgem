@@ -259,7 +259,6 @@ class SBSTSUT_beamng(SBSTSUT):
         logger.setLevel(logging.CRITICAL)
         logger.disabled = True
 
-    print(test)
     the_test = RoadTestFactory.create_road_test(test)
 
     # Check if the test is really valid.
