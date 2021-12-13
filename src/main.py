@@ -13,7 +13,7 @@ if __name__ == "__main__":
   sut_id = "sbst" # odroid, sbst_validator, sbst_plane, sbst
 
   # TODO: Put to config.
-  random_init = 70
+  random_init = 60
   N_tests = 300
 
   enable_log_printout = True
