@@ -2,7 +2,7 @@ import os
 import subprocess, sys
 import pathlib
 
-command = 'C:\\Users\\japeltom\\AppData\\Local\\Programs\\Python\\Python39\\python.exe main.py'
+command = 'C:\\Users\\japeltom\\AppData\\Local\\Programs\\Python\\Python37\\python.exe main.py'
 
 
 def run_on_powershell(scpt):
