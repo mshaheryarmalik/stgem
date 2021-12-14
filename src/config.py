@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import torch
 
 config = {}
-config["available_sut"] = ["odroid", "sbst_validator", "sbst_plane", "sbst"]
+config["available_sut"] = ["odroid", "sbst_validator", "sbst_plane", "sbst_dave2", "sbst"]
 config["available_model"] = ["ogan", "wgan", "random"]
 config["data_path"] = os.path.join("..", "data")
 config["test_save_path"] = os.path.join("..", "simulations")
@@ -67,18 +67,19 @@ config["odroid"]["file_base"] = os.path.join(config["odroid"]["data_directory"],
 config["odroid"]["output"] = 1
 config["odroid"]["fitness_threshold"] = 6.0
 
-for sut_id in ["sbst_validator", "sbst_plane", "sbst"]:
+for sut_id in ["sbst_validator", "sbst_plane", "sbst_dave2", "sbst"]:
   config[sut_id]["beamng_home"] = "C:\\BeamNG\\BeamNG.tech.v0.24.0.1"
   #config[sut_id]["beamng_home"] = "C:\\Users\\japeltom\\BeamNG\\BeamNG.tech.v0.24.0.1"
   #config[sut_id]["beamng_home"] = "C:\\Users\\japel\\dev\\BeamNG"
   config[sut_id]["map_size"] = 200
 
-for sut_id in ["sbst_plane", "sbst"]:
+for sut_id in ["sbst_plane", "sbst_dave2", "sbst"]:
   config[sut_id]["fitness_threshold"] = 0.95
   config[sut_id]["max_speed"] = 70
 
 config["sbst_validator"]["curvature_points"] = 9
 config["sbst_plane"]["curvature_points"] = 10
+config["sbst_dave2"]["curvature_points"] = 5
 config["sbst"]["curvature_points"] = 5
 
 # Session configs.
@@ -196,7 +197,28 @@ def get_model(sut_id, model_id, logger=None):
     from sut.sut_sbst import SBSTSUT_plane, sbst_test_to_image, sbst_validate_test
     from validator.validator import Validator
 
-    sut = SBSTSUT_plane(config[sut_id]["beamng_home"],
+    sut = SBSTSUT_plane(beamng_home=config[sut_id]["beamng_home"],
+                        map_size=config[sut_id]["map_size"],
+                        curvature_points=config[sut_id]["curvature_points"],
+                        oob_tolerance=config[sut_id]["fitness_threshold"],
+                        max_speed=config[sut_id]["max_speed"])
+    validator = Validator(sut.ndimensions, lambda t: sbst_validate_test(t, sut))
+
+    def _view_test(test, sut):
+      fig = sbst_test_to_image(convert(test), sut)
+      fig.show()
+      plt.close(fig)
+
+    def _save_test(test, session, file_name, sut):
+      fig = sbst_test_to_image(convert(test), sut)
+      fig.savefig(os.path.join(config[sut_id][model_id]["test_save_path"], session, file_name + ".jpg"))
+      plt.close(fig)
+
+  elif sut_id == "sbst_dave2":
+    from sut.sut_sbst import SBSTSUT_dave2, sbst_test_to_image, sbst_validate_test
+    from validator.validator import Validator
+
+    sut = SBSTSUT_dave2(beamng_home=config[sut_id]["beamng_home"],
                         map_size=config[sut_id]["map_size"],
                         curvature_points=config[sut_id]["curvature_points"],
                         oob_tolerance=config[sut_id]["fitness_threshold"],
@@ -217,7 +239,7 @@ def get_model(sut_id, model_id, logger=None):
     from sut.sut_sbst import SBSTSUT_beamng, sbst_test_to_image, sbst_validate_test
     from validator.validator import Validator
 
-    sut = SBSTSUT_beamng(config[sut_id]["beamng_home"],
+    sut = SBSTSUT_beamng(beamng_home=config[sut_id]["beamng_home"],
                          map_size=config[sut_id]["map_size"],
                          curvature_points=config[sut_id]["curvature_points"],
                          oob_tolerance=config[sut_id]["fitness_threshold"],

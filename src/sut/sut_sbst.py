@@ -12,12 +12,16 @@ import matplotlib.patches as patches
 from shapely.geometry import LineString, Polygon
 from shapely.affinity import translate, rotate
 from descartes import PolygonPatch
+from tensorflow.python.keras.models import load_model
+import tensorflow.version as tf_version
 
 from sut.sut import SUT
 
 from self_driving.beamng_brewer import BeamNGBrewer
+from self_driving.beamng_car_cameras import BeamNGCarCameras
 from self_driving.beamng_tig_maps import maps, LevelsFolder
 from self_driving.beamng_waypoint import BeamNGWaypoint
+from self_driving.nvidia_prediction import NvidiaPrediction
 from self_driving.simulation_data_collector import SimulationDataCollector
 from self_driving.utils import get_node_coords, points_distance
 from self_driving.vehicle_state_reader import VehicleStateReader
@@ -254,7 +258,7 @@ class SBSTSUT_beamng(SBSTSUT):
       self.vehicle = self.brewer.setup_vehicle()
 
       # Disable BeamNG logs.
-      for id in ["beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle"]:
+      for id in ["beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle", "beamngpy.Camera"]:
         logger = logging.getLogger(id)
         logger.setLevel(logging.CRITICAL)
         logger.disabled = True
@@ -493,6 +497,158 @@ class SBSTSUT_plane(SBSTSUT_beamng):
   def test_to_road_points(self, test):
     test = (self.map_size/2)*test + self.map_size/2
     return [(test[n], test[n+1]) for n in range(0, len(test), 2)]
+
+class SBSTSUT_dave2(SBSTSUT_beamng):
+  """
+  System under test for the BeamNG simulator with Dave2 AI.
+  """
+
+  def __init__(self, beamng_home, map_size, curvature_points, oob_tolerance, max_speed):
+    """
+    Initialize the class.
+
+    See the initializer of SBSTSUT_beamng for argument explanation.
+    """
+
+    try:
+      super().__init__(beamng_home, map_size, curvature_points, oob_tolerance, max_speed)
+    except:
+      raise
+
+    # Check that we have the correct Tensorflow version for the pretrained model.
+    if tf_version.VERSION != "2.4.1":
+      raise Exception("Tensorflow 2.4.1 required for pretrained Dave2 neural network. Tensorflow 2.4.1 is available only to Python versions <=3.8.")
+
+    # We hard code the model path for now.
+    self.model_file = os.path.join("dave2", "self-driving-car-010-2020.h5")
+    if not os.path.exists(self.model_file):
+      raise Exception("Dave2 model file '{}' not found.".format(self.model_file))
+    self.model = None
+
+  def _execute_single_test(self, test):
+    """
+    Execute a single test on BeamNG and return its fitness. Notice that we
+    expect the input to be a sequence of plane points.
+    """
+
+    # This code is mainly from https://github.com/se2p/tool-competition-av/code_pipeline/dave2_executor.py
+
+    if self.brewer is None:
+      self.brewer = BeamNGBrewer(beamng_home=self.beamng_home, beamng_user=self.beamng_user)
+      self.vehicle = self.brewer.setup_vehicle()
+
+      # Disable BeamNG logs.
+      for id in ["beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle", "beamngpy.Camera"]:
+        logger = logging.getLogger(id)
+        logger.setLevel(logging.CRITICAL)
+        logger.disabled = True
+
+    the_test = RoadTestFactory.create_road_test(test)
+
+    # Check if the test is really valid.
+    valid, msg = self.validator.validate_test(the_test)
+    if not valid:
+      # print("Invalid test, not run on SUT.")
+      return 0.0
+
+    # For the execution we need the interpolated points
+    nodes = the_test.interpolated_points
+
+    brewer = self.brewer
+    brewer.setup_road_nodes(nodes)
+    beamng = brewer.beamng
+    waypoint_goal = BeamNGWaypoint('waypoint_goal', get_node_coords(nodes[-1]))
+
+    # Notice that maps and LevelsFolder are global variables from
+    # self_driving.beamng_tig_maps.
+    beamng_levels = LevelsFolder(os.path.join(self.beamng_user, '0.24', 'levels'))
+    maps.beamng_levels = beamng_levels
+    maps.beamng_map = maps.beamng_levels.get_map('tig')
+    # maps.print_paths()
+
+    maps.install_map_if_needed()
+    maps.beamng_map.generated().write_items(brewer.decal_road.to_json() + '\n' + waypoint_goal.to_json())
+
+    cameras = BeamNGCarCameras()
+    vehicle_state_reader = VehicleStateReader(self.vehicle, beamng, additional_sensors=cameras.cameras_array)
+
+    brewer.vehicle_start_pose = brewer.road_points.vehicle_start_pose()
+
+    steps = brewer.params.beamng_steps
+    simulation_id = time.strftime('%Y-%m-%d--%H-%M-%S', time.localtime())
+    name = 'beamng_executor/sim_$(id)'.replace('$(id)', simulation_id)
+    sim_data_collector = SimulationDataCollector(self.vehicle,
+                                                 beamng,
+                                                 brewer.decal_road,
+                                                 brewer.params,
+                                                 vehicle_state_reader=vehicle_state_reader,
+                                                 simulation_name=name)
+
+    # TODO: Hacky - Not sure what's the best way to set this...
+    sim_data_collector.oob_monitor.tolerance = self.oob_tolerance
+
+    sim_data_collector.get_simulation_data().start()
+    try:
+      # start = timeit.default_timer()
+      brewer.bring_up()
+      if not self.model:
+        self.model = load_model(self.model_file)
+      predict = NvidiaPrediction(self.model, self.maxspeed)
+
+      # iterations_count = int(self.test_time_budget/250)
+      # idx = 0
+      # brewer.vehicle.ai_set_aggression(self.risk_value)
+      # brewer.vehicle.ai_set_speed(self.maxspeed, mode='limit')
+      # brewer.vehicle.ai_drive_in_lane(True)
+      # brewer.vehicle.ai_set_waypoint(waypoint_goal.name)
+
+      while True:
+        # idx += 1
+        # assert idx < iterations_count, "Timeout Simulation " + str(sim_data_collector.name)
+
+        sim_data_collector.collect_current_data(oob_bb=True)
+        last_state = sim_data_collector.states[-1]
+        # Target point reached
+        if points_distance(last_state.pos, waypoint_goal.position) < 8.0:
+          break
+
+        assert self._is_the_car_moving(last_state), "Car is not moving fast enough " + str(sim_data_collector.name)
+
+        assert not last_state.is_oob, "Car drove out of the lane " + str(sim_data_collector.name)
+
+        img = vehicle_state_reader.sensors['cam_center']['colour'].convert('RGB')
+        # TODO
+        steering_angle, throttle = predict.predict(img, last_state)
+        self.vehicle.control(throttle=throttle, steering=steering_angle, brake=0)
+
+        beamng.step(steps)
+
+      sim_data_collector.get_simulation_data().end(success=True)
+    except AssertionError as aex:
+      sim_data_collector.save()
+      # An assertion that trigger is still a successful test execution, otherwise it will count as ERROR
+      sim_data_collector.get_simulation_data().end(success=True, exception=aex)
+      # traceback.print_exception(type(aex), aex, aex.__traceback__)
+    except Exception as ex:
+      sim_data_collector.save()
+      sim_data_collector.get_simulation_data().end(success=False, exception=ex)
+      traceback.print_exception(type(ex), ex, ex.__traceback__)
+    finally:
+      sim_data_collector.save()
+      try:
+        sim_data_collector.take_car_picture_if_needed()
+      except:
+        pass
+
+      self.end_iteration()
+
+    # TODO: We could return other sorts of data as well.
+
+    # Return the highest OOB percentage from the states of the vehicle during
+    # the simulation (higher -> more out of bounds). The current competition
+    # code has a bug, so we cannot directly return the value of
+    # sim_data_collector.get_simulation_data().states[-1].max_oob_percentage
+    return max(state.oob_percentage for state in sim_data_collector.get_simulation_data().states)
 
 def sbst_test_to_image(test, sut):
   """

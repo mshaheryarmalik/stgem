@@ -10,7 +10,7 @@ from algorithms import main_ogan, main_wgan, main_random
 
 if __name__ == "__main__":
   model_id = "wgan" # ogan, wgan, random
-  sut_id = "sbst" # odroid, sbst_validator, sbst_plane, sbst
+  sut_id = "sbst" # odroid, sbst_validator, sbst_plane, sbst_dave2, sbst
 
   # TODO: Put to config.
   random_init = 60
