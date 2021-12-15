@@ -259,9 +259,9 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
     S(-x) = 1 - x for all x. Consider the middle points of the bins. We map
     the middle point of the middle bin to 0 and the remaining middle points
     symmetrically around 0 with first middle point corresponding to -1 and the
-    final to 1. We then shift these mapped middle points to the left by the
-    given amount. The weight of the bin will is S(x) where x is the mapped
-    and shifted middle point.
+    final to 1. We then shift these mapped middle points to the right by the
+    given amount. The weight of the bin will is S(x) where x is the mapped and
+    shifted middle point.
     """
 
     # If the number of bins is odd, then the middle point of the middle bin
