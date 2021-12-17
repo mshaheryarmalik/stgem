@@ -129,13 +129,19 @@ class SBSTSUT(SUT):
     if curvature_points < 2:
       raise ValueError("The roads must have at least two points.")
 
-    # The first component of a test is segment length for the road between two
-    # curvature points. It is modeled as a number in the interval [25, 35]
-    # arbitrary choice. The remaining components are curvature values which are
-    # currently set to be in [-0.07, 0.07]. The generator is expected to output
-    # values in the interval [-1, 1], so the generated tests are normalized to
-    # this interval.
-    return np.random.uniform(-1, 1, size=(N, curvature_points))
+    # The components of the actual test are curvature values in the range
+    # [-0.07, 0.07], but the generator output is expected to be in the interval
+    # [-1, 1].
+    #
+    # We do not choose the components of a test independently in [-1, 1] but
+    # we do as in the case of the Frenetic algorithm where the next component
+    # is in the range of the previous value +- 0.05.
+    tests = np.zeros(shape=(N, curvature_points))
+    for i in range(N):
+      tests[i,0] = np.random.uniform(-1, 1)
+      for j in range(1, curvature_points):
+        tests[i,j] = tests[i,j-1] + (1/0.07)*np.random.uniform(-0.05, 0.05)
+    return tests
 
 class SBSTSUT_beamng(SBSTSUT):
   """
@@ -166,7 +172,7 @@ class SBSTSUT_beamng(SBSTSUT):
       map_size (int):         Map size in pixels (total map map_size*map_size).
       curvature_points (int): How many road points are generated.
       oob_tolerance (float):  What percentage of car out of the road is considered a failed test.
-      max_speed (float):      Maximum speed for the vehicle during the simulation.
+      max_speed (float):      Maximum speed (km/h) for the vehicle during the simulation.
     """
 
     if map_size <= 0:
@@ -194,6 +200,7 @@ class SBSTSUT_beamng(SBSTSUT):
     self.oob_tolerance = oob_tolerance
     self.target = self.oob_tolerance
     self.maxspeed = max_speed
+    self.max_speed_in_ms = self.maxspeed*0.277778
 
     # Check for activation key.
     if not os.path.exists(os.path.join(self.beamng_user, "tech.key")):
@@ -313,8 +320,8 @@ class SBSTSUT_beamng(SBSTSUT):
       # idx = 0
 
       brewer.vehicle.ai_set_aggression(self.risk_value)
-      # TODO This does not seem to take any effect...
-      brewer.vehicle.ai_set_speed(self.maxspeed, mode='limit')
+      # Sets the target speed for the AI in m/s, limit means this is the maximum value (not the reference one)
+      brewer.vehicle.ai_set_speed(self.max_speed_in_ms, mode='limit')
       brewer.vehicle.ai_drive_in_lane(True)
       brewer.vehicle.ai_set_waypoint(waypoint_goal.name)
 
