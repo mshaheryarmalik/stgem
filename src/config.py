@@ -45,7 +45,7 @@ for sut_id in config["available_sut"]:
   # WGAN defaults.
   # 1 = something, 2 = increasing removal probability, 3 = WGAN weighted sampling, 4 = buckets
   config[sut_id]["wgan"]["algorithm_version"] = 4
-  config[sut_id]["wgan"]["noise_dim"] = 100
+  config[sut_id]["wgan"]["noise_dim"] = 10
   config[sut_id]["wgan"]["gan_neurons"] = 128
   config[sut_id]["wgan"]["gan_learning_rate"] = 0.00005
   config[sut_id]["wgan"]["analyzer_learning_rate"] = 0.001
@@ -75,7 +75,7 @@ for sut_id in ["sbst_validator", "sbst_plane", "sbst_dave2", "sbst"]:
 
 for sut_id in ["sbst_plane", "sbst_dave2", "sbst"]:
   config[sut_id]["fitness_threshold"] = 0.95
-  config[sut_id]["max_speed"] = 70
+  config[sut_id]["max_speed"] = 300
 
 config["sbst_validator"]["curvature_points"] = 9
 config["sbst_plane"]["curvature_points"] = 10
