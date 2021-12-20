@@ -25,6 +25,7 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, pretrained
   # Stores execution times.
   session.time_total = 0
   session.time_training_total = 0
+  session.time_generation_total = 0
   session.time_execution_total = 0
   session.time_training = []
   session.time_generation = []
@@ -202,6 +203,7 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, pretrained
   session.fitness_std = np.std(test_outputs)
   session.time_total = (time.monotonic() - time_total_start)
   session.time_training_total = sum(session.time_training)
+  session.time_generation_total = sum(session.time_generation)
   session.time_execution_total = sum(session.time_execution)
 
   # Save everything
@@ -232,6 +234,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   # Stores execution times.
   session.time_total = 0
   session.time_training_total = 0
+  session.time_generation_total = 0
   session.time_execution_total = 0
   session.time_training = []
   session.time_generation = []
@@ -550,6 +553,7 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   session.fitness_std = np.std(test_outputs)
   session.time_total = (time.monotonic() - time_total_start)
   session.time_training_total = sum(session.time_training)
+  session.time_generation_total = sum(session.time_generation)
   session.time_execution_total = sum(session.time_execution)
 
   # Save everything
@@ -570,6 +574,7 @@ def main_random(model_id, sut_id, model, session, view_test, save_test, pretrain
   # Stores execution times.
   session.time_total = 0
   session.time_training_total = 0
+  session.time_generation_total = 0
   session.time_execution_total = 0
   session.time_training = []
   session.time_generation = []
@@ -654,6 +659,7 @@ def main_random(model_id, sut_id, model, session, view_test, save_test, pretrain
   session.fitness_std = np.std(test_outputs)
   session.time_total = (time.monotonic() - time_total_start)
   session.time_training_total = sum(session.time_training)
+  session.time_generation_total = sum(session.time_generation)
   session.time_execution_total = sum(session.time_execution)
  
   # Save everything
