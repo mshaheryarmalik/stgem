@@ -60,7 +60,7 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, pretrained
   # ---------------------------------------------------------------------------
   test_inputs = np.zeros(shape=(session.N_tests, model.sut.ndimensions)) # array to hold all generated tests
   test_outputs = np.zeros(shape=(session.N_tests, 1))                    # array to hold test outputs
-  tests_generated = 0                                                    # how many tests are generated so far
+  tests_generated = 0                                                    # how many tests have been generated so far
 
   if session.load_pregenerated_data:
     model.log("Loading pregenerated initial tests.")
@@ -517,7 +517,6 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
       for epoch in range(model.train_settings_init["epochs"]):
         # We include the new tests to the batch with high probability if and
         # only if they have high fitness.
-        bin_sample(1, S, R(tests_generated))
         BS = min(model.batch_size, session.random_init)
         train_X = np.zeros(shape=(BS, test_inputs.shape[1]))
         train_Y = np.zeros(shape=(BS, test_outputs.shape[1]))

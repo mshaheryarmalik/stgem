@@ -12,8 +12,6 @@ import matplotlib.patches as patches
 from shapely.geometry import LineString, Polygon
 from shapely.affinity import translate, rotate
 from descartes import PolygonPatch
-from tensorflow.python.keras.models import load_model
-import tensorflow.version as tf_version
 
 from sut.sut import SUT
 
@@ -114,7 +112,7 @@ class SBSTSUT(SUT):
 
   def _sample_input_space(self, N, curvature_points):
     """
-    Return n samples (tests) from the input space.
+    Return N samples (tests) from the input space.
 
     Args:
       N (int):                The number of tests to be sampled.
@@ -132,6 +130,7 @@ class SBSTSUT(SUT):
     # The components of the actual test are curvature values in the range
     # [-0.07, 0.07], but the generator output is expected to be in the interval
     # [-1, 1].
+    #return np.random.uniform(-1, 1, size=(N, curvature_points))
     #
     # We do not choose the components of a test independently in [-1, 1] but
     # we do as in the case of the Frenetic algorithm where the next component
@@ -516,6 +515,9 @@ class SBSTSUT_dave2(SBSTSUT_beamng):
 
     See the initializer of SBSTSUT_beamng for argument explanation.
     """
+
+    from tensorflow.python.keras.models import load_model
+    import tensorflow.version as tf_version
 
     try:
       super().__init__(beamng_home, map_size, curvature_points, oob_tolerance, max_speed)
