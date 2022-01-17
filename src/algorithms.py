@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import os, time, json
+import os, time, json, heapq
 from math import log10
 
 import numpy as np
@@ -128,12 +128,13 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, pretrained
   # ---------------------------------------------------------------------------
   while tests_generated < session.N_tests:
     # Generate a new valid test with high fitness and decrease target fitness
-    # as per execution of the loop.
+    # as per execution of the loop. We use a priority queue to track the best
+    # tests in case that an estimated good test was generated just before the
+    # target threshold was lowered enough for it to be selected.
     # -------------------------------------------------------------------------
     model.log("Starting to generate test {}.".format(tests_generated + 1))
     time_generation_start = time.monotonic()
-    best_test = None
-    best_fitness = 0.0
+    heap = []
     target_fitness = 1
     rounds = 0
     invalid = 0
@@ -148,17 +149,17 @@ def main_ogan(model_id, sut_id, model, session, view_test, save_test, pretrained
 
       # Predict the fitness of the new test.
       new_fitness = model.predict_fitness(new_test)[0,0]
-      if new_fitness > best_fitness:
-        best_test = new_test
-        best_fitness = new_fitness
+      heapq.heappush(heap, (1 - new_fitness, new_test))
 
       target_fitness *= session.fitness_coef
 
       # Check if the new test has high enough fitness.
-      if best_fitness >= target_fitness: break
+      if 1 - heap[0][0] >= target_fitness: break
 
     # Add the new test to our test suite.
     # -------------------------------------------------------------------------
+    best_test = heap[0][1].reshape(1, -1)
+    best_fitness = 1 - heap[0][0]
     test_inputs[tests_generated,:] = best_test
     tests_generated += 1
 
@@ -426,12 +427,13 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
   # ---------------------------------------------------------------------------
   while tests_generated < session.N_tests:
     # Generate a new valid test with high fitness and decrease target fitness
-    # as per execution of the loop.
+    # as per execution of the loop. We use a priority queue to track the best
+    # tests in case that an estimated good test was generated just before the
+    # target threshold was lowered enough for it to be selected.
     # -------------------------------------------------------------------------
     model.log("Starting to generate test {}.".format(tests_generated + 1))
     time_generation_start = time.monotonic()
-    best_test = None
-    best_fitness = 0.0
+    heap = []
     target_fitness = 1
     rounds = 0
     invalid = 0
@@ -446,22 +448,20 @@ def main_wgan(model_id, sut_id, model, session, view_test, save_test, pretrained
       if candidate_tests.shape[0] == 0:
         continue
 
-      # Find best test.
+      # Estimate test fitnesses and add them to heap.
       tests_predicted_fitness = model.predict_fitness(candidate_tests)
-      idx = np.argmax(tests_predicted_fitness)
-      new_test = candidate_tests[idx].reshape(1, -1)
-      new_fitness = tests_predicted_fitness[idx][0]
-      if new_fitness > best_fitness:
-        best_test = new_test
-        best_fitness = new_fitness
+      for i in range(tests_predicted_fitness.shape[0]):
+        heapq.heappush(heap, (1 - tests_predicted_fitness[i,0], candidate_tests[i]))
 
       target_fitness *= session.fitness_coef
 
-      # Check if the best test has high enough fitness.
-      if best_fitness >= target_fitness: break
+      # Check if the best predicted test is good enough.
+      if 1 - heap[0][0] >= target_fitness: break
 
     # Add the new test to our test suite.
     # -------------------------------------------------------------------------
+    best_test = heap[0][1].reshape(1, -1)
+    best_fitness = 1 - heap[0][0]
     test_inputs[tests_generated,:] = best_test
     tests_generated += 1
 
