@@ -254,7 +254,7 @@ class SBSTSUT_base(SUT):
     # The time plus OOB percentage is the output signal.
     states = sim_data_collector.get_simulation_data().states
     timestamps = np.zeros(len(states))
-    oob = np.zeros(size=(1, len(states)))
+    oob = np.zeros(shape=(1, len(states)))
     for i, state in enumerate(states):
       timestamps[i] = state.timer
       oob[0,i] = state.oob_percentage
