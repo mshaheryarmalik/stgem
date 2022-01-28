@@ -20,8 +20,8 @@ from shapely.geometry import LineString, Polygon
 from shapely.affinity import translate, rotate
 from descartes import PolygonPatch
 
-from ...sut import SUT
-from util import frechet_distance, sbst_validate_test
+from sut.sut import SUT
+from sut.sbst.util import frechet_distance, sbst_validate_test
 
 from self_driving.beamng_brewer import BeamNGBrewer
 from self_driving.beamng_car_cameras import BeamNGCarCameras
@@ -85,6 +85,7 @@ class SBSTSUT_base(SUT):
     # explanation in the docstring).
     self.beamng_user = os.path.join(os.environ["USERPROFILE"], "Documents/BeamNG.research")
     self.map_size = map_size
+    self.oob_tolerance = 0.95 # This is used by the SBST code, but the value does not matter.
     self.maxspeed = max_speed
     self.max_speed_in_ms = self.maxspeed*0.277778
 
@@ -249,15 +250,15 @@ class SBSTSUT_base(SUT):
 
       self.end_iteration()
 
-    # TODO: We could return other sorts of data as well.
-
-    # Return the highest OOB percentage from the states of the vehicle during
-    # the simulation (higher -> more out of bounds). The current competition
-    # code has a bug, so we cannot directly return the value of
-    # sim_data_collector.get_simulation_data().states[-1].max_oob_percentage
-    for state in sim_data_collector.get_simulation_data():
-      print(state)
-    return max(state.oob_percentage for state in sim_data_collector.get_simulation_data().states)
+    # Build a time series for the OOB percentage based on simulation states.
+    # The time plus OOB percentage is the output signal.
+    states = sim_data_collector.get_simulation_data().states
+    timestamps = np.zeros(len(states))
+    oob = np.zeros_like(timestamps)
+    for i, state in enumerate(states):
+      timestamps[i] = state.timer
+      oob[i] = state.oob_percentage
+    return timestamps, oob
 
 class SBSTSUT_curvature(SBSTSUT_base):
   """
@@ -269,7 +270,7 @@ class SBSTSUT_curvature(SBSTSUT_base):
   of the map and point initially directly upwards.
   """
 
-  def __init__(self, curvature_points, beamng_home, map_size, max_speed):
+  def __init__(self, curvature_points, beamng_home, map_size, max_speed, check_key=True):
     """
     Args:
       curvature_points (int): How many curvature values specify a road.
@@ -281,7 +282,7 @@ class SBSTSUT_curvature(SBSTSUT_base):
     if map_size <= 0:
       raise ValueError("The map size must be positive.")
 
-    super().__init__(beamng_home, map_size, max_speed)
+    super().__init__(beamng_home, map_size, max_speed, check_key)
     self.curvature_points = curvature_points
 
   def test_to_road_points(self, test):
@@ -421,7 +422,7 @@ class SBSTSUT(SBSTSUT_curvature):
 
     return result
 
-  def validity(self, test):
+  def validity(self, tests):
     """
     Validate the given tests.
 
@@ -474,7 +475,7 @@ class SBSTSUT_validator(SBSTSUT_curvature):
   """
 
   def __init__(self, map_size, curvature_points):
-    super().__init__(curvature_points, beamng_home="", map_size, max_speed=1, check_key=False)
+    super().__init__(curvature_points, beamng_home="", map_size=map_size, max_speed=1, check_key=False)
 
   def execute_test(self, tests):
     """

@@ -6,6 +6,9 @@ import math
 import numpy as np
 from shapely.geometry import LineString, Polygon
 
+from code_pipeline.tests_generation import RoadTestFactory
+from code_pipeline.validation import TestValidator
+
 def sbst_test_to_image(test, map_size):
   """
   Visualizes the road described as points in the plane in the map of specified
