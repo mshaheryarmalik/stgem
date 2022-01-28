@@ -1,40 +1,31 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+"""
+Here is a base class implementation for systems under test (SUTs). We do not
+strictly enforce the input and output representations for flexibility, but we
+have the following conventions which should be followed if possible.
+
+Inputs:
+-------
+We have two input formats: vectors and discrete signals. Notice that it should
+always be possible to give several inputs at once since then parallelization
+can be used.
+
+Vectors inputs should be numpy arrays of floats. The SUT should allow the
+execution of variable-length input vectors whenever this makes sense (e.g.,
+when the input is interpretable as time series). Since we allow several inputs
+to be specified at once, the input should here be an array of vectors.
+
+Discrete signals.
+"""
+
 import numpy as np
 
 class SUT:
   """
   Base class implementing a system under test.
   """
-
-  def __init__(self):
-    self.ndimensions = None
-    self.dataX = None
-    self.dataY = None
-    self.target = 1.0
-
-  def distance(self, X, Y):
-    """
-    Returns the distance between two tests. This might not make sense for
-    arbitrary system under test; we return Euclidean distance by default.
-
-    Args:
-      X (np.ndarray): Test array of shape (1, self.ndimensions) or (self.dimensions).
-      Y (np.ndarray): Test array of shape (1, self.ndimensions) or (self.dimensions).
-
-    Returns:
-      result (float): The Euclidean distance of X and Y.
-    """
-
-    if len(X.shape) > 2 or len(Y.shape) > 2:
-      raise ValueError("The tests must be 1- or 2-dimensional arrays.")
-    X = X.reshape(-1)
-    Y = Y.reshape(-1)
-    if X.shape[0] != Y.shape[0]:
-      raise ValueError("The tests must have the same dimension.")
-
-    return np.linalg.norm(X - Y)
 
   def execute_test(self, tests):
     raise NotImplementedError()
@@ -44,6 +35,19 @@ class SUT:
 
   def sample_input_space(self, N=1):
     raise NotImplementedError()
+
+  def validity(self, tests):
+    """
+    Basic validator which deems all tests valid.
+
+    Args:
+      tests (np.ndarray): Array of shape (N, ...).
+
+    Returns:
+      output (np.ndarray): Array of shape (N, 1).
+    """
+
+    return np.ones(shape=(tests.shape[0], 1))
 
 def SUT_MO_W(SUT):
   """
@@ -119,3 +123,4 @@ def SUT_MO_W(SUT):
       raise ValueError("The number of tests should be positive.")
 
     return self.suts[0].sample_input_space(N)
+
