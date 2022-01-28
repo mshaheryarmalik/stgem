@@ -27,27 +27,21 @@ class SUT:
   Base class implementing a system under test.
   """
 
-  def execute_test(self, tests):
+  def execute_test(self, test):
     raise NotImplementedError()
 
-  def execute_random_test(self, N=1):
+  def execute_random_test(self):
     raise NotImplementedError()
 
-  def sample_input_space(self, N=1):
+  def sample_input_space(self):
     raise NotImplementedError()
 
-  def validity(self, tests):
+  def validity(self, test):
     """
     Basic validator which deems all tests valid.
-
-    Args:
-      tests (np.ndarray): Array of shape (N, ...).
-
-    Returns:
-      output (np.ndarray): Array of shape (N, 1).
     """
 
-    return np.ones(shape=(tests.shape[0], 1))
+    return 1
 
 def SUT_MO_W(SUT):
   """

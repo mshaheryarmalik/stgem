@@ -177,7 +177,7 @@ class WOGAN(Algorithm):
       invalid = 0
       while tests_generated < self.N_random_init:
         test = self.sut.sample_input_space()
-        if self.sut.validity(test)[0,0] == 0:
+        if self.sut.validity(test) == 0:
           invalid += 1
           continue
         test_inputs[tests_generated,:] = test
@@ -269,8 +269,9 @@ class WOGAN(Algorithm):
             candidate_tests = self.models[i].generate_test(self.N_candidate_tests)
 
             # Pick only the valid tests.
-            candidate_tests = candidate_tests[(self.sut.validity(candidate_tests) == 1.0).reshape(-1)]
-            invalid += self.N_candidate_tests - candidate_tests.shape[0]
+            valid_idx = [i for i in range(self.N_candidate_tests) if self.sut.validity(candidate_tests[i]) == 1]
+            candidate_tests = candidate_tests[valid_idx]
+            invalid += self.N_candidate_tests - len(valid_idx)
             if candidate_tests.shape[0] == 0:
               continue
 
@@ -288,7 +289,7 @@ class WOGAN(Algorithm):
 
       # Add the new test to our test suite.
       # -------------------------------------------------------------------------
-      best_test = heap[0][1].reshape(1, -1)
+      best_test = heap[0][1]
       best_fitness = 1 - heap[0][0]
       test_inputs[tests_generated,:] = best_test
       tests_generated += 1

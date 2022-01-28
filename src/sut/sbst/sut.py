@@ -254,10 +254,10 @@ class SBSTSUT_base(SUT):
     # The time plus OOB percentage is the output signal.
     states = sim_data_collector.get_simulation_data().states
     timestamps = np.zeros(len(states))
-    oob = np.zeros_like(timestamps)
+    oob = np.zeros(size=(1, len(states)))
     for i, state in enumerate(states):
       timestamps[i] = state.timer
-      oob[i] = state.oob_percentage
+      oob[0,i] = state.oob_percentage
     return timestamps, oob
 
 class SBSTSUT_curvature(SBSTSUT_base):
@@ -323,40 +323,33 @@ class SBSTSUT_curvature(SBSTSUT_base):
 
     return points
 
-  def execute_random_test(self, N=1):
+  def execute_random_test(self):
     """
-    Execute N random tests and return their outputs.
-
-    Args:
-      N (int): The number of tests to be executed.
+    Execute a random tests and return it and its output.
 
     Returns:
-      tests (np.ndarray):   Array of shape (N, self.curvature_points) of floats
-                            in [-1, 1].
-      outputs (np.ndarray): Array of shape (N, 1).
+      test (np.ndarray): Array of shape (self.curvature_points) of floats in
+                         [-1, 1].
+      timestamps (np.ndarray): Array of shape (N, 1).
+      oob (np.ndarray): Array of shape (1, N).
     """
 
-    if N <= 0:
-      raise ValueError("The number of tests should be positive.")
+    test = self.sample_input_space()
+    timestamps, oob = self.execute_test(test)
+    return test, timestamps, oob
 
-    dataX = self.sample_input_space(N)
-    dataY = self.execute_test(dataX)
-    return dataX, dataY
-
-  def _sample_input_space(self, N, curvature_points):
+  def _sample_input_space(self, curvature_points):
     """
-    Return N samples (tests) from the input space.
+    Return a sample (test) from the input space.
 
     Args:
-      N (int):                The number of tests to be sampled.
       curvature_points (int): Number of curvature points.
 
     Returns:
-      tests (np.ndarray): Array of shape (N, curvature_points).
+      test (np.ndarray): Array of shape (curvature_points) of floats in
+                         [-1, 1].
     """
 
-    if N <= 0:
-      raise ValueError("The number of tests should be positive.")
     if curvature_points <= 0:
       raise ValueError("The number of curvature points must be positive.")
 
@@ -368,29 +361,22 @@ class SBSTSUT_curvature(SBSTSUT_base):
     # We do not choose the components of a test independently in [-1, 1] but
     # we do as in the case of the Frenetic algorithm where the next component
     # is in the range of the previous value +- 0.05.
-    tests = np.zeros(shape=(N, curvature_points))
-    for i in range(N):
-      tests[i,0] = np.random.uniform(-1, 1)
-      for j in range(1, curvature_points):
-        tests[i,j] = tests[i,j-1] + (1/0.07)*np.random.uniform(-0.05, 0.05)
-    return tests
+    test = np.zeros(curvature_points)
+    test[0] = np.random.uniform(-1, 1)
+    for i in range(1, curvature_points):
+      test[i] = test[i-1] + (1/0.07)*np.random.uniform(-0.05, 0.05)
+    return test
 
-  def sample_input_space(self, N=1):
+  def sample_input_space(self):
     """
-    Return N samples (tests) from the input space.
-
-    Args:
-      N (int): The number of tests to be sampled.
+    Return a sample (test) from the input space.
 
     Returns:
-      tests (np.ndarray): Array of shape (N, self.curvature_points) of floats
-                          in [-1, 1].
+      test (np.ndarray): Array of shape (self.curvature_points) of floats in
+                         [-1, 1].
     """
 
-    if N <= 0:
-      raise ValueError("The number of tests should be positive.")
-
-    return self._sample_input_space(N, self.curvature_points)
+    return self._sample_input_space(self.curvature_points)
 
 class SBSTSUT(SBSTSUT_curvature):
   """
@@ -401,47 +387,33 @@ class SBSTSUT(SBSTSUT_curvature):
   def __init__(self, curvature_points, beamng_home, map_size, max_speed):
     super().__init__(curvature_points, beamng_home, map_size, max_speed)
 
-  def execute_test(self, tests):
+  def execute_test(self, test):
     """
-    Execute the given tests on the SUT.
+    Execute the given test on the SUT.
 
     Args:
-      tests (np.ndarray): Array of N tests with shape (N, M) with M curvature
-                          values.
+      test (np.ndarray): Array with shape (1, N) or (N) with N curvature
+                         values.
 
     Returns:
-      result (np.ndarray): Array of shape (N, 1).
+      timestamps (np.ndarray): Array of shape (M, 1).
+      oob (np.ndarray): Array of shape (1, M).
     """
 
-    if len(tests.shape) != 2:
-      raise ValueError("Input array expected to have shape (N, M).")
+    return self._execute_test_beamng(self.test_to_road_points(test.reshape(-1)))
 
-    result = np.zeros(shape=(tests.shape[0], 1))
-    for n, test in enumerate(tests):
-      result[n,0] = self._execute_test_beamng(self.test_to_road_points(tests[n,:]))
-
-    return result
-
-  def validity(self, tests):
+  def validity(self, test):
     """
-    Validate the given tests.
+    Validate the given test.
 
     Args:
-      tests (np.ndarray): Array of N tests with shape (N, M) with M curvature
-                          values.
+      test (np.ndarray): Array with shape (M) with M curvature values.
 
     Returns:
-      result (np.ndarray): Array of shape (N, 1).
+      result (float)
     """
 
-    if len(tests.shape) != 2:
-      raise ValueError("Input array expected to have shape (N, M).")
-
-    result = np.zeros(shape=(tests.shape[0], 1))
-    for n, test in enumerate(tests):
-      result[n,0] = sbst_validate_test(self.test_to_road_points(test), self.map_size)
-
-    return result
+    return sbst_validate_test(self.test_to_road_points(test), self.map_size)
 
   def distance_frechet(self, X, Y):
     """
@@ -477,24 +449,16 @@ class SBSTSUT_validator(SBSTSUT_curvature):
   def __init__(self, map_size, curvature_points):
     super().__init__(curvature_points, beamng_home="", map_size=map_size, max_speed=1, check_key=False)
 
-  def execute_test(self, tests):
+  def execute_test(self, test):
     """
-    Execute the given tests on the SUT.
+    Execute the given test on the SUT.
 
     Args:
-      tests (np.ndarray): Array of N tests with shape (N, M) of M curvature
-                          values.
+      test (np.ndarray): Array with shape (1,N) or (N) of N curvature values.
 
     Returns:
-      result (np.ndarray): Array of shape (N, 1).
+      result (np.ndarray): Array of shape (1).
     """
 
-    if len(tests.shape) != 2:
-      raise ValueError("Input array expected to have shape (N, M).")
-
-    result = np.zeros(shape=(tests.shape[0], 1))
-    for n, test in enumerate(tests):
-      result[n,0] = sbst_validate_test(self.test_to_road_points(test), self.map_size)
-
-    return result
+    return np.array(sbst_validate_test(self.test_to_road_points(test), self.map_size)).reshape(1)
 
