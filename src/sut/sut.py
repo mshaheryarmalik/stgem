@@ -8,14 +8,11 @@ have the following conventions which should be followed if possible.
 
 Inputs:
 -------
-We have two input formats: vectors and discrete signals. Notice that it should
-always be possible to give several inputs at once since then parallelization
-can be used.
+We have two input formats: vectors and discrete signals.
 
 Vectors inputs should be numpy arrays of floats. The SUT should allow the
 execution of variable-length input vectors whenever this makes sense (e.g.,
-when the input is interpretable as time series). Since we allow several inputs
-to be specified at once, the input should here be an array of vectors.
+when the input is interpretable as time series).
 
 Discrete signals.
 """
