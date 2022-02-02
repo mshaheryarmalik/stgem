@@ -18,15 +18,16 @@ class Random(Algorithm):
 
         self.models = [Random_Model(self.sut, self.parameters, self.logger) for _ in range(self.objective_func.dim)]
 
+
     def generate_test(self):
-        self.timer_start("total")
+        self.perf.timer_start("total")
 
         # TODO: Implement the usage of predefined random data.
 
         while True:
             # Generate a new test.
             # -----------------------------------------------------------------------
-            self.timer_start("generation")
+            self.perf.timer_start("generation")
             self.log("Starting to generate test {}.".format(len(self.test_suite) + 1))
             rounds = 0
             invalid = 0
@@ -45,23 +46,21 @@ class Random(Algorithm):
 
             # Save information on how many tests needed to be generated etc.
             # -----------------------------------------------------------------------
-            self.save_history("generation_time", self.timer_reset("generation"))
-            self.save_history("N_tests_generated", rounds)
-            self.save_history("N_invalid_tests_generated", invalid)
+            self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
+            self.perf.save_history("N_tests_generated", rounds)
+            self.perf.save_history("N_invalid_tests_generated", invalid)
 
             # Execute the test on the SUT.
             # -----------------------------------------------------------------------
             self.log("Executing the test...")
 
-            self.timer_start("execution")
+
             sut_output = self.sut.execute_test(new_test)
             # Check if we get a vector of floats or a 2-tuple of arrays (signals).
             if np.isscalar(sut_output[0]):
                 output = self.objective_func(sut_output)
             else:
                 output = self.objective_func(*sut_output)
-            self.save_history("execution_time", self.timer_reset("execution"))
-
             self.log("The actual fitness {} for the generated test.".format(output))
 
             # Add the new test to the test suite.
@@ -70,8 +69,8 @@ class Random(Algorithm):
             self.test_suite.append(idx)
             self.objective_selector.update(np.argmax(output))
 
-            self.save_history("training_time", 0)
+            self.perf.save_history("training_time", 0)
 
-            self.timers_hold()
+            self.perf.timers_hold()
             yield idx
-            self.timers_resume()
+            self.perf.timers_resume()

@@ -24,6 +24,8 @@ class AT(SUT):
         # TODO: Right now the values below are fixed as in the Fainekos et al.
         #       paper. We should consider making them configurable.
 
+        SUT.__init__(self)
+
         # The total time domain for the signal.
         self.time = 30
         # How many time units a signal must stay constant. This determines how
@@ -75,7 +77,7 @@ class AT(SUT):
 
         return timestamps_array, result
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         """
         Execute the given test on the SUT.
 

@@ -18,6 +18,8 @@ class OdroidSUT(SUT):
     """
 
     def __init__(self):
+        SUT.__init__(self)
+
         self.data_file = os.path.join("sut", "odroid", "odroid.npy")
 
         self.ndimensions = None
@@ -63,7 +65,7 @@ class OdroidSUT(SUT):
         self.scaleY3 = self.dataY[:, 2].max(axis=0)
         self.dataY[:, 2] = self.dataY[:, 2] / self.scaleY3
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         """
         Execute the given tests on the SUT. As not all possible parameters have a
         test value in the data, we find the closest test from the test data

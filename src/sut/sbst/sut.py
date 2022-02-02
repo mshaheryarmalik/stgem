@@ -70,6 +70,8 @@ class SBSTSUT_base(SUT):
           check_key (bool):       Check if the activation key exists.
         """
 
+        SUT.__init__(self)
+
         if map_size <= 0:
             raise ValueError("The map size must be positive.")
         if max_speed <= 0:
@@ -397,7 +399,7 @@ class SBSTSUT(SBSTSUT_curvature):
     def __init__(self, curvature_points, beamng_home, map_size, max_speed):
         super().__init__(curvature_points, beamng_home, map_size, max_speed)
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         """
         Execute the given test on the SUT.
 

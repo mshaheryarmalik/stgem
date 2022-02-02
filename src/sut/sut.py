@@ -16,13 +16,22 @@ when the input is interpretable as time series).
 
 Discrete signals.
 """
+from performance import PerformanceData
 
 class SUT:
     """
     Base class implementing a system under test.
     """
+    def __init__(self):
+        self.perf= PerformanceData()
 
     def execute_test(self, test):
+        self.perf.timer_start("execution")
+        r= self._execute_test(test)
+        self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
+        return r
+
+    def _execute_test(self, test):
         raise NotImplementedError()
 
     def execute_random_test(self):
@@ -37,3 +46,4 @@ class SUT:
         """
 
         return 1
+
