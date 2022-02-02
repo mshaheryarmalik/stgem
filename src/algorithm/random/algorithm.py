@@ -53,7 +53,12 @@ class Random(Algorithm):
       self.log("Executing the test...")
 
       self.timer_start("execution")
-      output = self.objective_func(self.sut.execute_test(new_test))
+      sut_output = self.sut.execute_test(new_test)
+      # Check if we get a vector of floats or a 2-tuple of arrays (signals).
+      if np.isscalar(sut_output[0]):
+        output = self.objective_func(sut_output)
+      else:
+        output = self.objective_func(*sut_output)
       self.save_history("execution_time", self.timer_reset("execution"))
 
       self.log("The actual fitness {} for the generated test.".format(output))

@@ -90,6 +90,12 @@ class SBSTSUT_base(SUT):
     if not os.path.exists(os.path.join(self.beamng_user, "tech.key")):
       raise Exception("The activation key 'tech.key' must be in the directory {}.".format(self.beamng_user))
 
+    # Disable BeamNG logs etc.
+    for id in ["shapely.geos", "beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle", "beamngpy.Camera"]:
+      logger = logging.getLogger(id)
+      logger.setLevel(logging.CRITICAL)
+      logger.disabled = True
+
     # For validating the executed roads.
     self.validator = TestValidator(map_size=self.map_size)
 
@@ -150,12 +156,6 @@ class SBSTSUT_base(SUT):
     if self.brewer is None:
       self.brewer = BeamNGBrewer(beamng_home=self.beamng_home, beamng_user=self.beamng_user)
       self.vehicle = self.brewer.setup_vehicle()
-
-      # Disable BeamNG logs.
-      for id in ["beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle", "beamngpy.Camera"]:
-        logger = logging.getLogger(id)
-        logger.setLevel(logging.CRITICAL)
-        logger.disabled = True
 
     the_test = RoadTestFactory.create_road_test(test)
 

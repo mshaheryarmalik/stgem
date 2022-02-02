@@ -21,18 +21,31 @@ class OwnExperiment:
 
 if __name__ == "__main__":
   # Random
-  job = {"sut": "odroid.OdroidSUT",
-         "sut_parameters": {"data_file": "../data/odroid/odroid.npy"},
-         "objective_func": "ObjectiveMaxSelected",
-         "objective_func_parameters": {"selected": [0]},
+  job = {"sut": "sbst.SBSTSUT",
+         "sut_parameters": {"beamng_home": "C:\\Users\\japeltom\\BeamNG\\BeamNG.tech.v0.24.0.1", "map_size": 200, "max_speed": 75, "curvature_points": 5},
+         "objective_func": "ObjectiveMaxComponentwise",
          "objective_selector": "ObjectiveSelectorMAB",
-         "objective_selector_parameters": {"warm_up": 60},
+         "objective_selector_parameters": {"warm_up": 3},
          "algorithm": "random.Random",
          "algorithm_parameters": {"use_predefined_random_data": False,
                                   "predefined_random_data": {"test_inputs": None,
                                                              "test_outputs": None}},
-         "job_parameters": {"N_tests": 300}
+         "job_parameters": {"N_tests": 10}
          }
+  """
+  job = {"sut": "odroid.OdroidSUT",
+         "sut_parameters": {"data_file": "..\data\odroid\odroid.npy"},
+         "objective_func": "ObjectiveMaxSelected",
+         "objective_selector": "ObjectiveSelectorMAB",
+         "objective_selector_parameters": {"warm_up": 3},
+         "algorithm": "random.Random",
+         "algorithm_parameters": {"use_predefined_random_data": False,
+                                  "predefined_random_data": {"test_inputs": None,
+                                                             "test_outputs": None}},
+         "job_parameters": {"N_tests": 10}
+         }
+  """
+
   # Process the settings copy commands.
   def dict_access(d, s):
     current = d
@@ -58,14 +71,16 @@ if __name__ == "__main__":
 
   # Setup loggers.
   logger_names = ["algorithm", "model"]
-  logging.basicConfig(level=logging.DEBUG, format="%(name)s: %(message)s")
+  logging.basicConfig(level=logging.INFO, format="%(name)s: %(message)s")
   loggers = {x:logging.getLogger(x) for x in ["algorithm", "model"]}
   for logger in loggers.values():
-    logger.setLevel("DEBUG")
+    logger.setLevel("INFO")
   logger = namedtuple("Logger", logger_names)(**loggers)
 
   # Setup the system under test.
   sut_class = sut.loadSUT(job["sut"])
+  if not "sut_parameters" in job:
+      job["sut_parameters"] = {}
   sut = sut_class(**job["sut_parameters"])
 
   # Setup the test repository.
@@ -73,6 +88,8 @@ if __name__ == "__main__":
 
   # Setup the objective functions for optimization.
   objective_class = objective.loadObjective(job["objective_func"])
+  if not "objective_func_parameters" in job:
+      job["objective_func_parameters"] = {}
   objective_func = objective_class(**job["objective_func_parameters"])
   target = None
 

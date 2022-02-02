@@ -31,7 +31,7 @@ class ObjectiveMaxComponentwise(Objective):
   """
 
   def __init__(self):
-    pass
+    self.dim = 1
 
   def __call__(self, timestamps, signals):
     return [max(signal) for signal in signals]
