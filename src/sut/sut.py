@@ -17,8 +17,6 @@ when the input is interpretable as time series).
 Discrete signals.
 """
 
-import numpy as np
-
 class SUT:
   """
   Base class implementing a system under test.
