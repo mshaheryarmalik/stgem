@@ -6,7 +6,7 @@ from job import Job
 if __name__ == "__main__":
     # Random
     job_desc = {"sut": "odroid.OdroidSUT",
-           "sut_parameters": {"data_file": "../data/odroid/odroid.npy"},
+           "sut_parameters": {},
            "objective_func": "ObjectiveMaxSelected",
            "objective_func_parameters": {"selected": [0]},
            "objective_selector": "ObjectiveSelectorMAB",

@@ -17,8 +17,8 @@ class OdroidSUT(SUT):
     is a 3-tuple (power, performance, efficiency) scaled to [0, 1].
     """
 
-    def __init__(self, data_file):
-        self.data_file = data_file
+    def __init__(self):
+        self.data_file = os.path.join("sut", "odroid", "odroid.npy")
 
         self.ndimensions = None
         self.dataX = None
