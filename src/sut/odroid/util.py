@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
 
 def generate_odroid_data(data_file):
     """

@@ -42,7 +42,7 @@ class OdroidSUT(SUT):
             csv_file = self.data_file[:-4] + ".csv"
             if not os.path.exists(csv_file):
                 raise Exception("No Odroid csv file '{}' available for data generation.".format(csv_file))
-            preprocess_data.generate_odroid_data(self.data_file)
+            generate_odroid_data(csv_file)
 
         data = np.load(self.data_file)
 
