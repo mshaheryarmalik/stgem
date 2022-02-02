@@ -19,24 +19,24 @@ Discrete signals.
 
 import numpy as np
 
+
 class SUT:
-  """
-  Base class implementing a system under test.
-  """
-
-  def execute_test(self, test):
-    raise NotImplementedError()
-
-  def execute_random_test(self):
-    raise NotImplementedError()
-
-  def sample_input_space(self):
-    raise NotImplementedError()
-
-  def validity(self, test):
     """
-    Basic validator which deems all tests valid.
+    Base class implementing a system under test.
     """
 
-    return 1
+    def execute_test(self, test):
+        raise NotImplementedError()
 
+    def execute_random_test(self):
+        raise NotImplementedError()
+
+    def sample_input_space(self):
+        raise NotImplementedError()
+
+    def validity(self, test):
+        """
+        Basic validator which deems all tests valid.
+        """
+
+        return 1
