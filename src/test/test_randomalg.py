@@ -4,7 +4,7 @@ class RandomAlgorithmTestCase(unittest.TestCase):
     def test_random_alg(self):
         from job import Job
         job_desc = {"sut": "odroid.OdroidSUT",
-                    "sut_parameters": {"data_file": "../../data/odroid/odroid.npy"},
+                    "sut_parameters": {},
                     "objective_func": "ObjectiveMaxSelected",
                     "objective_func_parameters": {"selected": [0]},
                     "objective_selector": "ObjectiveSelectorMAB",
