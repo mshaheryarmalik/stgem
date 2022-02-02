@@ -12,9 +12,6 @@ import logging
 
 import numpy as np
 
-from matplotlib import pyplot as plt
-import matplotlib.patches as patches
-
 from shapely.geometry import Point
 from shapely.geometry import LineString, Polygon
 from shapely.affinity import translate, rotate

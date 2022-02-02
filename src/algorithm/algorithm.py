@@ -8,12 +8,16 @@ class Algorithm:
   Base class for all test suite generation algorithms.
   """
 
-  def __init__(self, sut, objective):
+  def __init__(self, sut, test_repository, objective_func, objective_selector, logger=None):
     self.sut = sut
-    self.objective = objective
-    self.parameter_names = []
-    self.parameters = {}
+    self.test_repository = test_repository
+    self.objective_func = objective_func
+    self.objective_selector = objective_selector
 
+    self.logger = logger
+    self.log = lambda s: self.logger.algorithm.info(s) if logger is not None else None
+
+    self.test_suite = []
     self.timers = {}
     self.histories = {}
 
@@ -25,13 +29,13 @@ class Algorithm:
     return value
 
   def get_history(self, id):
-    if not id in self.times:
+    if not id in self.timers:
       raise Exception("No history for the identifier '{}'.".format(id))
     return self.histories[id]
 
   def save_history(self, id, value, single=False):
     if not single:
-      if not id in self.times:
+      if not id in self.timers:
         self.histories[id] = []
       self.histories[id].append(value)
     else:
