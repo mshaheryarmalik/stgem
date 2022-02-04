@@ -24,7 +24,7 @@ class OGAN(Algorithm):
         self.models = [model_class(sut=self.sut, parameters=parameters, logger=logger) for _ in range(self.objective_func.dim)]
 
     def generate_test(self):
-        self.timer_start("total")
+        self.perf.timer_start("total")
 
         tests_generated = 0                                         # how many tests have been generated so far
         model_trained = [0 for m in range(self.objective_func.dim)] # keeps track how many tests were generated when a model was previously trained
@@ -43,7 +43,7 @@ class OGAN(Algorithm):
         # Notice that in principle we should train all models here. We however
         # opt to train only active models for more generality. It is up to the
         # caller to ensure that all models are trained here if so desired.
-        self.timer_start("training")
+        self.perf.timer_start("training")
         for i in self.objective_selector.select():
             self.log("Training the OGAN model {}...".format(i + 1))
             dataX, dataY = self.test_repository.get(self.test_suite)
@@ -55,7 +55,7 @@ class OGAN(Algorithm):
                                                 train_settings=self.models[i].train_settings_init
                                                )
             model_trained[i] = tests_generated
-        self.save_history("training_time", self.timer_reset("training"))
+        self.perf.save_history("training_time", self.perf.timer_reset("training"))
 
         # Begin the main loop for new test generation and training.
         # ---------------------------------------------------------------------
@@ -70,7 +70,7 @@ class OGAN(Algorithm):
             # tests in case that an estimated good test was generated just
             # before the target threshold was lowered enough for it to be
             # selected.
-            self.timer_start("generation")
+            self.perf.timer_start("generation")
             self.log("Starting to generate test {}.".format(tests_generated + 1))
             heap = []
             target_fitness = 1
@@ -111,10 +111,10 @@ class OGAN(Algorithm):
   
             # Save information on how many tests needed to be generated etc.
             # -----------------------------------------------------------------
-            self.save_history("generation_time", self.timer_reset("generation"))
+            self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
             N_generated = rounds*self.N_candidate_tests
-            self.save_history("N_tests_generated", N_generated)
-            self.save_history("N_invalid_tests_generated", invalid)
+            self.perf.save_history("N_tests_generated", N_generated)
+            self.perf.save_history("N_invalid_tests_generated", invalid)
   
             # Execute the test on the SUT.
             # -----------------------------------------------------------------
@@ -124,9 +124,9 @@ class OGAN(Algorithm):
             self.log("Chose test {} with predicted maximum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
             self.log("Executing the test...")
   
-            self.timer_start("execution")
+            self.perf.timer_start("execution")
             sut_output = self.sut.execute_test(best_test)
-            self.save_history("execution_time", self.timer_reset("execution"))
+            self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
             # Check if we get a vector of floats or a 2-tuple of arrays
             # (signals).
             if np.isscalar(sut_output[0]):
@@ -148,7 +148,7 @@ class OGAN(Algorithm):
             # We train the models which were involved in the test generation.
             # We do not take the updated active model into account. We train
             # only if enough delay since the last training.
-            self.timer_start("training")
+            self.perf.timer_start("training")
             for i in active_models:
                 if tests_generated - model_trained[i] >= self.train_delay:
                     self.log("Training the OGAN model {}...".format(i + 1))
@@ -160,9 +160,9 @@ class OGAN(Algorithm):
                                                         dataY,
                                                         train_settings=self.models[i].train_settings,
                                                        )
-            self.save_history("training_time", self.timer_reset("training"))
+            self.perf.save_history("training_time", self.perf.timer_reset("training"))
   
-            self.timers_hold()
+            self.perf.timers_hold()
             yield idx
-            self.timers_resume()
+            self.perf.timers_resume()
   
