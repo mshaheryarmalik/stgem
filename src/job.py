@@ -27,6 +27,7 @@ class Job:
                 current = current[k]
             current[pcs[-1]] = v
 
+        # Implement the copying mechanism of values.
         keys = list(self.description.keys())
         for key in keys:
             item = dict_access(self.description, key)
@@ -34,6 +35,11 @@ class Job:
                 keys += [key + "." + k for k in item.keys()]
             elif isinstance(item, str) and item.startswith("copy:"):
                 dict_set(self.description, key, dict_access(self.description, item[5:]))
+
+        # Fill in empty values for certain parameters if missing.
+        for name in ["sut_parameters", "objective_selector_parameters", "objective_func_parameters"]:
+            if not name in self.description:
+                self.description[name] = {}
 
         # Setup the device.
         self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -60,8 +66,6 @@ class Job:
 
         # Setup the objective selector.
         objective_class = objective.loadObjectiveSelector(self.description["objective_selector"])
-        if not "objective_selector_parameters" in self.description:
-            self.description["objective_selector_parameters"] = {}
         objective_selector = objective_class(objective_func=objective_func, **self.description["objective_selector_parameters"])
 
         # Process job parameters for algorithm setup.

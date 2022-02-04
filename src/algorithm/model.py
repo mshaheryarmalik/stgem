@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-
 class Model:
     """
     Base class for all models.
@@ -22,3 +21,4 @@ class Model:
 
     def generate_test(self):
         raise NotImplementedError()
+

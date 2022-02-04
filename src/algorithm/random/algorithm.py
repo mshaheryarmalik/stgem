@@ -41,8 +41,6 @@ class Random(Algorithm):
 
                 break
 
-            self.log("Chose test {} with predicted objective [{}]. Generated total {} tests of which {} were invalid.".format(new_test, ",".join("1" for i in range(self.objective_func.dim)), rounds, invalid))
-
             # Save information on how many tests needed to be generated etc.
             # -----------------------------------------------------------------------
             self.save_history("generation_time", self.timer_reset("generation"))
@@ -51,16 +49,17 @@ class Random(Algorithm):
 
             # Execute the test on the SUT.
             # -----------------------------------------------------------------------
+            self.log("Chose test {} with predicted maximum objective 1. Generated total {} tests of which {} were invalid.".format(new_test, rounds, invalid))
             self.log("Executing the test...")
 
             self.timer_start("execution")
             sut_output = self.sut.execute_test(new_test)
+            self.save_history("execution_time", self.timer_reset("execution"))
             # Check if we get a vector of floats or a 2-tuple of arrays (signals).
             if np.isscalar(sut_output[0]):
                 output = self.objective_func(sut_output)
             else:
                 output = self.objective_func(*sut_output)
-            self.save_history("execution_time", self.timer_reset("execution"))
 
             self.log("The actual fitness {} for the generated test.".format(output))
 

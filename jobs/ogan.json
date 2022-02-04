@@ -1,0 +1,25 @@
+{
+"sut": "odroid.OdroidSUT",
+"objective_func": "ObjectiveMaxSelected",
+"objective_func_parameters": {"selected": [0]},
+"objective_selector": "ObjectiveSelectorMAB",
+"objective_selector_parameters": {"warm_up": 60},
+"algorithm": "ogan.OGAN",
+"algorithm_parameters":
+    {"input_dimension": 6,
+     "use_predefined_random_data": false,
+     "predefined_random_data": {"test_inputs": null, "test_outputs": null},
+     "fitness_coef": 0.95,
+     "train_delay": 3,
+     "N_candidate_tests": 1,
+     "ogan_model": "OGAN_Model",
+     "ogan_model_parameters": {"optimizer": "Adam", "lr": 0.001, "betas": [0, 0.9], "noise_batch_size": 128, "generator_loss": "MSE", "discriminator_loss": "MSE"},
+     "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_epochs": 1},
+     "train_settings": {"epochs": 1, "discriminator_epochs": 5, "generator_epochs": 1},
+     "generator_mlm": "GeneratorNetwork",
+     "generator_mlm_parameters": {"noise_dim": 10, "output_shape": "copy:algorithm_parameters.input_dimension", "neurons": 128},
+     "discriminator_mlm": "DiscriminatorNetwork",
+     "discriminator_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "neurons": 128, "discriminator_output_activation": "sigmoid"}
+    },
+"job_parameters": {"N_tests": 300}
+} 

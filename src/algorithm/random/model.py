@@ -1,8 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from model import Model
-
+from algorithm.model import Model
 
 class Random_Model(Model):
     """
