@@ -1,8 +1,8 @@
 {
 "sut": "odroid.OdroidSUT",
 "sut_parameters": {},
-"objective_func": "ObjectiveMaxSelected",
-"objective_func_parameters": {"selected": [0]},
+"objective_func": ["ObjectiveMaxSelected"],
+"objective_func_parameters": [{"selected": [0]}],
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 60},
 "algorithm": "random.Random",

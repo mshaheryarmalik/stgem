@@ -62,7 +62,7 @@ class DiscriminatorNetwork(nn.Module):
   def forward(self, x):
     x = F.leaky_relu(self.dlayer1(x), negative_slope=0.1) # LeakyReLU recommended in the literature for GANs discriminators.
     x = F.leaky_relu(self.dlayer2(x), negative_slope=0.1)
-    x = torch.sigmoid(self.dlayer3(x))
+    x = self.output_activation(self.dlayer3(x))
 
     return x
 

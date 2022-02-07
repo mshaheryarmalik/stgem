@@ -12,10 +12,10 @@ class Algorithm:
     Base class for all test suite generation algorithms.
     """
 
-    def __init__(self, sut, test_repository, objective_func, objective_selector, logger=None):
+    def __init__(self, sut, test_repository, objective_funcs, objective_selector, logger=None):
         self.sut = sut
         self.test_repository = test_repository
-        self.objective_func = objective_func
+        self.objective_funcs = objective_funcs
         self.objective_selector = objective_selector
 
         self.logger = logger
@@ -72,12 +72,22 @@ class Algorithm:
             self.perf.save_history("N_tests_generated", invalid + 1)
             self.perf.save_history("N_invalid_tests_generated", invalid)
 
-            self.log("Executing {} ({}/{})".format(test, tests_generated, self.N_random_init))
-            self.perf.timer_start("execution")
-            test_output = self.objective_func(self.sut.execute_test(test))
-            self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
+            sut_output = self.sut.execute_test(test)
+            # Check if the SUT output is a vector or a signal.
+            if np.isscalar(sut_output[0]):
+                output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
+            else:
+                output = [self.objective_funcs[i](**sut_output) for i in range(self.N_models)]
 
-            idx = self.test_repository.record(test, test_output)
+            self.log("Executing {} ({}/{})".format(test, tests_generated, self.N_random_init))
+            sut_output = self.sut.execute_test(test)
+            # Check if the SUT output is a vector or a signal.
+            if np.isscalar(sut_output[0]):
+                test_output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
+            else:
+                test_output = [self.objective_funcs[i](**sut_output) for i in range(self.N_models)]
+
+            idx = self.test_repository.record(test.reshape(-1), test_output)
             self.test_suite.append(idx)
             self.objective_selector.update(np.argmax(test_output))
 

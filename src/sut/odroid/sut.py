@@ -22,6 +22,11 @@ class OdroidSUT(SUT):
 
         self.data_file = os.path.join("sut", "odroid", "odroid.npy")
 
+        self.idim = 6
+        self.odim = 3
+        self.irange = np.asarray([(-1, 1) for _ in range(self.idim)])
+        self.orange = np.asarray([(0, 1) for _ in range(self.odim)])
+
         self.ndimensions = None
         self.dataX = None
         self.dataY = None
@@ -82,7 +87,7 @@ class OdroidSUT(SUT):
         if not (test.shape == (1, self.ndimensions) or test.shape == (self.ndimensions,)):
             raise ValueError("Input array expected to have shape (1, {0}) or ({0}).".format(self.ndimensions))
 
-        distances = np.sum((self.dataX - test) ** 2, axis=1)
+        distances = np.sum((self.dataX - test)**2, axis=1)
         return self.dataY[np.argmin(distances)]
 
     def execute_random_test(self):

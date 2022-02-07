@@ -12,11 +12,12 @@ class Random(Algorithm):
     Baseline random algorithm for generating a test suite.
     """
 
-    def __init__(self, sut, test_repository, objective_func, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_func, objective_selector, logger)
+    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
+        super().__init__(sut, test_repository, objective_funcs, objective_selector, logger)
         self.parameters = parameters
 
-        self.models = [Random_Model(self.sut, self.parameters, self.logger) for _ in range(self.objective_func.dim)]
+        self.N_models = sum(f.dim for f in self.objective_funcs)
+        self.models = [Random_Model(self.sut, self.parameters, self.logger) for _ in range(self.N_models)]
 
     def generate_test(self):
         self.perf.timer_start("total")
@@ -53,17 +54,17 @@ class Random(Algorithm):
             self.log("Executing the test...")
 
             sut_output = self.sut.execute_test(new_test)
-            self.save_history("execution_time", self.timer_reset("execution"))
-            # Check if we get a vector of floats or a 2-tuple of arrays (signals).
+            # Check if the SUT output is a vector or a signal.
             if np.isscalar(sut_output[0]):
-                output = self.objective_func(sut_output)
+                output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
             else:
-                output = self.objective_func(*sut_output)
+                output = [self.objective_funcs[i](**sut_output) for i in range(self.N_models)]
+
             self.log("The actual fitness {} for the generated test.".format(output))
 
             # Add the new test to the test suite.
             # -----------------------------------------------------------------------
-            idx = self.test_repository.record(new_test, output)
+            idx = self.test_repository.record(new_test.reshape(-1), output)
             self.test_suite.append(idx)
             self.objective_selector.update(np.argmax(output))
 

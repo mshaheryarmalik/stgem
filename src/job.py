@@ -3,6 +3,7 @@ import os, datetime, logging
 from collections import namedtuple
 
 import torch
+import numpy as np
 
 import sut, objective, algorithm
 from test_repository import TestRepository
@@ -37,9 +38,11 @@ class Job:
                 dict_set(self.description, key, dict_access(self.description, item[5:]))
 
         # Fill in empty values for certain parameters if missing.
-        for name in ["sut_parameters", "objective_selector_parameters", "objective_func_parameters"]:
+        for name in ["sut_parameters", "objective_selector_parameters"]:
             if not name in self.description:
                 self.description[name] = {}
+        for i in range(len(self.description["objective_func"]) - len(self.description["objective_func_parameters"])):
+            self.description["objective_func_parameters"].append({})
 
         # Setup the device.
         self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -60,13 +63,17 @@ class Job:
         test_repository = TestRepository()
 
         # Setup the objective functions for optimization.
-        objective_class = objective.loadObjective(self.description["objective_func"])
-        objective_func = objective_class(**self.description["objective_func_parameters"])
-        target = None
+        N_objectives = 0
+        objective_funcs = []
+        for n, s in enumerate(self.description["objective_func"]):
+            objective_class = objective.loadObjective(s)
+            objective_func = objective_class(sut=asut, **self.description["objective_func_parameters"][n])
+            N_objectives += objective_func.dim
+            objective_funcs.append(objective_func)
 
         # Setup the objective selector.
-        objective_class = objective.loadObjectiveSelector(self.description["objective_selector"])
-        objective_selector = objective_class(objective_func=objective_func, **self.description["objective_selector_parameters"])
+        objective_selector_class = objective.loadObjectiveSelector(self.description["objective_selector"])
+        objective_selector = objective_selector_class(N_objectives=N_objectives)
 
         # Process job parameters for algorithm setup.
         # Setup the initial random tests to 20% unless the value is user-set.
@@ -79,14 +86,16 @@ class Job:
         self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
         algorithm_class = algorithm.loadAlgorithm(self.description["algorithm"])
         self.algorithm = algorithm_class(sut=asut,
-                                    test_repository=test_repository,
-                                    objective_func=objective_func,
-                                    objective_selector=objective_selector,
-                                    parameters=self.description["algorithm_parameters"],
-                                    logger=logger)
+                                         test_repository=test_repository,
+                                         objective_funcs=objective_funcs,
+                                         objective_selector=objective_selector,
+                                         parameters=self.description["algorithm_parameters"],
+                                         logger=logger
+                                        )
 
     def start(self):
         generator = self.algorithm.generate_test()
         for i in range(self.description["job_parameters"]["N_tests"]):
             next(generator)
+
 

@@ -30,8 +30,10 @@ class OGAN_Model(Model):
         # Load the specified optimizers.
         module = importlib.import_module("torch.optim")
         optimizer_class = getattr(module, self.ogan_model_parameters["optimizer"])
-        self.optimizerG = optimizer_class(self.modelG.parameters(), **algorithm.filter_arguments(self.ogan_model_parameters, optimizer_class))
-        self.optimizerD = optimizer_class(self.modelD.parameters(), **algorithm.filter_arguments(self.ogan_model_parameters, optimizer_class))
+        generator_parameters = {k[10:]:v for k, v in self.ogan_model_parameters.items() if k.startswith("generator")}
+        self.optimizerG = optimizer_class(self.modelG.parameters(), **algorithm.filter_arguments(generator_parameters, optimizer_class))
+        discriminator_parameters = {k[14:]:v for k, v in self.ogan_model_parameters.items() if k.startswith("discriminator")}
+        self.optimizerD = optimizer_class(self.modelD.parameters(), **algorithm.filter_arguments(discriminator_parameters, optimizer_class))
 
         # Loss functions.
         def get_loss(loss_s):
@@ -79,8 +81,8 @@ class OGAN_Model(Model):
                                    discriminator_epochs: How many times the
                                    discriminator is trained per call.
 
-                                   generator_epochs: How many times the
-                                   generator is trained per call.
+                                   generator_batch_size: How large batches of
+                                   noise are used at a training step.
 
                                  The default for each missing key is 1. Keys
                                  not found above are ignored.
@@ -92,9 +94,9 @@ class OGAN_Model(Model):
         dataX = torch.from_numpy(dataX).float().to(self.device)
         dataY = torch.from_numpy(dataY).float().to(self.device)
 
-        # Unpack values from the epochs dictionary.
+        # Unpack values from the train_settings dictionary.
         discriminator_epochs = train_settings["discriminator_epochs"] if "discriminator_epochs" in train_settings else 1
-        generator_epochs = train_settings["generator_epochs"] if "generator_epochs" in train_settings else 1
+        generator_batch_size = train_settings["generator_batch_size"] if "generator_batch_size" in train_settings else 32
 
         # Save the training modes for restoring later.
         training_D = self.modelD.training
@@ -137,7 +139,7 @@ class OGAN_Model(Model):
         self.modelG.train(True)
         inputs = torch.from_numpy(inputs).float().to(self.device)
 
-        fake_label = torch.ones(size=(self.noise_batch_size, 1)).to(self.device)
+        fake_label = torch.ones(size=(generator_batch_size, 1)).to(self.device)
 
         # Notice the following subtlety. Below the tensor 'outputs' contains
         # information on how it is computed (the computation graph is being kept
@@ -148,13 +150,13 @@ class OGAN_Model(Model):
         # initialized only for the parameters of 'self.modelG' (see the
         # initialization of 'self.modelG'.
 
-        for n in range(generator_epochs):
-            outputs = self.modelD(self.modelG(inputs))
-            G_loss = self.lossG(outputs, fake_label)
+        for c, n in enumerate(range(0, self.noise_batch_size, generator_batch_size)):
+            outputs = self.modelD(self.modelG(inputs[n:n+generator_batch_size]))
+            G_loss = self.lossG(outputs, fake_label[:outputs.shape[0]])
             self.optimizerG.zero_grad()
             G_loss.backward()
             self.optimizerG.step()
-            self.log("Generator epoch: {}/{}, Loss: {}".format(n + 1, generator_epochs, G_loss))
+            self.log("Generator step: {}/{}, Loss: {}".format(c + 1, self.noise_batch_size//generator_batch_size + 1, G_loss))
 
         self.modelG.train(False)
 
@@ -197,9 +199,6 @@ class OGAN_Model(Model):
         Returns:
           output (np.ndarray): Array of shape (N, 1).
         """
-
-        if len(test.shape) != 2 or test.shape[1] != self.sut.ndimensions:
-            raise ValueError("Input array expected to have shape (N, {}).".format(self.sut.ndimensions))
 
         test_tensor = torch.from_numpy(test).float().to(self.device)
         return self.modelD(test_tensor).cpu().detach().numpy()

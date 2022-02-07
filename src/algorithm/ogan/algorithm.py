@@ -12,22 +12,24 @@ class OGAN(Algorithm):
     Implements the online generative adversarial network algorithm.
     """
 
-    def __init__(self, sut, test_repository, objective_func, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_func, objective_selector, logger)
+    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
+        super().__init__(sut, test_repository, objective_funcs, objective_selector, logger)
         self.parameters = parameters
+
+        self.N_models = sum(f.dim for f in self.objective_funcs)
 
         # Setup the models.
         # ---------------------------------------------------------------------
         # Load the specified OGAN model and initialize it.
         module = importlib.import_module(".model", "algorithm.ogan")
-        model_class = getattr(module, self.parameters["ogan_model"])
-        self.models = [model_class(sut=self.sut, parameters=parameters, logger=logger) for _ in range(self.objective_func.dim)]
+        self.model_class = getattr(module, self.parameters["ogan_model"])
+        self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=logger) for _ in range(self.N_models)]
 
     def generate_test(self):
         self.perf.timer_start("total")
 
-        tests_generated = 0                                         # how many tests have been generated so far
-        model_trained = [0 for m in range(self.objective_func.dim)] # keeps track how many tests were generated when a model was previously trained
+        tests_generated = 0                               # how many tests have been generated so far
+        model_trained = [0 for m in range(self.N_models)] # keeps track how many tests were generated when a model was previously trained
 
         # Generate initial tests randomly.
         # ---------------------------------------------------------------------
@@ -48,7 +50,7 @@ class OGAN(Algorithm):
             self.log("Training the OGAN model {}...".format(i + 1))
             dataX, dataY = self.test_repository.get(self.test_suite)
             dataX = np.array(dataX)
-            dataY = np.array(dataY)
+            dataY = np.array(dataY)[:,i].reshape(-1, 1)
             for epoch in range(self.models[i].train_settings_init["epochs"]):
                 self.models[i].train_with_batch(dataX,
                                                 dataY,
@@ -71,13 +73,13 @@ class OGAN(Algorithm):
             # before the target threshold was lowered enough for it to be
             # selected.
             self.perf.timer_start("generation")
-            self.log("Starting to generate test {}.".format(tests_generated + 1))
             heap = []
             target_fitness = 1
             entry_count = 0 # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
             rounds = 0
             invalid = 0
             active_models = self.objective_selector.select()
+            self.log("Starting to generate test {} using the OGAN models {}.".format(tests_generated + 1, ",".join(str(m + 1) for m in active_models)))
             while True:
                 # TODO: Avoid selecting similar or same tests.
                 rounds += 1
@@ -123,16 +125,13 @@ class OGAN(Algorithm):
   
             self.log("Chose test {} with predicted maximum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
             self.log("Executing the test...")
-  
-            self.perf.timer_start("execution")
+
             sut_output = self.sut.execute_test(best_test)
-            self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
-            # Check if we get a vector of floats or a 2-tuple of arrays
-            # (signals).
+            # Check if the SUT output is a vector or a signal.
             if np.isscalar(sut_output[0]):
-                output = self.objective_func(sut_output)
+                output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
             else:
-                output = self.objective_func(*sut_output)
+                output = [self.objective_funcs[i](**sut_output) for i in range(self.N_models)]
   
             self.log("The actual objective {} for the generated test.".format(output))
   
@@ -152,9 +151,11 @@ class OGAN(Algorithm):
             for i in active_models:
                 if tests_generated - model_trained[i] >= self.train_delay:
                     self.log("Training the OGAN model {}...".format(i + 1))
+                    # Reset the model.
+                    self.models[i] = self.model_class(sut=self.sut, parameters=self.parameters, logger=self.logger)
                     dataX, dataY = self.test_repository.get(self.test_suite)
                     dataX = np.array(dataX)
-                    dataY = np.array(dataY)
+                    dataY = np.array(dataY)[:,i].reshape(-1, 1)
                     for epoch in range(self.models[i].train_settings["epochs"]):
                         self.models[i].train_with_batch(dataX,
                                                         dataY,
