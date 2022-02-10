@@ -5,8 +5,9 @@ import numpy as np
 
 
 class ObjectiveSelector:
-    def __init__(self, N_objectives):
+    def __init__(self, N_objectives,parameters):
         self.dim = N_objectives
+        self.parameters=parameters
 
     def select_all(self):
         return list(range(self.dim))
@@ -23,9 +24,6 @@ class ObjectiveSelectorAll(ObjectiveSelector):
     Model selector which ignores everything an just returns all models.
     """
 
-    def __init__(self, N_objectives):
-        super().__init__(N_objectives)
-
     def select(self):
         return self.select_all()
 
@@ -37,9 +35,9 @@ class ObjectiveSelectorMAB(ObjectiveSelector):
     model. A warm-up period can be defined where all models are returned.
     """
 
-    def __init__(self, N_objectives, warm_up=0):
-        super().__init__(N_objectives)
-        self.warm_up = warm_up
+    def __init__(self, N_objectives, parameters):
+        super().__init__(N_objectives,parameters)
+        self.warm_up = self.parameters["warm_up"]
         self.total_calls = 0
         self.model_successes = [0 for i in range(self.dim)]
 

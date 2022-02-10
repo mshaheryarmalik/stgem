@@ -73,7 +73,8 @@ class Job:
 
         # Setup the objective selector.
         objective_selector_class = objective.loadObjectiveSelector(self.description["objective_selector"])
-        objective_selector = objective_selector_class(N_objectives=N_objectives)
+        objective_selector = objective_selector_class(N_objectives=N_objectives,
+                                                      parameters=self.description.get("objective_selector_parameters",None))
 
         # Process job parameters for algorithm setup.
         # Setup the initial random tests to 20% unless the value is user-set.
