@@ -21,8 +21,9 @@ class OGAN(Algorithm):
         # Setup the models.
         # ---------------------------------------------------------------------
         # Load the specified OGAN model and initialize it.
-        module = importlib.import_module(".model", "algorithm.ogan")
-        self.model_class = getattr(module, self.parameters["ogan_model"])
+        (modulename,classname) = self.parameters["ogan_model"].split(".")
+        module = importlib.import_module("."+modulename, "algorithm.ogan")
+        self.model_class = getattr(module, classname)
         self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=logger) for _ in range(self.N_models)]
 
     def generate_test(self):
