@@ -46,7 +46,7 @@ class OGAN(Algorithm):
         # opt to train only active models for more generality. It is up to the
         # caller to ensure that all models are trained here if so desired.
         self.perf.timer_start("training")
-        for i in self.objective_selector.select():
+        for i in self.objective_selector.select_all():
             self.log("Training the OGAN model {}...".format(i + 1))
             dataX, dataY = self.test_repository.get(self.test_suite)
             dataX = np.array(dataX)
