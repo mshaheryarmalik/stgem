@@ -27,10 +27,12 @@ class MO3D(SUT):
         self.idim = 3
         self.odim = 3
         self.irange = np.asarray([(-15, 15), (-15, 15), (-15, 15)])
-        self.orange = np.asarray([(-3, 350), (-3, 350), (-3, 350)])
+        self.orange = np.asarray([(0, 350), (0, 350), (0, 350)])
 
     def _execute_test(self, test):
+        #print("unscaled",test)
         test = self.descale(test.reshape(1, -1), self.irange).reshape(-1)
+        #print("descaled", test)
 
         x1 = test[0]
         x2 = test[1]
@@ -40,6 +42,7 @@ class MO3D(SUT):
         h2 = 230-75*(math.cos(x1/2.5+15)+math.cos(x2/2.5+15)+math.cos(x3/2.5+15))
         h3 = (x1-7)**2+(x2-7)**2+(x3-7)**2 - (math.cos((x1-7)/2.75) + math.cos((x2-7)/2.75) + math.cos((x3-7)/2.75))
 
+        print("result",[h1, h2, h3])
         return np.asarray([h1, h2, h3])
 
     def execute_random_test(self):

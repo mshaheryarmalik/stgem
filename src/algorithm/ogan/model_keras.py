@@ -77,7 +77,7 @@ class OGANK_Model(AlgModel):
 
         dloss = self.modelD.fit(
             # fix me
-            dataX, dataY, epochs=discriminator_epochs, verbose=0
+            dataX, dataY, epochs=discriminator_epochs, verbose=False
         )
 
         for l in self.modelD.layers:
@@ -98,7 +98,7 @@ class OGANK_Model(AlgModel):
         noise = np.random.normal(0, 1, size=[batchSize, self.noise_dimensions])
         yGen = np.zeros(batchSize)
 
-        gloss = self.gan.fit(noise, yGen, epochs=train_settings["generator_epochs"], verbose=0)
+        gloss = self.gan.fit(noise, yGen, epochs=train_settings["generator_epochs"], verbose=True)
 
 
 

@@ -12,7 +12,7 @@
      "fitness_coef": 0.95,
      "train_delay": 3,
      "N_candidate_tests": 1,
-     "ogan_model": "model.OGAN_Model",
+     "ogan_model": "model_keras.OGAN_Model",
      "ogan_model_parameters": {"optimizer": "Adam", "lr": 0.001, "betas": [0, 0.9], "noise_batch_size": 128, "generator_loss": "MSE", "discriminator_loss": "MSE"},
      "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_epochs": 1},
      "train_settings": {"epochs": 1, "discriminator_epochs": 5, "generator_epochs": 1},

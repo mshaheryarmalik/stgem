@@ -9,7 +9,7 @@
     {"input_dimension": 3,
      "use_predefined_random_data": false,
      "predefined_random_data": {"test_inputs": null, "test_outputs": null},
-     "fitness_coef": 0.95,
+     "fitness_coef": 0.1,
      "train_delay": 3,
      "N_candidate_tests": 1,
      "ogan_model": "model.OGAN_Model",

@@ -75,7 +75,7 @@ class OGAN(Algorithm):
             # selected.
             self.perf.timer_start("generation")
             heap = []
-            target_fitness = 1
+            target_fitness = 0
             entry_count = 0 # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
             rounds = 0
             invalid = 0
@@ -102,15 +102,16 @@ class OGAN(Algorithm):
                         # to heap.
                         tests_predicted_objective = self.models[i].predict_objective(candidate_tests)
                         for j in range(tests_predicted_objective.shape[0]):
-                            heapq.heappush(heap, (1 - tests_predicted_objective[j,0], entry_count, candidate_tests[j]))
+                            heapq.heappush(heap, (tests_predicted_objective[j,0], entry_count, candidate_tests[j]))
                             entry_count += 1
   
                         break
   
-                target_fitness *= self.fitness_coef
-  
+                target_fitness += self.fitness_coef
+
+                print(heap[0])
                 # Check if the best predicted test is good enough.
-                if 1 - heap[0][0] >= target_fitness: break
+                if heap[0][0] <= target_fitness: break
   
             # Save information on how many tests needed to be generated etc.
             # -----------------------------------------------------------------
@@ -122,12 +123,14 @@ class OGAN(Algorithm):
             # Execute the test on the SUT.
             # -----------------------------------------------------------------
             best_test = heap[0][2]
-            best_estimated_objective = 1 - heap[0][0]
+            best_estimated_objective = heap[0][0]
   
             self.log("Chose test {} with predicted maximum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
-            self.log("Executing the test...")
+            self.log("Executing the test {}...".format(best_test))
 
             sut_output = self.sut.execute_test(best_test)
+
+            self.log("Result from sut {}".format(sut_output))
             # Check if the SUT output is a vector or a signal.
             if np.isscalar(sut_output[0]):
                 output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
