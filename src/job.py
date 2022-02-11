@@ -46,11 +46,13 @@ class Job:
 
         # Setup seed.
         # TODO: Make configurable.
+        # Notice that making Pytorch deterministic makes it a lot slower.
         SEED = random.randint(0, 2**15)
         random.seed(SEED)
         np.random.seed(SEED)
         torch.manual_seed(SEED)
-        #torch.use_deterministic_algorithms(mode=True)
+        torch.use_deterministic_algorithms(mode=True)
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
         # Setup the device.
         self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
