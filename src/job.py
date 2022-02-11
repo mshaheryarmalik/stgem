@@ -116,36 +116,31 @@ class Job:
         return self
 
     def start(self):
+
         mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
+        if mode not in ["exhaust_budget", "stop_at_first_falsification"]:
+            raise Exception("Unknown test generation mode '{}'.".format(mode))
+
         falsified = False
         generator = self.algorithm.generate_test()
+        outputs = []
 
-        if mode == "exhaust_budget":
-            outputs = []
-            for i in range(self.description["job_parameters"]["N_tests"]):
-                idx = next(generator)
-                _, output = self.algorithm.test_repository.get(idx)
-                outputs.append(output)
+        for i in range(self.description["job_parameters"]["N_tests"]):
 
-            outputs = np.asarray(outputs)
-            print("Minimum objective components:")
-            print(np.min(outputs, axis=0))
-            if 0 in np.min(outputs, axis=0):
-               falsified=True
+            idx = next(generator)
+            _, output = self.algorithm.test_repository.get(idx)
+            outputs.append(output)
 
-        elif mode == "stop_at_first_falsification":
-            for i in range(self.description["job_parameters"]["N_tests"]):
-                idx = next(generator)
-                _, output = self.algorithm.test_repository.get(idx)
-                if np.min(output) == 0:
-                    print("First falsified at test {}.".format(i + 1))
-                    falsified = True
-                    break
-        else:
-            raise Exception("Unknown test generation mode '{}'.".format(mode))
+            if not falsified and np.min(output) == 0:
+                print("First falsified at test {}.".format(i + 1))
+                falsified = True
+            if falsified and mode == "stop_at_first_falsification":
+                break
 
         if falsified:
             return True
         else:
             print("Could not falsify within the given budget.")
+            print("Minimum objective components:")
+            print(np.min(np.asarray(outputs), axis=0))
             return False
