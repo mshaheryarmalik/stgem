@@ -14,6 +14,9 @@ class PlatypusOpt(Algorithm):
         self.parameters = parameters
 
     def generate_test(self):
+        self.lastIdx=0
+        self.reportedIdx=0
+
         def fitness_func(test):
             sut_output = self.sut.execute_test(np.array(test))
 
@@ -29,6 +32,7 @@ class PlatypusOpt(Algorithm):
             # Add the new test to the test suite.
             # -----------------------------------------------------------------
             idx = self.test_repository.record(test, output)
+            self.lastIdx=idx
             self.test_suite.append(idx)
             self.objective_selector.update(np.argmin(output))
 
@@ -44,9 +48,13 @@ class PlatypusOpt(Algorithm):
 
         algorithm = NSGAII(problem)
 
-        algorithm.run(1000)
+        # It seems that NSGAII works in batches of more or less 100 evals
+        # So each step generates many tests
+        # We report them one by one. It is not the best solution, but it
+        # kind of works for now.
+        while True:
+            algorithm.step()
+            while self.reportedIdx<=self.lastIdx:
+                yield self.reportedIdx
+                self.reportedIdx=self.reportedIdx+1
 
-        # TODO Fix this
-
-        for idx in range(len(algorithm.result)):
-            yield idx

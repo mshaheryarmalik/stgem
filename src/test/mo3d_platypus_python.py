@@ -27,7 +27,7 @@ description = {
     "objective_selector": "ObjectiveSelectorMAB",
     "objective_selector_parameters": {"warm_up": 30},
     "algorithm": "platypus.PlatypusOpt",
-    "job_parameters": {"N_tests": 80, "N_random_init": 20, "mode": "stop_at_first_falsification"}
+    "job_parameters": {"N_tests": 2000, "N_random_init": 20, "mode": "stop_at_first_falsification"}
 }
 
 Job(description).start()
