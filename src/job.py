@@ -50,7 +50,7 @@ class Job:
         random.seed(SEED)
         np.random.seed(SEED)
         torch.manual_seed(SEED)
-        torch.use_deterministic_algorithms(mode=True)
+        #torch.use_deterministic_algorithms(mode=True)
 
         # Setup the device.
         self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -105,16 +105,4 @@ class Job:
         generator = self.algorithm.generate_test()
         for i in range(self.description["job_parameters"]["N_tests"]):
             next(generator)
-
-
-        tests = []
-        outputs = []
-        for t, o in self.algorithm.test_repository.get(self.test_suite):
-            tests.append(t)
-            outputs.append(o)
-        tests = np.asarray(tests)
-        outputs = np.asarray(outputs)
-
-        print("Minimum objective components:")
-        print(np.min(outputs, axis=0))
 
