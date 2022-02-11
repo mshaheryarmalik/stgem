@@ -5,9 +5,8 @@ import numpy as np
 
 
 class ObjectiveSelector:
-    def __init__(self, N_objectives,parameters):
+    def __init__(self, N_objectives):
         self.dim = N_objectives
-        self.parameters=parameters
 
     def select_all(self):
         return list(range(self.dim))
@@ -36,7 +35,7 @@ class ObjectiveSelectorMAB(ObjectiveSelector):
     """
 
     def __init__(self, N_objectives, warm_up):
-        super().__init__(N_objectives, parameters)
+        super().__init__(N_objectives)
         self.warm_up = warm_up
         self.total_calls = 0
         self.model_successes = [0 for i in range(self.dim)]

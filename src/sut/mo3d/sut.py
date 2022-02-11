@@ -42,7 +42,6 @@ class MO3D(SUT):
         h2 = 230-75*(math.cos(x1/2.5+15)+math.cos(x2/2.5+15)+math.cos(x3/2.5+15))
         h3 = (x1-7)**2+(x2-7)**2+(x3-7)**2 - (math.cos((x1-7)/2.75) + math.cos((x2-7)/2.75) + math.cos((x3-7)/2.75))
 
-        print("result",[h1, h2, h3])
         return np.asarray([h1, h2, h3])
 
     def _min_distance(self, tests, x):

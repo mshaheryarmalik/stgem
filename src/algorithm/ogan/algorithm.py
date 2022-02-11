@@ -129,13 +129,13 @@ class OGAN(Algorithm):
 
             sut_output = self.sut.execute_test(best_test)
 
-            self.log("Result from sut {}".format(sut_output))
             # Check if the SUT output is a vector or a signal.
             if np.isscalar(sut_output[0]):
                 output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
             else:
                 output = [self.objective_funcs[i](**sut_output) for i in range(self.N_models)]
   
+            self.log("Result from the SUT {}".format(sut_output))
             self.log("The actual objective {} for the generated test.".format(output))
   
             # Add the new test to the test suite.
