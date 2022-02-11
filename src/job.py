@@ -1,6 +1,7 @@
 
 import os, datetime, logging, random
 from collections import namedtuple
+import json
 
 import torch
 import numpy as np
@@ -10,9 +11,18 @@ from test_repository import TestRepository
 
 
 class Job:
-    def __init__(self, description):
-        self.description=description
+    def __init__(self, description=None):
+        if description is None:
+            self.description= {}
+        else:
+            self.description=description
+            self.setup()
+
+    def setup_from_file(self,file_name):
+        with open(file_name) as f:
+            self.description=json.load(f)
         self.setup()
+        return self
 
     def setup(self):
         def dict_access(d, s):
@@ -103,10 +113,13 @@ class Job:
                                          logger=logger
                                         )
 
+        return self
+
     def start(self):
         mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
-
+        falsified = False
         generator = self.algorithm.generate_test()
+
         if mode == "exhaust_budget":
             outputs = []
             for i in range(self.description["job_parameters"]["N_tests"]):
@@ -117,8 +130,10 @@ class Job:
             outputs = np.asarray(outputs)
             print("Minimum objective components:")
             print(np.min(outputs, axis=0))
+            if 0 in np.min(outputs, axis=0):
+               falsified=True
+
         elif mode == "stop_at_first_falsification":
-            falsified = False
             for i in range(self.description["job_parameters"]["N_tests"]):
                 idx = next(generator)
                 _, output = self.algorithm.test_repository.get(idx)
@@ -126,9 +141,11 @@ class Job:
                     print("First falsified at test {}.".format(i + 1))
                     falsified = True
                     break
-
-            if not falsified:
-                print("Could not falsify within the given budget.")
         else:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
 
+        if falsified:
+            return True
+        else:
+            print("Could not falsify within the given budget.")
+            return False
