@@ -32,7 +32,7 @@ description = {
         {"input_dimension": 3,
          "use_predefined_random_data": False,
          "predefined_random_data": {"test_inputs": None, "test_outputs": None},
-         "fitness_coef": 0.1,
+         "fitness_coef": 0.95,
          "train_delay": 0,
          "N_candidate_tests": 1,
          "ogan_model": "model_keras.OGANK_Model",
