@@ -26,7 +26,13 @@ class SUT:
     Base class implementing a system under test.
     """
 
-    def __init__(self):
+    def __init__(self,parameters=None):
+
+        if parameters is None:
+            self.parameters={}
+        else:
+            self.parameters=parameters
+
         self.perf = PerformanceData()
         # The variables below are set by the inheriting classes.
         #
@@ -101,11 +107,13 @@ class SUT:
     def _execute_test(self, test):
         raise NotImplementedError()
 
+
     def execute_random_test(self):
-        raise NotImplementedError()
+        test = self.sample_input_space()
+        return test, self._execute_test(test)
 
     def sample_input_space(self):
-        raise NotImplementedError()
+        return np.random.uniform(-1, 1, size=(1, self.idim))
 
     def validity(self, test):
         """
@@ -113,6 +121,12 @@ class SUT:
         """
 
         return 1
+
+    def _min_distance(self, tests, x):
+        # We use the Euclidean distance.
+        tests = np.asarray(tests)
+        d = np.linalg.norm(tests - x, axis=1)
+        return min(d)
 
     def min_distance(self, tests, x):
         """
