@@ -19,6 +19,29 @@ class Model:
 
         return value
 
-    def generate_test(self):
+    def generate_test(self, N=1):
+        """
+        Generate N random tests.
+
+        Args:
+          N (int): Number of tests to be generated.
+
+        Returns:
+          output (np.ndarray): Array of shape (N, self.sut.ndimensions).
+        """
+
+        raise NotImplementedError()
+
+    def predict_objective(self, test):
+        """
+        Predicts the objective function value of the given tests.
+
+        Args:
+          test (np.ndarray): Array of shape (N, self.sut.ndimensions).
+
+        Returns:
+          output (np.ndarray): Array of shape (N, 1).
+        """
+
         raise NotImplementedError()
 
