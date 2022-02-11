@@ -31,5 +31,5 @@
      "train_settings_init": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
      "train_settings": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}
     },
-"job_parameters": {"N_tests": 80, "N_random_init":  20 }
+"job_parameters": {"N_tests": 80, "N_random_init":  20, "mode": "stop_at_first_falsification"}
 }

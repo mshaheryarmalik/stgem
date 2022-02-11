@@ -104,7 +104,31 @@ class Job:
                                         )
 
     def start(self):
+        mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
+
         generator = self.algorithm.generate_test()
-        for i in range(self.description["job_parameters"]["N_tests"]):
-            next(generator)
+        if mode == "exhaust_budget":
+            outputs = []
+            for i in range(self.description["job_parameters"]["N_tests"]):
+                idx = next(generator)
+                _, output = self.algorithm.test_repository.get(idx)
+                outputs.append(output)
+
+            outputs = np.asarray(outputs)
+            print("Minimum objective components:")
+            print(np.min(outputs, axis=0))
+        elif mode == "stop_at_first_falsification":
+            falsified = False
+            for i in range(self.description["job_parameters"]["N_tests"]):
+                idx = next(generator)
+                _, output = self.algorithm.test_repository.get(idx)
+                if np.min(output) == 0:
+                    print("First falsified at test {}.".format(i + 1))
+                    falsified = True
+                    break
+
+            if not falsified:
+                print("Could not falsify within the given budget.")
+        else:
+            raise Exception("Unknown test generation mode '{}'.".format(mode))
 
