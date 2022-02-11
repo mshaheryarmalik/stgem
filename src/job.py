@@ -48,7 +48,7 @@ class Job:
                 dict_set(self.description, key, dict_access(self.description, item[5:]))
 
         # Fill in empty values for certain parameters if missing.
-        for name in ["sut_parameters", "objective_selector_parameters"]:
+        for name in ["sut_parameters", "objective_selector_parameters","algorithm_parameters"]:
             if not name in self.description:
                 self.description[name] = {}
         for i in range(len(self.description["objective_func"]) - len(self.description["objective_func_parameters"])):
