@@ -107,11 +107,12 @@ class OGAN(Algorithm):
   
                         break
   
-                target_fitness += self.fitness_coef
+                # We go up from 0 like we would go down from 1 when multiplied by self.fitness_coef.
+                target_fitness = 1 - self.fitness_coef*(1 - target_fitness)
 
                 # Check if the best predicted test is good enough.
                 if heap[0][0] <= target_fitness: break
-  
+
             # Save information on how many tests needed to be generated etc.
             # -----------------------------------------------------------------
             self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
