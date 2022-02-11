@@ -77,7 +77,7 @@ class Job:
 
         # Setup the system under test.
         sut_class = sut.loadSUT(self.description["sut"])
-        asut = sut_class(**self.description["sut_parameters"])
+        asut = sut_class(parameters=self.description.get("sut_parameters",{}))
 
         # Setup the test repository.
         test_repository = TestRepository()

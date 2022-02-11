@@ -21,8 +21,8 @@ class MO3D(SUT):
     3-tuples of numbers in [-1, 1] which are scaled to [-15, 15] internally.
     """
 
-    def __init__(self):
-        SUT.__init__(self)
+    def __init__(self,parameters):
+        SUT.__init__(self,parameters)
 
         self.idim = 3
         self.odim = 3
