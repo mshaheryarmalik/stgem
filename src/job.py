@@ -1,5 +1,5 @@
 
-import os, datetime, logging
+import os, datetime, logging, random
 from collections import namedtuple
 
 import torch
@@ -44,6 +44,14 @@ class Job:
         for i in range(len(self.description["objective_func"]) - len(self.description["objective_func_parameters"])):
             self.description["objective_func_parameters"].append({})
 
+        # Setup seed.
+        # TODO: Make configurable.
+        SEED = random.randint(0, 2**15)
+        random.seed(SEED)
+        numpy.random.seed(SEED)
+        torch.manual_seed(SEED)
+        torch.use_deterministic_algorithms(mode=True)
+
         # Setup the device.
         self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -73,8 +81,7 @@ class Job:
 
         # Setup the objective selector.
         objective_selector_class = objective.loadObjectiveSelector(self.description["objective_selector"])
-        objective_selector = objective_selector_class(N_objectives=N_objectives,
-                                                      parameters=self.description.get("objective_selector_parameters",None))
+        objective_selector = objective_selector_class(N_objectives=N_objectives, **self.description["objective_selector_parameters"])
 
         # Process job parameters for algorithm setup.
         # Setup the initial random tests to 20% unless the value is user-set.
@@ -98,5 +105,4 @@ class Job:
         generator = self.algorithm.generate_test()
         for i in range(self.description["job_parameters"]["N_tests"]):
             next(generator)
-
 

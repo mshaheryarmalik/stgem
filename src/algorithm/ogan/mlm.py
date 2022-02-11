@@ -24,6 +24,10 @@ class GeneratorNetwork(nn.Module):
     self.glayer1 = nn.Linear(self.input_shape, self.neurons)
     self.glayer2 = nn.Linear(self.neurons, self.neurons)
     self.glayer3 = nn.Linear(self.neurons, self.output_shape)
+    # Use uniform Glorot initialization of weights as in Keras.
+    torch.nn.init.xavier_uniform_(self.glayer1.weight)
+    torch.nn.init.xavier_uniform_(self.glayer2.weight)
+    torch.nn.init.xavier_uniform_(self.glayer3.weight)
 
   def forward(self, x):
     x = F.relu(self.glayer1(x))
@@ -49,6 +53,10 @@ class DiscriminatorNetwork(nn.Module):
     self.dlayer1 = nn.Linear(self.input_shape, self.neurons)
     self.dlayer2 = nn.Linear(self.neurons, self.neurons)
     self.dlayer3 = nn.Linear(self.neurons, 1)
+    # Use uniform Glorot initialization of weights as in Keras.
+    torch.nn.init.xavier_uniform_(self.dlayer1.weight)
+    torch.nn.init.xavier_uniform_(self.dlayer2.weight)
+    torch.nn.init.xavier_uniform_(self.dlayer3.weight)
 
     # Select the output activation function.
     a = discriminator_output_activation

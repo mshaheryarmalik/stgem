@@ -17,20 +17,6 @@ class Objective:
     def __call__(self, output):
         return output
 
-    def _scale(self, x, intervals):
-        """
-        Scale the components of x in the given intervals to [0, 1].
-        """
-
-        for i in range(x.shape[1]):
-            A = intervals[i][0]
-            B = intervals[i][1]
-            C = 1/(B-A)
-            D = -A/(B-A)
-            x[:,i] = C*x[:,i] + D
-
-        return x
-
 class ObjectiveMaxSelected(Objective):
     """
     Objective function for SUT with fixed-length vector outputs which selects

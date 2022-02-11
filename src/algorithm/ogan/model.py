@@ -107,13 +107,16 @@ class OGAN_Model(Model):
         # We want the discriminator to learn the mapping from tests to test
         # outputs.
         self.modelD.train(True)
+        losses = []
         for n in range(discriminator_epochs):
             D_loss = self.lossD(self.modelD(dataX), dataY)
+            losses.append(D_loss.cpu().detach().numpy())
             self.optimizerD.zero_grad()
             D_loss.backward()
             self.optimizerD.step()
 
-            self.log("Discriminator epoch {}/{}, Loss: {}".format(n + 1, discriminator_epochs, D_loss))
+        m = np.mean(losses)
+        self.log("Discriminator epochs {}, Loss: {} -> {}, mean {}".format(discriminator_epochs, losses[0], losses[-1], m))
 
         self.modelD.train(False)
 
@@ -122,9 +125,9 @@ class OGAN_Model(Model):
 
         # Train the generator on the discriminator.
         # -----------------------------------------------------------------------
-        # We generate noise and label it to have output 1 (max objective).
+        # We generate noise and label it to have output 0 (min objective).
         # Training the generator in this way should shift it to generate tests
-        # with high output values (high objective). Notice that we need to
+        # with low output values (low objective). Notice that we need to
         # validate the generated tests as no invalid tests with high fitness
         # exist.
         self.modelG.train(False)
@@ -139,7 +142,7 @@ class OGAN_Model(Model):
         self.modelG.train(True)
         inputs = torch.from_numpy(inputs).float().to(self.device)
 
-        fake_label = torch.ones(size=(generator_batch_size, 1)).to(self.device)
+        fake_label = torch.zeros(size=(generator_batch_size, 1)).to(self.device)
 
         # Notice the following subtlety. Below the tensor 'outputs' contains
         # information on how it is computed (the computation graph is being kept
@@ -150,13 +153,16 @@ class OGAN_Model(Model):
         # initialized only for the parameters of 'self.modelG' (see the
         # initialization of 'self.modelG'.
 
-        for c, n in enumerate(range(0, self.noise_batch_size, generator_batch_size)):
+        losses = []
+        for n in range(0, self.noise_batch_size, generator_batch_size):
             outputs = self.modelD(self.modelG(inputs[n:n+generator_batch_size]))
             G_loss = self.lossG(outputs, fake_label[:outputs.shape[0]])
+            losses.append(G_loss.cpu().detach().numpy())
             self.optimizerG.zero_grad()
             G_loss.backward()
             self.optimizerG.step()
-            self.log("Generator step: {}/{}, Loss: {}".format(c + 1, self.noise_batch_size//generator_batch_size + 1, G_loss))
+        m = np.mean(losses)
+        self.log("Generator steps {}, Loss: {} -> {}, mean {}".format(self.noise_batch_size//generator_batch_size + 1, losses[0], losses[-1], m))
 
         self.modelG.train(False)
 

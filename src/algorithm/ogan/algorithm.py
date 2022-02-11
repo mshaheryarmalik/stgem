@@ -21,8 +21,8 @@ class OGAN(Algorithm):
         # Setup the models.
         # ---------------------------------------------------------------------
         # Load the specified OGAN model and initialize it.
-        (modulename,classname) = self.parameters["ogan_model"].split(".")
-        module = importlib.import_module("."+modulename, "algorithm.ogan")
+        modulename, classname = self.parameters["ogan_model"].split(".")
+        module = importlib.import_module("." + modulename, "algorithm.ogan")
         self.model_class = getattr(module, classname)
         self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=logger) for _ in range(self.N_models)]
 
@@ -55,7 +55,7 @@ class OGAN(Algorithm):
             for epoch in range(self.models[i].train_settings_init["epochs"]):
                 self.models[i].train_with_batch(dataX,
                                                 dataY,
-                                                train_settings=self.models[i].train_settings_init
+                                                train_settings=self.models[i].train_settings_init,
                                                )
             model_trained[i] = tests_generated
         self.perf.save_history("training_time", self.perf.timer_reset("training"))
@@ -65,14 +65,14 @@ class OGAN(Algorithm):
         while True:
             # We generate a new valid test as follows. For each active model,
             # we generate new tests using the model, discard invalid tests, and
-            # estimate the objective function values using the discriminator.
-            # The test with the highest objective function component is treated
-            # as the candidate, and the candidate is accepted if the value
-            # exceeds the target. We decrease the target fitness as per
-            # execution of the loop. We use a prioprity queue to track the best
-            # tests in case that an estimated good test was generated just
-            # before the target threshold was lowered enough for it to be
-            # selected.
+            # estimate the corresponding objective function values. The test
+            # closest to target fitness 0 (minimization) is treated as the
+            # candidate, and the candidate is accepted if the estimate exceeds
+            # the current target threshold. The target threshold is changed on
+            # each loop execution in order to make acceptance easier. We use a
+            # priority queue to track the best tests in case that an estimated
+            # good test was generated just before the target threshold was
+            # changed enough for it to be selected.
             self.perf.timer_start("generation")
             heap = []
             target_fitness = 0
@@ -109,7 +109,6 @@ class OGAN(Algorithm):
   
                 target_fitness += self.fitness_coef
 
-                print(heap[0])
                 # Check if the best predicted test is good enough.
                 if heap[0][0] <= target_fitness: break
   
@@ -125,8 +124,8 @@ class OGAN(Algorithm):
             best_test = heap[0][2]
             best_estimated_objective = heap[0][0]
   
-            self.log("Chose test {} with predicted maximum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
-            self.log("Executing the test {}...".format(best_test))
+            self.log("Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
+            self.log("Executing the test...")
 
             sut_output = self.sut.execute_test(best_test)
 
@@ -143,7 +142,7 @@ class OGAN(Algorithm):
             # -----------------------------------------------------------------
             idx = self.test_repository.record(best_test, output)
             self.test_suite.append(idx)
-            self.objective_selector.update(np.argmax(output))
+            self.objective_selector.update(np.argmin(output))
             tests_generated += 1
   
             # Train the model.
@@ -165,6 +164,7 @@ class OGAN(Algorithm):
                                                         dataY,
                                                         train_settings=self.models[i].train_settings,
                                                        )
+                    model_trained[i] = tests_generated
             self.perf.save_history("training_time", self.perf.timer_reset("training"))
   
             self.perf.timers_hold()

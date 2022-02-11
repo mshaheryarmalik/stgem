@@ -1,23 +1,26 @@
 {
 "sut": "mo3d.MO3D",
 "objective_func": ["ObjectiveMaxSelected", "ObjectiveMaxSelected", "ObjectiveMaxSelected"],
-"objective_func_parameters": [{"selected": [0], "invert": true, "scale": true}, {"selected": [1], "invert": true, "scale": true}, {"selected": [2], "invert": true, "scale": true}],
+"objective_func_parameters": [{"selected": [0], "scale": true}, {"selected": [1], "scale": true}, {"selected": [2], "scale": true}],
 "objective_selector": "ObjectiveSelectorMAB",
-"objective_selector_parameters": {"warm_up": 60},
+"objective_selector_parameters": {"warm_up": 30},
 "algorithm": "ogan.OGAN",
 "algorithm_parameters":
     {"input_dimension": 3,
+     "random_search_min_distance": 0.8,
      "use_predefined_random_data": false,
      "predefined_random_data": {"test_inputs": null, "test_outputs": null},
-     "fitness_coef": 0.1,
-     "train_delay": 3,
+     "fitness_coef": 0.95,
+     "train_delay": 1,
      "N_candidate_tests": 1,
      "ogan_model": "model.OGAN_Model",
      "ogan_model_parameters": {"optimizer": "Adam",
                                "discriminator_lr": 0.001,
-                               "discriminator_betas": [0, 0.9],
+                               "discriminator_betas": [0.9, 0.999],
+                               "discriminator_eps": 1e-07,
                                "generator_lr": 0.0001,
-                               "generator_betas": [0, 0.9],
+                               "generator_betas": [0.9, 0.999],
+                               "generator_eps": 1e-07,
                                "noise_batch_size": 10000,
                                "generator_loss": "MSE",
                                "discriminator_loss": "MSE"},
@@ -28,5 +31,5 @@
      "discriminator_mlm": "DiscriminatorNetwork",
      "discriminator_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "neurons": 512, "discriminator_output_activation": "sigmoid"}
     },
-"job_parameters": {"N_tests": 300}
+"job_parameters": {"N_tests": 80, "N_random_init": 20}
 }

@@ -17,6 +17,8 @@ when the input is interpretable as time series).
 Discrete signals.
 """
 
+import numpy as np
+
 from performance import PerformanceData
 
 class SUT:
@@ -60,33 +62,35 @@ class SUT:
 
     def scale(self, x, intervals, target_A=-1, target_B=-1):
         """
-        Scales the components of x with the specified intervals to the interval
-        [A, B] (default [-1, 1]).
+        Return a scaled x where the components of x with the specified
+        intervals are scaled to the interval [A, B] (default [-1, 1]).
         """
 
+        y = np.zeros_like(x)
         for i in range(x.shape[1]):
             A = intervals[i][0]
             B = intervals[i][1]
             C = (target_B-target_A)/(B-A)
             D = target_A - C*A
-            x[:,i] = C*x[:,i] + D
+            y[:,i] = C*x[:,i] + D
 
-        return x
+        return y
 
     def descale(self, x, intervals, A=-1, B=1):
         """
-        Scale the components of x in [A, B] (default [-1, 1]) to the given
-        intervals.
+        Return a scaled x where the components of x in [A, B] (default [-1, 1])
+        are scaled to the given intervals.
         """
 
+        y = np.zeros_like(x)
         for i in range(x.shape[1]):
             target_A = intervals[i][0]
             target_B = intervals[i][1]
             C = (target_B-target_A)/(B-A)
             D = target_A - C*A
-            x[:,i] = C*x[:,i] + D
+            y[:,i] = C*x[:,i] + D
 
-        return x
+        return y
 
     def execute_test(self, test):
         self.perf.timer_start("execution")
@@ -109,4 +113,11 @@ class SUT:
         """
 
         return 1
+
+    def min_distance(self, tests, x):
+        """
+        Returns the minimum distance of the given tests to the specified test.
+        """
+
+        return self._min_distance(tests, x)
 

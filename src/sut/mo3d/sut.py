@@ -45,6 +45,12 @@ class MO3D(SUT):
         print("result",[h1, h2, h3])
         return np.asarray([h1, h2, h3])
 
+    def _min_distance(self, tests, x):
+        # We use the Euclidean distance.
+        tests = np.asarray(tests)
+        d = np.linalg.norm(tests - x, axis=1)
+        return min(d)
+
     def execute_random_test(self):
         test = self.sample_input_space()
         return test, self._execute_test(test)

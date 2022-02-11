@@ -20,3 +20,4 @@ class TestRepository:
             X = [self.tests[i] for i in idx]
             Y = [self.outputs[i] for i in idx]
             return X, Y
+

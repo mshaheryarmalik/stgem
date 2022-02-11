@@ -91,6 +91,7 @@ class AT(SUT):
         """
 
         # Descale the test components.
+        # TODO: Use the parent class scale functions.
         descaled = []
         for X in (self.throttle_range, self.brake_range):
             for i in range(self.pieces):
