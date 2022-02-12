@@ -2,9 +2,10 @@
 import os, datetime, logging, random
 from collections import namedtuple
 import json
-
-import torch
+import datetime
 import numpy as np
+import dill as pickle
+
 
 import sut, objective, algorithm
 from test_repository import TestRepository
@@ -18,6 +19,7 @@ class Job:
             self.description=description
             self.setup()
 
+
     def setup_from_file(self,file_name):
         with open(file_name) as f:
             self.description=json.load(f)
@@ -25,6 +27,9 @@ class Job:
         return self
 
     def setup(self):
+        import torch
+
+
         def dict_access(d, s):
             current = d
             for k in s.split("."):
@@ -115,13 +120,16 @@ class Job:
 
         return self
 
+
+
     def start(self):
 
         mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
         if mode not in ["exhaust_budget", "stop_at_first_falsification"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
 
-        falsified = False
+        falsified=False
+
         generator = self.algorithm.generate_test()
         outputs = []
 
@@ -137,10 +145,33 @@ class Job:
             if falsified and mode == "stop_at_first_falsification":
                 break
 
-        if falsified:
-            return True
-        else:
+        if not falsified:
             print("Could not falsify within the given budget.")
             print("Minimum objective components:")
             print(np.min(np.asarray(outputs), axis=0))
-            return False
+
+        jr=JobResult(self.description,self.algorithm.test_repository,falsified)
+        jr.algorithm_performance=self.algorithm.perf
+        jr.sut_performance=self.algorithm.sut.perf
+
+        return jr
+
+
+class JobResult:
+    def __init__(self,descriptipon,test_repository,falsified):
+        self.timestamp= datetime.datetime.now()
+        self.description=descriptipon
+        self.falsified= falsified
+        self.test_repository=test_repository
+        self.algorithm_performance=None
+        self.sut_performance=None
+
+    @staticmethod
+    def restore_from_file(file_name):
+        with open(file_name, "rb") as file:
+            obj=pickle.load(file)
+        return obj
+
+    def dump_to_file(self,file_name):
+        with open(file_name,"wb") as file:
+            pickle.dump(self,file)
