@@ -11,6 +11,26 @@ import sut, objective, algorithm
 from test_repository import TestRepository
 
 
+class JobResult:
+    def __init__(self,descriptipon,test_repository,falsified):
+        self.timestamp= datetime.datetime.now()
+        self.description=descriptipon
+        self.falsified= falsified
+        self.test_repository=test_repository
+        self.algorithm_performance=None
+        self.sut_performance=None
+
+    @staticmethod
+    def restore_from_file(file_name):
+        with open(file_name, "rb") as file:
+            obj=pickle.load(file)
+        return obj
+
+    def dump_to_file(self,file_name):
+        with open(file_name,"wb") as file:
+            pickle.dump(self,file)
+
+
 class Job:
     def __init__(self, description=None):
         if description is None:
@@ -121,8 +141,11 @@ class Job:
         return self
 
 
+    def start(self) -> JobResult:
+        # old method name
+        return self.run()
 
-    def start(self):
+    def run(self) -> JobResult:
 
         mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
         if mode not in ["exhaust_budget", "stop_at_first_falsification"]:
@@ -156,22 +179,3 @@ class Job:
 
         return jr
 
-
-class JobResult:
-    def __init__(self,descriptipon,test_repository,falsified):
-        self.timestamp= datetime.datetime.now()
-        self.description=descriptipon
-        self.falsified= falsified
-        self.test_repository=test_repository
-        self.algorithm_performance=None
-        self.sut_performance=None
-
-    @staticmethod
-    def restore_from_file(file_name):
-        with open(file_name, "rb") as file:
-            obj=pickle.load(file)
-        return obj
-
-    def dump_to_file(self,file_name):
-        with open(file_name,"wb") as file:
-            pickle.dump(self,file)
