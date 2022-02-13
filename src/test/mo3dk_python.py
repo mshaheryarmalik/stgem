@@ -2,7 +2,7 @@ import math
 from job import Job
 import unittest
 
-def myfunc(input):
+def myfunc(input:  [[-15, 15], [-15, 15], [-15, 15]] ) -> [ [0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
     h1 = 305 - 100 * (math.sin(x1 / 3) + math.sin(x2 / 3) + math.sin(x3 / 3))
     h2 = 230 - 75 * (math.cos(x1 / 2.5 + 15) + math.cos(x2 / 2.5 + 15) + math.cos(x3 / 2.5 + 15))
@@ -12,12 +12,9 @@ def myfunc(input):
     # we make it easy to falsify
     return [h1, h2, h3-20]
 
-
 description = {
     "sut": "python.PythonFunction",
     "sut_parameters": {
-        "input_range": [[-15, 15], [-15, 15], [-15, 15]],
-        "output_range": [[0, 350], [0, 350], [0, 350]],
         "function": myfunc
     },
     "objective_func": ["ObjectiveMaxSelected", "ObjectiveMaxSelected", "ObjectiveMaxSelected"],
@@ -54,4 +51,5 @@ description = {
     "job_parameters": {"N_tests": 80, "N_random_init": 20, "mode": "stop_at_first_falsification"}
 }
 
-Job(description).start()
+r=Job(description).start()
+r.dump_to_file("mod3k_python_results.pickle")
