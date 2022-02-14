@@ -120,29 +120,30 @@ class Job:
         falsified = False
         generator = self.algorithm.generate_test()
 
+        outputs = []
         if mode == "exhaust_budget":
-            outputs = []
             for i in range(self.description["job_parameters"]["N_tests"]):
                 idx = next(generator)
                 _, output = self.algorithm.test_repository.get(idx)
                 outputs.append(output)
 
-            outputs = np.asarray(outputs)
-            print("Minimum objective components:")
-            print(np.min(outputs, axis=0))
-            if 0 in np.min(outputs, axis=0):
-               falsified=True
-
         elif mode == "stop_at_first_falsification":
             for i in range(self.description["job_parameters"]["N_tests"]):
                 idx = next(generator)
                 _, output = self.algorithm.test_repository.get(idx)
+                outputs.append(output)
                 if np.min(output) == 0:
                     print("First falsified at test {}.".format(i + 1))
-                    falsified = True
                     break
         else:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
+
+        outputs = np.asarray(outputs)
+        print("Minimum objective components:")
+        print(np.min(outputs, axis=0))
+
+        if 0 in np.min(outputs, axis=0):
+           falsified=True
 
         if falsified:
             return True
