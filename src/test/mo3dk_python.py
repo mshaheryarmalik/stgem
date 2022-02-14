@@ -17,7 +17,7 @@ description = {
     "sut_parameters": {
         "function": myfunc
     },
-    "objective_func": ["ObjectiveMaxSelected", "ObjectiveMaxSelected", "ObjectiveMaxSelected"],
+    "objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
     "objective_func_parameters": [
         {"selected": [0], "invert": False, "scale": True},
         {"selected": [1], "invert": False, "scale": True},

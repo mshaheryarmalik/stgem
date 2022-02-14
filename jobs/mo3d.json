@@ -1,6 +1,6 @@
 {
 "sut": "mo3d.MO3D",
-"objective_func": ["ObjectiveMaxSelected", "ObjectiveMaxSelected", "ObjectiveMaxSelected"],
+"objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
 "objective_func_parameters": [{"selected": [0], "scale": true}, {"selected": [1], "scale": true}, {"selected": [2], "scale": true}],
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 30},
