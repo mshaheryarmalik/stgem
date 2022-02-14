@@ -12,7 +12,7 @@ class JobTestCase(unittest.TestCase):
     def test_30_mo3dk_file(self):
         from job import Job
         result = Job().setup_from_file("test_jobs/mo3dk.json").start()
-        assert result
+        assert result.falsified
 
 
 

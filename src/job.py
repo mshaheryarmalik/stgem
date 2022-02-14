@@ -2,12 +2,33 @@
 import os, datetime, logging, random
 from collections import namedtuple
 import json
-
-import torch
+import datetime
 import numpy as np
+import dill as pickle
+
 
 import sut, objective, algorithm
 from test_repository import TestRepository
+
+
+class JobResult:
+    def __init__(self,descriptipon,test_repository,falsified):
+        self.timestamp= datetime.datetime.now()
+        self.description=descriptipon
+        self.falsified= falsified
+        self.test_repository=test_repository
+        self.algorithm_performance=None
+        self.sut_performance=None
+
+    @staticmethod
+    def restore_from_file(file_name):
+        with open(file_name, "rb") as file:
+            obj=pickle.load(file)
+        return obj
+
+    def dump_to_file(self,file_name):
+        with open(file_name,"wb") as file:
+            pickle.dump(self,file)
 
 
 class Job:
@@ -18,6 +39,7 @@ class Job:
             self.description=description
             self.setup()
 
+
     def setup_from_file(self,file_name):
         with open(file_name) as f:
             self.description=json.load(f)
@@ -25,6 +47,9 @@ class Job:
         return self
 
     def setup(self):
+        import torch
+
+
         def dict_access(d, s):
             current = d
             for k in s.split("."):
@@ -48,7 +73,7 @@ class Job:
                 dict_set(self.description, key, dict_access(self.description, item[5:]))
 
         # Fill in empty values for certain parameters if missing.
-        for name in ["sut_parameters", "objective_selector_parameters"]:
+        for name in ["sut_parameters", "objective_selector_parameters","algorithm_parameters"]:
             if not name in self.description:
                 self.description[name] = {}
         for i in range(len(self.description["objective_func"]) - len(self.description["objective_func_parameters"])):
@@ -115,38 +140,42 @@ class Job:
 
         return self
 
-    def start(self):
+
+    def start(self) -> JobResult:
+        # old method name
+        return self.run()
+
+    def run(self) -> JobResult:
+
         mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
-        falsified = False
-        generator = self.algorithm.generate_test()
-
-        outputs = []
-        if mode == "exhaust_budget":
-            for i in range(self.description["job_parameters"]["N_tests"]):
-                idx = next(generator)
-                _, output = self.algorithm.test_repository.get(idx)
-                outputs.append(output)
-
-        elif mode == "stop_at_first_falsification":
-            for i in range(self.description["job_parameters"]["N_tests"]):
-                idx = next(generator)
-                _, output = self.algorithm.test_repository.get(idx)
-                outputs.append(output)
-                if np.min(output) == 0:
-                    print("First falsified at test {}.".format(i + 1))
-                    break
-        else:
+        if mode not in ["exhaust_budget", "stop_at_first_falsification"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
 
-        outputs = np.asarray(outputs)
-        print("Minimum objective components:")
-        print(np.min(outputs, axis=0))
+        falsified=False
 
-        if 0 in np.min(outputs, axis=0):
-           falsified=True
+        generator = self.algorithm.generate_test()
+        outputs = []
 
-        if falsified:
-            return True
-        else:
+        for i in range(self.description["job_parameters"]["N_tests"]):
+
+            idx = next(generator)
+            _, output = self.algorithm.test_repository.get(idx)
+            outputs.append(output)
+
+            if not falsified and np.min(output) == 0:
+                print("First falsified at test {}.".format(i + 1))
+                falsified = True
+            if falsified and mode == "stop_at_first_falsification":
+                break
+
+        if not falsified:
             print("Could not falsify within the given budget.")
-            return False
+            print("Minimum objective components:")
+            print(np.min(np.asarray(outputs), axis=0))
+
+        jr=JobResult(self.description,self.algorithm.test_repository,falsified)
+        jr.algorithm_performance=self.algorithm.perf
+        jr.sut_performance=self.algorithm.sut.perf
+
+        return jr
+
