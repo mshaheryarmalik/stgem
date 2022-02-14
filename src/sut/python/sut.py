@@ -13,7 +13,7 @@ class PythonFunction(SUT):
 
         if "input_range" in self.parameters:
             self.irange = np.asarray(self.parameters["input_range"])
-        if "ouput_range" in self.parameters:
+        if "output_range" in self.parameters:
             self.orange = np.asarray(self.parameters["output_range"])
 
         self.function= self.parameters["function"]
