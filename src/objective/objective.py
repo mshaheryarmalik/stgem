@@ -17,10 +17,10 @@ class Objective:
     def __call__(self, output):
         return output
 
-class ObjectiveMaxSelected(Objective):
+class ObjectiveMinSelected(Objective):
     """
-    Objective function for SUT with fixed-length vector outputs which selects
-    the maximum among the specified components.
+    Objective function for a SUT with fixed-length vector outputs which selects
+    the minimum among the specified components.
     """
 
     def __init__(self, sut, selected=None, scale=False, invert=False):
@@ -50,16 +50,16 @@ class ObjectiveMaxSelected(Objective):
         else:
             output = output[idx]
 
-        return max(0, min(1, max(output)))
+        return max(0, min(1, min(output)))
 
-class ObjectiveMaxComponentwise(Objective):
+class ObjectiveMinComponentwise(Objective):
     """
-    Objective function for SUT with signal outputs which computes the
-    componentwise maxima of the signal.
+    Objective function for a SUT with signal outputs which outputs the minima
+    of the signals.
     """
 
     def __init__(self):
         self.dim = 1
 
     def __call__(self, timestamps, signals):
-        return [max(signal) for signal in signals]
+        return [min(signal) for signal in signals]
