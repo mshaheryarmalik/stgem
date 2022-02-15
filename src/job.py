@@ -4,6 +4,7 @@ from collections import namedtuple
 import json
 import datetime
 import numpy as np
+import torch
 import dill as pickle
 
 
@@ -34,22 +35,18 @@ class JobResult:
 class Job:
     def __init__(self, description=None):
         if description is None:
-            self.description= {}
+            self.description = {}
         else:
-            self.description=description
+            self.description = description
             self.setup()
 
-
-    def setup_from_file(self,file_name):
+    def setup_from_file(self, file_name):
         with open(file_name) as f:
-            self.description=json.load(f)
+            self.description = json.load(f)
         self.setup()
         return self
 
     def setup(self):
-        import torch
-
-
         def dict_access(d, s):
             current = d
             for k in s.split("."):

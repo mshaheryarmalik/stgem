@@ -84,14 +84,8 @@ class Algorithm:
             self.perf.save_history("N_tests_generated", invalid + distance_invalid + 1)
             self.perf.save_history("N_invalid_tests_generated", invalid)
 
-            sut_output = self.sut.execute_test(test)
-            # Check if the SUT output is a vector or a signal.
-            if np.isscalar(sut_output[0]):
-                output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
-            else:
-                output = [self.objective_funcs[i](**sut_output) for i in range(self.N_models)]
-
             self.log("Executing {} ({}/{})".format(test, tests_generated, self.N_random_init))
+
             sut_output = self.sut.execute_test(test)
             # Check if the SUT output is a vector or a signal.
             if np.isscalar(sut_output[0]):
@@ -101,7 +95,7 @@ class Algorithm:
 
             idx = self.test_repository.record(test.reshape(-1), test_output)
             self.test_suite.append(idx)
-            self.objective_selector.update(np.argmin(output))
+            self.objective_selector.update(np.argmin(test_output))
 
             self.log("Result: {}".format(test_output))
 

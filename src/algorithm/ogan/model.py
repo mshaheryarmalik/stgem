@@ -108,7 +108,7 @@ class OGAN_Model(Model):
         # outputs.
         self.modelD.train(True)
         losses = []
-        for n in range(discriminator_epochs):
+        for _ in range(discriminator_epochs):
             D_loss = self.lossD(self.modelD(dataX), dataY)
             losses.append(D_loss.cpu().detach().numpy())
             self.optimizerD.zero_grad()
@@ -116,7 +116,7 @@ class OGAN_Model(Model):
             self.optimizerD.step()
 
         m = np.mean(losses)
-        self.log("Discriminator epochs {}, Loss: {} -> {}, mean {}".format(discriminator_epochs, losses[0], losses[-1], m))
+        self.log("Discriminator epochs {}, Loss: {} -> {} (mean {})".format(discriminator_epochs, losses[0], losses[-1], m))
 
         self.modelD.train(False)
 
