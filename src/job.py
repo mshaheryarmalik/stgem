@@ -167,8 +167,9 @@ class Job:
 
         if not falsified:
             print("Could not falsify within the given budget.")
-            print("Minimum objective components:")
-            print(np.min(np.asarray(outputs), axis=0))
+
+        print("Minimum objective components:")
+        print(np.min(np.asarray(outputs), axis=0))
 
         jr=JobResult(self.description,self.algorithm.test_repository,falsified)
         jr.algorithm_performance=self.algorithm.perf
