@@ -36,7 +36,7 @@ class WOGAN_NN(nn.Module):
 
         # Hidden layer activation.
         if not hidden_activation in activations:
-            raise Exception("Unknown activation function '{}'.".format(activation))
+            raise Exception("Unknown activation function '{}'.".format(hidden_activation))
         self.hidden_activation = activations[hidden_activation]
 
         # Output activation.
