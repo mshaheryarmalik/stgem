@@ -17,5 +17,7 @@ if __name__ == "__main__":
         print("usage: stgem.py job_description_file [... job_description_file_n]")
         raise SystemExit
 
-    for job in jobs:
-        job.start()
+    for n, job in enumerate(jobs):
+        jr = job.start()
+        jr.dump_to_file("job_{}_output.pickle".format(n))
+

@@ -18,7 +18,9 @@ class JobResult:
         self.description=descriptipon
         self.falsified= falsified
         self.test_repository=test_repository
+        self.test_suite=None
         self.algorithm_performance=None
+        self.model_performance = None
         self.sut_performance=None
 
     @staticmethod
@@ -137,7 +139,6 @@ class Job:
 
         return self
 
-
     def start(self) -> JobResult:
         # old method name
         return self.run()
@@ -174,6 +175,8 @@ class Job:
         jr=JobResult(self.description,self.algorithm.test_repository,falsified)
         jr.algorithm_performance=self.algorithm.perf
         jr.sut_performance=self.algorithm.sut.perf
+        jr.test_suite = self.algorithm.test_suite
+        jr.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
 
         return jr
 

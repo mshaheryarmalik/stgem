@@ -7,13 +7,13 @@ class PerformanceData:
         self.histories = {}
 
     def get_history(self, id):
-        if not id in self.timers:
+        if not id in self.histories:
             raise Exception("No history for the identifier '{}'.".format(id))
         return self.histories[id]
 
     def save_history(self, id, value, single=False):
         if not single:
-            if not id in self.timers:
+            if not id in self.histories:
                 self.histories[id] = []
             self.histories[id].append(value)
         else:

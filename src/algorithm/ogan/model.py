@@ -19,11 +19,15 @@ class OGAN_Model(Model):
 
         self.noise_batch_size = self.ogan_model_parameters["noise_batch_size"]
 
+        self._initialize()
+
+    def _initialize(self):
         # Load the specified generator and discriminator machine learning
         # models and initialize them.
         module = importlib.import_module(".mlm", "algorithm.ogan")
         generator_class = getattr(module, self.generator_mlm)
         discriminator_class = getattr(module, self.discriminator_mlm)
+
         self.modelG = generator_class(**self.generator_mlm_parameters).to(self.device)
         self.modelD = discriminator_class(**self.discriminator_mlm_parameters).to(self.device)
 
@@ -65,6 +69,15 @@ class OGAN_Model(Model):
             self.lossD = get_loss(self.ogan_model_parameters["discriminator_loss"])
         except:
             raise
+
+        # Setup loss saving.
+        self.losses_D = []
+        self.losses_G = []
+        self.perf.save_history("discriminator_loss", self.losses_D)
+        self.perf.save_history("generator_loss", self.losses_G)
+
+    def reset(self):
+        self._initialize()
 
     def train_with_batch(self, dataX, dataY, train_settings):
         """
@@ -110,11 +123,12 @@ class OGAN_Model(Model):
         losses = []
         for _ in range(discriminator_epochs):
             D_loss = self.lossD(self.modelD(dataX), dataY)
-            losses.append(D_loss.cpu().detach().numpy())
+            losses.append(D_loss.cpu().detach().numpy().item())
             self.optimizerD.zero_grad()
             D_loss.backward()
             self.optimizerD.step()
 
+        self.losses_D += losses
         m = np.mean(losses)
         self.log("Discriminator epochs {}, Loss: {} -> {} (mean {})".format(discriminator_epochs, losses[0], losses[-1], m))
 
@@ -157,10 +171,12 @@ class OGAN_Model(Model):
         for n in range(0, self.noise_batch_size, generator_batch_size):
             outputs = self.modelD(self.modelG(inputs[n:n+generator_batch_size]))
             G_loss = self.lossG(outputs, fake_label[:outputs.shape[0]])
-            losses.append(G_loss.cpu().detach().numpy())
+            losses.append(G_loss.cpu().detach().numpy().item())
             self.optimizerG.zero_grad()
             G_loss.backward()
             self.optimizerG.step()
+
+        self.losses_G += losses
         m = np.mean(losses)
         self.log("Generator steps {}, Loss: {} -> {}, mean {}".format(self.noise_batch_size//generator_batch_size + 1, losses[0], losses[-1], m))
 
