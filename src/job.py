@@ -42,6 +42,15 @@ class Job:
             self.description = description
             self.setup()
 
+    def setup_from_dict(self, description):
+        self.description = description
+        self.setup()
+        return self
+
+    def setup_from_json(self, json_s):
+        d = json.loads(json_s)
+        return self.setup_from_dict(d)
+
     def setup_from_file(self, file_name):
         with open(file_name) as f:
             self.description = json.load(f)
@@ -79,14 +88,18 @@ class Job:
             self.description["objective_func_parameters"].append({})
 
         # Setup seed.
-        # TODO: Make configurable.
+        # We use a random seed unless it is specified.
         # Notice that making Pytorch deterministic makes it a lot slower.
-        SEED = random.randint(0, 2**15)
+        if "seed" in self.description["job_parameters"] and self.description["job_parameters"]["seed"] is not None:
+            SEED = self.description["job_parameters"]["seed"]
+            torch.use_deterministic_algorithms(mode=True)
+            os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+        else:
+            SEED = random.randint(0, 2**15)
+
         random.seed(SEED)
         np.random.seed(SEED)
         torch.manual_seed(SEED)
-        torch.use_deterministic_algorithms(mode=True)
-        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
         # Setup the device.
         self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
