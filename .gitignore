@@ -1,3 +1,6 @@
 __pycache__
 simulations
+Autotrans_shift.slxc
+src/.ipynb_checkpoints
 src/sut/odroid/odroid.npy
+src/slprj
