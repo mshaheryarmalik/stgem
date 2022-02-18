@@ -4,8 +4,13 @@
 import importlib
 
 def loadObjective(name):
-    modulename, classname = name.split(".")
-    module = importlib.import_module("." + modulename + ".objective", "objective")
+    if "." in name:
+        modulename, classname = name.split(".")
+        modulename += "."
+    else:
+        modulename = ""
+        classname = name
+    module = importlib.import_module("." + modulename + "objective", "objective")
     try:
         the_class = getattr(module, classname)
     except AttributeError:
