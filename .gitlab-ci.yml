@@ -34,12 +34,11 @@ before_script:
 pytest:
   stage: test
   script:
-  - cd src
   - export PYTHONPATH=`pwd`
   - cd test
-  - pytest --junitxml=report.xml
+  - pytest --junitxml=pytest-report.xml
   artifacts:
     when: always
     reports:
-      junit: src/test/report.xml
+      junit: test/pytest-report.xml
 
