@@ -3,6 +3,8 @@
 
 import importlib, inspect
 
+from .algorithm import Algorithm
+from .model import Model
 
 def loadAlgorithm(name):
     pcs = name.split(".")

@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from stgem import algorithm
-from stgem.algorithm.model import Model
+from stgem.algorithm import Model
 
 class WOGAN_Model(Model):
     """

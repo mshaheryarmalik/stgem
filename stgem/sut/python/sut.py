@@ -4,7 +4,7 @@
 import math
 import numpy as np
 
-from stgem.sut.sut import SUT
+from stgem.sut import SUT
 
 class PythonFunction(SUT):
 

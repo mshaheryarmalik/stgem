@@ -5,7 +5,7 @@ import importlib
 
 import numpy as np
 
-from stgem.algorithm.model import Model as AlgModel
+from stgem.algorithm import Model as AlgModel
 from keras.models import Sequential, Model
 from keras.layers import Dense, LeakyReLU, Input
 from tensorflow.keras.optimizers import Adam

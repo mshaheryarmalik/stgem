@@ -5,7 +5,7 @@ import importlib, heapq
 
 import numpy as np
 
-from stgem.algorithm.algorithm import Algorithm
+from stgem.algorithm import Algorithm
 
 class OGAN(Algorithm):
     """

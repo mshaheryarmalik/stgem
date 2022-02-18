@@ -1,4 +1,4 @@
-from stgem.algorithm.algorithm import Algorithm
+from stgem.algorithm import Algorithm
 import numpy as np
 
 from platypus import NSGAII,EpsMOEA, Problem, Real, Integer, nondominated

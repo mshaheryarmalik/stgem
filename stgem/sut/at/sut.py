@@ -11,7 +11,7 @@ try:
 except ImportError:
     raise Exception("Error importing Python Matlab engine for AT.")
 
-from stgem.sut.sut import SUT
+from stgem.sut import SUT
 
 
 class AT(SUT):

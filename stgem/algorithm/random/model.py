@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from stgem.algorithm.model import Model
+from stgem.algorithm import Model
 
 class Random_Model(Model):
     """

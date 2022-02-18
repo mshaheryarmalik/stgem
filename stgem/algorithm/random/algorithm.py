@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from stgem.algorithm.algorithm import Algorithm
+from stgem.algorithm import Algorithm
 from .model import Random_Model
 
 

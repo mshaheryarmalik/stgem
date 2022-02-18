@@ -3,6 +3,9 @@
 
 import importlib
 
+from .objective import Objective
+from .objective_selector import ObjectiveSelector
+
 def loadObjective(name):
     if "." in name:
         modulename, classname = name.split(".")

@@ -17,7 +17,7 @@ from shapely.geometry import LineString, Polygon
 from shapely.affinity import translate, rotate
 from descartes import PolygonPatch
 
-from stgem.sut.sut import SUT
+from stgem.sut import SUT
 from stgem.sut.sbst.util import frechet_distance, sbst_validate_test
 
 from self_driving.beamng_brewer import BeamNGBrewer

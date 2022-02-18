@@ -3,6 +3,7 @@
 
 import importlib
 
+from .sut import SUT
 
 def loadSUT(name):
     pcs = name.split(".")
