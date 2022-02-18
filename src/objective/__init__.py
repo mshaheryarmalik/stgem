@@ -6,11 +6,10 @@ import importlib
 def loadObjective(name):
     if "." in name:
         modulename, classname = name.split(".")
-        modulename += "."
+        module = importlib.import_module("." + modulename + ".objective", "objective")
     else:
-        modulename = ""
-        classname = name
-    module = importlib.import_module("." + modulename + "objective", "objective")
+        classname= name
+        module = importlib.import_module(".objective", "objective")
     try:
         the_class = getattr(module, classname)
     except AttributeError:
