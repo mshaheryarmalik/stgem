@@ -20,11 +20,11 @@ class AT(SUT):
     the input signals is 30 units and it is split into 6 constant pieces.
     """
 
-    def __init__(self):
+    def __init__(self, parameters):
+        super().__init__(parameters)
+
         # TODO: Right now the values below are fixed as in the Fainekos et al.
         #       paper. We should consider making them configurable.
-
-        SUT.__init__(self)
 
         # The total time domain for the signal.
         self.time = 30
@@ -36,14 +36,19 @@ class AT(SUT):
         self.sampling_step = 0.2
         self.steps = self.time // self.sampling_step
 
-        # The ranges for the input signals come from ARCH COMP 2020.
-        self.throttle_range = (0, 100)
-        self.brake_range = (0, 325)
+        self.idim = 2*self.pieces
+        self.odim = 3
 
-        # TODO: The output signal ranges are not currently used.
+        # The ranges for the input signals come from ARCH COMP 2020.
+        throttle_range = (0, 100)
+        brake_range = (0, 325)
+        self.irange = np.asarray([throttle_range for _ in range(self.pieces)] + [brake_range for _ in range(self.pieces)])
+
         # TODO: Figure out correct output ranges.
-        # SPEED, RPM, GEAR
-        self.orange = [200, 7000, 4]
+        speed_range = (0, 200)
+        rpm_range = (0, 7000)
+        gear_range = (0, 4)
+        self.orange = np.asarray([speed_range, rpm_range, gear_range])
 
         self.MODEL_NAME = "Autotrans_shift"
         # Initialize the Matlab engine (takes a lot of time).
@@ -90,13 +95,7 @@ class AT(SUT):
           signals (np.ndarray): Array of shape (3, M).
         """
 
-        # Descale the test components.
-        # TODO: Use the parent class scale functions.
-        descaled = []
-        for X in (self.throttle_range, self.brake_range):
-            for i in range(self.pieces):
-                descaled.append(0.5 * (X[1] - X[0]) * test[i] + 0.5 * (X[1] + X[0]))
-        test = descaled
+        test = self.descale(test.reshape(1, -1), self.irange).reshape(-1)
 
         # Convert the test vector to two functions which take time as input and
         # return the signal values.
@@ -134,3 +133,4 @@ class AT(SUT):
         """
 
         return np.random.uniform(-1, 1, size=2 * self.pieces)
+

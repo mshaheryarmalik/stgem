@@ -46,7 +46,7 @@ class Algorithm:
           for idx in self.predefined_random_data_idx:
             self.perf.timer_start("generation")
             self.test_suite.append(idx)
-            self.objective_selector.update(np.argmax(self.test_repository.get(idx)[1]))
+            self.objective_selector.update(np.argmin(self.test_repository.get(idx)[1]))
             tests_generated += 1
             self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
             self.perf.save_history("N_tests_generated", 1)
@@ -91,7 +91,7 @@ class Algorithm:
             if np.isscalar(sut_output[0]):
                 test_output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
             else:
-                test_output = [self.objective_funcs[i](**sut_output) for i in range(self.N_models)]
+                test_output = [self.objective_funcs[i](*sut_output) for i in range(self.N_models)]
 
             idx = self.test_repository.record(test.reshape(-1), test_output)
             self.test_suite.append(idx)

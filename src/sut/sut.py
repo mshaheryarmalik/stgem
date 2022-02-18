@@ -53,7 +53,7 @@ class SUT:
         #
         # Outputs are not scaled to [-1, 1] by default, but this can be
         # achieved by specifying an output range and by using the self.scale
-        # method. As the output range is unknown, the value None can be used to
+        # method. If the output range is unknown, the value None can be used to
         # indicate this. For example, self.orange = [(-300, 100), None]
         # specifies output range [-300, 100] for the first component and the
         # range of the second component is unknown.
@@ -106,7 +106,6 @@ class SUT:
 
     def _execute_test(self, test):
         raise NotImplementedError()
-
 
     def execute_random_test(self):
         test = self.sample_input_space()

@@ -63,3 +63,4 @@ class ObjectiveMinComponentwise(Objective):
 
     def __call__(self, timestamps, signals):
         return [min(signal) for signal in signals]
+

@@ -13,9 +13,9 @@ from test_repository import TestRepository
 
 
 class JobResult:
-    def __init__(self,descriptipon,test_repository,falsified):
+    def __init__(self, description, test_repository, falsified):
         self.timestamp= datetime.datetime.now()
-        self.description=descriptipon
+        self.description=description
         self.falsified= falsified
         self.test_repository=test_repository
         self.test_suite=None
@@ -84,6 +84,8 @@ class Job:
         for name in ["sut_parameters", "objective_selector_parameters","algorithm_parameters"]:
             if not name in self.description:
                 self.description[name] = {}
+        if "objective_func_parameters" not in self.description:
+            self.description["objective_func_parameters"] = []
         for i in range(len(self.description["objective_func"]) - len(self.description["objective_func_parameters"])):
             self.description["objective_func_parameters"].append({})
 

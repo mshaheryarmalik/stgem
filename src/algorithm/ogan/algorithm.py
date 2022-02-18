@@ -16,7 +16,7 @@ class OGAN(Algorithm):
         super().__init__(sut, test_repository, objective_funcs, objective_selector, logger)
         self.parameters = parameters
 
-        self.N_models = sum(f.dim for f in self.objective_funcs)
+        self.N_models = sum(1 for f in self.objective_funcs)
 
         # Setup the models.
         # ---------------------------------------------------------------------
@@ -81,6 +81,7 @@ class OGAN(Algorithm):
             invalid = 0
             active_models = self.objective_selector.select()
             self.log("Starting to generate test {} using the OGAN models {}.".format(tests_generated + 1, ",".join(str(m + 1) for m in active_models)))
+
             while True:
                 # TODO: Avoid selecting similar or same tests.
                 rounds += 1
@@ -134,7 +135,7 @@ class OGAN(Algorithm):
             if np.isscalar(sut_output[0]):
                 output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
             else:
-                output = [self.objective_funcs[i](**sut_output) for i in range(self.N_models)]
+                output = [self.objective_funcs[i](*sut_output) for i in range(self.N_models)]
   
             self.log("Result from the SUT {}".format(sut_output))
             self.log("The actual objective {} for the generated test.".format(output))
@@ -145,6 +146,10 @@ class OGAN(Algorithm):
             self.test_suite.append(idx)
             self.objective_selector.update(np.argmin(output))
             tests_generated += 1
+
+            self.perf.timers_hold()
+            yield idx
+            self.perf.timers_resume()
   
             # Train the model.
             # -----------------------------------------------------------------
@@ -156,7 +161,7 @@ class OGAN(Algorithm):
                 if tests_generated - model_trained[i] >= self.train_delay:
                     self.log("Training the OGAN model {}...".format(i + 1))
                     # Reset the model.
-                    self.models[i] = self.model_class(sut=self.sut, parameters=self.parameters, logger=self.logger)
+                    self.models[i].reset()
                     dataX, dataY = self.test_repository.get(self.test_suite)
                     dataX = np.array(dataX)
                     dataY = np.array(dataY)[:,i].reshape(-1, 1)
@@ -168,7 +173,4 @@ class OGAN(Algorithm):
                     model_trained[i] = tests_generated
             self.perf.save_history("training_time", self.perf.timer_reset("training"))
   
-            self.perf.timers_hold()
-            yield idx
-            self.perf.timers_resume()
   

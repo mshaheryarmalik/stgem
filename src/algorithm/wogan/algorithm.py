@@ -235,7 +235,7 @@ class WOGAN(Algorithm):
             if np.isscalar(sut_output[0]):
                 output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
             else:
-                output = [self.objective_funcs[i](**sut_output) for i in range(self.N_models)]
+                output = [self.objective_funcs[i](*sut_output) for i in range(self.N_models)]
   
             self.log("Result from the SUT {}".format(sut_output))
             self.log("The actual objective {} for the generated test.".format(output))
