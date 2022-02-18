@@ -35,7 +35,7 @@ pytest:
   stage: test
   script:
   # this path should be updated when we move src to stgem
-  - export PYTHONPATH=`pwd`\src
+  - export PYTHONPATH=`pwd`/src
   - cd test
   - pytest --junitxml=pytest-report.xml
   artifacts:
