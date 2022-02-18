@@ -33,6 +33,8 @@ before_script:
 
 test:
   script:
-  - cd src/test 
+  - cd src
+  - export PYTHONPATH=`pwd`
+  - cd test
   - pytest
 
