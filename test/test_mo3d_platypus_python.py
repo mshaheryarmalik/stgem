@@ -1,5 +1,5 @@
 import math
-from job import Job
+from stgem.job import Job
 import unittest
 
 def myfunc(input):
