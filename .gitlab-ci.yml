@@ -41,5 +41,5 @@ pytest:
   artifacts:
     when: always
     reports:
-      junit: report.xml
+      junit: src/test/report.xml
 
