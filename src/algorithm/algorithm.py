@@ -21,6 +21,9 @@ class Algorithm:
         self.logger = logger
         self.log = (lambda s: self.logger.algorithm.info(s) if logger is not None else None)
 
+        self.models=[]
+        self.N_models=0
+
         self.test_suite = []
 
         self.perf = PerformanceData()
