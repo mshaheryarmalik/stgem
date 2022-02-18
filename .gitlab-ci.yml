@@ -34,12 +34,12 @@ before_script:
 pytest:
   stage: test
   script:
-  - cd src
-  - export PYTHONPATH=`pwd`
+  # this path should be updated when we move src to stgem
+  - export PYTHONPATH=`pwd`\src
   - cd test
-  - pytest --junitxml=report.xml
+  - pytest --junitxml=pytest-report.xml
   artifacts:
     when: always
     reports:
-      junit: src/test/report.xml
+      junit: test/pytest-report.xml
 
