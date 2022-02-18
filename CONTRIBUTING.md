@@ -90,4 +90,10 @@ The environment setup is completed.
 
 ## Run tests
 
-TBA
+You can use pytest to run all the tests automatically:
+
+```shell
+pip install pytest
+cd test
+pytest
+```
