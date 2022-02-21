@@ -54,7 +54,7 @@ class AT(SUT):
         # Initialize the Matlab engine (takes a lot of time).
         self.engine = matlab.engine.start_matlab()
         # The path for the model file.
-        self.engine.addpath(os.path.join("sut", "at"))
+        self.engine.addpath(os.path.join("stgem", "sut", "at"))
         # Get options for the model (takes a lot of time).
         model_opts = self.engine.simget(self.MODEL_NAME)
         # Set the output format of the model.

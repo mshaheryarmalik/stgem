@@ -1,18 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import os, sys, json
+import os, json
 
-import click
+from stgem.job import Job
 
-from .job import Job
-
-@click.command()
-@click.argument("files", type=str, nargs=-1)
-@click.option("-n", type=int, multiple=True)
-@click.option("--seed", "-s", type=int, multiple=True)
 def start(files, n, seed):
-
     # Parse the descriptions from the command line arguments.
     descriptions = []
     for i, file_name in enumerate(files):
@@ -27,7 +20,7 @@ def start(files, n, seed):
             # Now we add 1 to the seed for each consecutive copy of the job.
             SEED = seed[i] + j if i < len(seed) else None
             description["job_parameters"]["seed"] = SEED
-            description["job_parameters"]["output_file"] = "job_{}_{}.pickle".format(i, j)
+            description["job_parameters"]["output_file"] = "output/job_{}_{}.pickle".format(i, j)
 
             descriptions.append(description)
 
@@ -35,7 +28,4 @@ def start(files, n, seed):
         job = Job().setup_from_dict(description)
         jr = job.start()
         jr.dump_to_file(job.description["job_parameters"]["output_file"])
-
-if __name__ == "__main__":
-    start()
 
