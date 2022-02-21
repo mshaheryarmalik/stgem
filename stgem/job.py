@@ -7,10 +7,10 @@ import numpy as np
 import torch
 import dill as pickle
 
-
-from . import sut, objective, algorithm
-from .test_repository import TestRepository
-
+from stgem import load_stgem_module
+import stgem.algorithm as algorithm
+import stgem.objective as objective
+from stgem.test_repository import TestRepository
 
 class JobResult:
     def __init__(self, description, test_repository, falsified):
@@ -115,7 +115,7 @@ class Job:
         logger = namedtuple("Logger", logger_names)(**loggers)
 
         # Setup the system under test.
-        sut_class = sut.loadSUT(self.description["sut"])
+        sut_class = load_stgem_module(self.description["sut"], "sut")
         asut = sut_class(parameters=self.description.get("sut_parameters",{}))
 
         # Setup the test repository.
