@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import importlib, inspect
-
+from .algorithm import Algorithm
+from .model import Model
 
 from stgem import load_stgem_module
 

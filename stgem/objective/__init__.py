@@ -5,10 +5,20 @@ import importlib
 
 from .objective import Objective
 from .objective_selector import ObjectiveSelector
-from stgem import load_stgem_module
 
 def loadObjective(name):
-    return load_stgem_module(name,"objective.objective")
+    if "." in name:
+        modulename, classname = name.split(".")
+        module = importlib.import_module("." + modulename + ".objective", "stgem.objective")
+    else:
+        classname= name
+        module = importlib.import_module(".objective",package="stgem.objective")
+    try:
+        the_class = getattr(module, classname)
+    except AttributeError:
+        raise Exception("The objective module does not have class '{}'.".format(classname))
+
+    return the_class
 
 def loadObjectiveSelector(name):
     module = importlib.import_module(".objective_selector", "stgem.objective")
