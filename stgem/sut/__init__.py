@@ -3,12 +3,12 @@
 
 import importlib
 
-from .sut import SUT
+from stgem.sut import SUT
 
 def loadSUT(name):
     pcs = name.split(".")
     try:
-        module = importlib.import_module("." + pcs[0] + ".sut", package="stgem.sut")
+        module = importlib.import_module(pcs[0] + ".sut", package="stgem.sut")
     except ModuleNotFoundError:
         raise Exception("The specified SUT module '{}' does not exist.".format(pcs[0]))
     try:

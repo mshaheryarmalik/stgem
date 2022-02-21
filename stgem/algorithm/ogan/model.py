@@ -24,7 +24,8 @@ class OGAN_Model(Model):
     def _initialize(self):
         # Load the specified generator and discriminator machine learning
         # models and initialize them.
-        module = importlib.import_module(".mlm", "algorithm.ogan")
+        #module = importlib.import_module("mlm", "stgem.algorithm.ogan")
+        module = importlib.import_module("stgem.algorithm.ogan.mlm")
         generator_class = getattr(module, self.generator_mlm)
         discriminator_class = getattr(module, self.discriminator_mlm)
 
