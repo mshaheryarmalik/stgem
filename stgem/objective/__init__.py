@@ -8,7 +8,7 @@ from .objective_selector import ObjectiveSelector
 from stgem import load_stgem_module
 
 def loadObjective(name):
-    return load_stgem_module(name,"objective")
+    return load_stgem_module(name,"objective.objective")
 
 def loadObjectiveSelector(name):
     module = importlib.import_module(".objective_selector", "stgem.objective")
