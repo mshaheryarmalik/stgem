@@ -2,22 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import importlib, inspect
-
 from .algorithm import Algorithm
 from .model import Model
 
-def loadAlgorithm(name):
-    pcs = name.split(".")
-    try:
-        module = importlib.import_module("." + pcs[0] + ".algorithm", "stgem.algorithm")
-    except ModuleNotFoundError:
-        raise Exception("The specified algorithm module '{}' does not exist.".format(pcs[0]))
-    try:
-        class_algorithm = getattr(module, pcs[1])
-    except AttributeError:
-        raise Exception("The algorithm module does not have class '{}'.".format(pcs[1]))
+from stgem import load_stgem_module
 
-    return class_algorithm
+def loadAlgorithm(name):
+    return load_stgem_module(name,"algorithm")
 
 
 def filter_arguments(dictionary, target):
