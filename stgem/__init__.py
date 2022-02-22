@@ -12,7 +12,7 @@ def load_stgem_class(name, namespace, module_path=None):
         class_name = pcs[1]
     else:
         if module_path is None:
-            primary_module_name = "stgem." + namespace
+            primary_module_name = "stgem." + namespace + "." + namespace
             secondary_module_name = None
             class_name = name
         else:
