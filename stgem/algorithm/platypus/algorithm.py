@@ -1,7 +1,8 @@
+import sys
 from stgem.algorithm import Algorithm
 import numpy as np
 
-from platypus import NSGAII,EpsMOEA, Problem, Real, Integer, nondominated
+from platypus import NSGAII, EpsMOEA, GDE3, SPEA2, Problem, Real, Integer, nondominated
 
 
 class PlatypusOpt(Algorithm):
@@ -12,6 +13,7 @@ class PlatypusOpt(Algorithm):
     def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
         super().__init__(sut, test_repository, objective_funcs, objective_selector, logger)
         self.parameters = parameters
+        self.platypus_algorithm = {"NSGAII": NSGAII, "EpsMOEA": EpsMOEA, "GDE3": GDE3, "SPEA2": SPEA2}
 
     def generate_test(self):
         self.lastIdx=0
@@ -46,15 +48,22 @@ class PlatypusOpt(Algorithm):
         problem.function = fitness_func
         problem.directions[:] = Problem.MINIMIZE
 
-        algorithm = NSGAII(problem)
+        algorithm = self.platypus_algorithm[self.parameters["platypus_algorithm"]]\
+                    (problem, population_size=self.parameters["population_size"])
 
+        #raise sys.exit()
         # It seems that NSGAII works in batches of more or less 100 evals
         # So each step generates many tests
         # We report them one by one. It is not the best solution, but it
         # kind of works for now.
+
+        #n = 0
         while True:
             algorithm.step()
+            #algorithm.run(100)
             while self.reportedIdx<=self.lastIdx:
+                #print(self.reportedIdx, self.lastIdx)
                 yield self.reportedIdx
                 self.reportedIdx=self.reportedIdx+1
-
+                #n += 1
+                #print('n------------------------', n)
