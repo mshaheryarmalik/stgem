@@ -128,13 +128,12 @@ class Job:
         objective_funcs = []
         for n, s in enumerate(self.description["objective_func"]):
             objective_class = load_stgem_class(s, "objective", self.description["job_parameters"]["module_path"])
-            #objective_class = objective.loadObjective(s)
             objective_func = objective_class(sut=asut, **self.description["objective_func_parameters"][n])
             N_objectives += objective_func.dim
             objective_funcs.append(objective_func)
 
         # Setup the objective selector.
-        objective_selector_class = objective.loadObjectiveSelector(self.description["objective_selector"])
+        objective_selector_class = load_stgem_class(self.description["objective_selector"], "objective_selector", self.description["job_parameters"]["module_path"])
         objective_selector = objective_selector_class(N_objectives=N_objectives, **self.description["objective_selector_parameters"])
 
         # Process job parameters for algorithm setup.
@@ -147,7 +146,6 @@ class Job:
         self.description["algorithm_parameters"]["N_tests"] = self.description["job_parameters"]["N_tests"]
         self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
         algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
-        #algorithm_class = algorithm.loadAlgorithm(self.description["algorithm"])
         self.algorithm = algorithm_class(sut=asut,
                                          test_repository=test_repository,
                                          objective_funcs=objective_funcs,
