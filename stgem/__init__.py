@@ -1,21 +1,27 @@
 import importlib
 
+def load_stgem_class(name, namespace, module_path=None):
+    # If there is no dot in the name, then we attempt to load the class from
+    # the appropriate file from the module path. Otherwise we use the part
+    # before the dot to indicate a subfolder under stgem and load from there.
+    if "." in name:
+        pcs = name.split(".")
+        module_name = "stgem." + namespace + "." + pcs[0] + "." + namespace
+        class_name = pcs[1]
+    else:
+        if module_path is None:
+            raise Exception("No submodule name specified when importing from stgem namespace {}".format(namespace))
+        module_name = module_path + "." + namespace
+        class_name = name
 
-def load_stgem_module(name,namespace):
-    module=None
-    pcs = name.split(".")
     try:
-        module = importlib.import_module(pcs[0] + "."+namespace)
+        module = importlib.import_module(module_name)
     except ModuleNotFoundError:
-        pass
-    if not module:
-        try:
-            module = importlib.import_module("." + pcs[0] + "."+namespace, package="stgem."+namespace)
-        except ModuleNotFoundError:
-            raise Exception("The specified {} module '{}' does not exist.".format(namespace, pcs[0]))
+        raise Exception("The module '{}' does not exist.".format(module_name))
     try:
-        the_class = getattr(module, pcs[1])
-    except AttributeError:
-        raise Exception("The specified {} module '{}' does not have class '{}'.".format(namespace, pcs[0], pcs[1]))
+        the_class = getattr(module, class_name)
+    except:
+        raise Exception("The module '{}' does not have class '{}'.".format(module_name, class_name))
 
     return the_class
+

@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import dill as pickle
 
-from stgem import load_stgem_module
+from stgem import load_stgem_class
 import stgem.algorithm as algorithm
 import stgem.objective as objective
 from stgem.test_repository import TestRepository
@@ -88,6 +88,8 @@ class Job:
             self.description["objective_func_parameters"] = []
         for i in range(len(self.description["objective_func"]) - len(self.description["objective_func_parameters"])):
             self.description["objective_func_parameters"].append({})
+        if "module_path" not in self.description["job_parameters"]:
+            self.description["job_parameters"]["module_path"] = None
 
         # Setup seed.
         # We use a random seed unless it is specified.
@@ -115,8 +117,8 @@ class Job:
         logger = namedtuple("Logger", logger_names)(**loggers)
 
         # Setup the system under test.
-        sut_class = load_stgem_module(self.description["sut"], "sut")
-        asut = sut_class(parameters=self.description.get("sut_parameters",{}))
+        sut_class = load_stgem_class(self.description["sut"], "sut", self.description["job_parameters"]["module_path"])
+        asut = sut_class(parameters=self.description.get("sut_parameters", {}))
 
         # Setup the test repository.
         test_repository = TestRepository()
@@ -125,7 +127,8 @@ class Job:
         N_objectives = 0
         objective_funcs = []
         for n, s in enumerate(self.description["objective_func"]):
-            objective_class = objective.loadObjective(s)
+            objective_class = load_stgem_class(s, "objective", self.description["job_parameters"]["module_path"])
+            #objective_class = objective.loadObjective(s)
             objective_func = objective_class(sut=asut, **self.description["objective_func_parameters"][n])
             N_objectives += objective_func.dim
             objective_funcs.append(objective_func)
@@ -143,7 +146,8 @@ class Job:
         # TODO: predefined random data loader
         self.description["algorithm_parameters"]["N_tests"] = self.description["job_parameters"]["N_tests"]
         self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
-        algorithm_class = algorithm.loadAlgorithm(self.description["algorithm"])
+        algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
+        #algorithm_class = algorithm.loadAlgorithm(self.description["algorithm"])
         self.algorithm = algorithm_class(sut=asut,
                                          test_repository=test_repository,
                                          objective_funcs=objective_funcs,

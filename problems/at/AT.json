@@ -1,6 +1,7 @@
 {
-"sut": "at.AT",
-"objective_func": ["at.AT_Objective_1", "at.AT_Objective_2", "at.AT_Objective_3"],
+"sut": "AT",
+"sut_parameters": {"model_file": "problems/at/Autotrans_shift"},
+"objective_func": ["AT_Objective_1", "AT_Objective_2", "AT_Objective_3"],
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 30},
 "algorithm": "ogan.OGAN",

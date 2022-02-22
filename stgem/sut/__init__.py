@@ -26,12 +26,11 @@ class SUT:
     Base class implementing a system under test.
     """
 
-    def __init__(self,parameters=None):
-
+    def __init__(self, parameters=None):
         if parameters is None:
-            self.parameters={}
+            self.parameters = {}
         else:
-            self.parameters=parameters
+            self.parameters = parameters
 
         self.perf = PerformanceData()
         # The variables below are set by the inheriting classes.
@@ -65,6 +64,13 @@ class SUT:
         # having the same range and by clipping to [0, 1].
         self.irange = None
         self.orange = None
+
+    def __getattr__(self, name):
+        value = self.parameters.get(name)
+        if value is None:
+            raise AttributeError(name)
+
+        return value
 
     def scale(self, x, intervals, target_A=-1, target_B=-1):
         """

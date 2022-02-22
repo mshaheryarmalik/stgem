@@ -12,7 +12,7 @@ def loadObjective(name):
         module = importlib.import_module("." + modulename + ".objective", "stgem.objective")
     else:
         classname= name
-        module = importlib.import_module(".objective",package="stgem.objective")
+        module = importlib.import_module(".objective", package="stgem.objective")
     try:
         the_class = getattr(module, classname)
     except AttributeError:
