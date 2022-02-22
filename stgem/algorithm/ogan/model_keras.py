@@ -45,10 +45,10 @@ class OGANK_Model(AlgModel):
             raise ValueError("There should be at least as many training outputs as there are inputs.")
 
 
-        self.noise_dimensions=self.model_parameters["noise_dimensions"]
+        self.noise_dimensions=self.ogan_model_parameters["noise_dimensions"]
         lf = "mean_squared_error"
-        sizeD =  self.model_parameters["d_size"]
-        sizeG =  self.model_parameters["g_size"]
+        sizeD =  self.ogan_model_parameters["d_size"]
+        sizeG =  self.ogan_model_parameters["g_size"]
         input_shape = (self.input_dimension,)
         a = "relu"
 
@@ -61,7 +61,7 @@ class OGANK_Model(AlgModel):
 
         self.modelG.compile(
             loss=lf,
-            optimizer=Adam(learning_rate=self.model_parameters["g_adam_lr"]),
+            optimizer=Adam(learning_rate=self.ogan_model_parameters["g_adam_lr"]),
         )
 
         self.modelD = Sequential()
@@ -70,7 +70,7 @@ class OGANK_Model(AlgModel):
         self.modelD.add(Dense(sizeD, activation=a))
         self.modelD.add(Dense(1, activation="relu"))
 
-        self.modelD.compile(loss=lf, optimizer=Adam(learning_rate= self.model_parameters["d_adam_lr"]))
+        self.modelD.compile(loss=lf, optimizer=Adam(learning_rate= self.ogan_model_parameters["d_adam_lr"]))
 
         # Unpack values from the train_settings dictionary.
         discriminator_epochs = train_settings["discriminator_epochs"] if "discriminator_epochs" in train_settings else 1
@@ -91,10 +91,10 @@ class OGANK_Model(AlgModel):
         )
         self.gan.compile(
             loss=lf,
-            optimizer=Adam(learning_rate=self.model_parameters["g_adam_lr"]),
+            optimizer=Adam(learning_rate=self.ogan_model_parameters["g_adam_lr"]),
         )
 
-        batchSize =self.model_parameters["noise_bs"]
+        batchSize =self.ogan_model_parameters["noise_bs"]
         noise = np.random.normal(0, 1, size=[batchSize, self.noise_dimensions])
         yGen = np.zeros(batchSize)
 

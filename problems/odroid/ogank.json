@@ -1,5 +1,6 @@
 {
-"sut": "odroid.OdroidSUT",
+"sut": "OdroidSUT",
+"sut_parameters": {"data_file": "problems/odroid/odroid.npy"},
 "objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
 "objective_func_parameters": [{"selected": [0]},{"selected": [1]},{"selected": [2]}],
 "objective_selector": "ObjectiveSelectorMAB",
@@ -13,10 +14,17 @@
      "train_delay": 3,
      "N_candidate_tests": 1,
      "ogan_model": "model_keras.OGANK_Model",
-     "model_parameters": {
-       "optimizer": "Adam", "d_adam_lr": 0.001, "g_adam_lr": 0.0001,
-      "noise_bs": 128, "noise_dimensions":  10,
-      "d_size": 128, "g_size": 128
+     "ogan_model_parameters": {
+       "optimizer": "Adam",
+       "d_epochs": 10,
+       "noise_bs": 10000,
+       "g_epochs": 1,
+       "d_size": 512,
+       "g_size": 512,
+       "d_adam_lr": 0.001,
+       "g_adam_lr": 0.0001,
+       "noise_dimensions": 50,
+       "noise_batch_size": 10000
      },
      "train_settings_init": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
      "train_settings": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}

@@ -13,7 +13,6 @@ except ImportError:
 
 from stgem.sut import SUT
 
-
 class AT(SUT):
     """
     Class for the automatic transmission (AT) SUT. Currently the time domain for
@@ -50,11 +49,13 @@ class AT(SUT):
         gear_range = (0, 4)
         self.orange = np.asarray([speed_range, rpm_range, gear_range])
 
-        self.MODEL_NAME = "Autotrans_shift"
+        if not os.path.exists(self.model_file + ".mdl"):
+            raise Exception("Model file '{}.mdl' does not exist.".format(self.model_file))
+        self.MODEL_NAME = os.path.basename(self.model_file)
         # Initialize the Matlab engine (takes a lot of time).
         self.engine = matlab.engine.start_matlab()
         # The path for the model file.
-        self.engine.addpath(os.path.join("sut", "at"))
+        self.engine.addpath(os.path.dirname(self.model_file))
         # Get options for the model (takes a lot of time).
         model_opts = self.engine.simget(self.MODEL_NAME)
         # Set the output format of the model.

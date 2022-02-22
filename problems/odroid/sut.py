@@ -6,8 +6,7 @@ import os
 import numpy as np
 
 from stgem.sut import SUT
-from stgem.sut.odroid.util import generate_odroid_data
-
+from .util import generate_odroid_data
 
 class OdroidSUT(SUT):
     """
@@ -19,8 +18,6 @@ class OdroidSUT(SUT):
 
     def __init__(self,parameters):
         SUT.__init__(self,parameters)
-
-        self.data_file = os.path.join("sut", "odroid", "odroid.npy")
 
         self.idim = 6
         self.odim = 3
