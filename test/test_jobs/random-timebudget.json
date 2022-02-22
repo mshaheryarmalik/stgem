@@ -1,0 +1,17 @@
+{
+"sut": "mo3d.MO3D",
+"objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
+"objective_func_parameters": [
+  {"selected": [0], "invert": false, "scale": true},
+  {"selected": [1], "invert": false, "scale": true},
+  {"selected": [2], "invert": false, "scale": true}],
+"objective_selector": "ObjectiveSelectorMAB",
+"objective_selector_parameters": {"warm_up": 30},
+"algorithm": "random.Random",
+"algorithm_parameters":
+    {
+     "use_predefined_random_data": false,
+     "predefined_random_data": {"test_inputs": null, "test_outputs": null}
+    },
+"job_parameters": {"max_time": 60, "N_random_init":  50, "mode": "stop_at_first_falsification"}
+}

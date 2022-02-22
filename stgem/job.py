@@ -6,6 +6,7 @@ import datetime
 import numpy as np
 import torch
 import dill as pickle
+import time
 
 from stgem import load_stgem_class
 import stgem.algorithm as algorithm
@@ -139,11 +140,12 @@ class Job:
         # Process job parameters for algorithm setup.
         # Setup the initial random tests to 20% unless the value is user-set.
         if not "N_random_init" in self.description["job_parameters"]:
-            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"]["N_tests"])
+            # if N_tests nor N_random_init are provided we use 20 tests
+            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("N_tests",100))
 
         # Select the algorithm to be used and setup it.
         # TODO: predefined random data loader
-        self.description["algorithm_parameters"]["N_tests"] = self.description["job_parameters"]["N_tests"]
+        self.description["algorithm_parameters"]["N_tests"] = self.description["job_parameters"].get("N_tests",0)
         self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
         algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
         self.algorithm = algorithm_class(sut=asut,
@@ -166,12 +168,21 @@ class Job:
         if mode not in ["exhaust_budget", "stop_at_first_falsification"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
 
+        max_time = self.description["job_parameters"].get("max_time", 0)
+        max_tests = self.description["job_parameters"].get("N_tests", 0)
+        if max_time == 0 and max_tests == 0:
+            raise Exception("Job description does not specify neither a maximum time nor a maximum number tests")
+
         falsified=False
 
         generator = self.algorithm.generate_test()
         outputs = []
 
-        for i in range(self.description["job_parameters"]["N_tests"]):
+        i=0
+        start_time=time.perf_counter()
+        elapsed_time=0
+
+        while (max_tests==0 or i < max_tests) and (max_time==0 or elapsed_time< max_time):
 
             idx = next(generator)
             _, output = self.algorithm.test_repository.get(idx)
@@ -180,8 +191,12 @@ class Job:
             if not falsified and np.min(output) == 0:
                 print("First falsified at test {}.".format(i + 1))
                 falsified = True
+
             if falsified and mode == "stop_at_first_falsification":
                 break
+
+            i=i+1
+            elapsed_time=time.perf_counter()-start_time
 
         if not falsified:
             print("Could not falsify within the given budget.")
