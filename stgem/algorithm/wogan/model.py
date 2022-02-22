@@ -21,12 +21,12 @@ class WOGAN_Model(Model):
         self.gp_coefficient = self.wogan_model_parameters["gp_coefficient"]
 
         # Load the specified analyzer and initialize it.
-        module = importlib.import_module(".analyzer", "algorithm.wogan")
+        module = importlib.import_module("stgem.algorithm.wogan.analyzer")
         analyzer_class = getattr(module, self.analyzer)
         self.analyzer = analyzer_class(parameters=self.parameters, logger=logger)
 
         # Load the specified generator and critic and initialize them.
-        module = importlib.import_module(".mlm", "algorithm.wogan")
+        module = importlib.import_module("stgem.algorithm.wogan.mlm")
         generator_class = getattr(module, self.generator_mlm)
         critic_class = getattr(module, self.critic_mlm)
         self.modelG = generator_class(**self.generator_mlm_parameters).to(self.device)

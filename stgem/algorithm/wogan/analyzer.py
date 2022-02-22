@@ -45,7 +45,7 @@ class Analyzer_NN(Analyzer):
         super().__init__(parameters, logger)
 
         # Load the specified analyzer machine learning model and initialize it.
-        module = importlib.import_module(".mlm", "algorithm.wogan")
+        module = importlib.import_module("stgem.algorithm.wogan.mlm")
         analyzer_class = getattr(module, self.parameters["analyzer_mlm"])
         self.modelA = analyzer_class(**algorithm.filter_arguments(self.parameters["analyzer_mlm_parameters"], analyzer_class)).to(self.device)
 

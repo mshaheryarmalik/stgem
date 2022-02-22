@@ -3,5 +3,6 @@ simulations
 Autotrans_shift.slxc
 .ipynb_checkpoints
 output
-stgem/sut/odroid/odroid.npy
+problems/odroid/odroid.npy
 slprj
+

@@ -22,9 +22,8 @@ class WOGAN(Algorithm):
         # Setup the models.
         # ---------------------------------------------------------------------
         # Load the specified WOGAN model and initialize it.
-        modulename, classname = self.parameters["wogan_model"].split(".")
-        module = importlib.import_module("." + modulename, "stgem.algorithm.wogan")
-        self.model_class = getattr(module, classname)
+        module = importlib.import_module("stgem.algorithm.wogan.model")
+        self.model_class = getattr(module, self.parameters["wogan_model"])
         self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=logger) for _ in range(self.N_models)]
 
         # Setup the shift function for sampling training data.

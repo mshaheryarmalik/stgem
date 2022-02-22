@@ -4,8 +4,7 @@
 import numpy as np
 
 from stgem.algorithm import Algorithm
-from .model import Random_Model
-
+from stgem.random.model import Random_Model
 
 class Random(Algorithm):
     """
