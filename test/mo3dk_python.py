@@ -33,7 +33,7 @@ description = {
          "train_delay": 0,
          "N_candidate_tests": 1,
          "ogan_model": "model_keras.OGANK_Model",
-         "model_parameters": {
+         "ogan_model_parameters": {
              "optimizer": "Adam",
              "d_epochs": 10,
              "noise_bs": 10000,
@@ -52,4 +52,4 @@ description = {
 }
 
 r=Job(description).start()
-r.dump_to_file("mod3k_python_results.pickle")
+r.dump_to_file("mo3k_python_results.pickle")

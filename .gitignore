@@ -2,6 +2,7 @@ __pycache__
 simulations
 Autotrans_shift.slxc
 .ipynb_checkpoints
+*.pickle
 output
 problems/odroid/odroid.npy
 slprj
