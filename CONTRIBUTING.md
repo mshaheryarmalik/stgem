@@ -83,6 +83,11 @@ install the dependencies into the venv.
 git clone https://gitlab.abo.fi/aidoart/stgem.git
 cd stgem
 pip install -r requirements.txt
+````
+
+It seems that there is a version issue with a antlr, a dependency of rtamt. Until it is fixed upstream, we need to run this after installing the requirements:
+```
+pip install antlr4-python3-runtime==4.9
 ```
 
 The environment setup is completed. 
