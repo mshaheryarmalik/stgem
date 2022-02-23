@@ -5,5 +5,5 @@ keras~=2.8.0
 dill~=0.3.4
 Platypus-Opt~=1.0.4
 click
-antlr4-python3-runtime==4.9
 rtamt
+antlr4-python3-runtime==4.9
