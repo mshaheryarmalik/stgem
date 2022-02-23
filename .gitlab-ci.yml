@@ -30,6 +30,7 @@ before_script:
   - source venv/bin/activate
   - pip install -r requirements.txt
   - pip install pytest
+  - pip install antlr4-python3-runtime==4.9
 
 pytest:
   stage: test
