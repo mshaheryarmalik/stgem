@@ -48,22 +48,18 @@ class PlatypusOpt(Algorithm):
         problem.function = fitness_func
         problem.directions[:] = Problem.MINIMIZE
 
-        algorithm = self.platypus_algorithm[self.parameters["platypus_algorithm"]]\
-                    (problem, population_size=self.parameters["population_size"])
+        algorithm = self.platypus_algorithm[self.parameters.get("platypus_algorithm", "NSGAII")](
+            problem,
+            population_size=self.parameters.get("population_size", 100)
+        )
 
-        #raise sys.exit()
         # It seems that NSGAII works in batches of more or less 100 evals
         # So each step generates many tests
         # We report them one by one. It is not the best solution, but it
         # kind of works for now.
 
-        #n = 0
         while True:
             algorithm.step()
-            #algorithm.run(100)
-            while self.reportedIdx<=self.lastIdx:
-                #print(self.reportedIdx, self.lastIdx)
+            while self.reportedIdx <= self.lastIdx:
                 yield self.reportedIdx
-                self.reportedIdx=self.reportedIdx+1
-                #n += 1
-                #print('n------------------------', n)
+                self.reportedIdx += 1
