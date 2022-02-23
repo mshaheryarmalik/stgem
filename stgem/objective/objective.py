@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import rtamt
 
 """
 REMEMBER: Always clip the objective function values to [0, 1]. Otherwise we
@@ -16,6 +17,8 @@ class Objective:
 
     def __call__(self, output):
         return output
+
+
 
 class ObjectiveMinSelected(Objective):
     """
@@ -64,3 +67,38 @@ class ObjectiveMinComponentwise(Objective):
     def __call__(self, timestamps, signals):
         return [min(signal) for signal in signals]
 
+class FalsifySTL(Objective):
+    """
+    Objective function to falsify a STL specification
+    """
+    def __init__(self, sut, specification):
+        super().__init__(sut)
+        self.dim = 1
+        self.specification=specification
+        if not "outputs" in sut.parameters:
+            raise Exception("SUS should have a sut_parameter named outputs containing a list of strings with the names of its outputs. ")
+
+    def __call__(self, output):
+        # This code only works for outputs as vectors
+        # TODO: Extend this for signal outputs
+
+        # 1. Create the RTAMT spect
+        # We recreate the spec objects at every iteration, if not it uses the previous values
+        self.spec = rtamt.STLSpecification()
+        for var in self.sut.parameters["outputs"]:
+            self.spec.declare_var(var, 'float')
+        self.spec.spec = self.specification
+        self.spec.parse()
+        self.spec.pastify()
+
+        # 2. Scale output, so we get a robutness between [0,1]
+        ranges = self.sut.orange
+        output = self.sut.scale(output.reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
+
+        # 3. Get robustness
+        rob= self.spec.update(0, zip(self.sut.parameters["outputs"],output ))
+
+        # 4. Clip robustness in [0,1]
+        rob=max(0,min(rob,1))
+
+        return rob
