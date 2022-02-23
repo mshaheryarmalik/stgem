@@ -3,7 +3,7 @@ import glob
 
 
 class JobTestCase(unittest.TestCase):
-    def test_json_file(self):
+    def test_00_json_file(self):
         from stgem.job import Job
         fns=glob.glob("test_jobs/*.json")
         fns.sort()
@@ -11,7 +11,7 @@ class JobTestCase(unittest.TestCase):
             print("# Test job fle",fn)
             result = Job().setup_from_file(fn).run()
 
-    def test_20_mo3dk_pymodule(self):
+    def test_mo3dk_pymodule(self):
         import mo3dk_python
 
 
