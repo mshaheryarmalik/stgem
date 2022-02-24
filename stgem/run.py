@@ -29,6 +29,9 @@ def start(files, n, seed, resume):
     # Parse the descriptions from the command line arguments.
 
     descriptions = []
+    # resume argument given, it checks if an unfinished pickle by the same name exists
+    # If exists that pickled data is restored to the descriptions
+    # If not raise system exit with an error message file "The resume file ... does not exist."
     if len(resume) > 0:
         resume_file = os.path.join('output',
                                    'unfinished_{}.pickle'.format(os.path.basename(resume[0].rsplit('.', 1)[0])))
@@ -65,10 +68,14 @@ def start(files, n, seed, resume):
         job = Job().setup_from_dict(description)
         jr = job.start()
         jr.dump_to_file(job.description["job_parameters"]["output_file"])
-        current_file = files[0] if len(resume) == 0 else resume[0]
-        unfinished_pickle_file = 'output/unfinished_{}.pickle'.format(os.path.basename(current_file.rsplit('.', 1)[0]))
 
+        # If the job is not single test run it creates pickles
+        # make pickle file link, name depending on a new run or a resume
         if len(descriptions) > 1:
+            current_file = files[0] if len(resume) == 0 else resume[0]
+            unfinished_pickle_file = 'output/unfinished_{}.pickle'.format(
+                                     os.path.basename(current_file.rsplit('.', 1)[0]))
+
             if des_index < len(descriptions) - 1:
                 dump_to_file(obj=descriptions[des_index + 1:], file_name=unfinished_pickle_file)
             else:
