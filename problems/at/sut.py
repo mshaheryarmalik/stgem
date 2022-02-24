@@ -42,7 +42,7 @@ class AT(SUT):
 
         self.idim = 2*self.pieces
         ##self.odim = 3
-        self.odim = self.odim = self.parameters["algorithm_parameters"]["odim"]
+        self.odim = self.parameters["algorithm_parameters"]["odim"]
 
         # The ranges for the input signals come from ARCH COMP 2020.
         throttle_range = (0, 100)
