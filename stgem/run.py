@@ -4,12 +4,26 @@
 import os, json
 
 from stgem.job import Job, JobResult
+import dill as pickle
+
 
 def split_path(s):
     rest, tail = os.path.split(s)
     if rest in ("", os.path.sep):
         return tail,
     return split_path(rest) + (tail,)
+
+
+def restore_from_file(file_name):
+    with open(file_name, "rb") as file:
+        obj=pickle.load(file)
+    return obj
+
+
+def dump_to_file(obj, file_name):
+    with open(file_name, "wb") as file:
+        pickle.dump(obj, file)
+
 
 def start(files, n, seed, resume):
     # Parse the descriptions from the command line arguments.
@@ -23,7 +37,7 @@ def start(files, n, seed, resume):
             raise SystemExit("The resume file '{}' does not exist.".format(resume_file))
 
         else:
-            restore = JobResult.restore_from_file(file_name=resume_file)
+            restore = restore_from_file(file_name=resume_file)
             descriptions = restore
 
     else:
@@ -54,7 +68,8 @@ def start(files, n, seed, resume):
         current_file = files[0] if len(resume) == 0 else resume[0]
         unfinished_pickle_file = 'output/unfinished_{}.pickle'.format(os.path.basename(current_file.rsplit('.', 1)[0]))
 
-        if des_index < len(descriptions) - 1:
-            JobResult.dump_to_file(self=descriptions[des_index + 1:], file_name=unfinished_pickle_file)
-        else:
-            os.remove(unfinished_pickle_file)
+        if len(descriptions) > 1:
+            if des_index < len(descriptions) - 1:
+                dump_to_file(obj=descriptions[des_index + 1:], file_name=unfinished_pickle_file)
+            else:
+                os.remove(unfinished_pickle_file)
