@@ -32,21 +32,18 @@ def start(files, n, seed, resume):
     # resume argument given, it checks if an unfinished pickle by the same name exists
     # If exists that pickled data is restored to the descriptions
     # If not raise system exit with an error message file "The resume file ... does not exist."
-    if len(resume) > 0:
-        resume_file = os.path.join('output',
-                                   'unfinished_{}.pickle'.format(os.path.basename(resume[0].rsplit('.', 1)[0])))
-
-        if not os.path.exists(resume_file):
-            raise SystemExit("The resume file '{}' does not exist.".format(resume_file))
-
+    if resume is not None:
+        if not os.path.exists(resume):
+            raise SystemExit("The resume file '{}' does not exist.".format(resume))
         else:
-            restore = restore_from_file(file_name=resume_file)
+            restore = restore_from_file(file_name=resume)
             descriptions = restore
 
     else:
+        resume= "output/unfinished_jobs.pickle"
         for i, file_name in enumerate(files):
             if not os.path.exists(file_name):
-                raise SystemExit("The file '{}' does not exist.".format(file_name))
+                raise SystemExit("The job file '{}' does not exist.".format(file_name))
 
             N_executions = n[i] if i < len(n) else 1
             for j in range(N_executions):
@@ -72,11 +69,7 @@ def start(files, n, seed, resume):
         # If the job is not single test run it creates pickles
         # make pickle file link, name depending on a new run or a resume
         if len(descriptions) > 1:
-            current_file = files[0] if len(resume) == 0 else resume[0]
-            unfinished_pickle_file = 'output/unfinished_{}.pickle'.format(
-                                     os.path.basename(current_file.rsplit('.', 1)[0]))
-
             if des_index < len(descriptions) - 1:
-                dump_to_file(obj=descriptions[des_index + 1:], file_name=unfinished_pickle_file)
+                dump_to_file(obj=descriptions[des_index + 1:], file_name=resume)
             else:
-                os.remove(unfinished_pickle_file)
+                os.remove(resume)

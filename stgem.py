@@ -9,7 +9,7 @@ import stgem.run
 @click.argument("files", type=str, nargs=-1)
 @click.option("-n", type=int, multiple=True)
 @click.option("--seed", "-s", type=int, multiple=True)
-@click.option("--resume", "-r", type=str, multiple=True)
+@click.option("--resume", "-r", type=click.Path(file_okay=True, dir_okay=True, readable=True,writable=True), multiple=False)
 def main(files, n, seed, resume):
     stgem.run.start(files, n, seed, resume)
 
