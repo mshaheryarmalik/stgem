@@ -1,0 +1,19 @@
+{
+"sut": "mo3d.MO3D",
+"objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
+"objective_func_parameters": [
+  {"selected": [0], "invert": false, "scale": true},
+  {"selected": [1], "invert": false, "scale": true},
+  {"selected": [2], "invert": false, "scale": true}],
+"objective_selector": "ObjectiveSelectorMAB",
+"objective_selector_parameters": {"warm_up": 30},
+"algorithm": "matlab.MATLAB1",
+"algorithm_parameters":
+    {"time": 30,
+      "minimum_time": 5,
+      "sampling_step": 0.2,
+      "idim": false,
+      "odim": 3
+     },
+"job_parameters": {"N_tests": 300, "N_random_init":  50, "mode": "stop_at_first_falsification"}
+}
