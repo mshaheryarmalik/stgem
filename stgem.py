@@ -9,8 +9,9 @@ import stgem.run
 @click.argument("files", type=str, nargs=-1)
 @click.option("-n", type=int, multiple=True)
 @click.option("--seed", "-s", type=int, multiple=True)
-def main(files, n, seed):
-    stgem.run.start(files, n, seed)
+@click.option("--resume", "-r", type=click.Path(file_okay=True, dir_okay=True, readable=True,writable=True), multiple=False)
+def main(files, n, seed, resume):
+    stgem.run.start(files, n, seed, resume)
 
 if __name__== "__main__":
     main()
