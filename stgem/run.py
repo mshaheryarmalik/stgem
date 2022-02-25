@@ -24,14 +24,11 @@ def dump_to_file(obj, file_name):
         pickle.dump(obj, file)
 
 
-def run_one_job(description,resume):
+def run_one_job(description):
     output_filename = description["job_parameters"]["output_file"]
-    # we execute a job if we are not in resume mode
-    # or if we are in resume mode but the output file does not exist
-    if resume is None or not os.path.exists(output_filename):
-        job = Job().setup_from_dict(description)
-        jr = job.run()
-        jr.dump_to_file(output_filename)
+    job = Job().setup_from_dict(description)
+    jr = job.run()
+    jr.dump_to_file(output_filename)
 
 def start(files, n, seed, resume, multiprocess):
 
@@ -70,18 +67,24 @@ def start(files, n, seed, resume, multiprocess):
         resume_filename = resume
         if not os.path.exists(resume_filename):
             raise SystemExit("The resume file '{}' does not exist.".format(resume_filename))
-        else:
-            descriptions = restore_from_file(file_name=resume_filename)
+
+        all_descriptions = restore_from_file(file_name=resume_filename)
+
+        # only process descriptions that are missing a file
+        for description in all_descriptions:
+            output_filename = description["job_parameters"]["output_file"]
+            if not os.path.exists(output_filename):
+                descriptions.append(description)
 
     # 2. execute job descriptions
     if multiprocess <= 1:
         # sequential execution of jobs
         for description in descriptions:
-            run_one_job(description, resume)
+            run_one_job(description)
     else:
         # parallel execution of jobs in different processes
         with Pool(multiprocess) as pool:
-            pool.starmap(run_one_job, zip(descriptions, [resume] * len(descriptions)))
+            pool.map(run_one_job, descriptions)
             pool.close()
             pool.join()
 
