@@ -37,7 +37,7 @@ def start(files, n, seed, resume, multiprocess):
     # 1. prepare job descriptions
     if resume is None:
         # not in resume mode, we build the resume file
-        resume_filename= "output/unfinished_jobs.pickle"
+        resume_filename= "output/stgem_resume_file.pickle"
 
         for i, file_name in enumerate(files):
             if not os.path.exists(file_name):
