@@ -22,27 +22,21 @@ class AT(SUT):
     def __init__(self, parameters):
         super().__init__(parameters)
 
-        self.parameters = parameters
-
         # TODO: Right now the values below are fixed as in the Fainekos et al.
         #       paper. We should consider making them configurable.
 
         # The total time domain for the signal.
-        ##self.time = 30
-        self.time = self.parameters["algorithm_parameters"]["time"]
+        self.time = 30
         # How many time units a signal must stay constant. This determines how
         # many pieces we have for each input signal.
-        ##self.minimum_time = 5
-        self.minimum_time = self.parameters["algorithm_parameters"]["minimum_time"]
+        self.minimum_time = 5
         self.pieces = self.time // self.minimum_time
         # How often input signals are sampled for execution (in time units).
-        ##self.sampling_step = 0.2
-        self.sampling_step = self.parameters["algorithm_parameters"]["sampling_step"]
+        self.sampling_step = 0.2
         self.steps = self.time // self.sampling_step
 
         self.idim = 2*self.pieces
-        ##self.odim = 3
-        self.odim = self.parameters["algorithm_parameters"]["odim"]
+        self.odim = 3
 
         # The ranges for the input signals come from ARCH COMP 2020.
         throttle_range = (0, 100)
@@ -140,4 +134,3 @@ class AT(SUT):
         """
 
         return np.random.uniform(-1, 1, size=2 * self.pieces)
-

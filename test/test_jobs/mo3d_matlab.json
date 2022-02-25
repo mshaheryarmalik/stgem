@@ -1,5 +1,13 @@
 {
-"sut": "mo3d.MO3D",
+"sut": "matlab.AT",
+  "sut_parameters":
+    {"model_file": "problems/at/Autotrans_shift",
+      "time": 30,
+      "minimum_time": 5,
+      "sampling_step": 0.2,
+      "idim": false,
+      "odim": 3
+     },
 "objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
 "objective_func_parameters": [
   {"selected": [0], "invert": false, "scale": true},
@@ -7,13 +15,30 @@
   {"selected": [2], "invert": false, "scale": true}],
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 30},
-"algorithm": "matlab.MATLAB1",
+"algorithm": "ogan.OGAN",
 "algorithm_parameters":
-    {"time": 30,
-      "minimum_time": 5,
-      "sampling_step": 0.2,
-      "idim": false,
-      "odim": 3
-     },
-"job_parameters": {"N_tests": 300, "N_random_init":  50, "mode": "stop_at_first_falsification"}
+    {"input_dimension": 3,
+     "random_search_min_distance": 0.8,
+     "use_predefined_random_data": false,
+     "predefined_random_data": {"test_inputs": null, "test_outputs": null},
+     "fitness_coef": 0.95,
+     "train_delay": 1,
+     "N_candidate_tests": 1,
+     "ogan_model": "model.OGAN_Model",
+     "ogan_model_parameters": {"optimizer": "Adam",
+                               "discriminator_lr": 0.005,
+                               "discriminator_betas": [0.9, 0.999],
+                               "generator_lr": 0.0010,
+                               "generator_betas": [0.9, 0.999],
+                               "noise_batch_size": 512,
+                               "generator_loss": "MSE",
+                               "discriminator_loss": "MSE"},
+     "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
+     "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32},
+     "generator_mlm": "GeneratorNetwork",
+     "generator_mlm_parameters": {"noise_dim": 20, "output_shape": "copy:algorithm_parameters.input_dimension", "neurons": 64},
+     "discriminator_mlm": "DiscriminatorNetwork",
+     "discriminator_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "neurons": 64, "discriminator_output_activation": "sigmoid"}
+    },
+"job_parameters": {"N_tests": 80, "N_random_init": 20, "mode": "stop_at_first_falsification"}
 }
