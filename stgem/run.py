@@ -70,7 +70,7 @@ def start(files, n, seed, resume, multiprocess):
 
         all_descriptions = restore_from_file(file_name=resume_filename)
 
-        # only process descriptions that are missing a file
+        # only process descriptions that are missing a corresponding output file
         for description in all_descriptions:
             output_filename = description["job_parameters"]["output_file"]
             if not os.path.exists(output_filename):
