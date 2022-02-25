@@ -25,7 +25,7 @@ def dump_to_file(obj, file_name):
         pickle.dump(obj, file)
 
 
-def start(files, n, seed, resume):
+def start(files, n, seed, resume, threads):
     # Parse the descriptions from the command line arguments.
 
     descriptions = []

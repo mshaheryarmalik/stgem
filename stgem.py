@@ -10,8 +10,9 @@ import stgem.run
 @click.option("-n", type=int, multiple=True)
 @click.option("--seed", "-s", type=int, multiple=True)
 @click.option("--resume", "-r", type=click.Path(file_okay=True, dir_okay=True, readable=True,writable=True), multiple=False)
-def main(files, n, seed, resume):
-    stgem.run.start(files, n, seed, resume)
+@click.option("--threads","-t", type=int, default=1)
+def main(files, n, seed, resume,threads):
+    stgem.run.start(files, n, seed, resume,threads)
 
 if __name__== "__main__":
     main()
