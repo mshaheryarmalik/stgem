@@ -31,9 +31,12 @@ class JobResult:
         return obj
 
     def dump_to_file(self,file_name):
-        with open(file_name,"wb") as file:
+        # first create a temporary file
+        temp_file_name=file_name+".tmp"
+        with open(temp_file_name,"wb") as file:
             pickle.dump(self,file)
-
+        # then we rename it to its final name
+        os.replace( temp_file_name, file_name)
 
 class Job:
     def __init__(self, description=None):
