@@ -29,18 +29,12 @@ def start(files, n, seed, resume):
     # Parse the descriptions from the command line arguments.
 
     descriptions = []
-    # resume argument given, it checks if an unfinished pickle by the same name exists
-    # If exists that pickled data is restored to the descriptions
-    # If not raise system exit with an error message file "The resume file ... does not exist."
-    if resume is not None:
-        if not os.path.exists(resume):
-            raise SystemExit("The resume file '{}' does not exist.".format(resume))
-        else:
-            restore = restore_from_file(file_name=resume)
-            descriptions = restore
 
-    else:
-        resume= "output/unfinished_jobs.pickle"
+    # 1. prepare job descriptions
+    if resume is None:
+        # not in resume mode, we build the resume file
+        resume_filename= "output/unfinished_jobs.pickle"
+
         for i, file_name in enumerate(files):
             if not os.path.exists(file_name):
                 raise SystemExit("The job file '{}' does not exist.".format(file_name))
@@ -58,18 +52,29 @@ def start(files, n, seed, resume):
                 SEED = seed[i] + j if i < len(seed) else None
                 description["job_parameters"]["seed"] = SEED
                 description["job_parameters"]["output_file"] = "output/job_{}_{}.pickle".format(i, j)
-
                 descriptions.append(description)
 
-    for description, des_index in zip(descriptions, range(len(descriptions))):
-        job = Job().setup_from_dict(description)
-        jr = job.start()
-        jr.dump_to_file(job.description["job_parameters"]["output_file"])
+        # always create a resume file, even if there is a single job since it may not terminate
+        dump_to_file(obj=descriptions, file_name=resume_filename)
+    else:
+        # resume argument given, it checks if an unfinished pickle by the same name exists
+        # If exists that pickled data is restored to the descriptions
+        # If not raise system exit with an error message file "The resume file ... does not exist."
+        resume_filename = resume
+        if not os.path.exists(resume_filename):
+            raise SystemExit("The resume file '{}' does not exist.".format(resume_filename))
+        else:
+            descriptions = restore_from_file(file_name=resume_filename)
 
-        # If the job is not single test run it creates pickles
-        # make pickle file link, name depending on a new run or a resume
-        if len(descriptions) > 1:
-            if des_index < len(descriptions) - 1:
-                dump_to_file(obj=descriptions[des_index + 1:], file_name=resume)
-            else:
-                os.remove(resume)
+    # 2. execute job descriptions, if needed
+    for description, des_index in zip(descriptions, range(len(descriptions))):
+        output_filename=description["job_parameters"]["output_file"]
+        # we execute a job if we are not in resume mode
+        # or if we are in resume mode but the output file does not exist
+        if resume is None or not os.path.exists(output_filename):
+            job = Job().setup_from_dict(description)
+            jr = job.start()
+            jr.dump_to_file(output_filename)
+
+    # 3. clean up
+    os.remove(resume_filename)
