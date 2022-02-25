@@ -3,9 +3,9 @@
 
 import os, json
 
-from stgem.job import Job, JobResult
+from stgem.job import Job
 import dill as pickle
-
+from multiprocessing import Pool
 
 def split_path(s):
     rest, tail = os.path.split(s)
@@ -19,14 +19,21 @@ def restore_from_file(file_name):
         obj=pickle.load(file)
     return obj
 
-
 def dump_to_file(obj, file_name):
     with open(file_name, "wb") as file:
         pickle.dump(obj, file)
 
 
-def start(files, n, seed, resume, threads):
-    # Parse the descriptions from the command line arguments.
+def run_one_job(description,resume):
+    output_filename = description["job_parameters"]["output_file"]
+    # we execute a job if we are not in resume mode
+    # or if we are in resume mode but the output file does not exist
+    if resume is None or not os.path.exists(output_filename):
+        job = Job().setup_from_dict(description)
+        jr = job.run()
+        jr.dump_to_file(output_filename)
+
+def start(files, n, seed, resume, multiprocess):
 
     descriptions = []
 
@@ -66,15 +73,19 @@ def start(files, n, seed, resume, threads):
         else:
             descriptions = restore_from_file(file_name=resume_filename)
 
-    # 2. execute job descriptions, if needed
-    for description, des_index in zip(descriptions, range(len(descriptions))):
-        output_filename=description["job_parameters"]["output_file"]
-        # we execute a job if we are not in resume mode
-        # or if we are in resume mode but the output file does not exist
-        if resume is None or not os.path.exists(output_filename):
-            job = Job().setup_from_dict(description)
-            jr = job.start()
-            jr.dump_to_file(output_filename)
+    # 2. execute job descriptions
+    if multiprocess <= 1:
+        # sequential execution of jobs
+        for description in descriptions:
+            run_one_job(description, resume)
+    else:
+        # parallel execution of jobs in different processes
+        with Pool(multiprocess) as pool:
+            pool.starmap(run_one_job, zip(descriptions, [resume] * len(descriptions)))
+            pool.close()
+            pool.join()
 
     # 3. clean up
     os.remove(resume_filename)
+
+
