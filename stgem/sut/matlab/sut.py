@@ -39,7 +39,9 @@ class MO3D(SUT):
         x2 = test[1]
         x3 = test[2]
 
+        # start matlab engine
         eng = matlab.engine.start_matlab()
+        # here calls the matlab function with inputs list and get the output list
         matfunc = eng.mo3d((float(x1), float(x2), float(x3)), nargout=1)
 
         # h1 = 305-100*(math.sin(x1/3)+math.sin(x2/3)+math.sin(x3/3))
