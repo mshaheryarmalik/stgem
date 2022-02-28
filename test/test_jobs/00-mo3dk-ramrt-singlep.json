@@ -1,13 +1,8 @@
 {
   "sut": "mo3d.MO3D",
-  "sut_parameters": {
-    "inputs": ["i1", "i2", "i3" ],
-    "outputs": ["o1", "o2", "o3"]
-  },
-
   "objective_func": [ "FalsifySTL" ],
   "objective_func_parameters": [
-    { "specification": "always[0,1] o1>0 and o2>0 and o3>0"}
+    { "specification": "always[0,1] o0>0 and o1>0 and o2>0"}
   ],
 
   "objective_selector": "ObjectiveSelectorMAB",

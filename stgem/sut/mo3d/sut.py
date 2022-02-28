@@ -26,8 +26,8 @@ class MO3D(SUT):
 
         self.idim = 3
         self.odim = 3
-        self.irange = np.asarray([(-15, 15), (-15, 15), (-15, 15)])
-        self.orange = np.asarray([(0, 350), (0, 350), (0, 350)])
+        self.irange = [[-15, 15], [-15, 15], [-15, 15]]
+        self.orange = [[0, 350], [0, 350], [0, 350]]
 
     def _execute_test(self, test):
         #print("unscaled",test)
