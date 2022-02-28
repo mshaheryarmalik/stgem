@@ -14,50 +14,19 @@ except ImportError:
 
 from stgem.sut import SUT
 
-class AT(SUT):
+class Matlab_Simulink_Signal(SUT):
     """
-    Class for the automatic transmission (AT) SUT. Currently the time domain for
-    the input signals is 30 units and it is split into 6 constant pieces.
+    Generic class for using Matlab Simulink models using signal inputs.
     """
 
     def __init__(self, parameters):
         super().__init__(parameters)
 
-        self.parameters = parameters
-
-        # TODO: Right now the values below are fixed as in the Fainekos et al.
-        #       paper. We should consider making them configurable.
-
-        # The total time domain for the signal.
-        ##self.time = 30
-        self.time = self.parameters["time"]
-        # How many time units a signal must stay constant. This determines how
-        # many pieces we have for each input signal.
-        ##self.minimum_time = 5
-        self.minimum_time = self.parameters["minimum_time"]
-        self.pieces = self.time // self.minimum_time
         # How often input signals are sampled for execution (in time units).
-        ##self.sampling_step = 0.2
-        self.sampling_step = self.parameters["sampling_step"]
-        self.steps = self.time // self.sampling_step
+        self.steps = self.simulation_time // self.sampling_step
 
-        self.idim = 2*self.pieces
-        ##self.odim = 3
-        self.odim = self.parameters["odim"]
-
-        # The ranges for the input signals come from ARCH COMP 2020.
-        throttle_range = (0, 100)
-        brake_range = (0, 325)
-        self.irange = np.asarray([throttle_range for _ in range(self.pieces)] + [brake_range for _ in range(self.pieces)])
-
-        # TODO: Figure out correct output ranges.
-        speed_range = (0, 200)
-        rpm_range = (0, 7000)
-        gear_range = (0, 4)
-        self.orange = np.asarray([speed_range, rpm_range, gear_range])
-
-        if not os.path.exists(self.model_file + ".mdl"):
-            raise Exception("Model file '{}.mdl' does not exist.".format(self.model_file))
+        if not os.path.exists(self.model_file + ".mdl") and not os.path.exists(self.model_file + ".slx"):
+            raise Exception("Neither '{0}.mdl' nor '{0}.slx' exists.".format(self.model_file))
 
         self.MODEL_NAME = os.path.basename(self.model_file)
         # Initialize the Matlab engine (takes a lot of time).
@@ -67,57 +36,92 @@ class AT(SUT):
         # Get options for the model (takes a lot of time).
         model_opts = self.engine.simget(self.MODEL_NAME)
         # Set the output format of the model.
+        # TODO: Should this be done for models other than AT?
         self.model_opts = self.engine.simset(model_opts, "SaveFormat", "Array")
 
-    def _execute_test_at(self, timestamps, throttle, brake):
+    def _execute_test_simulink(self, timestamps, signals):
         """
         Execute a test with the given input signals.
         """
 
         # Setup the parameters for Matlab.
         simulation_time = matlab.double([0, timestamps[-1]])
-        model_input = matlab.double(np.row_stack((timestamps, throttle, brake)).T.tolist())
+        model_input = matlab.double(np.row_stack((timestamps, *signals)).T.tolist())
 
         # Run the simulation.
-        out_timestamps, _, data = self.engine.sim(self.MODEL_NAME, simulation_time, self.model_opts, model_input, nargout=3)
+        out_timestamps, _, data = self.engine.sim(self.MODEL_NAME, simulation_time, self.model_opts, model_input, nargout=self.odim)
 
         timestamps_array = np.array(out_timestamps).flatten()
         data_array = np.array(data)
 
         # Reshape the data.
-        result = np.zeros(shape=(3, len(timestamps_array)))
-        for i in range(3):
+        result = np.zeros(shape=(self.odim, len(timestamps_array)))
+        for i in range(self.odim):
             result[i] = data_array[:, i]
 
         return timestamps_array, result
+
+    def _execute_test(self, timestamps, signals):
+        return self._execute_test_simulink(timestamps, signals)
+
+class Matlab_Simulink(Matlab_Simulink_Signal):
+    """
+    Generic class for using Matlab Simulink models using piecewise constant
+    inputs. We assume that the input is a vector of numbers in [-1, 1] and that
+    the first K numbers specify the pieces of the first signal, the next K
+    numbers the second signal, etc. The number K is specified by the simulation
+    time and the length of the time interval during which the signal must stay
+    constant.
+    """
+
+    def __init__(self, parameters):
+        try:
+            super().__init__(parameters)
+        except:
+            raise
+
+        # How many inputs we have for each signal.
+        self.pieces = self.simulation_time // self.time_slice
+
+    def initialize(self):
+        # Redefine input dimension.
+        self.signals = self.idim
+        self.idim = self.idim*self.pieces
+
+        # Redo input ranges for vector inputs.
+        new = []
+        for i in range(len(self.irange)):
+            for _ in range(self.pieces):
+                new.append(self.irange[i])
+        self.irange = new
 
     def _execute_test(self, test):
         """
         Execute the given test on the SUT.
 
         Args:
-          test (np.ndarray): Array with shape (1,N) or (N) with N = 2*self.pieces
-                             floats.
+          test (np.ndarray): Array of floats with shape (1,N) or (N) with
+                             N = self.idim.
 
         Returns:
           timestamps (np.ndarray): Array of shape (M, 1).
-          signals (np.ndarray): Array of shape (3, M).
+          signals (np.ndarray): Array of shape (self.odim, M).
         """
 
         test = self.descale(test.reshape(1, -1), self.irange).reshape(-1)
 
-        # Convert the test vector to two functions which take time as input and
-        # return the signal values.
-        idx = (lambda t: int(t // self.minimum_time) if t < self.time else self.pieces - 1)
-        signals = [lambda t: test[idx(t)], lambda t: test[self.pieces + idx(t)]]
-
-        # Setup the signals.
-        timestamps = np.linspace(0, self.time, int(self.steps))
-        throttle = [signals[0](t) for t in timestamps]
-        brake = [signals[1](t) for t in timestamps]
+        # Convert the test input to signals.
+        idx = lambda t: int(t // self.time_slice) if t < self.simulation_time else self.pieces - 1
+        signal_f = []
+        for i in range(self.signals):
+            signal_f.append(lambda t: test[i*self.pieces + idx(t)])
+        timestamps = np.linspace(0, self.simulation_time, int(self.steps))
+        signals = []
+        for i in range(self.signals):
+            signals.append(np.asarray([signal_f[i](t) for t in timestamps]))
 
         # Execute the test.
-        return self._execute_test_at(timestamps, throttle, brake)
+        return self._execute_test_simulink(timestamps, signals)
 
     def execute_random_test(self):
         """
@@ -133,12 +137,3 @@ class AT(SUT):
         timestamps, signals = self.execute_test(test)
         return test, timestamps, signals
 
-    def sample_input_space(self):
-        """
-        Return a sample (test) from the input space.
-
-        Returns:
-          test (np.ndarray): Array of shape (2*self.pieces) of floats in [-1, 1].
-        """
-
-        return np.random.uniform(-1, 1, size=2 * self.pieces)

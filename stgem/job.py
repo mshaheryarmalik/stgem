@@ -119,7 +119,27 @@ class Job:
 
         # Setup the system under test.
         sut_class = load_stgem_class(self.description["sut"], "sut", self.description["job_parameters"]["module_path"])
-        asut = sut_class(parameters=self.description.get("sut_parameters", {}))
+        sut_parameters = self.description.get("sut_parameters", {})
+        if not "input_range" in sut_parameters:
+            sut_parameters["input_range"] = []
+        if not "output_range" in sut_parameters:
+            sut_parameters["output_range"] = []
+        asut = sut_class(parameters=sut_parameters)
+        # Setup input and output names if necessary.
+        if isinstance(asut.inputs, int):
+            asut.inputs = ["i{}".format(i) for i in range(asut.inputs)]
+        if isinstance(asut.outputs, int):
+            asut.outputs = ["o{}".format(i) for i in range(asut.outputs)]
+        # Setup input and output dimensions.
+        asut.idim = len(sut_parameters["inputs"])
+        asut.odim = len(sut_parameters["outputs"])
+        # Fill in unspecified input and output ranges with Nones.
+        asut.irange = sut_parameters["input_range"]
+        asut.irange += [None for _ in range(asut.idim - len(sut_parameters["input_range"]))]
+        asut.orange = sut_parameters["output_range"]
+        asut.orange += [None for _ in range(asut.odim - len(sut_parameters["output_range"]))]
+        # Run secondary initializer.
+        asut.initialize()
 
         # Setup the test repository.
         test_repository = TestRepository()
