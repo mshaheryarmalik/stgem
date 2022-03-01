@@ -36,10 +36,10 @@ pytest:
   stage: test
   script:
   - export PYTHONPATH=`pwd`
-  - cd test
+  - cd tests
   - pytest --junitxml=pytest-report.xml
   artifacts:
     when: always
     reports:
-      junit: test/pytest-report.xml
+      junit: tests/pytest-report.xml
 
