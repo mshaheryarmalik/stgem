@@ -1,14 +1,12 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import math
 import matlab.engine
-
 import numpy as np
-
 from stgem.sut import SUT
 
-class MO3D(SUT):
+
+class MATLAB(SUT):
     """
     Implements a certain mathematical function as a SUT.
 
@@ -25,30 +23,37 @@ class MO3D(SUT):
     def __init__(self,parameters):
         SUT.__init__(self,parameters)
 
-        self.idim = 3
-        self.odim = 3
-        self.irange = np.asarray([(-15, 15), (-15, 15), (-15, 15)])
-        self.orange = np.asarray([(0, 350), (0, 350), (0, 350)])
+        self.parameters = parameters
+
+        #self.idim = 3
+        self.idim = self.parameters['idim']
+        #self.odim = 3
+        self.odim = self.parameters['odim']
+        #self.irange = np.asarray([(-15, 15), (-15, 15), (-15, 15)])
+        self.irange = np.asarray(self.parameters['irange'])
+        #self.orange = np.asarray([(0, 350), (0, 350), (0, 350)])
+        self.orange = np.asarray(self.parameters['orange'])
 
     def _execute_test(self, test):
-        #print("unscaled",test)
+        # print("unscaled",test)
         test = self.descale(test.reshape(1, -1), self.irange).reshape(-1)
-        #print("descaled", test)
+        # print("descaled", test)
 
-        x1 = test[0]
-        x2 = test[1]
-        x3 = test[2]
+        # x1 = test[0]
+        # x2 = test[1]
+        # x3 = test[2]
 
         # start matlab engine
         eng = matlab.engine.start_matlab()
         # here calls the matlab function with inputs list and get the output list
-        matfunc = eng.mo3d((float(x1), float(x2), float(x3)), nargout=1)
+        # parse input parameters in any given dimension
+        matlab_function = eng.mo3d([float(x) for x in test], nargout=1)
 
         # h1 = 305-100*(math.sin(x1/3)+math.sin(x2/3)+math.sin(x3/3))
         # h2 = 230-75*(math.cos(x1/2.5+15)+math.cos(x2/2.5+15)+math.cos(x3/2.5+15))
         # h3 = (x1-7)**2+(x2-7)**2+(x3-7)**2 - (math.cos((x1-7)/2.75) + math.cos((x2-7)/2.75) + math.cos((x3-7)/2.75))
 
-        return np.asarray([matfunc[0], matfunc[1], matfunc[2]])
+        return np.asarray([utpt for utpt in matlab_function])
 
     def _min_distance(self, tests, x):
         # We use the Euclidean distance.
@@ -62,4 +67,3 @@ class MO3D(SUT):
 
     def sample_input_space(self):
         return np.random.uniform(-1, 1, size=(1, self.idim))
-
