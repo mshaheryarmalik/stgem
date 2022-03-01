@@ -2,7 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import rtamt
+
+# rtamt may have dependency problems. We continue even if we cannot import it
+try:
+    import rtamt
+except:
+    print("Cannot import rtamt. Objectives using rtamt will throw an exception.")
+    import traceback
+    traceback.print_exc()
+
 
 """
 REMEMBER: Always clip the objective function values to [0, 1]. Otherwise we

@@ -92,6 +92,18 @@ pip install antlr4-python3-runtime==4.9
 
 The environment setup is completed. 
 
+## Install MATLAB
+
+Installing MATLAB is only necessary if you want to use a SUT that uses MATLAB. If this is the case, you should install MATLAB in your computer and obtain a license for it. Then you should install MATLAB support for your Python interpreter following the instructions from:
+
+https://se.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html
+
+After that, you can check your setup with these Python commands:
+
+```python
+import matlab.engine
+eng = matlab.engine.start_matlab()
+```
 
 ## Run tests
 
