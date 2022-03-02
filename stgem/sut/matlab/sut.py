@@ -1,9 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+import sys
 
 import matlab.engine
 import numpy as np
 from stgem.sut import SUT
+import os
+
+# start the matlab engine
+matlab_engine = matlab.engine.start_matlab()
 
 
 class MATLAB(SUT):
@@ -20,40 +25,37 @@ class MATLAB(SUT):
     3-tuples of numbers in [-1, 1] which are scaled to [-15, 15] internally.
     """
 
-    def __init__(self,parameters):
-        SUT.__init__(self,parameters)
+    def __init__(self, parameters):
+        SUT.__init__(self, parameters)
 
         self.parameters = parameters
 
-        #self.idim = 3
-        self.idim = self.parameters['idim']
-        #self.odim = 3
-        self.odim = self.parameters['odim']
-        #self.irange = np.asarray([(-15, 15), (-15, 15), (-15, 15)])
-        self.irange = np.asarray(self.parameters['irange'])
-        #self.orange = np.asarray([(0, 350), (0, 350), (0, 350)])
-        self.orange = np.asarray(self.parameters['orange'])
+        self.idim = len(self.parameters["input_range"])
+        self.odim = len(self.parameters["output_range"])
+        self.irange = np.asarray(self.parameters["input_range"])
+        self.orange = np.asarray(self.parameters["output_range"])
 
     def _execute_test(self, test):
         # print("unscaled",test)
         test = self.descale(test.reshape(1, -1), self.irange).reshape(-1)
         # print("descaled", test)
 
-        # x1 = test[0]
-        # x2 = test[1]
-        # x3 = test[2]
+        # set matlab class directory, .m file
+        matlab_engine.addpath(os.path.dirname(self.parameters["model_file"]))
 
-        # start matlab engine
-        eng = matlab.engine.start_matlab()
-        # here calls the matlab function with inputs list and get the output list
+        # make the matlab function from the input strings
+        matlab_function_str = "matlab_engine.{}".format(os.path.basename(self.parameters["model_file"]))
+
+        # create a callable function from the given string argument, from "model_file"
+        # calls the matlab function with inputs list and get the output list
         # parse input parameters in any given dimension
-        matlab_function = eng.mo3d([float(x) for x in test], nargout=1)
+        run_matlab_function = eval(matlab_function_str)([float(x) for x in test], nargout=1)
 
         # h1 = 305-100*(math.sin(x1/3)+math.sin(x2/3)+math.sin(x3/3))
         # h2 = 230-75*(math.cos(x1/2.5+15)+math.cos(x2/2.5+15)+math.cos(x3/2.5+15))
         # h3 = (x1-7)**2+(x2-7)**2+(x3-7)**2 - (math.cos((x1-7)/2.75) + math.cos((x2-7)/2.75) + math.cos((x3-7)/2.75))
 
-        return np.asarray([utpt for utpt in matlab_function])
+        return np.asarray([utpt for utpt in run_matlab_function])
 
     def _min_distance(self, tests, x):
         # We use the Euclidean distance.

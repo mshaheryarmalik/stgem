@@ -1,10 +1,10 @@
 {
 "sut": "matlab.MATLAB",
     "sut_parameters": {
-    "idim": 3,
-    "odim": 3,
-    "irange": [[-15, 15], [-15, 15], [-15, 15]],
-    "orange":  [[0, 350], [0, 350], [0, 350]]},
+    "model_file": "problems/matlab/mo3d",
+    "input_range": [[-15, 15], [-15, 15], [-15, 15]],
+    "output_range":  [[0, 350], [0, 350], [0, 350]]
+    },
 "objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
 "objective_func_parameters": [{"selected": [0], "scale": true}, {"selected": [1], "scale": true}, {"selected": [2], "scale": true}],
 "objective_selector": "ObjectiveSelectorMAB",
