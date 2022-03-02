@@ -54,7 +54,7 @@ class ObjectiveMinSelected(Objective):
             output = output*(-1)
             ranges = np.asarray([[-I[1], -I[0]] for I in self.sut.orange[idx]])
         else:
-            ranges = self.sut.orange[idx]
+            ranges = [self.sut.orange[i] for i in idx]
 
         if self.scale:
             output = self.sut.scale(output[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)

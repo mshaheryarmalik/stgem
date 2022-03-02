@@ -14,9 +14,7 @@ def myfunc(input:  [[-15, 15], [-15, 15], [-15, 15]] ) -> [ [0, 350], [0, 350], 
 
 description = {
     "sut": "python.PythonFunction",
-    "sut_parameters": {
-        "function": myfunc
-    },
+    "sut_parameters": {"function": myfunc},
     "objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
     "objective_func_parameters": [
         {"selected": [0], "invert": False, "scale": True},
