@@ -3,15 +3,6 @@
 
 import numpy as np
 
-# rtamt may have dependency problems. We continue even if we cannot import it
-try:
-    import rtamt
-except:
-    print("Cannot import rtamt. Objectives using rtamt will throw an exception.")
-    import traceback
-    traceback.print_exc()
-
-
 """
 REMEMBER: Always clip the objective function values to [0, 1]. Otherwise we
 can get very wild losses when training neural networks. This is not good as
@@ -77,36 +68,84 @@ class ObjectiveMinComponentwise(Objective):
 
 class FalsifySTL(Objective):
     """
-    Objective function to falsify a STL specification
+    Objective function to falsify a STL specification.
     """
+
     def __init__(self, sut, specification):
         super().__init__(sut)
+
+        # rtamt may have dependency problems. We continue even if we cannot import it
+        try:
+            import rtamt
+        except:
+            print("Cannot import rtamt. Objectives using rtamt will throw an exception.")
+            import traceback
+            traceback.print_exc()
+
         self.dim = 1
-        self.specification=specification
-        if not "outputs" in sut.parameters:
-            raise Exception("SUS should have a sut_parameter named outputs containing a list of strings with the names of its outputs. ")
+        self.specification = specification
 
-    def __call__(self, output):
-        # This code only works for outputs as vectors
-        # TODO: Extend this for signal outputs
-
-        # 1. Create the RTAMT spect
-        # We recreate the spec objects at every iteration, if not it uses the previous values
+        # Create the RTAMT specification.
+        # We use discrete time STL
         self.spec = rtamt.STLSpecification()
-        for var in self.sut.parameters["outputs"]:
-            self.spec.declare_var(var, 'float')
-        self.spec.spec = self.specification
-        self.spec.parse()
-        self.spec.pastify()
+        for var in self.sut.outputs:
+            self.spec.declare_var(var, float)
+        self.spec.spec = specification()
 
-        # 2. Scale output, so we get a robutness between [0,1]
-        ranges = self.sut.orange
-        output = self.sut.scale(output.reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
+    def _evaluate_vector(self, output):
+        pass
 
-        # 3. Get robustness
-        rob= self.spec.update(0, zip(self.sut.parameters["outputs"],output ))
+    def _evaluate_signal(self, timestamps, signals):
+        # Find the step length of the timestamps (in seconds) and setup time
+        # correctly. Currently we only support fixed step length.
+        if len(timestamps) == 1:
+            raise Exception("A signal should be defined on at least two time steps.")
+        step = timestamps[1] - timestamps[0]
+        for i in range(2, len(timestamps)):
+            if timestamps[i] - timestamps[i-1] != step:
+                raise Exception("Timestamps with variable step length not supported.")
 
-        # 4. Clip robustness in [0,1]
-        rob=max(0,min(rob,1))
+        # Scale the signals.
 
-        return rob
+        self.spec.set_sampling_period(step, "s", 0.1)
+
+        # We need to parse only after setting the sampling period.
+        try:
+            self.spec.parse()
+        except:
+            # TODO: Handle errors.
+            raise
+
+        # Check that the horizon of the formula is equals the length of the
+        # signal. If this is not the case, we would need more logic to extract
+        # the correct robustness value.
+        horizon = self.spec.top.horizon
+        print("Horizon: {}".format(horizon))
+
+        # Transform the STL formula to past temporal logic.
+        try:
+            self.spec.pastify()
+        except:
+            # TODO: Handle errors.
+            raise
+
+        trajectories = {"time": timestamps}
+        for i, name in enumerate(self.sut.outputs):
+            trajectories[name] = signals[i]
+
+        # The final value is the correct one when we assume that the horizon
+        # equals the signal length.
+        robustness = self.spec.evaluate(trajectories)[-1][1]
+        # Clip the robustness to [0, 1].
+        robustness = max(0, min(robustness, 1))
+
+        return robustness
+
+    def __call__(self, *args, **kwargs):
+        # If we have a single argument, then we treat it as a vector input.
+        # Otherwise we assume that we have a signal input timestaps, signals.
+        if len(args) == 1:
+            self._evaluate_vector(args[0])
+        else:
+            self._evaluate_signal(timestamps=args[0], signals=args[1])
+
