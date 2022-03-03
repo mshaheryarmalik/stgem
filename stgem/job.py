@@ -14,10 +14,10 @@ import stgem.objective as objective
 from stgem.test_repository import TestRepository
 
 class JobResult:
-    def __init__(self, description, test_repository, falsified):
+    def __init__(self, description, test_repository, success):
         self.timestamp= datetime.datetime.now()
         self.description=description
-        self.falsified= falsified
+        self.success= success
         self.test_repository=test_repository
         self.test_suite=None
         self.algorithm_performance=None
@@ -206,7 +206,7 @@ class Job:
         if max_time == 0 and max_tests == 0:
             raise Exception("Job description does not specify neither a maximum time nor a maximum number tests")
 
-        falsified=False
+        success=False
 
         generator = self.algorithm.generate_test()
         outputs = []
@@ -221,23 +221,23 @@ class Job:
             _, output = self.algorithm.test_repository.get(idx)
             outputs.append(output)
 
-            if not falsified and np.min(output) == 0:
-                print("First falsified at test {}.".format(i + 1))
-                falsified = True
+            if not success and np.min(output) == 0:
+                print("First success at test {}.".format(i + 1))
+                success = True
 
-            if falsified and mode == "stop_at_first_objective":
+            if success and mode == "stop_at_first_objective":
                 break
 
             i=i+1
             elapsed_time=time.perf_counter()-start_time
 
-        if not falsified:
-            print("Could not falsify within the given budget.")
+        if not success:
+            print("Could not fulfill objective within the given budget.")
 
         print("Minimum objective components:")
         print(np.min(np.asarray(outputs), axis=0))
 
-        jr=JobResult(self.description,self.algorithm.test_repository,falsified)
+        jr=JobResult(self.description,self.algorithm.test_repository,success)
         jr.algorithm_performance=self.algorithm.perf
         jr.sut_performance=self.algorithm.sut.perf
         jr.test_suite = self.algorithm.test_suite
