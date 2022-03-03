@@ -1,6 +1,6 @@
 {
 "sut": "mo3d.MO3D",
-"objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
+"objective_func": ["Minimize", "Minimize", "Minimize"],
 "objective_func_parameters": [{"selected": [0], "scale": true}, {"selected": [1], "scale": true}, {"selected": [2], "scale": true}],
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 60},
@@ -42,5 +42,5 @@
      "critic_mlm": "CriticNetwork",
      "critic_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "hidden_neurons": [128, 128]}
     },
-"job_parameters": {"N_tests": 80}
+"job_parameters": {"max_tests": 80}
 } 

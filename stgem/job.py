@@ -14,10 +14,10 @@ import stgem.objective as objective
 from stgem.test_repository import TestRepository
 
 class JobResult:
-    def __init__(self, description, test_repository, falsified):
+    def __init__(self, description, test_repository, success):
         self.timestamp= datetime.datetime.now()
         self.description=description
-        self.falsified= falsified
+        self.success= success
         self.test_repository=test_repository
         self.test_suite=None
         self.algorithm_performance=None
@@ -173,12 +173,12 @@ class Job:
         # Process job parameters for algorithm setup.
         # Setup the initial random tests to 20% unless the value is user-set.
         if not "N_random_init" in self.description["job_parameters"]:
-            # if N_tests nor N_random_init are provided we use 20 tests
-            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("N_tests",100))
+            # if max_tests nor N_random_init are provided we use 20 tests
+            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("max_tests",100))
 
         # Select the algorithm to be used and setup it.
         # TODO: predefined random data loader
-        self.description["algorithm_parameters"]["N_tests"] = self.description["job_parameters"].get("N_tests",0)
+        self.description["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests",0)
         self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
         algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
         self.algorithm = algorithm_class(sut=asut,
@@ -198,15 +198,15 @@ class Job:
     def run(self) -> JobResult:
 
         mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
-        if mode not in ["exhaust_budget", "stop_at_first_falsification"]:
+        if mode not in ["exhaust_budget", "stop_at_first_objective"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
 
         max_time = self.description["job_parameters"].get("max_time", 0)
-        max_tests = self.description["job_parameters"].get("N_tests", 0)
+        max_tests = self.description["job_parameters"].get("max_tests", 0)
         if max_time == 0 and max_tests == 0:
             raise Exception("Job description does not specify neither a maximum time nor a maximum number tests")
 
-        falsified=False
+        success=False
 
         generator = self.algorithm.generate_test()
         outputs = []
@@ -221,23 +221,23 @@ class Job:
             _, output = self.algorithm.test_repository.get(idx)
             outputs.append(output)
 
-            if not falsified and np.min(output) == 0:
-                print("First falsified at test {}.".format(i + 1))
-                falsified = True
+            if not success and np.min(output) == 0:
+                print("First success at test {}.".format(i + 1))
+                success = True
 
-            if falsified and mode == "stop_at_first_falsification":
+            if success and mode == "stop_at_first_objective":
                 break
 
             i=i+1
             elapsed_time=time.perf_counter()-start_time
 
-        if not falsified:
-            print("Could not falsify within the given budget.")
+        if not success:
+            print("Could not fulfill objective within the given budget.")
 
         print("Minimum objective components:")
         print(np.min(np.asarray(outputs), axis=0))
 
-        jr=JobResult(self.description,self.algorithm.test_repository,falsified)
+        jr=JobResult(self.description,self.algorithm.test_repository,success)
         jr.algorithm_performance=self.algorithm.perf
         jr.sut_performance=self.algorithm.sut.perf
         jr.test_suite = self.algorithm.test_suite

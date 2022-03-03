@@ -46,8 +46,8 @@
     }
   },
   "job_parameters": {
-    "N_tests": 300,
+    "max_tests": 300,
     "N_random_init": 50,
-    "mode": "stop_at_first_falsification"
+    "mode": "stop_at_first_objective"
   }
 }
