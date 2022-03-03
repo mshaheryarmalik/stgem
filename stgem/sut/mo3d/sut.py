@@ -26,8 +26,8 @@ class MO3D(SUT):
 
         self.idim = 3
         self.odim = 3
-        self.irange = np.asarray([(-15, 15), (-15, 15), (-15, 15)])
-        self.orange = np.asarray([(0, 350), (0, 350), (0, 350)])
+        self.irange = [[-15, 15], [-15, 15], [-15, 15]]
+        self.orange = [[0, 350], [0, 350], [0, 350]]
 
     def _execute_test(self, test):
         #print("unscaled",test)
@@ -44,16 +44,4 @@ class MO3D(SUT):
 
         return np.asarray([h1, h2, h3])
 
-    def _min_distance(self, tests, x):
-        # We use the Euclidean distance.
-        tests = np.asarray(tests)
-        d = np.linalg.norm(tests - x, axis=1)
-        return min(d)
-
-    def execute_random_test(self):
-        test = self.sample_input_space()
-        return test, self._execute_test(test)
-
-    def sample_input_space(self):
-        return np.random.uniform(-1, 1, size=(1, self.idim))
 

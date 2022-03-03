@@ -42,18 +42,18 @@ class SUT:
         # vector-valued outputs and number of signals for signal-valued
         # outputs).
         self.odim = None
+        # Names for inputs and outputs. These are set by the caller.
+        self.inputs = None
+        self.outputs = None
         # We always assume that inputs are scaled to [-1, 1], so a range for
         # inputs must be specified (a list of 2-tuples representing intervals).
-        # For example, self.irange = [(0, 2), (-15, 15)] would indicate range
-        # [0, 2] for the first component and (-15, 15) for the second.
-        #
-        # IMPORTANT: The values self.irange and self.orange must be numpy
-        # arrays! The above notation is just for clarity.
+        # For example, self.irange = [[0, 2], [-15, 15]] would indicate range
+        # [0, 2] for the first component and [-15, 15] for the second.
         #
         # Outputs are not scaled to [-1, 1] by default, but this can be
         # achieved by specifying an output range and by using the self.scale
         # method. If the output range is unknown, the value None can be used to
-        # indicate this. For example, self.orange = [(-300, 100), None]
+        # indicate this. For example, self.orange = [[-300, 100], None]
         # specifies output range [-300, 100] for the first component and the
         # range of the second component is unknown.
         #
@@ -62,8 +62,8 @@ class SUT:
         # directly compare the objective function values in [0, 1], so they
         # should in some sense be comparable. This is approximately achieved by
         # having the same range and by clipping to [0, 1].
-        self.irange = None
-        self.orange = None
+        self.irange = []
+        self.orange = []
 
     def __getattr__(self, name):
         value = self.parameters.get(name)
@@ -72,35 +72,50 @@ class SUT:
 
         return value
 
+    def initialize(self):
+        """
+        This is for SUTs which need two-step initialization.
+        """
+
+        pass
+
     def scale(self, x, intervals, target_A=-1, target_B=-1):
         """
         Return a scaled x where the components of x with the specified
-        intervals are scaled to the interval [A, B] (default [-1, 1]).
+        intervals are scaled to the interval [A, B] (default [-1, 1]). If an
+        interval is None, then no scaling is done.
         """
 
         y = np.zeros_like(x)
         for i in range(x.shape[1]):
-            A = intervals[i][0]
-            B = intervals[i][1]
-            C = (target_B-target_A)/(B-A)
-            D = target_A - C*A
-            y[:,i] = C*x[:,i] + D
+            if intervals[i] is not None:
+                A = intervals[i][0]
+                B = intervals[i][1]
+                C = (target_B-target_A)/(B-A)
+                D = target_A - C*A
+                y[:,i] = C*x[:,i] + D
+            else:
+                y[:i] = x[:,i]
 
         return y
 
     def descale(self, x, intervals, A=-1, B=1):
         """
         Return a scaled x where the components of x in [A, B] (default [-1, 1])
-        are scaled to the given intervals.
+        are scaled to the given intervals. If an interval is None, then no
+        scaling is done.
         """
 
         y = np.zeros_like(x)
         for i in range(x.shape[1]):
-            target_A = intervals[i][0]
-            target_B = intervals[i][1]
-            C = (target_B-target_A)/(B-A)
-            D = target_A - C*A
-            y[:,i] = C*x[:,i] + D
+            if intervals[i] is not None:
+                target_A = intervals[i][0]
+                target_B = intervals[i][1]
+                C = (target_B-target_A)/(B-A)
+                D = target_A - C*A
+                y[:,i] = C*x[:,i] + D
+            else:
+                y[:,i] = x[:,i]
 
         return y
 

@@ -7,33 +7,36 @@ import numpy as np
 from stgem.sut import SUT
 
 class PythonFunction(SUT):
+    """
+    A SUT which encapsulates a Python function.
+    """
 
-    def __init__(self,parameters):
-        SUT.__init__(self,parameters)
+    def __init__(self, parameters):
+        super().__init__(parameters)
 
-        if "input_range" in self.parameters:
-            self.irange = np.asarray(self.parameters["input_range"])
-        if "output_range" in self.parameters:
-            self.orange = np.asarray(self.parameters["output_range"])
+        self.function = self.parameters["function"]
 
-        self.function= self.parameters["function"]
+        # Use input parameters primarily and function annotation secondarily.
+        if "input_range" in self.parameters and len(self.parameters["input_range"]) > 0:
+            self.irange = self.parameters["input_range"]
+        else:
+            for k, v in self.function.__annotations__.items():
+                if k != "return":
+                    self.irange = v
 
-        # Look up input and output ranges from function annotations
-        for k,v in self.function.__annotations__.items():
-            if k == "return":
-                self.orange = np.asarray(v)
-            else:
-                self.irange = np.asarray(v)
+        if "output_range" in self.parameters and len(self.parameters["output_range"]) > 0:
+            self.orange = self.parameters["output_range"]
+        else:
+            for k, v in self.function.__annotations__.items():
+                if k == "return":
+                    self.orange = v
 
-        self.idim = len( self.irange )
-        self.odim = len( self.orange )
+        self.idim = len(self.irange)
+        self.odim = len(self.orange)
 
     def _execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.irange).reshape(-1)
-        output=self.function(test)
+        output = self.function(test)
 
         return np.asarray(output)
-
-
-
 

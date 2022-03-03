@@ -462,7 +462,7 @@ class SBSTSUT_validator(SBSTSUT_curvature):
     def __init__(self, map_size, curvature_points):
         super().__init__(curvature_points, beamng_home="", map_size=map_size, max_speed=1, check_key=False)
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         """
         Execute the given test on the SUT.
 
