@@ -1,6 +1,6 @@
 {
 "sut": "mo3d.MO3D",
-"objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
+"objective_func": ["Minimize", "Minimize", "Minimize"],
 "objective_func_parameters": [{"selected": [0], "scale": true}, {"selected": [1], "scale": true}, {"selected": [2], "scale": true}],
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 30},
@@ -8,5 +8,5 @@
 "algorithm_parameters": {
    "platypus_algorithm" : "NSGAII",
    "population_size" : 200},
-"job_parameters": {"N_tests": 200, "N_random_init": 20, "mode": "stop_at_first_falsification"}
+"job_parameters": {"max_tests": 200, "N_random_init": 20, "mode": "stop_at_first_objective"}
 }

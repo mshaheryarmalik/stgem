@@ -19,7 +19,7 @@ description = {
         "output_range": [[0, 350], [0, 350], [0, 350]],
         "function": myfunc
     },
-    "objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
+    "objective_func": ["Minimize", "Minimize", "Minimize"],
     "objective_func_parameters": [
         {"selected": [0], "invert": False, "scale": True},
         {"selected": [1], "invert": False, "scale": True},
@@ -27,7 +27,7 @@ description = {
     "objective_selector": "ObjectiveSelectorMAB",
     "objective_selector_parameters": {"warm_up": 30},
     "algorithm": "platypus.PlatypusOpt",
-    "job_parameters": {"N_tests": 2000, "N_random_init": 20, "mode": "stop_at_first_falsification"}
+    "job_parameters": {"max_tests": 2000, "N_random_init": 20, "mode": "stop_at_first_objective"}
 }
 
 Job(description).start()

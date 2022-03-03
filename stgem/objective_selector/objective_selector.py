@@ -34,7 +34,7 @@ class ObjectiveSelectorMAB(ObjectiveSelector):
     model. A warm-up period can be defined where all models are returned.
     """
 
-    def __init__(self, N_objectives, warm_up):
+    def __init__(self, N_objectives, warm_up=30):
         super().__init__(N_objectives)
         self.warm_up = warm_up
         self.total_calls = 0

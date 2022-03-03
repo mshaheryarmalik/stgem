@@ -1,6 +1,6 @@
 {
 "sut": "mo3d.MO3D",
-"objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
+"objective_func": ["Minimize", "Minimize", "Minimize"],
 "objective_func_parameters": [
   {"selected": [0], "invert": false, "scale": true},
   {"selected": [1], "invert": false, "scale": true},
@@ -13,5 +13,5 @@
      "use_predefined_random_data": false,
      "predefined_random_data": {"test_inputs": null, "test_outputs": null}
     },
-"job_parameters": {"max_time": 60, "N_random_init":  50, "mode": "stop_at_first_falsification"}
+"job_parameters": {"max_time": 60, "N_random_init":  50, "mode": "stop_at_first_objective"}
 }

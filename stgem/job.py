@@ -173,12 +173,12 @@ class Job:
         # Process job parameters for algorithm setup.
         # Setup the initial random tests to 20% unless the value is user-set.
         if not "N_random_init" in self.description["job_parameters"]:
-            # if N_tests nor N_random_init are provided we use 20 tests
-            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("N_tests",100))
+            # if max_tests nor N_random_init are provided we use 20 tests
+            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("max_tests",100))
 
         # Select the algorithm to be used and setup it.
         # TODO: predefined random data loader
-        self.description["algorithm_parameters"]["N_tests"] = self.description["job_parameters"].get("N_tests",0)
+        self.description["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests",0)
         self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
         algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
         self.algorithm = algorithm_class(sut=asut,
@@ -198,11 +198,11 @@ class Job:
     def run(self) -> JobResult:
 
         mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
-        if mode not in ["exhaust_budget", "stop_at_first_falsification"]:
+        if mode not in ["exhaust_budget", "stop_at_first_objective"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
 
         max_time = self.description["job_parameters"].get("max_time", 0)
-        max_tests = self.description["job_parameters"].get("N_tests", 0)
+        max_tests = self.description["job_parameters"].get("max_tests", 0)
         if max_time == 0 and max_tests == 0:
             raise Exception("Job description does not specify neither a maximum time nor a maximum number tests")
 
@@ -225,7 +225,7 @@ class Job:
                 print("First falsified at test {}.".format(i + 1))
                 falsified = True
 
-            if falsified and mode == "stop_at_first_falsification":
+            if falsified and mode == "stop_at_first_objective":
                 break
 
             i=i+1

@@ -1,12 +1,27 @@
-SUT Parameters
-==============
+# Job Parameters
+
+A job has two possible modes:
+
+- `mode : string`
+  - `exhaust_budget` the job runs until the budget is exhausted.
+  - `stop_at_first_objective ` the job runs until an objective is fullfiled or until  the budget is exhausted.
+
+
+The budget can be defined as a maximum number of tests, as a maximum clock time, or both:
+
+- `max_tests : integer` Maximum number of tests to generate. 
+- `max_time : integer`  Maximum total time allowed.
+
+If both  `max_tests` and `max_time` are given, the job ends when the first maximum is reached.
+
+# SUT Parameters
 
 A SUT can be configured through sut_parameters key in the job description file. These settings are mainly SUT-specific, but there are some general settings regarding the inputs and outputs. The following parameters exist:
 
-* inputs
-* input_range
-* outputs
-* output_range
+* `inputs : list of strings` 
+* `input_range: list of [float, float]`
+* `outputs : list of strings` 
+* `output_range: list of [float, float]`
 
 Let us describe input configuration only; output is similar.
 

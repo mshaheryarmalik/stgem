@@ -36,8 +36,8 @@ class WOGAN(Algorithm):
         if self.shift_function == "linear":
             # We increase the shift linearly according to the given initial and given
             # final value.
-            alpha = (self.shift_function_parameters["final"] - self.shift_function_parameters["initial"])/(self.N_tests - self.N_random_init)
-            beta = self.shift_function_parameters["final"] - alpha * self.N_tests
+            alpha = (self.shift_function_parameters["final"] - self.shift_function_parameters["initial"])/(self.max_tests - self.N_random_init)
+            beta = self.shift_function_parameters["final"] - alpha * self.max_tests
             self.shift = lambda x: alpha * x + beta
         else:
             raise Exception("No shift function type '{}'.".format(self.shift_function))

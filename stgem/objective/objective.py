@@ -28,7 +28,7 @@ class Objective:
 
 
 
-class ObjectiveMinSelected(Objective):
+class Minimize(Objective):
     """
     Objective function for a SUT with fixed-length vector outputs which selects
     the minimum among the specified components.
