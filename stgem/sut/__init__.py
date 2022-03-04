@@ -95,7 +95,7 @@ class SUT:
                 D = target_A - C*A
                 y[:,i] = C*x[:,i] + D
             else:
-                y[:i] = x[:,i]
+                y[:,i] = x[:,i]
 
         return y
 

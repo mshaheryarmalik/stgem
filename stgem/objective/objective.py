@@ -86,28 +86,34 @@ class FalsifySTL(Objective):
         self.specification = specification
 
         # Create the RTAMT specification.
-        # We use discrete time STL
-        self.spec = rtamt.STLSpecification()
+        # For now we use the dense time STL because it is unclear how to use
+        # the discrete version. The horizons are especially unclear in the 
+        # discrete case.
+        self.spec = rtamt.STLDenseTimeSpecification()
         for var in self.sut.outputs:
-            self.spec.declare_var(var, float)
-        self.spec.spec = specification()
+            self.spec.declare_var(var, "float")
+        self.spec.spec = specification
 
     def _evaluate_vector(self, output):
         pass
 
     def _evaluate_signal(self, timestamps, signals):
-        # Find the step length of the timestamps (in seconds) and setup time
-        # correctly. Currently we only support fixed step length.
-        if len(timestamps) == 1:
-            raise Exception("A signal should be defined on at least two time steps.")
-        step = timestamps[1] - timestamps[0]
-        for i in range(2, len(timestamps)):
-            if timestamps[i] - timestamps[i-1] != step:
-                raise Exception("Timestamps with variable step length not supported.")
+        # Here we find the robustness at time 0.
+        #
+        # We assume that the user guarantees that time is increasing and that
+        # timestamps do not overlap. It's best to use timestamps where the
+        # difference between consecutive times is approximately constant.
+
+        if timestamps[0] != 0:
+            raise Exception("The first timestamp should be 0.")
 
         # Scale the signals.
+        # TODO: This could be done in a prettier way.
+        for i in range(len(signals)):
+            ranges = [self.sut.orange[i] for _ in range(len(signals[i]))]
+            signals[i] = self.sut.scale(np.asarray(signals[i]).reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
 
-        self.spec.set_sampling_period(step, "s", 0.1)
+        self.spec.reset()
 
         # We need to parse only after setting the sampling period.
         try:
@@ -116,11 +122,11 @@ class FalsifySTL(Objective):
             # TODO: Handle errors.
             raise
 
-        # Check that the horizon of the formula is equals the length of the
-        # signal. If this is not the case, we would need more logic to extract
-        # the correct robustness value.
+        # This needs to be fetched at this point.
         horizon = self.spec.top.horizon
-        print("Horizon: {}".format(horizon))
+
+        if horizon > timestamps[-1]:
+            raise Exception("The horizon of the formula is too long compared to input signal length. The robustness cannot be computed.")
 
         # Transform the STL formula to past temporal logic.
         try:
@@ -129,13 +135,21 @@ class FalsifySTL(Objective):
             # TODO: Handle errors.
             raise
 
-        trajectories = {"time": timestamps}
+        trajectories = []
         for i, name in enumerate(self.sut.outputs):
-            trajectories[name] = signals[i]
+            trajectory = [[timestamps[j], signals[i][j]] for j in range(len(timestamps))]
+            trajectories.append([name, trajectory])
 
-        # The final value is the correct one when we assume that the horizon
-        # equals the signal length.
-        robustness = self.spec.evaluate(trajectories)[-1][1]
+        robustness_signal = self.spec.evaluate(*trajectories)
+        robustness = None
+        for t, r in robustness_signal:
+            if t == horizon:
+                robustness = r
+                break
+
+        if robustness is None:
+            raise Exception("Could not figure out correct robustness at horizon {} from robustness signal {}.".format(horizon, robustness_signal))
+
         # Clip the robustness to [0, 1].
         robustness = max(0, min(robustness, 1))
 
@@ -145,7 +159,7 @@ class FalsifySTL(Objective):
         # If we have a single argument, then we treat it as a vector input.
         # Otherwise we assume that we have a signal input timestaps, signals.
         if len(args) == 1:
-            self._evaluate_vector(args[0])
+            return self._evaluate_vector(args[0])
         else:
-            self._evaluate_signal(timestamps=args[0], signals=args[1])
+            return self._evaluate_signal(timestamps=args[0], signals=args[1])
 
