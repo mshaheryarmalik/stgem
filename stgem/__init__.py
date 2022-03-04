@@ -41,13 +41,12 @@ def load_stgem_class(name, namespace, module_path=None):
     if module is None:
         print(traceback_record)
         print("Error importing module '{}'.".format(module_name))
-        raise sys.exit()
+        raise ModuleNotFoundError
 
     try:
         the_class = getattr(module, class_name)
-    except:
-        traceback.print_exc()
-        print("Error importing class '{}'.".format(module_name))
-        raise sys.exit()
+    except Exception as err:
+        print("Error importing class '{}.{}'.".format(module_name,class_name))
+        raise err
 
     return the_class
