@@ -72,11 +72,11 @@ class AbstractTestExecutor(ABC):
 
         if is_valid:
             self.stats.test_valid += 1
-            start_execution_real_time = time.monotonic()
+            start_execution_real_time = time.perf_counter()
 
             test_outcome, description, execution_data = self._execute(the_test)
 
-            end_execution_real_time = time.monotonic()
+            end_execution_real_time = time.perf_counter()
             self.stats.test_execution_real_times.append(end_execution_real_time - start_execution_real_time)
 
             # Check that at least one element is there
