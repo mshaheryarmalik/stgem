@@ -3,15 +3,6 @@
 
 import numpy as np
 
-# rtamt may have dependency problems. We continue even if we cannot import it
-try:
-    import rtamt
-except:
-    print("Cannot import rtamt. Objectives using rtamt will throw an exception.")
-    import traceback
-    traceback.print_exc()
-
-
 """
 REMEMBER: Always clip the objective function values to [0, 1]. Otherwise we
 can get very wild losses when training neural networks. This is not good as
@@ -77,36 +68,128 @@ class ObjectiveMinComponentwise(Objective):
 
 class FalsifySTL(Objective):
     """
-    Objective function to falsify a STL specification
+    Objective function to falsify a STL specification.
     """
+
     def __init__(self, sut, specification):
         super().__init__(sut)
+
+        # rtamt may have dependency problems. We continue even if we cannot import it
+        try:
+            import rtamt
+        except:
+            print("Cannot import rtamt. Objectives using rtamt will throw an exception.")
+            import traceback
+            traceback.print_exc()
+
         self.dim = 1
-        self.specification=specification
-        if not "outputs" in sut.parameters:
-            raise Exception("SUS should have a sut_parameter named outputs containing a list of strings with the names of its outputs. ")
+        self.specification = specification
 
-    def __call__(self, output):
-        # This code only works for outputs as vectors
-        # TODO: Extend this for signal outputs
+        # Create the RTAMT specification.
+        # For signals we use the dense time STL because it is unclear how to
+        # use the discrete version. The horizons are especially unclear in the 
+        # discrete case. For vector outputs we use discrete time STL because
+        # updating with a single signal value does not seem to give sensible
+        # results otherwise.
+        self.spec_dense = rtamt.STLDenseTimeSpecification()
+        self.spec_discrete = rtamt.STLSpecification()
+        for var in self.sut.outputs:
+            self.spec_dense.declare_var(var, "float")
+            self.spec_discrete.declare_var(var, "float")
+        self.spec_dense.spec = specification
+        self.spec_discrete.spec = specification
 
-        # 1. Create the RTAMT spect
-        # We recreate the spec objects at every iteration, if not it uses the previous values
-        self.spec = rtamt.STLSpecification()
-        for var in self.sut.parameters["outputs"]:
-            self.spec.declare_var(var, 'float')
-        self.spec.spec = self.specification
-        self.spec.parse()
-        self.spec.pastify()
+    def _evaluate_vector(self, output):
+        # We assume that the output is a single observation of a signal. It
+        # follows that not all STL formulas have a clear interpretation (like
+        # always[0,30](x1 > 0 and x2 > 0). It is up to the user to ensure a
+        # reasonable interpretation.
 
-        # 2. Scale output, so we get a robutness between [0,1]
-        ranges = self.sut.orange
-        output = self.sut.scale(output.reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
+        spec = self.spec_discrete
 
-        # 3. Get robustness
-        rob= self.spec.update(0, zip(self.sut.parameters["outputs"],output ))
+        # Scale the input.
+        output = self.sut.scale(np.asarray(output).reshape(1, -1), self.sut.orange, target_A=0, target_B=1).reshape(-1)
 
-        # 4. Clip robustness in [0,1]
-        rob=max(0,min(rob,1))
+        spec.reset()
 
-        return rob
+        # We need to parse only after setting the sampling period.
+        try:
+            spec.parse()
+	    # Transform the STL formula to past temporal logic.
+            spec.pastify()
+        except:
+            # TODO: Handle errors.
+            raise
+
+		# Use the online monitor to get the robustness. We evaluate at time 0.
+        robustness = spec.update(0, zip(self.sut.outputs, output))
+
+        # Clip the robustness to [0, 1].
+        robustness = max(0, min(robustness, 1))
+
+        return robustness
+
+    def _evaluate_signal(self, timestamps, signals):
+        # Here we find the robustness at time 0.
+        #
+        # We assume that the user guarantees that time is increasing and that
+        # timestamps do not overlap. It's best to use timestamps where the
+        # difference between consecutive times is approximately constant.
+
+        spec = self.spec_dense
+
+        if timestamps[0] != 0:
+            raise Exception("The first timestamp should be 0.")
+
+        # Scale the signals.
+        signals = [self.sut.scale_signal(signals[i], self.sut.orange[i], target_A=0, target_B=1) for i in range(len(signals))]
+
+        spec.reset()
+
+        try:
+            spec.parse()
+        except:
+            # TODO: Handle errors.
+            raise
+
+        # This needs to be fetched at this point.
+        horizon = spec.top.horizon
+
+        if horizon > timestamps[-1]:
+            raise Exception("The horizon of the formula is too long compared to input signal length. The robustness cannot be computed.")
+
+        # Transform the STL formula to past temporal logic.
+        try:
+            spec.pastify()
+        except:
+            # TODO: Handle errors.
+            raise
+
+        trajectories = []
+        for i, name in enumerate(self.sut.outputs):
+            trajectory = [[timestamps[j], signals[i][j]] for j in range(len(timestamps))]
+            trajectories.append([name, trajectory])
+
+        robustness_signal = spec.evaluate(*trajectories)
+        robustness = None
+        for t, r in robustness_signal:
+            if t == horizon:
+                robustness = r
+                break
+
+        if robustness is None:
+            raise Exception("Could not figure out correct robustness at horizon {} from robustness signal {}.".format(horizon, robustness_signal))
+
+        # Clip the robustness to [0, 1].
+        robustness = max(0, min(robustness, 1))
+
+        return robustness
+
+    def __call__(self, *args, **kwargs):
+        # If we have a single argument, then we treat it as a vector input.
+        # Otherwise we assume that we have a signal input timestaps, signals.
+        if len(args) == 1:
+            return self._evaluate_vector(args[0])
+        else:
+            return self._evaluate_signal(timestamps=args[0], signals=args[1])
+
