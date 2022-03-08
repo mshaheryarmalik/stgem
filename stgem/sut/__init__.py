@@ -79,7 +79,7 @@ class SUT:
 
         pass
 
-    def scale(self, x, intervals, target_A=-1, target_B=-1):
+    def scale(self, x, intervals, target_A=-1, target_B=1):
         """
         Return a scaled x where the components of x with the specified
         intervals are scaled to the interval [A, B] (default [-1, 1]). If an
@@ -96,6 +96,26 @@ class SUT:
                 y[:,i] = C*x[:,i] + D
             else:
                 y[:,i] = x[:,i]
+
+        return y
+
+    def scale_signal(self, signal, interval, target_A=-1, target_B=1):
+        """
+        Scales the input signal whose values are in the given interval to the
+        specified interval [A, B] (default [-1, 1]). If the interval is None,
+        then no scaling is done.
+        """
+
+        y = []
+        for v in signal:
+            if interval is not None:
+                A = interval[0]
+                B = interval[1]
+                C = (target_B-target_A)/(B-A)
+                D = target_A - C*A
+                y.append(C*v + D)
+            else:
+                y.append(v)
 
         return y
 

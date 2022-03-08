@@ -86,16 +86,48 @@ class FalsifySTL(Objective):
         self.specification = specification
 
         # Create the RTAMT specification.
-        # For now we use the dense time STL because it is unclear how to use
-        # the discrete version. The horizons are especially unclear in the 
-        # discrete case.
-        self.spec = rtamt.STLDenseTimeSpecification()
+        # For signals we use the dense time STL because it is unclear how to
+        # use the discrete version. The horizons are especially unclear in the 
+        # discrete case. For vector outputs we use discrete time STL because
+        # updating with a single signal value does not seem to give sensible
+        # results otherwise.
+        self.spec_dense = rtamt.STLDenseTimeSpecification()
+        self.spec_discrete = rtamt.STLSpecification()
         for var in self.sut.outputs:
-            self.spec.declare_var(var, "float")
-        self.spec.spec = specification
+            self.spec_dense.declare_var(var, "float")
+            self.spec_discrete.declare_var(var, "float")
+        self.spec_dense.spec = specification
+        self.spec_discrete.spec = specification
 
     def _evaluate_vector(self, output):
-        pass
+        # We assume that the output is a single observation of a signal. It
+        # follows that not all STL formulas have a clear interpretation (like
+        # always[0,30](x1 > 0 and x2 > 0). It is up to the user to ensure a
+        # reasonable interpretation.
+
+        spec = self.spec_discrete
+
+        # Scale the input.
+        output = self.sut.scale(np.asarray(output).reshape(1, -1), self.sut.orange, target_A=0, target_B=1).reshape(-1)
+
+        spec.reset()
+
+        # We need to parse only after setting the sampling period.
+        try:
+            spec.parse()
+	    # Transform the STL formula to past temporal logic.
+            spec.pastify()
+        except:
+            # TODO: Handle errors.
+            raise
+
+		# Use the online monitor to get the robustness. We evaluate at time 0.
+        robustness = spec.update(0, zip(self.sut.outputs, output))
+
+        # Clip the robustness to [0, 1].
+        robustness = max(0, min(robustness, 1))
+
+        return robustness
 
     def _evaluate_signal(self, timestamps, signals):
         # Here we find the robustness at time 0.
@@ -104,33 +136,31 @@ class FalsifySTL(Objective):
         # timestamps do not overlap. It's best to use timestamps where the
         # difference between consecutive times is approximately constant.
 
+        spec = self.spec_dense
+
         if timestamps[0] != 0:
             raise Exception("The first timestamp should be 0.")
 
         # Scale the signals.
-        # TODO: This could be done in a prettier way.
-        for i in range(len(signals)):
-            ranges = [self.sut.orange[i] for _ in range(len(signals[i]))]
-            signals[i] = self.sut.scale(np.asarray(signals[i]).reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
+        signals = [self.sut.scale_signal(signals[i], self.sut.orange[i], target_A=0, target_B=1) for i in range(len(signals))]
 
-        self.spec.reset()
+        spec.reset()
 
-        # We need to parse only after setting the sampling period.
         try:
-            self.spec.parse()
+            spec.parse()
         except:
             # TODO: Handle errors.
             raise
 
         # This needs to be fetched at this point.
-        horizon = self.spec.top.horizon
+        horizon = spec.top.horizon
 
         if horizon > timestamps[-1]:
             raise Exception("The horizon of the formula is too long compared to input signal length. The robustness cannot be computed.")
 
         # Transform the STL formula to past temporal logic.
         try:
-            self.spec.pastify()
+            spec.pastify()
         except:
             # TODO: Handle errors.
             raise
@@ -140,7 +170,7 @@ class FalsifySTL(Objective):
             trajectory = [[timestamps[j], signals[i][j]] for j in range(len(timestamps))]
             trajectories.append([name, trajectory])
 
-        robustness_signal = self.spec.evaluate(*trajectories)
+        robustness_signal = spec.evaluate(*trajectories)
         robustness = None
         for t, r in robustness_signal:
             if t == horizon:
