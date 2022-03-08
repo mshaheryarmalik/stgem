@@ -24,7 +24,7 @@ class PerformanceData:
         if id in self.timers and self.timers[id] is not None:
             raise Exception("Restarting timer '{}' without resetting.".format(id))
 
-        self.timers[id] = time.monotonic()
+        self.timers[id] = time.perf_counter()
 
     def timer_reset(self, id):
         if not id in self.timers:
@@ -32,7 +32,7 @@ class PerformanceData:
         if self.timers[id] is None:
             raise Exception("Timer '{}' already reset.".format(id))
 
-        time_elapsed = time.monotonic() - self.timers[id]
+        time_elapsed = time.perf_counter() - self.timers[id]
         self.timers[id] = None
 
         return time_elapsed
@@ -40,7 +40,7 @@ class PerformanceData:
     def timers_hold(self):
         for id, t in self.timers.items():
             if t is not None:
-                self.timers[id] = time.monotonic() - self.timers[id]
+                self.timers[id] = time.perf_counter() - self.timers[id]
 
     def timers_resume(self):
         self.timers_hold()

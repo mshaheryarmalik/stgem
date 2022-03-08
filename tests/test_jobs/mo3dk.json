@@ -1,6 +1,6 @@
 {
 "sut": "mo3d.MO3D",
-"objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
+"objective_func": ["Minimize", "Minimize", "Minimize"],
 "objective_func_parameters": [
   {"selected": [0], "invert": false, "scale": true},
   {"selected": [1], "invert": false, "scale": true},
@@ -31,5 +31,5 @@
      "train_settings_init": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
      "train_settings": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}
     },
-"job_parameters": {"N_tests": 300, "N_random_init":  50, "mode": "stop_at_first_falsification"}
+"job_parameters": {"max_tests": 300, "N_random_init":  50, "mode": "stop_at_first_objective"}
 }

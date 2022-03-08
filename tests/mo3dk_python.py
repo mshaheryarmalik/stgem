@@ -15,7 +15,7 @@ def myfunc(input:  [[-15, 15], [-15, 15], [-15, 15]] ) -> [ [0, 350], [0, 350], 
 description = {
     "sut": "python.PythonFunction",
     "sut_parameters": {"function": myfunc},
-    "objective_func": ["ObjectiveMinSelected", "ObjectiveMinSelected", "ObjectiveMinSelected"],
+    "objective_func": ["Minimize", "Minimize", "Minimize"],
     "objective_func_parameters": [
         {"selected": [0], "invert": False, "scale": True},
         {"selected": [1], "invert": False, "scale": True},
@@ -46,7 +46,7 @@ description = {
          "train_settings_init": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
          "train_settings": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}
          },
-    "job_parameters": {"N_tests": 80, "N_random_init": 20, "mode": "stop_at_first_falsification"}
+    "job_parameters": {"max_tests": 80, "N_random_init": 20, "mode": "stop_at_first_objective"}
 }
 
 r=Job(description).start()
