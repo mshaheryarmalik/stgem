@@ -37,7 +37,7 @@ pytest:
   script:
   - export PYTHONPATH=`pwd`
   - cd tests
-  - pytest --junitxml=pytest-report.xml
+  - pytest --junitxml=pytest-report.xml -n 4
   artifacts:
     when: always
     reports:
