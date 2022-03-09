@@ -92,14 +92,14 @@ class Job:
             self.description["objective_func_parameters"] = []
         for i in range(len(self.description["objective_func"]) - len(self.description["objective_func_parameters"])):
             self.description["objective_func_parameters"].append({})
-        if "module_path" not in self.description["job_parameters"]:
-            self.description["job_parameters"]["module_path"] = None
+        if "module_path" not in self.description["step_parameters"]:
+            self.description["step_parameters"]["module_path"] = None
 
         # Setup seed.
         # We use a random seed unless it is specified.
         # Notice that making Pytorch deterministic makes it a lot slower.
-        if "seed" in self.description["job_parameters"] and self.description["job_parameters"]["seed"] is not None:
-            SEED = self.description["job_parameters"]["seed"]
+        if "seed" in self.description["step_parameters"] and self.description["step_parameters"]["seed"] is not None:
+            SEED = self.description["step_parameters"]["seed"]
             torch.use_deterministic_algorithms(mode=True)
             os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
         else:
@@ -121,7 +121,7 @@ class Job:
         logger = namedtuple("Logger", logger_names)(**loggers)
 
         # Setup the system under test.
-        sut_class = load_stgem_class(self.description["sut"], "sut", self.description["job_parameters"]["module_path"])
+        sut_class = load_stgem_class(self.description["sut"], "sut", self.description["step_parameters"]["module_path"])
         sut_parameters = self.description.get("sut_parameters", {})
         if not "input_range" in sut_parameters:
             sut_parameters["input_range"] = []
@@ -161,26 +161,26 @@ class Job:
         N_objectives = 0
         objective_funcs = []
         for n, s in enumerate(self.description["objective_func"]):
-            objective_class = load_stgem_class(s, "objective", self.description["job_parameters"]["module_path"])
+            objective_class = load_stgem_class(s, "objective", self.description["step_parameters"]["module_path"])
             objective_func = objective_class(sut=asut, **self.description["objective_func_parameters"][n])
             N_objectives += objective_func.dim
             objective_funcs.append(objective_func)
 
         # Setup the objective selector.
-        objective_selector_class = load_stgem_class(self.description["objective_selector"], "objective_selector", self.description["job_parameters"]["module_path"])
+        objective_selector_class = load_stgem_class(self.description["objective_selector"], "objective_selector", self.description["step_parameters"]["module_path"])
         objective_selector = objective_selector_class(N_objectives=N_objectives, **self.description["objective_selector_parameters"])
 
         # Process job parameters for algorithm setup.
         # Setup the initial random tests to 20% unless the value is user-set.
-        if not "N_random_init" in self.description["job_parameters"]:
+        if not "N_random_init" in self.description["step_parameters"]:
             # if max_tests nor N_random_init are provided we use 20 tests
-            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("max_tests",100))
+            self.description["step_parameters"]["N_random_init"] = int(0.2 * self.description["step_parameters"].get("max_tests",100))
 
         # Select the algorithm to be used and setup it.
         # TODO: predefined random data loader
-        self.description["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests",0)
-        self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
-        algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
+        self.description["algorithm_parameters"]["max_tests"] = self.description["step_parameters"].get("max_tests",0)
+        self.description["algorithm_parameters"]["N_random_init"] = self.description["step_parameters"]["N_random_init"]
+        algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["step_parameters"]["module_path"])
         self.algorithm = algorithm_class(sut=asut,
                                          test_repository=test_repository,
                                          objective_funcs=objective_funcs,
@@ -197,12 +197,12 @@ class Job:
 
     def run(self) -> JobResult:
 
-        mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
+        mode = "exhaust_budget" if "mode" not in self.description["step_parameters"] else self.description["step_parameters"]["mode"]
         if mode not in ["exhaust_budget", "stop_at_first_objective"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
 
-        max_time = self.description["job_parameters"].get("max_time", 0)
-        max_tests = self.description["job_parameters"].get("max_tests", 0)
+        max_time = self.description["step_parameters"].get("max_time", 0)
+        max_tests = self.description["step_parameters"].get("max_tests", 0)
         if max_time == 0 and max_tests == 0:
             raise Exception("Job description does not specify neither a maximum time nor a maximum number tests")
 

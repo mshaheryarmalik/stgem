@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, json
+import sys
 
 from stgem.job import Job
 import dill as pickle
@@ -25,7 +26,7 @@ def dump_to_file(obj, file_name):
 
 
 def run_one_job(description):
-    output_filename = description["job_parameters"]["output_file"]
+    output_filename = description["step_parameters"]["output_file"]
     job = Job().setup_from_dict(description)
     jr = job.run()
     jr.dump_to_file(output_filename)
@@ -50,13 +51,23 @@ def start(files, n, seed, resume, multiprocess):
 
                 # Add the directory for loading user-written modules.
                 f = os.path.dirname(file_name)
-                description["job_parameters"]["module_path"] = ".".join(x for x in split_path(os.path.dirname(file_name)))
 
-                # Now we add 1 to the seed for each consecutive copy of the job.
-                SEED = seed[i] + j if i < len(seed) else None
-                description["job_parameters"]["seed"] = SEED
-                description["job_parameters"]["output_file"] = "output/job_{}_{}.pickle".format(i, j)
-                descriptions.append(description)
+                # save sut common description and remove "steps"
+                # get steps on a loop and concat sut_description and step
+                sut_description = dict(description)
+                del sut_description["steps"]
+
+                for step in description["steps"]:
+                    step["step_parameters"]["module_path"] = ".".join(x for x in split_path(os.path.dirname(file_name)))
+
+                    # Now we add 1 to the seed for each consecutive copy of the job.
+                    SEED = seed[i] + j if i < len(seed) else None
+                    step["step_parameters"]["seed"] = SEED
+                    step["step_parameters"]["output_file"] = "output/job_{}_{}.pickle".format(i, j)
+
+                    sut_description_step = {**sut_description, **step}
+
+                    descriptions.append(sut_description_step)
 
         # always create a resume file, even if there is a single job since it may not terminate
         dump_to_file(obj=descriptions, file_name=resume_filename)
@@ -72,7 +83,7 @@ def start(files, n, seed, resume, multiprocess):
 
         # only process descriptions that are missing a corresponding output file
         for description in all_descriptions:
-            output_filename = description["job_parameters"]["output_file"]
+            output_filename = description["steps"]["step_parameters"]["output_file"]
             if not os.path.exists(output_filename):
                 descriptions.append(description)
 
