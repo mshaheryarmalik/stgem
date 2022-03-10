@@ -1,5 +1,6 @@
 
 import os, datetime, logging, random
+import sys
 from collections import namedtuple
 import json
 import datetime
@@ -92,14 +93,14 @@ class Job:
             self.description["objective_func_parameters"] = []
         for i in range(len(self.description["objective_func"]) - len(self.description["objective_func_parameters"])):
             self.description["objective_func_parameters"].append({})
-        if "module_path" not in self.description["step_parameters"]:
-            self.description["step_parameters"]["module_path"] = None
+        if "module_path" not in self.description["job_parameters"]:
+            self.description["job_parameters"]["module_path"] = None
 
         # Setup seed.
         # We use a random seed unless it is specified.
         # Notice that making Pytorch deterministic makes it a lot slower.
-        if "seed" in self.description["step_parameters"] and self.description["step_parameters"]["seed"] is not None:
-            SEED = self.description["step_parameters"]["seed"]
+        if "seed" in self.description["job_parameters"] and self.description["job_parameters"]["seed"] is not None:
+            SEED = self.description["job_parameters"]["seed"]
             torch.use_deterministic_algorithms(mode=True)
             os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
         else:
@@ -121,7 +122,7 @@ class Job:
         logger = namedtuple("Logger", logger_names)(**loggers)
 
         # Setup the system under test.
-        sut_class = load_stgem_class(self.description["sut"], "sut", self.description["step_parameters"]["module_path"])
+        sut_class = load_stgem_class(self.description["sut"], "sut", self.description["job_parameters"]["module_path"])
         sut_parameters = self.description.get("sut_parameters", {})
         if not "input_range" in sut_parameters:
             sut_parameters["input_range"] = []
@@ -161,33 +162,53 @@ class Job:
         N_objectives = 0
         objective_funcs = []
         for n, s in enumerate(self.description["objective_func"]):
-            objective_class = load_stgem_class(s, "objective", self.description["step_parameters"]["module_path"])
+            objective_class = load_stgem_class(s, "objective", self.description["job_parameters"]["module_path"])
             objective_func = objective_class(sut=asut, **self.description["objective_func_parameters"][n])
             N_objectives += objective_func.dim
             objective_funcs.append(objective_func)
 
         # Setup the objective selector.
-        objective_selector_class = load_stgem_class(self.description["objective_selector"], "objective_selector", self.description["step_parameters"]["module_path"])
+        objective_selector_class = load_stgem_class(self.description["objective_selector"], "objective_selector", self.description["job_parameters"]["module_path"])
         objective_selector = objective_selector_class(N_objectives=N_objectives, **self.description["objective_selector_parameters"])
 
         # Process job parameters for algorithm setup.
         # Setup the initial random tests to 20% unless the value is user-set.
-        if not "N_random_init" in self.description["step_parameters"]:
+        if not "N_random_init" in self.description["job_parameters"]:
             # if max_tests nor N_random_init are provided we use 20 tests
-            self.description["step_parameters"]["N_random_init"] = int(0.2 * self.description["step_parameters"].get("max_tests",100))
+            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("max_tests",100))
 
         # Select the algorithm to be used and setup it.
         # TODO: predefined random data loader
-        self.description["algorithm_parameters"]["max_tests"] = self.description["step_parameters"].get("max_tests",0)
-        self.description["algorithm_parameters"]["N_random_init"] = self.description["step_parameters"]["N_random_init"]
-        algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["step_parameters"]["module_path"])
-        self.algorithm = algorithm_class(sut=asut,
-                                         test_repository=test_repository,
-                                         objective_funcs=objective_funcs,
-                                         objective_selector=objective_selector,
-                                         parameters=self.description["algorithm_parameters"],
-                                         logger=logger
-                                        )
+        self.description["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests",0)
+        self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
+
+        # algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
+        # self.algorithm = algorithm_class(sut=asut,
+        #                                  test_repository=test_repository,
+        #                                  objective_funcs=objective_funcs,
+        #                                  objective_selector=objective_selector,
+        #                                  parameters=self.description["algorithm_parameters"],
+        #                                  logger=logger
+        #                                 )
+
+        # separate steps algorithms as algorithms list object
+        algorithm_classes = []
+        for step in self.description["steps"]:
+
+            algorithm_class = load_stgem_class(step["algorithm"],
+                                               "algorithm",
+                                               self.description["job_parameters"]["module_path"])
+
+            self.algorithm = algorithm_class(sut=asut,
+                                             test_repository=test_repository,
+                                             objective_funcs=objective_funcs,
+                                             objective_selector=objective_selector,
+                                             parameters=step["algorithm_parameters"],
+                                             logger=logger)
+
+            algorithm_classes.append(self.algorithm)
+
+        self.algorithms = algorithm_classes
 
         return self
 
@@ -197,51 +218,61 @@ class Job:
 
     def run(self) -> JobResult:
 
-        mode = "exhaust_budget" if "mode" not in self.description["step_parameters"] else self.description["step_parameters"]["mode"]
-        if mode not in ["exhaust_budget", "stop_at_first_objective"]:
-            raise Exception("Unknown test generation mode '{}'.".format(mode))
+        # declare common parameters
+        common_description = dict(self.description)
+        del common_description["steps"]
 
-        max_time = self.description["step_parameters"].get("max_time", 0)
-        max_tests = self.description["step_parameters"].get("max_tests", 0)
-        if max_time == 0 and max_tests == 0:
-            raise Exception("Job description does not specify neither a maximum time nor a maximum number tests")
+        jr = JobResult(description=None, test_repository=None, success=None)
 
-        success=False
+        # loop through steps and algorithms at the same time and perform steps
+        for step, algorithm in zip(self.description["steps"], self.algorithms):
+            mode = "exhaust_budget" if "mode" not in step["step_parameters"] else step["step_parameters"]["mode"]
+            if mode not in ["exhaust_budget", "stop_at_first_objective"]:
+                raise Exception("Unknown test generation mode '{}'.".format(mode))
 
-        generator = self.algorithm.generate_test()
-        outputs = []
+            max_time = step["step_parameters"].get("max_time", 0)
+            max_tests = step["step_parameters"].get("max_tests", 0)
+            if max_time == 0 and max_tests == 0:
+                raise Exception("Job description does not specify neither a maximum time nor a maximum number tests")
 
-        i=0
-        start_time=time.perf_counter()
-        elapsed_time=0
+            success = False
 
-        while (max_tests==0 or i < max_tests) and (max_time==0 or elapsed_time< max_time):
+            generator = algorithm.generate_test()
+            outputs = []
 
-            idx = next(generator)
-            _, output = self.algorithm.test_repository.get(idx)
-            outputs.append(output)
+            i = 0
+            start_time = time.perf_counter()
+            elapsed_time = 0
 
-            if not success and np.min(output) == 0:
-                print("First success at test {}.".format(i + 1))
-                success = True
+            while (max_tests == 0 or i < max_tests) and (max_time == 0 or elapsed_time < max_time):
 
-            if success and mode == "stop_at_first_objective":
-                break
+                idx = next(generator)
+                _, output = algorithm.test_repository.get(idx)
+                outputs.append(output)
 
-            i=i+1
-            elapsed_time=time.perf_counter()-start_time
+                if not success and np.min(output) == 0:
+                    print("First success at test {}.".format(i + 1))
+                    success = True
 
-        if not success:
-            print("Could not fulfill objective within the given budget.")
+                if success and mode == "stop_at_first_objective":
+                    break
 
-        print("Minimum objective components:")
-        print(np.min(np.asarray(outputs), axis=0))
+                i += 1
+                elapsed_time = time.perf_counter()-start_time
 
-        jr=JobResult(self.description,self.algorithm.test_repository,success)
-        jr.algorithm_performance=self.algorithm.perf
-        jr.sut_performance=self.algorithm.sut.perf
-        jr.test_suite = self.algorithm.test_suite
-        jr.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
+            if not success:
+                print("Could not fulfill objective within the given budget.")
+
+            print("Minimum objective components:")
+            print(np.min(np.asarray(outputs), axis=0))
+
+            # step_description = {**common_description, **step}
+
+            """JobResult saving Not completed"""
+            jr = JobResult(common_description, algorithm.test_repository, success)
+            jr.algorithm_performance = algorithm.perf
+            jr.sut_performance = algorithm.sut.perf
+            jr.test_suite = algorithm.test_suite
+            jr.model_performance = [algorithm.models[i].perf for i in range(algorithm.N_models)]
 
         return jr
-

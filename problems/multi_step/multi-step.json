@@ -12,6 +12,7 @@
   "objective_selector_parameters": {
     "warm_up": 30
   },
+"job_parameters": {"max_tests": 80, "mode": "stop_at_first_objective"},
 "steps": [
   {
   "algorithm": "random.Random",
@@ -22,44 +23,11 @@
   "step_parameters": {"max_tests": 20}
   },
   {
-  "algorithm": "wogan.WOGAN",
-  "algorithm_parameters": {"input_dimension": 3,
-     "use_predefined_random_data": false,
-     "predefined_random_data": {"test_inputs": null, "test_outputs": null},
-     "bins": 10,
-     "wgan_batch_size": 32,
-     "fitness_coef": 0.95,
-     "train_delay": 3,
-     "N_candidate_tests": 1,
-     "shift_function": "linear",
-     "shift_function_parameters": {"initial": 0, "final": 3},
-     "wogan_model": "WOGAN_Model",
-     "wogan_model_parameters": {"critic_optimizer": "Adam",
-                                "critic_lr": 0.001,
-                                "critic_betas": [0, 0.9],
-                                "generator_optimizer": "Adam",
-                                "generator_lr": 0.001,
-                                "generator_betas": [0, 0.9],
-                                "noise_batch_size": 32,
-                                "gp_coefficient": 10,
-                                "eps": 1e-6,
-                                "report_wd": true},
-     "train_settings_init": {"epochs": 3, "analyzer_epochs": 20, "critic_steps": 5, "generator_steps": 1},
-     "train_settings": {"epochs": 10, "analyzer_epochs": 1, "critic_steps": 5, "generator_steps": 1},
-     "analyzer": "Analyzer_NN",
-     "analyzer_parameters": {"optimizer": "Adam",
-                             "lr": 0.005,
-                             "betas": [0, 0.9],
-                             "loss": "MSE,logit",
-                             "l2_regularization_coef": 0.001},
-     "analyzer_mlm": "AnalyzerNetwork",
-     "analyzer_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "hidden_neurons": [64, 64], "layer_normalization": false},
-     "generator_mlm": "GeneratorNetwork",
-     "generator_mlm_parameters": {"noise_dim": 10, "output_shape": "copy:algorithm_parameters.input_dimension", "hidden_neurons": [128, 128], "batch_normalization": false, "layer_normalization": false},
-     "critic_mlm": "CriticNetwork",
-     "critic_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "hidden_neurons": [128, 128]}
-    },
-  "step_parameters": {"max_tests": 80, "mode": "stop_at_first_objective"}
+"algorithm": "platypus.PlatypusOpt",
+"algorithm_parameters": {
+   "platypus_algorithm" : "NSGAII",
+   "population_size" : 200},
+"step_parameters": {"max_tests": 200, "N_random_init": 20, "mode": "stop_at_first_objective"}
   }
 ]
 }
