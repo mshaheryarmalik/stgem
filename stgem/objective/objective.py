@@ -41,7 +41,7 @@ class Minimize(Objective):
 
         if self.invert:
             output = output*(-1)
-            ranges = np.asarray([[-I[1], -I[0]] for I in self.sut.output_range[idx]])
+            ranges = np.asarray([[-self.sut.output_range[i][1], -self.sut.output_range[i][0]] for i in idx])
         else:
             ranges = [self.sut.output_range[i] for i in idx]
 
