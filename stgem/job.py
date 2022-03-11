@@ -8,7 +8,6 @@ import numpy as np
 import torch
 import dill as pickle
 import time
-import gc
 
 from stgem import load_stgem_class
 import stgem.algorithm as algorithm
@@ -16,10 +15,15 @@ import stgem.objective as objective
 from stgem.test_repository import TestRepository
 
 class JobResult:
-    def __init__(self, description, step_results):
-        self.timestamp = datetime.datetime.now()
-        self.description = description
-        self.steps = step_results
+    def __init__(self, description, test_repository, success):
+        self.timestamp= datetime.datetime.now()
+        self.description=description
+        self.success= success
+        self.test_repository=test_repository
+        self.test_suite=None
+        self.algorithm_performance=None
+        self.model_performance = None
+        self.sut_performance=None
 
     @staticmethod
     def restore_from_file(file_name):
@@ -106,8 +110,8 @@ class Job:
         np.random.seed(SEED)
         torch.manual_seed(SEED)
 
-        # # Setup the device.
-        # self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Setup the device.
+        self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Setup loggers.
         logger_names = ["algorithm", "model"]
@@ -164,29 +168,32 @@ class Job:
             objective_funcs.append(objective_func)
 
         # Setup the objective selector.
-        objective_selector_class = load_stgem_class(self.description["objective_selector"],
-                                                    "objective_selector",
-                                                    self.description["job_parameters"]["module_path"])
+        objective_selector_class = load_stgem_class(self.description["objective_selector"], "objective_selector", self.description["job_parameters"]["module_path"])
+        objective_selector = objective_selector_class(N_objectives=N_objectives, **self.description["objective_selector_parameters"])
 
-        objective_selector = objective_selector_class(N_objectives=N_objectives,
-                                                      **self.description["objective_selector_parameters"])
+        # Process job parameters for algorithm setup.
+        # Setup the initial random tests to 20% unless the value is user-set.
+        if not "N_random_init" in self.description["job_parameters"]:
+            # if max_tests nor N_random_init are provided we use 20 tests
+            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("max_tests",100))
+
+        # Select the algorithm to be used and setup it.
+        # TODO: predefined random data loader
+        self.description["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests",0)
+        self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
+
+        # algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
+        # self.algorithm = algorithm_class(sut=asut,
+        #                                  test_repository=test_repository,
+        #                                  objective_funcs=objective_funcs,
+        #                                  objective_selector=objective_selector,
+        #                                  parameters=self.description["algorithm_parameters"],
+        #                                  logger=logger
+        #                                 )
 
         # separate steps algorithms as algorithms list object
         algorithm_classes = []
         for step in self.description["steps"]:
-            # Setup the device.
-            step["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-            # Process job parameters for algorithm setup.
-            # Setup the initial random tests to 20% unless the value is user-set.
-            if not "N_random_init" in step["step_parameters"]:
-                # if max_tests nor N_random_init are provided we use 20 tests
-                step["step_parameters"]["N_random_init"] = int(0.2 * step["step_parameters"].get("max_tests", 100))
-
-            # Select the algorithm to be used and setup it.
-            # TODO: predefined random data loader
-            step["algorithm_parameters"]["max_tests"] = step["step_parameters"].get("max_tests", 0)
-            step["algorithm_parameters"]["N_random_init"] = step["step_parameters"]["N_random_init"]
 
             algorithm_class = load_stgem_class(step["algorithm"],
                                                "algorithm",
@@ -215,8 +222,7 @@ class Job:
         common_description = dict(self.description)
         del common_description["steps"]
 
-        # save step results on loop to a list
-        step_result_obj_list = []
+        jr = JobResult(description=None, test_repository=None, success=None)
 
         # loop through steps and algorithms at the same time and perform steps
         for step, algorithm in zip(self.description["steps"], self.algorithms):
@@ -260,15 +266,13 @@ class Job:
             print("Minimum objective components:")
             print(np.min(np.asarray(outputs), axis=0))
 
-            step_result = {"success": success,
-                           "test_repository": algorithm.test_repository,
-                           "test_suite": algorithm.test_suite,
-                           "algorithm_performance": algorithm.perf,
-                           "model_performance": [algorithm.models[i].perf for i in range(algorithm.N_models)],
-                           "sut_performance": algorithm.sut.perf}
+            # step_description = {**common_description, **step}
 
-            step_result_obj_list.append(step_result)
-
-        jr = JobResult(common_description, step_result_obj_list)
+            """JobResult saving Not completed"""
+            jr = JobResult(common_description, algorithm.test_repository, success)
+            jr.algorithm_performance = algorithm.perf
+            jr.sut_performance = algorithm.sut.perf
+            jr.test_suite = algorithm.test_suite
+            jr.model_performance = [algorithm.models[i].perf for i in range(algorithm.N_models)]
 
         return jr
