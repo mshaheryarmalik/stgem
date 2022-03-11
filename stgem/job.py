@@ -121,32 +121,49 @@ class Job:
         logger = namedtuple("Logger", logger_names)(**loggers)
 
         # Setup the system under test.
+        # ---------------------------------------------------------------------
         sut_class = load_stgem_class(self.description["sut"], "sut", self.description["job_parameters"]["module_path"])
-        sut_parameters = self.description.get("sut_parameters", {})
-        if not "input_range" in sut_parameters:
-            sut_parameters["input_range"] = []
-        if not "output_range" in sut_parameters:
-            sut_parameters["output_range"] = []
-        asut = sut_class(parameters=sut_parameters)
+        asut = sut_class(parameters=self.description.get("sut_parameters", {}))
         # Setup input and output names and dimensions if necessary.
         if asut.idim is not None:
-            if "inputs" not in sut_parameters:
-                sut_parameters["inputs"] = ["i{}".format(i) for i in range(asut.idim)]
+            if asut.inputs is None:
+                asut.inputs = ["i{}".format(i) for i in range(asut.idim)]
         else:
-            if isinstance(sut_parameters["inputs"], int):
-                sut_parameters["inputs"] = ["i{}".format(i) for i in range(asut.idim)]
-            asut.idim = len(sut_parameters["inputs"])
+            # Infer the input dimension from input names or input range.
+            if asut.inputs is not None:
+                # Infer from input names.
+                if isinstance(asut.inputs, int):
+                    asut.idim = asut.inputs
+                else:
+                    asut.idim = len(asut.inputs)
+            else:
+                # Infer from input range.
+                if asut.input_range is None or len(asut.input_range) == 0:
+                    raise Exception("SUT input dimension not defined and cannot be inferred.")
+                asut.idim = len(asut.input_range)
+        # Use default input names if needed.
+        if asut.inputs is None:
+            asut.inputs = ["i{}".format(i) for i in range(asut.idim)]
 
         if asut.odim is not None:
-            if "outputs" not in sut_parameters:
-                sut_parameters["outputs"] = ["o{}".format(i) for i in range(asut.odim)]
+            if asut.outputs is None:
+                asut.outputs = ["o{}".format(i) for i in range(asut.odim)]
         else:
-            if isinstance(sut_parameters["outputs"], int):
-                sut_parameters["outputs"] = ["o{}".format(i) for i in range(asut.odim)]
-            asut.odim = len(sut_parameters["outputs"])
-
-        asut.inputs = sut_parameters["inputs"]
-        asut.outputs = sut_parameters["outputs"]
+            # Infer the input dimension from input names or input range.
+            if asut.outputs is not None:
+                # Infer from input names.
+                if isinstance(asut.outputs, int):
+                    asut.odim = asut.outputs
+                else:
+                    asut.odim = len(asut.outputs)
+            else:
+                # Infer from input range.
+                if asut.output_range is None or len(asut.output_range) == 0:
+                    raise Exception("SUT output dimension not defined and cannot be inferred.")
+                asut.odim = len(asut.output_range)
+        # Use default input names if needed.
+        if asut.outputs is None:
+            asut.outputs = ["o{}".format(i) for i in range(asut.odim)]
 
         # Fill in unspecified input and output ranges with Nones.
         asut.irange += [None for _ in range(asut.idim - len(asut.irange))]

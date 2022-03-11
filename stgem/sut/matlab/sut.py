@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
 import numpy as np
 
@@ -90,10 +89,10 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
 
         # Redo input ranges for vector inputs.
         new = []
-        for i in range(len(self.irange)):
+        for i in range(len(self.input_range)):
             for _ in range(self.pieces):
-                new.append(self.irange[i])
-        self.irange = new
+                new.append(self.input_range[i])
+        self.input_range = new
 
     def _execute_test(self, test):
         """
@@ -108,7 +107,7 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
           signals (np.ndarray): Array of shape (self.odim, M).
         """
 
-        test = self.descale(test.reshape(1, -1), self.irange).reshape(-1)
+        test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
 
         # Convert the test input to signals.
         idx = lambda t: int(t // self.time_slice) if t < self.simulation_time else self.pieces - 1
@@ -137,39 +136,40 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         timestamps, signals = self.execute_test(test)
         return test, timestamps, signals
 
-
 class Matlab(SUT):
     """
-    Implements a SUT in matlab.
+    Generic class for using Matlab m files with vector inputs.
+    """
+
+    """
+    Currently we assume the following. The model_file parameter defines a
+    Matlab function with the same name (function statement on the first line).
+    It takes as its input floats specified by self.idim and returns self.odim
+    values. If the function to be called does not fit this setting, this class
+    needs to be extended.
     """
 
     def __init__(self, parameters):
         SUT.__init__(self, parameters)
 
-        self.parameters = parameters
+        if not os.path.exists(self.model_file + ".m"):
+            raise Exception("The file '{}.m' does not exist.".format(self.model_file))
 
-        self.idim = len(self.parameters["input_range"])
-        self.odim = len(self.parameters["output_range"])
-        self.irange = np.asarray(self.parameters["input_range"])
-        self.orange = np.asarray(self.parameters["output_range"])
-
-        # start the matlab engine
+        self.MODEL_NAME = os.path.basename(self.model_file)
+        # Initialize the Matlab engine (takes a lot of time).
         self.engine = matlab.engine.start_matlab()
+        # The path for the model file.
+        self.engine.addpath(os.path.dirname(self.model_file))
+        # Save the function into an object.
+        self.matlab_func = getattr(self.engine, self.MODEL_NAME)
 
     def _execute_test(self, test):
-        test = self.descale(test.reshape(1, -1), self.irange).reshape(-1)
+        test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
 
-        # set matlab class directory, .m file
-        self.engine.addpath(os.path.dirname(self.parameters["model_file"]))
+        # TODO: Add error handling in case of wrong input situations or Matlab
+        #       errors.
+        # Matlab does not like numpy data types, so we convert to floats.
+        matlab_result = self.matlab_func(*(float(x) for x in test), nargout=self.odim)
 
-        # make the matlab function from the input strings
-        matlab_function_str = "self.engine.{}".format(os.path.basename(self.parameters["model_file"]))
-
-        # create a callable function from the given string argument, from "model_file"
-        # calls the matlab function with inputs list and get the output list
-        # parse input parameters in any given dimension
-        run_matlab_function = eval(matlab_function_str)([float(x) for x in test], nargout=1)
-
-        return np.asarray([utpt for utpt in run_matlab_function])
-
+        return np.asarray(matlab_result)
 
