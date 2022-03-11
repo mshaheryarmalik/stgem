@@ -33,37 +33,46 @@ class SUT:
             self.parameters = parameters
 
         self.perf = PerformanceData()
-        # The variables below are set by the inheriting classes.
-        #
-        # The input dimension of the SUT (number of components for
-        # vector-valued inputs and number of signals for signal-valued inputs).
-        self.idim = None
-        # The output dimension of the SUT (number of components for
-        # vector-valued outputs and number of signals for signal-valued
-        # outputs).
-        self.odim = None
-        # Names for inputs and outputs. These are set by the caller.
-        self.inputs = None
-        self.outputs = None
-        # We always assume that inputs are scaled to [-1, 1], so a range for
-        # inputs must be specified (a list of 2-tuples representing intervals).
-        # For example, self.irange = [[0, 2], [-15, 15]] would indicate range
-        # [0, 2] for the first component and [-15, 15] for the second.
-        #
-        # Outputs are not scaled to [-1, 1] by default, but this can be
-        # achieved by specifying an output range and by using the self.scale
-        # method. If the output range is unknown, the value None can be used to
-        # indicate this. For example, self.orange = [[-300, 100], None]
-        # specifies output range [-300, 100] for the first component and the
-        # range of the second component is unknown.
-        #
-        # NOTICE: While we support different ranges for each output value, they
-        # should in fact be the same. This is because most algorithms we use
-        # directly compare the objective function values in [0, 1], so they
-        # should in some sense be comparable. This is approximately achieved by
-        # having the same range and by clipping to [0, 1].
-        self.irange = []
-        self.orange = []
+        """
+        All SUTs have the below variables which concern inputs and outputs,
+        their ranges etc. We describe them here, but do not set them. They are
+        set by job.py and setting defaults for them here would complicate that
+        code. They can be set (and in some cases should be) by inheriting
+        classes.
+
+        
+        The input dimension of the SUT (number of components for vector-valued
+        inputs and number of signals for signal-valued inputs).
+        self.idim
+        The output dimension of the SUT (number of components for vector-valued
+        outputs and number of signals for signal-valued outputs).
+        self.odim
+
+        Names for inputs and outputs (strings).
+        self.inputs
+        self.outputs
+
+        We always assume that inputs are scaled to [-1, 1], so a range for
+        inputs must be specified (a list of 2-element lissts representing
+        intervals). For example, self.input_range = [[0, 2], [-15, 15]] would
+        indicate range [0, 2] for the first component and [-15, 15] for the
+        second.
+        self.input_range
+        
+        Outputs are not scaled to [-1, 1] by default, but this can be achieved
+        by specifying an output range and by using the self.scale method. If
+        the output range is unknown, the value None can be used to indicate
+        this. For example, self.output_range = [[-300, 100], None] specifies
+        output range [-300, 100] for the first component and the range of the
+        second component is unknown.
+        self.output_range
+        
+        NOTICE: While we support different ranges for each output value, they
+        should in fact be the same. This is because most algorithms we use
+        directly compare the objective function values in [0, 1], so they
+        should in some sense be comparable. This is approximately achieved by
+        having the same range and by clipping to [0, 1].
+        """
 
     def __getattr__(self, name):
         value = self.parameters.get(name)

@@ -1,8 +1,8 @@
 {
   "sut": "matlab.Matlab_Simulink",
   "sut_parameters": {"model_file": "../problems/at/Autotrans_shift",
-                     "inputs": ["throttle", "brake"],
-                     "outputs": ["speed", "rpm", "gear"],
+                     "inputs": ["THROTTLE", "BRAKE"],
+                     "outputs": ["SPEED", "RPM", "GEAR"],
                      "input_range": [[0, 100], [0, 325]],
                      "output_range": [[0, 200], [0, 7000], [0, 4]],
                      "simulation_time": 30,
@@ -10,13 +10,13 @@
                      "sampling_step": 0.2},
   "objective_func": ["FalsifySTL"],
   "objective_func_parameters": [
-    {"specification": "always[0,30] (rpm < 3000) implies (always[0,4] (speed < 35)"}
+    {"specification": "(always[0,30](RPM < 3000)) implies (always[0,4](SPEED < 35))"}
   ],
   "objective_selector": "ObjectiveSelectorMAB",
   "objective_selector_parameters": {"warm_up": 60},
   "algorithm": "ogan.OGAN",
   "algorithm_parameters":
-      {"input_dimension": 6,
+      {"input_dimension": 12,
        "use_predefined_random_data": false,
        "predefined_random_data": {"test_inputs": null, "test_outputs": null},
        "fitness_coef": 0.95,
@@ -38,5 +38,5 @@
        "discriminator_mlm": "DiscriminatorNetwork",
        "discriminator_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "neurons": 128, "discriminator_output_activation": "sigmoid"}
       },
-  "job_parameters": {"N_tests": 300, "N_random_init": 50, "mode": "stop_at_first_falsification"}
+  "job_parameters": {"max_tests": 300, "N_random_init": 50, "mode": "stop_at_first_objective"}
 }

@@ -38,6 +38,9 @@ class Matlab_Simulink_Signal(SUT):
         # TODO: Should this be done for models other than AT?
         self.model_opts = self.engine.simset(model_opts, "SaveFormat", "Array")
 
+    def __del__(self):
+        self.engine.quit()
+
     def _execute_test_simulink(self, timestamps, signals):
         """
         Execute a test with the given input signals.
@@ -162,6 +165,9 @@ class Matlab(SUT):
         self.engine.addpath(os.path.dirname(self.model_file))
         # Save the function into an object.
         self.matlab_func = getattr(self.engine, self.MODEL_NAME)
+
+    def __del__(self):
+        self.engine.quit()
 
     def _execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)

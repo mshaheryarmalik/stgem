@@ -10,7 +10,7 @@ class DummySUT(SUT):
         super().__init__()
         self.odim = odim
         self.outputs = outputs
-        self.orange = [None for _ in range(self.odim)]
+        self.output_range = [None for _ in range(self.odim)]
 
 class TestSTL(unittest.TestCase):
 

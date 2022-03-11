@@ -24,14 +24,12 @@ class MO3D(SUT):
     def __init__(self,parameters):
         SUT.__init__(self,parameters)
 
-        self.idim = 3
-        self.odim = 3
-        self.irange = [[-15, 15], [-15, 15], [-15, 15]]
-        self.orange = [[0, 350], [0, 350], [0, 350]]
+        self.input_range = [[-15, 15], [-15, 15], [-15, 15]]
+        self.output_range = [[0, 350], [0, 350], [0, 350]]
 
     def _execute_test(self, test):
         #print("unscaled",test)
-        test = self.descale(test.reshape(1, -1), self.irange).reshape(-1)
+        test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
         #print("descaled", test)
 
         x1 = test[0]
@@ -43,5 +41,4 @@ class MO3D(SUT):
         h3 = (x1-7)**2+(x2-7)**2+(x3-7)**2 - (math.cos((x1-7)/2.75) + math.cos((x2-7)/2.75) + math.cos((x3-7)/2.75))
 
         return np.asarray([h1, h2, h3])
-
 
