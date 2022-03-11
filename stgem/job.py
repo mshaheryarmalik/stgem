@@ -86,7 +86,7 @@ class Job:
                 dict_set(self.description, key, dict_access(self.description, item[5:]))
 
         # Fill in empty values for certain parameters if missing.
-        for name in ["sut_parameters", "objective_selector_parameters","algorithm_parameters"]:
+        for name in ["job_parameters","steps","sut_parameters", "objective_selector_parameters","algorithm_parameters"]:
             if not name in self.description:
                 self.description[name] = {}
         if "objective_func_parameters" not in self.description:
