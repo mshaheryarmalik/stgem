@@ -177,10 +177,6 @@ class Job:
             # if max_tests nor N_random_init are provided we use 20 tests
             self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("max_tests",100))
 
-        # Select the algorithm to be used and setup it.
-        # TODO: predefined random data loader
-        self.description["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests",0)
-        self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
 
         # algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
         # self.algorithm = algorithm_class(sut=asut,
@@ -198,6 +194,12 @@ class Job:
             algorithm_class = load_stgem_class(step["algorithm"],
                                                "algorithm",
                                                self.description["job_parameters"]["module_path"])
+
+            # Select the algorithm to be used and setup it.
+            step["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests",
+                                                                                                           0)
+            step["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"][
+                "N_random_init"]
 
             self.algorithm = algorithm_class(sut=asut,
                                              test_repository=test_repository,
