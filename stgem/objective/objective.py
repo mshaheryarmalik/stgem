@@ -17,8 +17,6 @@ class Objective:
     def __call__(self, output):
         return output
 
-
-
 class Minimize(Objective):
     """
     Objective function for a SUT with fixed-length vector outputs which selects
@@ -43,9 +41,9 @@ class Minimize(Objective):
 
         if self.invert:
             output = output*(-1)
-            ranges = np.asarray([[-I[1], -I[0]] for I in self.sut.orange[idx]])
+            ranges = np.asarray([[-I[1], -I[0]] for I in self.sut.output_range[idx]])
         else:
-            ranges = [self.sut.orange[i] for i in idx]
+            ranges = [self.sut.output_range[i] for i in idx]
 
         if self.scale:
             output = self.sut.scale(output[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
@@ -108,7 +106,7 @@ class FalsifySTL(Objective):
         spec = self.spec_discrete
 
         # Scale the input.
-        output = self.sut.scale(np.asarray(output).reshape(1, -1), self.sut.orange, target_A=0, target_B=1).reshape(-1)
+        output = self.sut.scale(np.asarray(output).reshape(1, -1), self.sut.output_range, target_A=0, target_B=1).reshape(-1)
 
         spec.reset()
 
@@ -142,7 +140,7 @@ class FalsifySTL(Objective):
             raise Exception("The first timestamp should be 0.")
 
         # Scale the signals.
-        signals = [self.sut.scale_signal(signals[i], self.sut.orange[i], target_A=0, target_B=1) for i in range(len(signals))]
+        signals = [self.sut.scale_signal(signals[i], self.sut.output_range[i], target_A=0, target_B=1) for i in range(len(signals))]
 
         spec.reset()
 

@@ -121,36 +121,63 @@ class Job:
         logger = namedtuple("Logger", logger_names)(**loggers)
 
         # Setup the system under test.
+        # ---------------------------------------------------------------------
         sut_class = load_stgem_class(self.description["sut"], "sut", self.description["job_parameters"]["module_path"])
-        sut_parameters = self.description.get("sut_parameters", {})
-        if not "input_range" in sut_parameters:
-            sut_parameters["input_range"] = []
-        if not "output_range" in sut_parameters:
-            sut_parameters["output_range"] = []
-        asut = sut_class(parameters=sut_parameters)
-        # Setup input and output names and dimensions if necessary.
-        if asut.idim is not None:
-            if "inputs" not in sut_parameters:
-                sut_parameters["inputs"] = ["i{}".format(i) for i in range(asut.idim)]
+        asut = sut_class(parameters=self.description.get("sut_parameters", {}))
+        # Setup input and output names and dimensions if necessary. The values
+        # in the job description take precendence.
+        if "inputs" in asut.parameters:
+            asut.inputs = asut.parameters["inputs"]
+        if "input_range" in asut.parameters:
+            asut.input_range = asut.parameters["input_range"]
+        if hasattr(asut, "idim"):
+            # idim set by SUT, check if input names are also set.
+            if not hasattr(asut, "inputs"):
+                # Set input names to default.
+                asut.inputs = ["i{}".format(i) for i in range(asut.idim)]
         else:
-            if isinstance(sut_parameters["inputs"], int):
-                sut_parameters["inputs"] = ["i{}".format(i) for i in range(asut.idim)]
-            asut.idim = len(sut_parameters["inputs"])
+            # idim not set by SUT, so we need to figure it out from parameters.
+            if hasattr(asut, "inputs"):
+                # Input names defined, so infer from it.
+                asut.idim = len(asut.inputs)
+            else:
+                # Input names not defined. The only option is to infer from
+                # input ranges. Otherwise we do not know what to do.
+                if not hasattr(asut, "input_range"):
+                    raise Exception("SUT input dimension not defined and cannot be inferred.")
+                asut.idim = len(asut.input_range)
+                asut.inputs = ["i{}".format(i) for i in range(asut.idim)]
 
-        if asut.odim is not None:
-            if "outputs" not in sut_parameters:
-                sut_parameters["outputs"] = ["o{}".format(i) for i in range(asut.odim)]
+        if "outputs" in asut.parameters:
+            asut.outputs = asut.parameters["outputs"]
+        if "output_range" in asut.parameters:
+            asut.output_range = asut.parameters["output_range"]
+        if hasattr(asut, "odim"):
+            # odim set by SUT, check if output names are also set.
+            if not hasattr(asut, "outputs"):
+                # Set output names to default.
+                asut.outputs = ["o{}".format(i) for i in range(asut.odim)]
         else:
-            if isinstance(sut_parameters["outputs"], int):
-                sut_parameters["outputs"] = ["o{}".format(i) for i in range(asut.odim)]
-            asut.odim = len(sut_parameters["outputs"])
+            # odim not set by SUT, so we need to figure it out from parameters.
+            if hasattr(asut, "outputs"):
+                # Output names defined, so infer from it.
+                asut.odim = len(asut.outputs)
+            else:
+                # Output names not defined. The only option is to infer from
+                # output ranges. Otherwise we do not know what to do.
+                if not hasattr(asut, "output_range"):
+                    raise Exception("SUT output dimension not defined and cannot be inferred.")
+                asut.odim = len(asut.output_range)
+                asut.outputs = ["o{}".format(i) for i in range(asut.odim)]
 
-        asut.inputs = sut_parameters["inputs"]
-        asut.outputs = sut_parameters["outputs"]
-
-        # Fill in unspecified input and output ranges with Nones.
-        asut.irange += [None for _ in range(asut.idim - len(asut.irange))]
-        asut.orange += [None for _ in range(asut.odim - len(asut.orange))]
+        # Setup input and output ranges and fill unspecified input and output
+        # ranges with Nones.
+        if not hasattr(asut, "input_range"):
+            asut.input_range = []
+        asut.input_range += [None for _ in range(asut.idim - len(asut.input_range))]
+        if not hasattr(asut, "output_range"):
+            asut.output_range = []
+        asut.output_range += [None for _ in range(asut.odim - len(asut.output_range))]
         # Run secondary initializer.
         asut.initialize()
 
