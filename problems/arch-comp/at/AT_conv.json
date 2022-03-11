@@ -1,6 +1,6 @@
 {
 "sut": "matlab.Matlab_Simulink",
-"sut_parameters": {"model_file": "problems/at/Autotrans_shift",
+"sut_parameters": {"model_file": "problems/arch-comp/at/Autotrans_shift",
                    "inputs": ["throttle", "brake"],
                    "outputs": ["speed", "rpm", "gear"],
                    "input_range": [[0, 100], [0, 325]],
@@ -13,8 +13,7 @@
 "objective_selector_parameters": {"warm_up": 30},
 "algorithm": "ogan.OGAN",
 "algorithm_parameters":
-    {"input_dimension": 12,
-     "random_search_min_distance": 0.8,
+    {"random_search_min_distance": 0.8,
      "use_predefined_random_data": false,
      "predefined_random_data": {"test_inputs": null, "test_outputs": null},
      "fitness_coef": 0.95,

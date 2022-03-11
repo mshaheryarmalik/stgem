@@ -65,7 +65,10 @@ class Job:
         def dict_access(d, s):
             current = d
             for k in s.split("."):
-                current = current[k]
+                try:
+                    current = current[k]
+                except KeyError as E:
+                    raise Exception("Error accessing key '{}' when copying job description values.".format(E.args[0]))
             return current
 
         def dict_set(d, s, v):
@@ -75,14 +78,18 @@ class Job:
                 current = current[k]
             current[pcs[-1]] = v
 
-        # Implement the copying mechanism of values.
-        keys = list(self.description.keys())
-        for key in keys:
-            item = dict_access(self.description, key)
-            if isinstance(item, dict):
-                keys += [key + "." + k for k in item.keys()]
-            elif isinstance(item, str) and item.startswith("copy:"):
-                dict_set(self.description, key, dict_access(self.description, item[5:]))
+        def perform_copy(d, keys):
+            keys = keys.copy()
+            for key in keys:
+                item = dict_access(d, key)
+                if isinstance(item, dict):
+                    keys += [key + "." + k for k in item.keys()]
+                elif isinstance(item, str) and item.startswith("copy:"):
+                    dict_set(d, key, dict_access(d, item[5:]))
+
+        # Perform initial copying of values for SUT and its parameters.
+        copy_keys = ["sut", "sut_parameters"]
+        perform_copy(self.description, copy_keys)
 
         # Fill in empty values for certain parameters if missing.
         for name in ["sut_parameters", "objective_selector_parameters","algorithm_parameters"]:
@@ -96,6 +103,7 @@ class Job:
             self.description["job_parameters"]["module_path"] = None
 
         # Setup seed.
+        # ---------------------------------------------------------------------
         # We use a random seed unless it is specified.
         # Notice that making Pytorch deterministic makes it a lot slower.
         if "seed" in self.description["job_parameters"] and self.description["job_parameters"]["seed"] is not None:
@@ -110,9 +118,11 @@ class Job:
         torch.manual_seed(SEED)
 
         # Setup the device.
+        # ---------------------------------------------------------------------
         self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Setup loggers.
+        # ---------------------------------------------------------------------
         logger_names = ["algorithm", "model"]
         logging.basicConfig(level=logging.DEBUG, format="%(name)s: %(message)s")
         loggers = {x: logging.getLogger(x) for x in ["algorithm", "model"]}
@@ -181,10 +191,21 @@ class Job:
         # Run secondary initializer.
         asut.initialize()
 
+        # Copy SUT input dimension to algorithm input_dimension unless it is
+        # already defined.
+        if not "input_dimension" in self.description["algorithm_parameters"]:
+            self.description["algorithm_parameters"]["input_dimension"] = asut.idim
+
         # Setup the test repository.
+        # ---------------------------------------------------------------------
         test_repository = TestRepository()
 
         # Setup the objective functions for optimization.
+        # ---------------------------------------------------------------------
+        # Perform the next copying.
+        copy_keys += ["objective_func", "objective_func_parameters"]
+        perform_copy(self.description, copy_keys)
+
         N_objectives = 0
         objective_funcs = []
         for n, s in enumerate(self.description["objective_func"]):
@@ -194,18 +215,26 @@ class Job:
             objective_funcs.append(objective_func)
 
         # Setup the objective selector.
+        # ---------------------------------------------------------------------
+        copy_keys += ["objective_selector", "objective_selector_parameters"]
+        perform_copy(self.description, copy_keys)
+
         objective_selector_class = load_stgem_class(self.description["objective_selector"], "objective_selector", self.description["job_parameters"]["module_path"])
         objective_selector = objective_selector_class(N_objectives=N_objectives, **self.description["objective_selector_parameters"])
 
         # Process job parameters for algorithm setup.
+        # ---------------------------------------------------------------------
         # Setup the initial random tests to 20% unless the value is user-set.
         if not "N_random_init" in self.description["job_parameters"]:
             # if max_tests nor N_random_init are provided we use 20 tests
             self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("max_tests",100))
 
         # Select the algorithm to be used and setup it.
-        # TODO: predefined random data loader
-        self.description["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests",0)
+        # ---------------------------------------------------------------------
+        copy_keys += ["algorithm", "algorithm_parameters"]
+        perform_copy(self.description, copy_keys)
+
+        self.description["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests", 0)
         self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
         algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
         self.algorithm = algorithm_class(sut=asut,

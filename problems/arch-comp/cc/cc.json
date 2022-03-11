@@ -1,0 +1,42 @@
+{
+"sut": "matlab.Matlab_Simulink",
+"sut_parameters": {"model_file": "problems/arch-comp/cc/cars",
+                   "inputs": ["THROTTLE", "BRAKE"],
+                   "outputs": ["Y1", "Y2", "Y3", "Y4", "Y5"],
+                   "input_range": [[0, 100], [0, 100]],
+                   "simulation_time": 100,
+                   "foo": "copy:sut",
+                   "time_slice": 5,
+                   "sampling_step": 0.2},
+"objective_func": ["FalsifySTL"],
+"objective_func_parameters": [
+  {"specification": "(always[0,100](Y5 - Y4 <= 40))"}
+],
+"objective_selector": "ObjectiveSelectorMAB",
+"objective_selector_parameters": {"warm_up": 30},
+"algorithm": "ogan.OGAN",
+"algorithm_parameters":
+    {"random_search_min_distance": 0.8,
+     "use_predefined_random_data": false,
+     "predefined_random_data": {"test_inputs": null, "test_outputs": null},
+     "fitness_coef": 0.95,
+     "train_delay": 1,
+     "N_candidate_tests": 1,
+     "ogan_model": "model.OGAN_Model",
+     "ogan_model_parameters": {"optimizer": "Adam",
+                               "discriminator_lr": 0.005,
+                               "discriminator_betas": [0.9, 0.999],
+                               "generator_lr": 0.001,
+                               "generator_betas": [0.9, 0.999],
+                               "noise_batch_size": 512,
+                               "generator_loss": "MSE",
+                               "discriminator_loss": "MSE"},
+     "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
+     "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32},
+     "generator_mlm": "GeneratorNetwork",
+     "generator_mlm_parameters": {"noise_dim": 20, "output_shape": "copy:algorithm_parameters.input_dimension", "neurons": 64},
+     "discriminator_mlm": "DiscriminatorNetwork",
+     "discriminator_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "neurons": 64, "discriminator_output_activation": "sigmoid"}
+    },
+"job_parameters": {"max_tests": 80, "N_random_init": 20, "mode": "stop_at_first_objective"}
+}
