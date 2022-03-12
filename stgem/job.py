@@ -14,12 +14,23 @@ import stgem.algorithm as algorithm
 import stgem.objective as objective
 from stgem.test_repository import TestRepository
 
-class JobResult:
-    def __init__(self, description, step_results):
+class StepResult:
+    def __init__(self, description, test_suite, success):
         self.timestamp = datetime.datetime.now()
         self.description = description
-        self.steps = step_results
+        self.test_suite= test_suite
+        self.success = success
+        self.algorithm_performance = None
+        self.model_performance = None
+        self.test_suite = None
 
+class JobResult:
+    def __init__(self, description, test_repository, step_results):
+        self.timestamp = datetime.datetime.now()
+        self.description = description
+        self.step_results = step_results
+        self.test_repository = test_repository
+        self.sut_performance = None
 
     @staticmethod
     def restore_from_file(file_name):
@@ -149,7 +160,7 @@ class Job:
         asut.initialize()
 
         # Setup the test repository.
-        test_repository = TestRepository()
+        self.test_repository = TestRepository()
 
         # Setup the objective functions for optimization.
         N_objectives = 0
@@ -190,7 +201,7 @@ class Job:
             step["algorithm_parameters"]["N_random_init"] = step["step_parameters"]["N_random_init"]
 
             self.algorithm = algorithm_class(sut=asut,
-                                             test_repository=test_repository,
+                                             test_repository=self.test_repository,
                                              objective_funcs=objective_funcs,
                                              objective_selector=objective_selector,
                                              parameters=step["algorithm_parameters"],
@@ -207,10 +218,8 @@ class Job:
         return self.run()
 
     def run(self) -> JobResult:
-        # declare common parameters
-        common_description = dict(self.description)
-        del common_description["steps"]
 
+        success = False
         # save step results on loop to a list
         step_result_obj_list = []
 
@@ -224,9 +233,7 @@ class Job:
             max_tests = step["step_parameters"].get("max_tests", 0)
             if max_time == 0 and max_tests == 0:
                 raise Exception(
-                    "Job description does not specify neither a maximum time nor a maximum number tests")
-
-            success = False
+                    "Step description does not specify neither a maximum time nor a maximum number tests")
 
             generator = algorithm.generate_test()
             outputs = []
@@ -251,21 +258,25 @@ class Job:
                 i += 1
                 elapsed_time = time.perf_counter() - start_time
 
-            if not success:
-                print("Could not fulfill objective within the given budget.")
 
             print("Minimum objective components:")
             print(np.min(np.asarray(outputs), axis=0))
 
-            step_result = {"success": success,
-                           "test_repository": algorithm.test_repository,
-                           "test_suite": algorithm.test_suite,
-                           "algorithm_performance": algorithm.perf,
-                           "model_performance": [algorithm.models[i].perf for i in range(algorithm.N_models)],
-                           "sut_performance": algorithm.sut.perf}
+            step_result = StepResult(step,algorithm.test_suite, success)
+            step_result.algorithm_performance= algorithm.perf
+            step_result.model_performance = [ algorithm.models[i].perf for i in range(algorithm.N_models)]
 
             step_result_obj_list.append(step_result)
 
-        jr = JobResult(common_description, step_result_obj_list)
+            if not success:
+                print("Could not fulfill objective within the given budget.")
+
+            if success and mode == "stop_at_first_objective":
+                break
+
+        jr = JobResult(self.description, self.test_repository, step_result_obj_list)
+
+        if len(step_result_obj_list)>0:
+            jr.sut_performance= algorithm.sut.perf
 
         return jr
