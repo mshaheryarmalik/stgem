@@ -90,5 +90,3 @@ def start(files, n, seed, resume, multiprocess):
 
     # 3. clean up
     os.remove(resume_filename)
-
-

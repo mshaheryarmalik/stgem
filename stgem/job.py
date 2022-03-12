@@ -1,5 +1,6 @@
 
 import os, datetime, logging, random
+import sys
 from collections import namedtuple
 import json
 import datetime
@@ -13,16 +14,23 @@ import stgem.algorithm as algorithm
 import stgem.objective as objective
 from stgem.test_repository import TestRepository
 
-class JobResult:
-    def __init__(self, description, test_repository, success):
-        self.timestamp= datetime.datetime.now()
-        self.description=description
-        self.success= success
-        self.test_repository=test_repository
-        self.test_suite=None
-        self.algorithm_performance=None
+class StepResult:
+    def __init__(self, description, test_suite, success):
+        self.timestamp = datetime.datetime.now()
+        self.description = description
+        self.test_suite= test_suite
+        self.success = success
+        self.algorithm_performance = None
         self.model_performance = None
-        self.sut_performance=None
+        self.test_suite = None
+
+class JobResult:
+    def __init__(self, description, test_repository, step_results):
+        self.timestamp = datetime.datetime.now()
+        self.description = description
+        self.step_results = step_results
+        self.test_repository = test_repository
+        self.sut_performance = None
 
     @staticmethod
     def restore_from_file(file_name):
@@ -37,6 +45,35 @@ class JobResult:
             pickle.dump(self,file)
         # then we rename it to its final name
         os.replace( temp_file_name, file_name)
+
+
+def fix_legacy_job_description(d):
+    if "steps" not in d and "algorithm" not in d:
+        raise Exception("Job description must have a 'steps' or an 'algorithm' entry")
+    new_step={}
+
+    new_step["algorithm"]=d["algorithm"]
+    del d["algorithm"]
+
+    if "algorithm_parameters" in d:
+        new_step["algorithm_parameters"] = d["algorithm_parameters"]
+        del d["algorithm_parameters"]
+
+    if "job_parameters" in d:
+        new_step["step_parameters"]=d["job_parameters"]
+
+    d["steps"]=[ new_step]
+
+
+    print("The provided job description uses a legacy format")
+    print("Condiser updating it to the new multi step format")
+    try:
+        new_description= json.dumps(d, indent=3)
+        print(new_description)
+    except TypeError:
+        print("The job description contains references to python functions. It cannot be represented as json")
+
+    return d
 
 class Job:
     def __init__(self, description=None):
@@ -84,6 +121,9 @@ class Job:
             elif isinstance(item, str) and item.startswith("copy:"):
                 dict_set(self.description, key, dict_access(self.description, item[5:]))
 
+        if not "steps" in self.description:
+            self.description=fix_legacy_job_description(self.description)
+
         # Fill in empty values for certain parameters if missing.
         for name in ["sut_parameters", "objective_selector_parameters","algorithm_parameters"]:
             if not name in self.description:
@@ -108,9 +148,6 @@ class Job:
         random.seed(SEED)
         np.random.seed(SEED)
         torch.manual_seed(SEED)
-
-        # Setup the device.
-        self.description["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Setup loggers.
         logger_names = ["algorithm", "model"]
@@ -182,7 +219,7 @@ class Job:
         asut.initialize()
 
         # Setup the test repository.
-        test_repository = TestRepository()
+        self.test_repository = TestRepository()
 
         # Setup the objective functions for optimization.
         N_objectives = 0
@@ -197,24 +234,44 @@ class Job:
         objective_selector_class = load_stgem_class(self.description["objective_selector"], "objective_selector", self.description["job_parameters"]["module_path"])
         objective_selector = objective_selector_class(N_objectives=N_objectives, **self.description["objective_selector_parameters"])
 
-        # Process job parameters for algorithm setup.
-        # Setup the initial random tests to 20% unless the value is user-set.
-        if not "N_random_init" in self.description["job_parameters"]:
-            # if max_tests nor N_random_init are provided we use 20 tests
-            self.description["job_parameters"]["N_random_init"] = int(0.2 * self.description["job_parameters"].get("max_tests",100))
+        # separate steps algorithms as algorithms list object
+        algorithm_classes = []
+        for step in self.description["steps"]:
+            if "algorithm_parameters" not in step:
+                step["algorithm_parameters"]={}
 
-        # Select the algorithm to be used and setup it.
-        # TODO: predefined random data loader
-        self.description["algorithm_parameters"]["max_tests"] = self.description["job_parameters"].get("max_tests",0)
-        self.description["algorithm_parameters"]["N_random_init"] = self.description["job_parameters"]["N_random_init"]
-        algorithm_class = load_stgem_class(self.description["algorithm"], "algorithm", self.description["job_parameters"]["module_path"])
-        self.algorithm = algorithm_class(sut=asut,
-                                         test_repository=test_repository,
-                                         objective_funcs=objective_funcs,
-                                         objective_selector=objective_selector,
-                                         parameters=self.description["algorithm_parameters"],
-                                         logger=logger
-                                        )
+            # Setup the device.
+            step["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+            # Process job parameters for algorithm setup.
+            # Setup the initial random tests to 20% unless the value is user-set.
+            if not "N_random_init" in step["step_parameters"]:
+                # if max_tests nor N_random_init are provided we use 20 tests
+                step["step_parameters"]["N_random_init"] = int(0.2 * step["step_parameters"].get("max_tests", 100))
+
+            # Select the algorithm to be used and setup it.
+            # TODO: predefined random data loader
+            step["algorithm_parameters"]["max_tests"] = step["step_parameters"].get("max_tests", 0)
+            step["algorithm_parameters"]["N_random_init"] = step["step_parameters"]["N_random_init"]
+
+            algorithm_class = load_stgem_class(step["algorithm"],
+                                               "algorithm",
+                                               self.description["job_parameters"]["module_path"])
+
+            # Select the algorithm to be used and setup it.
+            step["algorithm_parameters"]["max_tests"] = step["step_parameters"].get("max_tests", 0)
+            step["algorithm_parameters"]["N_random_init"] = step["step_parameters"]["N_random_init"]
+
+            self.algorithm = algorithm_class(sut=asut,
+                                             test_repository=self.test_repository,
+                                             objective_funcs=objective_funcs,
+                                             objective_selector=objective_selector,
+                                             parameters=step["algorithm_parameters"],
+                                             logger=logger)
+
+            algorithm_classes.append(self.algorithm)
+
+        self.algorithms = algorithm_classes
 
         return self
 
@@ -224,51 +281,64 @@ class Job:
 
     def run(self) -> JobResult:
 
-        mode = "exhaust_budget" if "mode" not in self.description["job_parameters"] else self.description["job_parameters"]["mode"]
-        if mode not in ["exhaust_budget", "stop_at_first_objective"]:
-            raise Exception("Unknown test generation mode '{}'.".format(mode))
+        success = False
+        # save step results on loop to a list
+        step_result_obj_list = []
 
-        max_time = self.description["job_parameters"].get("max_time", 0)
-        max_tests = self.description["job_parameters"].get("max_tests", 0)
-        if max_time == 0 and max_tests == 0:
-            raise Exception("Job description does not specify neither a maximum time nor a maximum number tests")
+        # loop through steps and algorithms at the same time and perform steps
+        for step, algorithm in zip(self.description["steps"], self.algorithms):
+            mode = "exhaust_budget" if "mode" not in step["step_parameters"] else step["step_parameters"]["mode"]
+            if mode not in ["exhaust_budget", "stop_at_first_objective"]:
+                raise Exception("Unknown test generation mode '{}'.".format(mode))
 
-        success=False
+            max_time = step["step_parameters"].get("max_time", 0)
+            max_tests = step["step_parameters"].get("max_tests", 0)
+            if max_time == 0 and max_tests == 0:
+                raise Exception(
+                    "Step description does not specify neither a maximum time nor a maximum number tests")
 
-        generator = self.algorithm.generate_test()
-        outputs = []
+            generator = algorithm.generate_test()
+            outputs = []
 
-        i=0
-        start_time=time.perf_counter()
-        elapsed_time=0
+            i = 0
+            start_time = time.perf_counter()
+            elapsed_time = 0
 
-        while (max_tests==0 or i < max_tests) and (max_time==0 or elapsed_time< max_time):
+            while (max_tests == 0 or i < max_tests) and (max_time == 0 or elapsed_time < max_time):
 
-            idx = next(generator)
-            _, output = self.algorithm.test_repository.get(idx)
-            outputs.append(output)
+                idx = next(generator)
+                _, output = algorithm.test_repository.get(idx)
+                outputs.append(output)
 
-            if not success and np.min(output) == 0:
-                print("First success at test {}.".format(i + 1))
-                success = True
+                if not success and np.min(output) == 0:
+                    print("First success at test {}.".format(i + 1))
+                    success = True
+
+                if success and mode == "stop_at_first_objective":
+                    break
+
+                i += 1
+                elapsed_time = time.perf_counter() - start_time
+
+
+            print("Minimum objective components:")
+            print(np.min(np.asarray(outputs), axis=0))
+
+            step_result = StepResult(step,algorithm.test_suite, success)
+            step_result.algorithm_performance= algorithm.perf
+            step_result.model_performance = [ algorithm.models[i].perf for i in range(algorithm.N_models)]
+
+            step_result_obj_list.append(step_result)
+
+            if not success:
+                print("Could not fulfill objective within the given budget.")
 
             if success and mode == "stop_at_first_objective":
                 break
 
-            i=i+1
-            elapsed_time=time.perf_counter()-start_time
+        jr = JobResult(self.description, self.test_repository, step_result_obj_list)
 
-        if not success:
-            print("Could not fulfill objective within the given budget.")
-
-        print("Minimum objective components:")
-        print(np.min(np.asarray(outputs), axis=0))
-
-        jr=JobResult(self.description,self.algorithm.test_repository,success)
-        jr.algorithm_performance=self.algorithm.perf
-        jr.sut_performance=self.algorithm.sut.perf
-        jr.test_suite = self.algorithm.test_suite
-        jr.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
+        if len(step_result_obj_list)>0:
+            jr.sut_performance= algorithm.sut.perf
 
         return jr
-
