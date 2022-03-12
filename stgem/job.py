@@ -71,7 +71,7 @@ def fix_legacy_job_description(d):
         new_description= json.dumps(d, indent=3)
         print(new_description)
     except TypeError:
-        print("Your job description contains references to python functions. It cannot be updated automatically")
+        print("The job description contains references to python functions. It cannot be represented as json")
 
     return d
 
