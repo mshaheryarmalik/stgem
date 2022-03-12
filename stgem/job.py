@@ -46,6 +46,35 @@ class JobResult:
         # then we rename it to its final name
         os.replace( temp_file_name, file_name)
 
+
+def fix_legacy_job_description(d):
+    if "steps" not in d and "algorithm" not in d:
+        raise Exception("Job description must have a 'steps' or an 'algorithm' entry")
+    new_step={}
+
+    new_step["algorithm"]=d["algorithm"]
+    del d["algorithm"]
+
+    if "algorithm_parameters" in d:
+        new_step["algorithm_parameters"] = d["algorithm_parameters"]
+        del d["algorithm_parameters"]
+
+    if "job_parameters" in d:
+        new_step["step_parameters"]=d["job_parameters"]
+
+    d["steps"]=[ new_step]
+
+
+    print("The provided job description uses a legacy format")
+    print("Condiser updating it to the new multi step format")
+    try:
+        new_description= json.dumps(d, indent=3)
+        print(new_description)
+    except TypeError:
+        print("Your job description contains references to python functions. It cannot be updated automatically")
+
+    return d
+
 class Job:
     def __init__(self, description=None):
         if description is None:
@@ -91,6 +120,9 @@ class Job:
                 keys += [key + "." + k for k in item.keys()]
             elif isinstance(item, str) and item.startswith("copy:"):
                 dict_set(self.description, key, dict_access(self.description, item[5:]))
+
+        if not "steps" in self.description:
+            self.description=fix_legacy_job_description(self.description)
 
         # Fill in empty values for certain parameters if missing.
         for name in ["sut_parameters", "objective_selector_parameters","algorithm_parameters"]:
@@ -178,6 +210,9 @@ class Job:
         # separate steps algorithms as algorithms list object
         algorithm_classes = []
         for step in self.description["steps"]:
+            if "algorithm_parameters" not in step:
+                step["algorithm_parameters"]={}
+
             # Setup the device.
             step["algorithm_parameters"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
