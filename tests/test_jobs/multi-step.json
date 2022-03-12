@@ -48,7 +48,7 @@
      "discriminator_mlm": "DiscriminatorNetwork",
      "discriminator_mlm_parameters": {"input_shape": 3, "neurons": 64, "discriminator_output_activation": "sigmoid"}
     },
-"step_parameters": {"max_tests": 200, "N_random_init": 20, "mode": "stop_at_first_objective"}
+"step_parameters": {"max_tests": 100, "N_random_init": 20, "mode": "stop_at_first_objective"}
   }
 ]
 }
