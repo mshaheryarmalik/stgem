@@ -7,7 +7,8 @@ class MyTestCase(unittest.TestCase):
         result = Job().setup_from_file("test_jobs/random.json").run()
         result.dump_to_file("temp.pickle")
         result2= JobResult.restore_from_file("temp.pickle")
-        print(result2.success)
+        for s in result2.step_results:
+            print(s.success)
 
 
 if __name__ == '__main__':
