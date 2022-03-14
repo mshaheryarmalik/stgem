@@ -79,7 +79,7 @@ class Job:
             current[pcs[-1]] = v
 
         def perform_copy(d, keys):
-            keys = keys.copy()
+            keys = [k for k in keys if k in d]
             for key in keys:
                 item = dict_access(d, key)
                 if isinstance(item, dict):
@@ -184,9 +184,13 @@ class Job:
         # ranges with Nones.
         if not hasattr(asut, "input_range"):
             asut.input_range = []
+        if not isinstance(asut.input_range, list):
+            raise Exception("The input_range attribute of the SUT must be a Python list.")
         asut.input_range += [None for _ in range(asut.idim - len(asut.input_range))]
         if not hasattr(asut, "output_range"):
             asut.output_range = []
+        if not isinstance(asut.output_range, list):
+            raise Exception("The output_range attribute of the SUT must be a Python list.")
         asut.output_range += [None for _ in range(asut.odim - len(asut.output_range))]
         # Run secondary initializer.
         asut.initialize()

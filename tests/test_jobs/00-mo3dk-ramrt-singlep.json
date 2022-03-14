@@ -12,7 +12,6 @@
 
   "algorithm": "ogan.OGAN",
   "algorithm_parameters": {
-    "input_dimension": 3,
     "use_predefined_random_data": false,
     "predefined_random_data": {
       "test_inputs": null,

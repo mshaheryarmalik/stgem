@@ -6,8 +6,7 @@
 "objective_selector_parameters": {"warm_up": 30},
 "algorithm": "ogan.OGAN",
 "algorithm_parameters":
-    {"input_dimension": 3,
-     "random_search_min_distance": 0.8,
+    {"random_search_min_distance": 0.8,
      "use_predefined_random_data": false,
      "predefined_random_data": {"test_inputs": null, "test_outputs": null},
      "fitness_coef": 0.95,

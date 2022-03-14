@@ -41,7 +41,8 @@ class Matlab_Simulink_Signal(SUT):
         self.variable_step = self.model_opts["Solver"].lower().startswith("variablestep")
 
     def __del__(self):
-        self.engine.quit()
+        if hasattr(self, "engine"):
+            self.engine.quit()
 
     def _execute_test_simulink(self, timestamps, signals):
         """

@@ -21,8 +21,8 @@ class OdroidSUT(SUT):
 
         self.idim = 6
         self.odim = 3
-        self.input_range = np.asarray([(-1, 1) for _ in range(self.idim)])
-        self.output_range = np.asarray([(0, 1) for _ in range(self.odim)])
+        self.input_range = [[-1, 1] for _ in range(self.idim)]
+        self.output_range = [[0, 1] for _ in range(self.odim)]
 
         self.ndimensions = None
         self.dataX = None
