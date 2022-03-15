@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import importlib
+
 import numpy as np
 
 from stgem.algorithm import Algorithm
@@ -15,7 +17,10 @@ class Random(Algorithm):
         super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
 
         self.N_models = sum(f.dim for f in self.objective_funcs)
-        self.models = [Random_Model(self.sut, self.parameters, self.logger) for _ in range(self.N_models)]
+        module = importlib.import_module("stgem.algorithm.random.model")
+        model = self.model if "model" in self.parameters else "Random_Model"
+        self.model_class = getattr(module, model)
+        self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=logger) for _ in range(self.N_models)]
 
     def generate_test(self):
         self.perf.timer_start("total")
@@ -70,3 +75,4 @@ class Random(Algorithm):
             self.perf.timers_hold()
             yield idx
             self.perf.timers_resume()
+

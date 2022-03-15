@@ -13,6 +13,10 @@
 "steps": ["step_random"],
 "step_random": {
   "step_parameters": {"max_tests": 300, "mode": "stop_at_first_objective"},
-  "algorithm": "random.Random"
+  "algorithm": "random.Random",
+  "algorithm_parameters": {
+    "model": "Random_LHS_Model",
+    "samples": "copy:step_random.step_parameters.max_tests"
+  }
 }
 }
