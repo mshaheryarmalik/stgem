@@ -22,31 +22,35 @@ description = {
         {"selected": [2], "invert": False, "scale": True}],
     "objective_selector": "ObjectiveSelectorMAB",
     "objective_selector_parameters": {"warm_up": 30},
-    "algorithm": "ogan.OGAN",
-    "algorithm_parameters":
-        {"input_dimension": 3,
-         "use_predefined_random_data": False,
-         "predefined_random_data": {"test_inputs": None, "test_outputs": None},
-         "fitness_coef": 0.95,
-         "train_delay": 0,
-         "N_candidate_tests": 1,
-         "ogan_model": "model_keras.OGANK_Model",
-         "ogan_model_parameters": {
-             "optimizer": "Adam",
-             "d_epochs": 10,
-             "noise_bs": 10000,
-             "g_epochs": 1,
-             "d_size": 512,
-             "g_size": 512,
-             "d_adam_lr": 0.001,
-             "g_adam_lr": 0.0001,
-             "noise_dimensions": 50,
-             "noise_batch_size": 10000
-         },
-         "train_settings_init": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
-         "train_settings": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}
-         },
-    "job_parameters": {"max_tests": 80, "N_random_init": 20, "mode": "stop_at_first_objective"}
+    "steps": ["step_random_search", "step_ogan"],
+    "step_random_search": {
+        "step_parameters": {"max_tests": 20, "mode": "stop_at_first_objective"},
+        "algorithm": "random.Random"
+    },
+    "step_ogan": {
+        "step_parameters": {"max_tests": 60, "mode": "stop_at_first_objective"}
+        "algorithm": "ogan.OGAN",
+        "algorithm_parameters": {
+             "fitness_coef": 0.95,
+             "train_delay": 0,
+             "N_candidate_tests": 1,
+             "ogan_model": "model_keras.OGANK_Model",
+             "ogan_model_parameters": {
+                 "optimizer": "Adam",
+                 "d_epochs": 10,
+                 "noise_bs": 10000,
+                 "g_epochs": 1,
+                 "d_size": 512,
+                 "g_size": 512,
+                 "d_adam_lr": 0.001,
+                 "g_adam_lr": 0.0001,
+                 "noise_dimensions": 50,
+                 "noise_batch_size": 10000
+             },
+             "train_settings_init": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
+             "train_settings": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}
+         }
+    }
 }
 
 r=Job(description).start()

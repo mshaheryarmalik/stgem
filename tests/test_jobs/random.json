@@ -1,17 +1,18 @@
 {
 "sut": "mo3d.MO3D",
+
 "objective_func": ["Minimize", "Minimize", "Minimize"],
 "objective_func_parameters": [
   {"selected": [0], "invert": false, "scale": true},
   {"selected": [1], "invert": false, "scale": true},
   {"selected": [2], "invert": false, "scale": true}],
+
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 30},
-"algorithm": "random.Random",
-"algorithm_parameters":
-    {
-     "use_predefined_random_data": false,
-     "predefined_random_data": {"test_inputs": null, "test_outputs": null}
-    },
-"job_parameters": {"max_tests": 300, "N_random_init":  50, "mode": "stop_at_first_objective"}
+
+"steps": ["step_random"],
+"step_random": {
+  "step_parameters": {"max_tests": 300, "mode": "stop_at_first_objective"},
+  "algorithm": "random.Random"
+}
 }

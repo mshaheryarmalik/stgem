@@ -31,13 +31,12 @@ def run_one_job(description):
     jr.dump_to_file(output_filename)
 
 def start(files, n, seed, resume, multiprocess):
-
     descriptions = []
 
     # 1. prepare job descriptions
     if resume is None:
         # not in resume mode, we build the resume file
-        resume_filename= "output/stgem_resume_file.pickle"
+        resume_filename = "output/stgem_resume_file.pickle"
 
         for i, file_name in enumerate(files):
             if not os.path.exists(file_name):
@@ -48,8 +47,9 @@ def start(files, n, seed, resume, multiprocess):
                 with open(file_name) as f:
                     description = json.load(f)
 
+                description["job_parameters"] = description.get("job_parameters", {})
+
                 # Add the directory for loading user-written modules.
-                f = os.path.dirname(file_name)
                 description["job_parameters"]["module_path"] = ".".join(x for x in split_path(os.path.dirname(file_name)))
 
                 # Now we add 1 to the seed for each consecutive copy of the job.
@@ -90,5 +90,3 @@ def start(files, n, seed, resume, multiprocess):
 
     # 3. clean up
     os.remove(resume_filename)
-
-

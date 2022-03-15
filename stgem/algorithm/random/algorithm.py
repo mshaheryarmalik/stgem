@@ -12,8 +12,7 @@ class Random(Algorithm):
     """
 
     def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, logger)
-        self.parameters = parameters
+        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
 
         self.N_models = sum(f.dim for f in self.objective_funcs)
         self.models = [Random_Model(self.sut, self.parameters, self.logger) for _ in range(self.N_models)]
@@ -27,7 +26,7 @@ class Random(Algorithm):
             # Generate a new test.
             # -----------------------------------------------------------------------
             self.perf.timer_start("generation")
-            self.log("Starting to generate test {}.".format(len(self.test_suite) + 1))
+            self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
             rounds = 0
             invalid = 0
             # Select a model randomly and generate a random valid test for it.
@@ -64,7 +63,6 @@ class Random(Algorithm):
             # Add the new test to the test suite.
             # -----------------------------------------------------------------------
             idx = self.test_repository.record(new_test.reshape(-1), output)
-            self.test_suite.append(idx)
             self.objective_selector.update(np.argmax(output))
 
             self.perf.save_history("training_time", 0)

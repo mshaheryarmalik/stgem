@@ -11,7 +11,6 @@ def myfunc(input):
 
     return [h1, h2, h3]
 
-
 description = {
     "sut": "python.PythonFunction",
     "sut_parameters": {
@@ -26,8 +25,11 @@ description = {
         {"selected": [2], "invert": False, "scale": True}],
     "objective_selector": "ObjectiveSelectorMAB",
     "objective_selector_parameters": {"warm_up": 30},
-    "algorithm": "platypus.PlatypusOpt",
-    "job_parameters": {"max_tests": 2000, "N_random_init": 20, "mode": "stop_at_first_objective"}
+    "steps": ["step_platypus"],
+    "step_platypus": {
+        "step_parameters": {"max_tests": 2000, "mode": "stop_at_first_objective"},
+        "algorithm": "platypus.PlatypusOpt"
+    }
 }
 
-Job(description).start()
+Job(description).run()

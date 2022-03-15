@@ -46,13 +46,13 @@ class Analyzer_NN(Analyzer):
 
         # Load the specified analyzer machine learning model and initialize it.
         module = importlib.import_module("stgem.algorithm.wogan.mlm")
-        analyzer_class = getattr(module, self.parameters["analyzer_mlm"])
-        self.modelA = analyzer_class(**algorithm.filter_arguments(self.parameters["analyzer_mlm_parameters"], analyzer_class)).to(self.device)
+        analyzer_class = getattr(module, self.analyzer_mlm)
+        self.modelA = analyzer_class(**algorithm.filter_arguments(self.analyzer_mlm_parameters, analyzer_class)).to(self.device)
 
         # Load the specified optimizer.
         module = importlib.import_module("torch.optim")
-        optimizer_class = getattr(module, self.parameters["analyzer_parameters"]["optimizer"])
-        self.optimizerA = optimizer_class(self.modelA.parameters(), **algorithm.filter_arguments(self.parameters["analyzer_parameters"], optimizer_class))
+        optimizer_class = getattr(module, self.analyzer_parameters["optimizer"])
+        self.optimizerA = optimizer_class(self.modelA.parameters(), **algorithm.filter_arguments(self.analyzer_parameters, optimizer_class))
 
         # Loss functions.
         def get_loss(loss_s):
