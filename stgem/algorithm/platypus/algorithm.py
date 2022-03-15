@@ -1,9 +1,8 @@
-import sys
 from stgem.algorithm import Algorithm
+
 import numpy as np
 
 from platypus import NSGAII, EpsMOEA, GDE3, SPEA2, Problem, Real, Integer, nondominated
-
 
 class PlatypusOpt(Algorithm):
     """
@@ -11,8 +10,7 @@ class PlatypusOpt(Algorithm):
     """
 
     def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, logger)
-        self.parameters = parameters
+        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
         self.platypus_algorithm = {"NSGAII": NSGAII, "EpsMOEA": EpsMOEA, "GDE3": GDE3, "SPEA2": SPEA2}
 
     def generate_test(self):
@@ -35,7 +33,6 @@ class PlatypusOpt(Algorithm):
             # -----------------------------------------------------------------
             idx = self.test_repository.record(test, output)
             self.lastIdx=idx
-            self.test_suite.append(idx)
             self.objective_selector.update(np.argmin(output))
 
             return output

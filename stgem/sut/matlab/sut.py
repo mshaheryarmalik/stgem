@@ -37,9 +37,12 @@ class Matlab_Simulink_Signal(SUT):
         # Set the output format of the model.
         # TODO: Should this be done for models other than AT?
         self.model_opts = self.engine.simset(model_opts, "SaveFormat", "Array")
+        # Figure out if we have a fixed-step solver or a variable-step solver.
+        self.variable_step = self.model_opts["Solver"].lower().startswith("variablestep")
 
     def __del__(self):
-        self.engine.quit()
+        if hasattr(self, "engine"):
+            self.engine.quit()
 
     def _execute_test_simulink(self, timestamps, signals):
         """
@@ -50,16 +53,42 @@ class Matlab_Simulink_Signal(SUT):
         simulation_time = matlab.double([0, timestamps[-1]])
         model_input = matlab.double(np.row_stack((timestamps, *signals)).T.tolist())
 
+        """
+        Output formats depends on the solver.
+
+        Fixed-step solver:
+        -----------------------------------------------------------------------
+        Since the simulation steps are known in advance, Matlab can put the
+        outputs in a matrix with columns time, output1, output2, ... This means
+        that three values are returned timestamps, internal state, and the
+        output matrix.
+
+        Variable-step solver:
+        -----------------------------------------------------------------------
+        Since the simulation timesteps are not known in advance, the size of
+        the matrix described is not known. Here Matlab returns 2 + outputs
+        arrays. The first has the timesteps, the second is the internal state,
+        and the remaining are the outputs.
+        """
+
         # Run the simulation.
-        out_timestamps, _, data = self.engine.sim(self.MODEL_NAME, simulation_time, self.model_opts, model_input, nargout=self.odim)
+        if self.variable_step:
+            output = self.engine.sim(self.MODEL_NAME, simulation_time, self.model_opts, model_input, nargout=self.odim + 2)
+            out_timestamps = output[0]
+
+            result = np.zeros(shape=(self.odim, len(output[0])))
+            for i in range(self.odim):
+                result[i] = np.asarray(output[2+i]).flatten()
+        else:
+            out_timestamps, _, data = self.engine.sim(self.MODEL_NAME, simulation_time, self.model_opts, model_input, nargout=self.odim)
+
+            data_array = np.array(data)
+            # Reshape the data.
+            result = np.zeros(shape=(self.odim, len(out_timestamps)))
+            for i in range(self.odim):
+                result[i] = data_array[:, i]
 
         timestamps_array = np.array(out_timestamps).flatten()
-        data_array = np.array(data)
-
-        # Reshape the data.
-        result = np.zeros(shape=(self.odim, len(timestamps_array)))
-        for i in range(self.odim):
-            result[i] = data_array[:, i]
 
         return timestamps_array, result
 

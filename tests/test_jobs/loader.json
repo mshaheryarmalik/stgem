@@ -7,9 +7,14 @@
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 30},
 
-"steps": ["step_random_search", "step_ogan"],
+"steps": ["step_loader", "step_random_search", "step_ogan"],
+"step_loader": {
+  "step_parameters": {"max_tests": 10, "mode": "stop_at_first_objective"},
+  "algorithm": "LoaderAlgorithm",
+  "algorithm_parameters": {"data_file": "foo.npy"}
+},
 "step_random_search": {
-  "step_parameters": {"max_tests": 20, "mode": "stop_at_first_objective"},
+  "step_parameters": {"max_tests": 10, "mode": "stop_at_first_objective"},
   "algorithm": "random.Random"
 },
 "step_ogan": {
@@ -33,8 +38,8 @@
     "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32},
     "generator_mlm": "GeneratorNetwork",
     "generator_mlm_parameters": {"noise_dim": 20, "output_shape": "copy:step_ogan.algorithm_parameters.input_dimension", "neurons": 64},
-    "discriminator_mlm": "DiscriminatorNetwork1dConv",
-    "discriminator_mlm_parameters": {"input_shape": "copy:step_ogan.algorithm_parameters.input_dimension", "feature_maps": [16], "kernel_sizes": [[2,2]], "convolution_activation": "relu", "dense_neurons": 32}
+    "discriminator_mlm": "DiscriminatorNetwork",
+    "discriminator_mlm_parameters": {"input_shape": "copy:step_ogan.algorithm_parameters.input_dimension", "neurons": 64, "discriminator_output_activation": "sigmoid"}
    }
 }
 }

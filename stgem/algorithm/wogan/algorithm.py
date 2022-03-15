@@ -14,8 +14,7 @@ class WOGAN(Algorithm):
     """
 
     def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, logger)
-        self.parameters = parameters
+        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
 
         self.N_models = sum(1 for f in self.objective_funcs)
 
@@ -36,7 +35,9 @@ class WOGAN(Algorithm):
         if self.shift_function == "linear":
             # We increase the shift linearly according to the given initial and given
             # final value.
-            alpha = (self.shift_function_parameters["final"] - self.shift_function_parameters["initial"])/(self.max_tests - self.N_random_init)
+            M1 = self.max_tests + self.preceding_tests # total number of tests after WOGAN has completed
+            M2 = self.preceding_tests                  # total number of tests before WOGAN started
+            alpha = (self.shift_function_parameters["final"] - self.shift_function_parameters["initial"])/(M1 - M2)
             beta = self.shift_function_parameters["final"] - alpha * self.max_tests
             self.shift = lambda x: alpha * x + beta
         else:
@@ -113,19 +114,17 @@ class WOGAN(Algorithm):
         model_trained = [0 for _ in range(self.N_models)]                            # keeps track how many tests were generated when a model was previously trained
         tests_generated = 0                                                          # how many tests have been generated so far
 
-        # Generate initial tests randomly.
-        # ---------------------------------------------------------------------
-        for idx in self._generate_initial_random_tests():
-            yield idx
-        tests_generated = len(self.test_suite)
+        # Take into account how many tests a previous step (usually random
+        # search) has generated.
+        tests_generated = self.test_repository.tests
+
+        # TODO: Check that we have previously generated at least a couple of
+        #       tests. Otherwise we get a cryptic error.
 
         # Assign the initial tests to bins.
         for i in range(self.N_models):
-            for j in self.test_suite:
+            for j in self.test_repository.indices:
                 test_bins[i][self.get_bin(self.test_repository.get(j)[1][i])].append(j)
-
-        # TODO: Add check that we get at least a couple samples for training.
-        #       Otherwise we get a cryptic error.
 
         # Train the models with the initial tests.
         # ---------------------------------------------------------------------
@@ -134,7 +133,7 @@ class WOGAN(Algorithm):
         # caller to ensure that all models are trained here if so desired.
         self.perf.timer_start("training")
         for i in self.objective_selector.select_all():
-            dataX, dataY = self.test_repository.get(self.test_suite)
+            dataX, dataY = self.test_repository.get()
             dataX = np.array(dataX)
             dataY = np.array(dataY)[:,i].reshape(-1, 1)
             for _ in range(self.models[i].train_settings["epochs"]):
@@ -147,8 +146,8 @@ class WOGAN(Algorithm):
                 # Train the WGAN.
                 self.log("Training WGAN model {}...".format(i + 1))
                 for epoch in range(self.models[i].train_settings_init["epochs"]):
-                    train_X = self.training_sample(min(self.wgan_batch_size, self.N_random_init),
-                                                   np.asarray(self.test_repository.get(self.test_suite)[0]),
+                    train_X = self.training_sample(min(self.wgan_batch_size, self.preceding_tests),
+                                                   np.asarray(self.test_repository.get()[0]),
                                                    test_bins[i],
                                                    self.shift(tests_generated),
                                                   )
@@ -242,7 +241,6 @@ class WOGAN(Algorithm):
             # Add the new test to the test suite.
             # -----------------------------------------------------------------
             idx = self.test_repository.record(best_test, output)
-            self.test_suite.append(idx)
             self.objective_selector.update(np.argmin(output))
             tests_generated += 1
 
@@ -263,7 +261,7 @@ class WOGAN(Algorithm):
             for i in active_models:
                 if tests_generated - model_trained[i] >= self.train_delay:
                     self.log("Training analyzer {}...".format(i + 1))
-                    dataX, dataY = self.test_repository.get(self.test_suite)
+                    dataX, dataY = self.test_repository.get()
                     dataX = np.array(dataX)
                     dataY = np.array(dataY)[:,i].reshape(-1, 1)
                     for _ in range(self.models[i].train_settings_init["epochs"]):
@@ -277,16 +275,16 @@ class WOGAN(Algorithm):
                         for epoch in range(self.models[i].train_settings_init["epochs"]):
                             # We include the new tests to the batch with high
                             # probability if and only if they have low objective.
-                            BS = min(self.wgan_batch_size, self.N_random_init)
+                            BS = min(self.wgan_batch_size, self.preceding_tests)
                             train_X = np.zeros(shape=(BS, self.sut.idim))
                             c = 0
                             for j in range(self.train_delay):
-                                test, output = self.test_repository.get(self.test_suite[-(j+1)])
+                                test, output = self.test_repository.get(self.test_repository.indices[-(j+1)])
                                 if self.get_bin(output[i]) >= self.bin_sample(1, self.shift(tests_generated))[0]:
                                     train_X[c] = test
                                     c += 1
                             train_X[c:] = self.training_sample(BS - c,
-                                                               np.asarray(self.test_repository.get(self.test_suite)[0]),
+                                                               np.asarray(self.test_repository.get()[0]),
                                                                test_bins[i],
                                                                self.shift(tests_generated),
                                                               )
