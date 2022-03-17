@@ -1,44 +1,3 @@
-## How to contribute code
-
-Follow these steps to submit your code contribution.
-
-### Step 1. Open an issue
-
-Before making any changes, we recommend opening an issue (if one doesn't already
-exist) and discussing your proposed changes. This way, we can give you feedback
-and validate the proposed changes.
-
-If the changes are minor (simple bug fix or documentation fix), then feel free
-to open a PR without discussion.
-
-### Step 2. Make code changes
-
-To make code changes, you need to fork the repository. You will need to setup a
-development environment and run the unit tests. This is covered in section
-"Setup environment".
-
-### Step 3. Create a pull request
-
-Once the change is ready, open a pull request from your branch in your fork to
-the main branch in [aidoartt/stgem](https://gitlab.abo.fi/aidoart/stgem).
-
-### Step 4. Sign the Contributor Agreement
-
-TBA
-
-### Step 5. Code review
-
-A reviewer will review the pull request and provide comments. 
-
-There may be
-several rounds of comments and code changes before the pull request gets
-approved by the reviewer.
-
-
-### Step 6. Merging
-
-Once the pull request is approved, a team member will take care of the merging.
-
 
 ## Setup environment
 
@@ -92,7 +51,7 @@ pip install antlr4-python3-runtime==4.9
 
 The environment setup is completed. 
 
-## Install MATLAB
+### Install MATLAB
 
 Installing MATLAB is only necessary if you want to use a SUT that uses MATLAB. If this is the case, you should install MATLAB in your computer and obtain a license for it. Then you should install MATLAB support for your Python interpreter following the instructions from:
 
@@ -105,7 +64,7 @@ import matlab.engine
 eng = matlab.engine.start_matlab()
 ```
 
-## Run tests
+### Run tests
 
 You can use pytest to run all the tests automatically:
 
@@ -114,3 +73,55 @@ pip install pytest
 cd test
 pytest
 ```
+
+## How to contribute code
+
+Follow these steps to submit your code contribution.
+
+### Step 1. Open an issue
+
+Before making any changes, we recommend opening an issue (if one doesn't already
+exist) and discussing your proposed changes. This way, we can give you feedback
+and validate the proposed changes.
+
+If the changes are minor (simple bug fix or documentation fix), then feel free
+to open a PR without discussion.
+
+### Step 2. Make code changes
+
+To make code changes, you need to fork the repository. You will need to setup a
+development environment and run the unit tests. This is covered in section
+"Setup environment".
+
+### Step 3. Create a pull request
+
+Once the change is ready, open a pull request from your branch in your fork to
+the main branch in [aidoartt/stgem](https://gitlab.abo.fi/aidoart/stgem).
+
+### Step 4. Sign the Contributor Agreement
+
+TBA
+
+### Step 5. Code review
+
+A reviewer will review the pull request and provide comments. 
+
+There may be
+several rounds of comments and code changes before the pull request gets
+approved by the reviewer.
+
+
+### Step 6. Merging
+
+Once the pull request is approved, a team member will take care of the merging.
+
+
+## How to report errors
+
+If you want to report an error please make sure that your report contains the following information:
+
+1. Where to find your code for example a link to a gitlab commit description page.
+2. The command that you are running from your shell. If the error seems to be related to missing files or modules or module import errors, report the directory from where you are running that command and your `PYTHONPATH` environment variable.
+3. The error stack trace and / or relevant program output. Use a format that is easy to read. In Markdown you can use triple quotes.
+ 
+This information is really useful for us to reproduce the errors and try to solve it.
