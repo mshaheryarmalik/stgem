@@ -1,4 +1,4 @@
-from stgem import STGEM
+from stgem import STGEM, Sequential
 from stgem.sut.python.sut import PythonFunction
 from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorMAB
@@ -25,26 +25,31 @@ generator = STGEM(
                 ],
     objective_selector=ObjectiveSelectorMAB(warm_up=30),
     steps=[
-        Random(max_tests=20, mode="stop_at_first_objective"),
-        OGAN(max_tests=20, mode="stop_at_first_objective",
-             parameters={ "fitness_coef": 0.95, "train_delay": 0,  "N_candidate_tests": 1},
-             model= OGANK_Model (
-                    parameters= {
-                     "optimizer": "Adam",
-                     "d_epochs": 10,
-                     "noise_bs": 10000,
-                     "g_epochs": 1,
-                     "d_size": 512,
-                     "g_size": 512,
-                     "d_adam_lr": 0.001,
-                     "g_adam_lr": 0.0001,
-                     "noise_dimensions": 50,
-                     "noise_batch_size": 10000
-                    }
-                ),
-             train_settings_init= {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
-             train_settings= {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}
-             )
+        Sequential( max_tests=20,
+                    mode="stop_at_first_objective",
+                    algorithm=Random()),
+        Sequential( max_tests=20,
+                    mode="stop_at_first_objective",
+                    algorithm=OGAN(
+                                parameters={ "fitness_coef": 0.95, "train_delay": 0,  "N_candidate_tests": 1},
+                                model= OGANK_Model (
+                                        parameters= {
+                                         "optimizer": "Adam",
+                                         "d_epochs": 10,
+                                         "noise_bs": 10000,
+                                         "g_epochs": 1,
+                                         "d_size": 512,
+                                         "g_size": 512,
+                                         "d_adam_lr": 0.001,
+                                         "g_adam_lr": 0.0001,
+                                         "noise_dimensions": 50,
+                                         "noise_batch_size": 10000
+                                        }
+                                    ),
+                                 train_settings_init= {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
+                                 train_settings= {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}
+                                 )
+                         )
     ]
 )
 
