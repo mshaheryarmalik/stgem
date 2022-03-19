@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import importlib, heapq
+import importlib, heapq,
 
 import numpy as np
 
@@ -12,24 +12,15 @@ class OGAN(Algorithm):
     Implements the online generative adversarial network algorithm.
     """
 
-    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
-
-        self.N_models = sum(1 for f in self.objective_funcs)
-
-        # Setup the models.
-        # ---------------------------------------------------------------------
-        # Load the specified OGAN model and initialize it.
-        module_name, class_name = self.parameters["ogan_model"].split(".")
-        module = importlib.import_module("stgem.algorithm.ogan." + module_name)
-        self.model_class = getattr(module, class_name)
-        self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=logger) for _ in range(self.N_models)]
+    # Do not change the defaults
+    default_parameters = {"fitness_coef": 0.95, "train_delay": 0, "N_candidate_tests": 1}
 
     def generate_test(self):
         self.perf.timer_start("total")
 
-        tests_generated = 0                               # how many tests have been generated so far
-        model_trained = [0 for m in range(self.N_models)] # keeps track how many tests were generated when a model was previously trained
+        tests_generated = 0  # how many tests have been generated so far
+        model_trained = [0 for m in range(
+            self.N_models)]  # keeps track how many tests were generated when a model was previously trained
 
         # Take into account how many tests a previous step (usually random
         # search) has generated.
@@ -48,12 +39,12 @@ class OGAN(Algorithm):
             self.log("Training the OGAN model {}...".format(i + 1))
             dataX, dataY = self.test_repository.get()
             dataX = np.array(dataX)
-            dataY = np.array(dataY)[:,i].reshape(-1, 1)
+            dataY = np.array(dataY)[:, i].reshape(-1, 1)
             for epoch in range(self.models[i].train_settings_init["epochs"]):
                 self.models[i].train_with_batch(dataX,
                                                 dataY,
                                                 train_settings=self.models[i].train_settings_init,
-                                               )
+                                                )
             model_trained[i] = tests_generated
         self.perf.save_history("training_time", self.perf.timer_reset("training"))
 
@@ -73,11 +64,12 @@ class OGAN(Algorithm):
             self.perf.timer_start("generation")
             heap = []
             target_fitness = 0
-            entry_count = 0 # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
+            entry_count = 0  # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
             rounds = 0
             invalid = 0
             active_models = self.objective_selector.select()
-            self.log("Starting to generate test {} using the OGAN models {}.".format(tests_generated + 1, ",".join(str(m + 1) for m in active_models)))
+            self.log("Starting to generate test {} using the OGAN models {}.".format(tests_generated + 1, ",".join(
+                str(m + 1) for m in active_models)))
 
             while True:
                 # TODO: Avoid selecting similar or same tests.
@@ -88,25 +80,25 @@ class OGAN(Algorithm):
                         # predicted objective function component. We do this as
                         # long as we find at least one valid test.
                         candidate_tests = self.models[i].generate_test(self.N_candidate_tests)
-  
+
                         # Pick only the valid tests.
                         valid_idx = [i for i in range(self.N_candidate_tests) if self.sut.validity(candidate_tests[i]) == 1]
                         candidate_tests = candidate_tests[valid_idx]
                         invalid += self.N_candidate_tests - len(valid_idx)
                         if candidate_tests.shape[0] == 0:
-                          continue
-  
+                            continue
+
                         # Estimate objective function values and add the tests
                         # to heap.
                         tests_predicted_objective = self.models[i].predict_objective(candidate_tests)
                         for j in range(tests_predicted_objective.shape[0]):
-                            heapq.heappush(heap, (tests_predicted_objective[j,0], entry_count, candidate_tests[j]))
+                            heapq.heappush(heap, (tests_predicted_objective[j, 0], entry_count, candidate_tests[j]))
                             entry_count += 1
-  
+
                         break
-  
+
                 # We go up from 0 like we would go down from 1 when multiplied by self.fitness_coef.
-                target_fitness = 1 - self.fitness_coef*(1 - target_fitness)
+                target_fitness = 1 - self.fitness_coef * (1 - target_fitness)
 
                 # Check if the best predicted test is good enough.
                 if heap[0][0] <= target_fitness: break
@@ -114,16 +106,18 @@ class OGAN(Algorithm):
             # Save information on how many tests needed to be generated etc.
             # -----------------------------------------------------------------
             self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
-            N_generated = rounds*self.N_candidate_tests
+            N_generated = rounds * self.N_candidate_tests
             self.perf.save_history("N_tests_generated", N_generated)
             self.perf.save_history("N_invalid_tests_generated", invalid)
-  
+
             # Execute the test on the SUT.
             # -----------------------------------------------------------------
             best_test = heap[0][2]
             best_estimated_objective = heap[0][0]
-  
-            self.log("Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
+
+            self.log(
+                "Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(
+                    best_test, best_estimated_objective, rounds, invalid))
             self.log("Executing the test...")
 
             sut_output = self.sut.execute_test(best_test)
@@ -133,10 +127,10 @@ class OGAN(Algorithm):
                 output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
             else:
                 output = [self.objective_funcs[i](*sut_output) for i in range(self.N_models)]
-  
+
             self.log("Result from the SUT {}".format(sut_output))
             self.log("The actual objective {} for the generated test.".format(output))
-  
+
             # Add the new test to the test suite.
             # -----------------------------------------------------------------
             idx = self.test_repository.record(best_test, output)
@@ -146,7 +140,7 @@ class OGAN(Algorithm):
             self.perf.timers_hold()
             yield idx
             self.perf.timers_resume()
-  
+
             # Train the model.
             # -----------------------------------------------------------------
             # We train the models which were involved in the test generation.
@@ -160,13 +154,12 @@ class OGAN(Algorithm):
                     self.models[i].reset()
                     dataX, dataY = self.test_repository.get()
                     dataX = np.array(dataX)
-                    dataY = np.array(dataY)[:,i].reshape(-1, 1)
+                    dataY = np.array(dataY)[:, i].reshape(-1, 1)
                     for epoch in range(self.models[i].train_settings["epochs"]):
                         self.models[i].train_with_batch(dataX,
                                                         dataY,
                                                         train_settings=self.models[i].train_settings,
-                                                       )
+                                                        )
                     model_trained[i] = tests_generated
             self.perf.save_history("training_time", self.perf.timer_reset("training"))
-  
-  
+

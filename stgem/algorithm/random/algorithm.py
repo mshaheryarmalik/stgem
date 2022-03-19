@@ -6,21 +6,11 @@ import importlib
 import numpy as np
 
 from stgem.algorithm import Algorithm
-from stgem.algorithm.random.model import Random_Model
 
 class Random(Algorithm):
     """
     Baseline random algorithm for generating a test suite.
     """
-
-    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
-
-        self.N_models = sum(f.dim for f in self.objective_funcs)
-        module = importlib.import_module("stgem.algorithm.random.model")
-        model = self.model if "model" in self.parameters else "Random_Model"
-        self.model_class = getattr(module, model)
-        self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=logger) for _ in range(self.N_models)]
 
     def generate_test(self):
         self.perf.timer_start("total")

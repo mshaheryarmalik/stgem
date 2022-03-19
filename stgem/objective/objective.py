@@ -11,7 +11,10 @@ then the loss minimization might focus on the wrong thing.
 
 class Objective:
 
-    def __init__(self, sut):
+    def __init__(self):
+        pass
+
+    def setup(self,sut):
         self.sut = sut
 
     def __call__(self, output):
@@ -23,8 +26,8 @@ class Minimize(Objective):
     the minimum among the specified components.
     """
 
-    def __init__(self, sut, selected=None, scale=False, invert=False):
-        super().__init__(sut)
+    def __init__(self, selected=None, scale=False, invert=False):
+        super().__init__()
         if not (isinstance(selected, list) or isinstance(selected, tuple) or selected is None):
             raise Exception("The parameter 'selected' must be None or a list or a tuple.")
 
@@ -69,8 +72,8 @@ class FalsifySTL(Objective):
     Objective function to falsify a STL specification.
     """
 
-    def __init__(self, sut, specification):
-        super().__init__(sut)
+    def __init__(self, specification):
+        super().__init__()
 
         # rtamt may have dependency problems. We continue even if we cannot import it
         try:

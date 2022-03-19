@@ -2,30 +2,50 @@
 # -*- coding: utf-8 -*-
 
 import os
-
-import numpy as np
-
+import copy
 from stgem.performance import PerformanceData
+
 
 class Algorithm:
     """
     Base class for all test suite generation algorithms.
     """
 
-    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
+    default_parameters={}
+
+    def __init__(self, model_factory=None, parameters=None):
+
+        self.model_factory=model_factory
+        self.N_models = 0
+        self.models = []
+
+        if parameters is None:
+            parameters = copy.copy(self.default_parameters)
+
+        self.parameters=parameters
+        self.perf = PerformanceData()
+
+    def create_models(self):
+        if self.model_factory:
+            self.N_models = sum(1 for f in self.objective_funcs)
+            self.models = [ self.model_factory()  for _ in range(self.N_models)]
+        else:
+            self.N_models=0
+            self.models=[]
+
+    def setup(self, sut, test_repository, objective_funcs, objective_selector, device=None, logger=None):
         self.sut = sut
         self.test_repository = test_repository
         self.objective_funcs = objective_funcs
         self.objective_selector = objective_selector
-        self.parameters = parameters
-
+        self.device=device
         self.logger = logger
         self.log = (lambda s: self.logger.algorithm.info(s) if logger is not None else None)
 
-        self.models=[]
-        self.N_models=0
+        self.create_models()
 
-        self.perf = PerformanceData()
+        for m in self.models:
+            m.setup(sut, logger)
 
     def __getattr__(self, name):
         value = self.parameters.get(name)
@@ -34,8 +54,24 @@ class Algorithm:
 
         return value
 
+
+
+    def initialize(self):
+        """
+           A Step calls this method before the firt generate_test call
+        """
+        pass
+
     def generate_test(self):
         raise NotImplementedError()
+
+    def finalize(self):
+        """
+        A Step calls this method after all tests have been generated and the algorithm
+        will not be used anymore in that step.
+        """
+        pass
+
 
 class LoaderAlgorithm(Algorithm):
     """
@@ -44,9 +80,8 @@ class LoaderAlgorithm(Algorithm):
 
     # TODO: Currently this is a placeholder and does nothing.
 
-    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
-
+    def __init__(self, parameters=None):
+        super().__init__(parameters)
         return
         # Check if the data file exists.
         if not os.path.exists(self.data_file):
@@ -55,4 +90,3 @@ class LoaderAlgorithm(Algorithm):
     def generate_test(self):
         return
         yield
-

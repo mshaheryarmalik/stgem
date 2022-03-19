@@ -14,14 +14,10 @@ class OGAN_Model(Model):
     Implements the WOGAN model.
     """
 
-    def __init__(self, sut, parameters, logger=None):
-        super().__init__(sut, parameters, logger)
+    def setup(self,sut, logger):
+        super().setup(sut,logger)
+        self.noise_batch_size = self.parameters["noise_batch_size"]
 
-        self.noise_batch_size = self.ogan_model_parameters["noise_batch_size"]
-
-        self._initialize()
-
-    def _initialize(self):
         # Load the specified generator and discriminator machine learning
         # models and initialize them.
         module = importlib.import_module("stgem.algorithm.ogan.mlm")
