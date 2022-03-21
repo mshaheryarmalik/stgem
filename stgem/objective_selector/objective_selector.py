@@ -23,7 +23,6 @@ class ObjectiveSelector:
     def update(self, idx):
         return
 
-
 class ObjectiveSelectorAll(ObjectiveSelector):
     """
     Model selector which ignores everything an just returns all models.
@@ -31,7 +30,6 @@ class ObjectiveSelectorAll(ObjectiveSelector):
 
     def select(self):
         return self.select_all()
-
 
 class ObjectiveSelectorMAB(ObjectiveSelector):
     """

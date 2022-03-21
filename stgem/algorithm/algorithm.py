@@ -48,17 +48,17 @@ class Algorithm:
             m.setup(sut, logger)
 
     def __getattr__(self, name):
-        value = self.parameters.get(name)
-        if value is None:
-            raise AttributeError(name)
+        if "parameters" in self.__dict__:
+            if name in self.parameters:
+                return self.parameters.get(name)
 
-        return value
+        raise AttributeError(name)
 
 
 
     def initialize(self):
         """
-           A Step calls this method before the firt generate_test call
+           A Step calls this method before the first generate_test call
         """
         pass
 

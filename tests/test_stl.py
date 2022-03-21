@@ -16,7 +16,8 @@ class TestSTL(unittest.TestCase):
 
     def get(self, specification, variables, *args, **kwargs):
         sut = DummySUT(len(variables), variables)
-        objective = FalsifySTL(sut, specification)
+        objective = FalsifySTL(specification)
+        objective.setup(sut)
         return objective(*args)
 
     def test_stl(self):

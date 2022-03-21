@@ -6,11 +6,15 @@ import importlib
 import numpy as np
 
 from stgem.algorithm import Algorithm
+from stgem.algorithm.random.model import Uniform
 
 class Random(Algorithm):
     """
     Baseline random algorithm for generating a test suite.
     """
+
+    def __init__(self, model_factory=(lambda: Uniform()), parameters=None):
+        super().__init__(model_factory,parameters)
 
     def generate_test(self):
         self.perf.timer_start("total")

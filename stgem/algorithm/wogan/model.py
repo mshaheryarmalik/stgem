@@ -14,11 +14,13 @@ class WOGAN_Model(Model):
     Implements the WOGAN model.
     """
 
-    def __init__(self, sut, parameters, logger=None):
-        super().__init__(sut, parameters, logger)
+    def setup(self, sut, logger=None):
+        super().setup(sut, logger)
 
         self.noise_dim = self.generator_mlm_parameters["noise_dim"]
         self.gp_coefficient = self.wogan_model_parameters["gp_coefficient"]
+
+        TODO
 
         # Load the specified analyzer and initialize it.
         module = importlib.import_module("stgem.algorithm.wogan.analyzer")

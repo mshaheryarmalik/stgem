@@ -115,6 +115,8 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         self.pieces = self.simulation_time // self.time_slice
 
     def initialize(self):
+        # TODO Who calls this?
+        
         # Redefine input dimension.
         self.signals = self.idim
         self.idim = self.idim*self.pieces

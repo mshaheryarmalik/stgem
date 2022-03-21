@@ -21,11 +21,15 @@ class MO3D(SUT):
     3-tuples of numbers in [-1, 1] which are scaled to [-15, 15] internally.
     """
 
-    def __init__(self,parameters):
+    def __init__(self,parameters=None):
         SUT.__init__(self,parameters)
 
         self.input_range = [[-15, 15], [-15, 15], [-15, 15]]
         self.output_range = [[0, 350], [0, 350], [0, 350]]
+        self.inputs=["i0","i1","i2"]
+        self.outputs=["o0","o1","o2"]
+        self.idim=3
+        self.odim=3
 
     def _execute_test(self, test):
         #print("unscaled",test)

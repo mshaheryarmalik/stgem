@@ -40,7 +40,7 @@ class LHS(Model):
     def generate_test(self):
         self.current += 1
 
-        if self.current > len(self.random_tests):
+        if self.current >= len(self.random_tests):
             raise Exception("Random sample exhausted.")
 
         return self.random_tests[self.current]

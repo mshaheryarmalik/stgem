@@ -4,6 +4,8 @@ import dill as pickle
 import torch
 import os, time, datetime, random, logging
 import numpy as np
+from stgem.objective_selector import ObjectiveSelectorAll
+
 
 from stgem.algorithm.algorithm import Algorithm
 from stgem.sut import SUT
@@ -78,7 +80,7 @@ class Search(Step):
         if self.max_time == 0 and self.max_tests == 0:
             raise Exception("Step description does not specify neither a maximum time nor a maximum number tests.")
 
-        # allow the allgorithm to initialize itself
+        # allow the algorithm to initialize itself
         self.algorithm.initialize()
 
         success = False
@@ -108,7 +110,7 @@ class Search(Step):
             i += 1
             elapsed_time = time.perf_counter() - start_time
 
-        # allow the allgorithm to store trained models or other generated data
+        # allow the algorithm to store trained models or other generated data
         self.algorithm.finalize()
 
         # report resuts
@@ -122,12 +124,14 @@ class Search(Step):
 
         return step_result
 
-
 class STGEM:
-    def __init__(self, description, sut: SUT, objectives, objective_selector, steps: List[Step]):
+    def __init__(self, description, sut: SUT, objectives, objective_selector=None, steps=[]):
         self.description = description
         self.sut = sut
         self.objectives = objectives
+
+        if objective_selector is None:
+            objective_selector = ObjectiveSelectorAll()
         self.objective_selector = objective_selector
         self.steps = steps
         self.device = None

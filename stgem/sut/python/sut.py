@@ -3,7 +3,7 @@
 
 import math
 import numpy as np
-
+import inspect
 from stgem.sut import SUT
 
 
@@ -33,6 +33,9 @@ class PythonFunction(SUT):
 
         self.idim = len(self.input_range)
         self.odim = len(self.output_range)
+
+        self.inputs=inspect.getfullargspec(self.function).args
+        self.outputs=["o"+str(i) for i in range(self.odim)]
 
     def _execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)

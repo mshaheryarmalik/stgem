@@ -9,9 +9,8 @@ class PlatypusOpt(Algorithm):
     Implements the online generative adversarial network algorithm.
     """
 
-    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
-        self.platypus_algorithm = {"NSGAII": NSGAII, "EpsMOEA": EpsMOEA, "GDE3": GDE3, "SPEA2": SPEA2}
+    platypus_algorithm = {"NSGAII": NSGAII, "EpsMOEA": EpsMOEA, "GDE3": GDE3, "SPEA2": SPEA2}
+    default_parameters = {"platypus_algorithm": "NSGAII"}
 
     def generate_test(self):
         self.lastIdx=0

@@ -62,6 +62,7 @@ class ObjectiveMinComponentwise(Objective):
     """
 
     def __init__(self):
+        super().__init__()
         self.dim = 1
 
     def __call__(self, timestamps, signals):
@@ -75,6 +76,20 @@ class FalsifySTL(Objective):
     def __init__(self, specification):
         super().__init__()
 
+        self.dim = 1
+        self.specification = specification
+
+
+    def setup(self, sut):
+        # Create the RTAMT specification.
+        # For signals we use the dense time STL because it is unclear how to
+        # use the discrete version. The horizons are especially unclear in the 
+        # discrete case. For vector outputs we use discrete time STL because
+        # updating with a single signal value does not seem to give sensible
+        # results otherwise.
+        super().setup(sut)
+
+
         # rtamt may have dependency problems. We continue even if we cannot import it
         try:
             import rtamt
@@ -83,22 +98,14 @@ class FalsifySTL(Objective):
             import traceback
             traceback.print_exc()
 
-        self.dim = 1
-        self.specification = specification
 
-        # Create the RTAMT specification.
-        # For signals we use the dense time STL because it is unclear how to
-        # use the discrete version. The horizons are especially unclear in the 
-        # discrete case. For vector outputs we use discrete time STL because
-        # updating with a single signal value does not seem to give sensible
-        # results otherwise.
         self.spec_dense = rtamt.STLDenseTimeSpecification()
         self.spec_discrete = rtamt.STLSpecification()
         for var in self.sut.outputs:
             self.spec_dense.declare_var(var, "float")
             self.spec_discrete.declare_var(var, "float")
-        self.spec_dense.spec = specification
-        self.spec_discrete.spec = specification
+        self.spec_dense.spec = self.specification
+        self.spec_discrete.spec = self.specification
 
     def _evaluate_vector(self, output):
         # We assume that the output is a single observation of a signal. It

@@ -13,18 +13,7 @@ class WOGAN(Algorithm):
     adversarial networks.
     """
 
-    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
-
-        self.N_models = sum(1 for f in self.objective_funcs)
-
-        # Setup the models.
-        # ---------------------------------------------------------------------
-        # Load the specified WOGAN model and initialize it.
-        module = importlib.import_module("stgem.algorithm.wogan.model")
-        self.model_class = getattr(module, self.wogan_model)
-        self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=logger) for _ in range(self.N_models)]
-
+    def initialize(self):
         # Setup the shift function for sampling training data.
         # ---------------------------------------------------------------------
         if self.shift_function is None:

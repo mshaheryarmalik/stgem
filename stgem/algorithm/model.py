@@ -25,11 +25,11 @@ class Model:
         self.perf = PerformanceData()
 
     def __getattr__(self, name):
-        value = self.parameters.get(name)
-        if value is None:
-            raise AttributeError(name)
+        if "parameters" in self.__dict__:
+            if name in self.parameters:
+                return self.parameters.get(name)
 
-        return value
+        raise AttributeError(name)
 
     def reset(self):
         pass

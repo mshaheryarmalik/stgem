@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import importlib, heapq,
+import importlib, heapq
 
 import numpy as np
 
