@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from stgem.sut import SUT
+from stgem.sut import SUT, SUTResult
 from stgem.objective.objective import FalsifySTL
 
 class DummySUT(SUT):
@@ -28,7 +28,7 @@ class TestSTL(unittest.TestCase):
         specification = "always[0,1](foo > 0 and bar > 0)"
         correct_robustness = 0.5
 
-        robustness = self.get(specification, variables, output)
+        robustness = self.get(specification, variables, SUTResult(None, output, None, None, None))
         assert robustness == correct_robustness
 
         output = [3, -0.5]
@@ -36,7 +36,7 @@ class TestSTL(unittest.TestCase):
         specification = "always[0,1](foo > 0 and bar > 0)"
         correct_robustness = 0
 
-        robustness = self.get(specification, variables, output)
+        robustness = self.get(specification, variables, SUTResult(None, output, None, None, None))
         assert robustness == correct_robustness
 
         # Test signal outputs.
@@ -49,7 +49,7 @@ class TestSTL(unittest.TestCase):
         specification = "always[0,1](s1 > 0 and s2 > 0)"
         correct_robustness = 1.0
 
-        robustness = self.get(specification, variables, t, signals)
+        robustness = self.get(specification, variables, SUTResult(None, signals, t, t, None))
         assert robustness == correct_robustness
 
         data = pd.read_csv("data/stl_at.csv")
@@ -66,19 +66,19 @@ class TestSTL(unittest.TestCase):
         specification = "(always[0,30](RPM < 3000)) implies (always[0,4](SPEED < 35))"
         correct_robustness = 0
 
-        robustness = self.get(specification, variables, t, signals)
+        robustness = self.get(specification, variables, SUTResult(None, signals, t, t, None))
         assert robustness == correct_robustness
 
         specification = "(always[0,30](RPM < 3000)) implies (always[0,8](SPEED < 50))"
         correct_robustness = 1
 
-        robustness = self.get(specification, variables, t, signals)
+        robustness = self.get(specification, variables, SUTResult(None, signals, t, t, None))
         assert robustness == correct_robustness
 
         specification = "(always[0,30](RPM < 3000)) implies (always[0,20](SPEED < 65))"
         correct_robustness = 1
 
-        robustness = self.get(specification, variables, t, signals)
+        robustness = self.get(specification, variables, SUTResult(None, signals, t, t, None))
         assert robustness == correct_robustness
 
 if __name__ == "__main__":

@@ -18,8 +18,14 @@ Discrete signals.
 """
 
 import numpy as np
+from collections import namedtuple
 
 from stgem.performance import PerformanceData
+
+# TODO Document this
+# TODO Consider a dataclass
+
+SUTResult=namedtuple('SUTResult','inputs outputs input_timestamps output_timestamps error')
 
 class SUT:
     """
@@ -33,6 +39,7 @@ class SUT:
             self.parameters = parameters
 
         self.perf = PerformanceData()
+
         """
         All SUTs have the below variables which concern inputs and outputs,
         their ranges etc. We describe them here, but do not set them. They are
@@ -149,13 +156,13 @@ class SUT:
 
         return y
 
-    def execute_test(self, test):
+    def execute_test(self, test) -> SUTResult:
         self.perf.timer_start("execution")
         r = self._execute_test(test)
         self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
         return r
 
-    def _execute_test(self, test):
+    def _execute_test(self, test) -> SUTResult:
         raise NotImplementedError()
 
     def execute_random_test(self):

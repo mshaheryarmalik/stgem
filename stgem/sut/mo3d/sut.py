@@ -5,7 +5,7 @@ import math
 
 import numpy as np
 
-from stgem.sut import SUT
+from stgem.sut import SUT,  SUTResult
 
 class MO3D(SUT):
     """
@@ -44,5 +44,5 @@ class MO3D(SUT):
         h2 = 230-75*(math.cos(x1/2.5+15)+math.cos(x2/2.5+15)+math.cos(x3/2.5+15))
         h3 = (x1-7)**2+(x2-7)**2+(x3-7)**2 - (math.cos((x1-7)/2.75) + math.cos((x2-7)/2.75) + math.cos((x3-7)/2.75))
 
-        return np.asarray([h1, h2, h3])
+        return SUTResult(test,np.asarray([h1, h2, h3]),None,None, None)
 

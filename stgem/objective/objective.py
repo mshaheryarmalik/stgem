@@ -3,6 +3,7 @@
 
 import numpy as np
 
+from stgem.sut import SUTResult
 """
 REMEMBER: Always clip the objective function values to [0, 1]. Otherwise we
 can get very wild losses when training neural networks. This is not good as
@@ -17,8 +18,8 @@ class Objective:
     def setup(self,sut):
         self.sut = sut
 
-    def __call__(self, inputs, outputs, input_timestamps=None, output_timestamps=None):
-        return outputs
+    def __call__(self, r: SUTResult):
+        return r.outputs
 
 class Minimize(Objective):
     """
@@ -36,24 +37,24 @@ class Minimize(Objective):
         self.scale = scale
         self.invert = invert
 
-    def __call__(self, inputs, outputs, input_timestamps=None, output_timestamps=None):
-        assert output_timestamps is None
+    def __call__(self, r: SUTResult):
+        assert r.output_timestamps is None
 
         if self.selected is None:
-            idx = list(range(len(outputs)))
+            idx = list(range(len(r.outputs)))
         else:
             idx = self.selected
 
         if self.invert:
-            outputs = outputs*(-1)
+            outputs = r.outputs*(-1)
             ranges = np.asarray([[-self.sut.output_range[i][1], -self.sut.output_range[i][0]] for i in idx])
         else:
             ranges = [self.sut.output_range[i] for i in idx]
 
         if self.scale:
-            output = self.sut.scale(outputs[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
+            output = self.sut.scale(r.outputs[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
         else:
-            output = outputs[idx]
+            output = r.outputs[idx]
 
         return max(0, min(1, min(output)))
 
@@ -67,9 +68,9 @@ class ObjectiveMinComponentwise(Objective):
         super().__init__()
         self.dim = 1
 
-    def __call__(self, inputs, outputs, input_timestamps=None, output_timestamps=None):
-        assert output_timestamps is not None
-        return [min(output) for output in outputs]
+    def __call__(self, r: SUTResult):
+        assert r.output_timestamps is not None
+        return [min(output) for output in r.outputs]
 
 class FalsifySTL(Objective):
     """
@@ -196,11 +197,9 @@ class FalsifySTL(Objective):
 
         return robustness
 
-    def __call__(self, inputs, outputs, input_timestamps=None, output_timestamps=None):
-        # If we have a single argument, then we treat it as a vector input.
-        # Otherwise we assume that we have a signal input timestaps, signals.
-        if output_timestamps is None:
-            return self._evaluate_vector(outputs)
+    def __call__(self, r: SUTResult):
+        if r.output_timestamps is None:
+            return self._evaluate_vector(r.outputs)
         else:
-            return self._evaluate_signal(timestamps=output_timestamps, signals=outputs)
+            return self._evaluate_signal(timestamps=r.output_timestamps, signals=r.outputs)
 

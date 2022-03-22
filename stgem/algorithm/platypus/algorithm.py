@@ -17,15 +17,10 @@ class PlatypusOpt(Algorithm):
         self.reportedIdx=0
 
         def fitness_func(test):
-            sut_output = self.sut.execute_test(np.array(test))
+            sut_result = self.sut.execute_test(np.array(test))
+            output = [self.objective_funcs[i](sut_result) for i in range(self.sut.odim)]
 
-            # Check if the SUT output is a vector or a signal.
-            if np.isscalar(sut_output[0]):
-                output = [self.objective_funcs[i](sut_output) for i in range(self.sut.odim)]
-            else:
-                output = [self.objective_funcs[i](**sut_output) for i in range(self.sut.odim)]
-
-            self.log("Result from the SUT {}".format(sut_output))
+            self.log("Result from the SUT {}".format(sut_result))
             self.log("The actual objective {} for the generated test.".format(output))
 
             # Add the new test to the test suite.

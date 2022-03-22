@@ -11,7 +11,7 @@ try:
 except ImportError:
     raise Exception("Error importing Python Matlab engine for AT.")
 
-from stgem.sut import SUT
+from stgem.sut import SUT,SUTResult
 
 class Matlab_Simulink_Signal(SUT):
     """
@@ -90,7 +90,8 @@ class Matlab_Simulink_Signal(SUT):
 
         timestamps_array = np.array(out_timestamps).flatten()
 
-        return timestamps_array, result
+        # TODO Return input timestamps
+        return SUTResult(model_input, result, None, timestamps_array, None)
 
     def _execute_test(self, timestamps, signals):
         return self._execute_test_simulink(timestamps, signals)
@@ -167,8 +168,8 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         """
 
         test = self.sample_input_space()
-        timestamps, signals = self.execute_test(test)
-        return test, timestamps, signals
+        tr = self.execute_test(test)
+        return tr
 
 class Matlab(SUT):
     """

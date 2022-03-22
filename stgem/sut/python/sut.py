@@ -4,7 +4,7 @@
 import math
 import numpy as np
 import inspect
-from stgem.sut import SUT
+from stgem.sut import SUT, SUTResult
 
 
 class PythonFunction(SUT):
@@ -39,6 +39,12 @@ class PythonFunction(SUT):
 
     def _execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
-        output = self.function(test)
+        output=[]
+        error=None
+        # Add a exception handler
+        try:
+            output = self.function(test)
+        except Exception as err:
+            error=err
 
-        return np.asarray(output)
+        return SUTResult(test,np.asarray(output),None,None, error)

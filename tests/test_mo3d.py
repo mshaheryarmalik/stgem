@@ -4,6 +4,7 @@ from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorMAB
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model_keras import OGANK_Model
+from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
 
@@ -33,8 +34,6 @@ class TestPython(unittest.TestCase):
             objective_selector=ObjectiveSelectorMAB(warm_up=5),
             steps=[
                 Search(max_tests=20,
-                       algorithm=Random(model_factory=(lambda: Uniform()))),
-                Search(max_time=5,
                        algorithm=Random(model_factory=(lambda: Uniform()))),
                 Search(max_tests=20,
                        algorithm=Random(model_factory=(lambda: LHS(parameters={"samples":20})))),
