@@ -17,8 +17,8 @@ class Objective:
     def setup(self,sut):
         self.sut = sut
 
-    def __call__(self, output):
-        return output
+    def __call__(self, inputs, outputs, input_timestamps=None, output_timestamps=None):
+        return outputs
 
 class Minimize(Objective):
     """
@@ -36,22 +36,24 @@ class Minimize(Objective):
         self.scale = scale
         self.invert = invert
 
-    def __call__(self, output):
+    def __call__(self, inputs, outputs, input_timestamps=None, output_timestamps=None):
+        assert output_timestamps is None
+
         if self.selected is None:
-            idx = list(range(len(output)))
+            idx = list(range(len(outputs)))
         else:
             idx = self.selected
 
         if self.invert:
-            output = output*(-1)
+            outputs = outputs*(-1)
             ranges = np.asarray([[-self.sut.output_range[i][1], -self.sut.output_range[i][0]] for i in idx])
         else:
             ranges = [self.sut.output_range[i] for i in idx]
 
         if self.scale:
-            output = self.sut.scale(output[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
+            output = self.sut.scale(outputs[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
         else:
-            output = output[idx]
+            output = outputs[idx]
 
         return max(0, min(1, min(output)))
 
@@ -65,8 +67,9 @@ class ObjectiveMinComponentwise(Objective):
         super().__init__()
         self.dim = 1
 
-    def __call__(self, timestamps, signals):
-        return [min(signal) for signal in signals]
+    def __call__(self, inputs, outputs, input_timestamps=None, output_timestamps=None):
+        assert output_timestamps is not None
+        return [min(output) for output in outputs]
 
 class FalsifySTL(Objective):
     """
@@ -107,7 +110,7 @@ class FalsifySTL(Objective):
         self.spec_dense.spec = self.specification
         self.spec_discrete.spec = self.specification
 
-    def _evaluate_vector(self, output):
+    def _evaluate_vector(self,  output):
         # We assume that the output is a single observation of a signal. It
         # follows that not all STL formulas have a clear interpretation (like
         # always[0,30](x1 > 0 and x2 > 0). It is up to the user to ensure a
@@ -193,11 +196,11 @@ class FalsifySTL(Objective):
 
         return robustness
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, inputs, outputs, input_timestamps=None, output_timestamps=None):
         # If we have a single argument, then we treat it as a vector input.
         # Otherwise we assume that we have a signal input timestaps, signals.
-        if len(args) == 1:
-            return self._evaluate_vector(args[0])
+        if output_timestamps is None:
+            return self._evaluate_vector(outputs)
         else:
-            return self._evaluate_signal(timestamps=args[0], signals=args[1])
+            return self._evaluate_signal(timestamps=output_timestamps, signals=outputs)
 
