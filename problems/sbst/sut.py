@@ -44,7 +44,7 @@ class SBSTSUT_base(SUT):
     of this class will raise a NotImplementedError.
     """
 
-    def __init__(self, beamng_home, map_size, max_speed, check_key=True):
+    def __init__(self, parameters):
         """
         Initialize the class.
 
@@ -70,15 +70,13 @@ class SBSTSUT_base(SUT):
           check_key (bool):       Check if the activation key exists.
         """
 
-        SUT.__init__(self)
+        SUT.__init__(self, parameters)
 
-        if map_size <= 0:
+        if self.map_size <= 0:
             raise ValueError("The map size must be positive.")
-        if max_speed <= 0:
+        if self.max_speed <= 0:
             raise ValueError("The maximum speed should be positive.")
 
-        self.map_size = map_size
-        self.beamng_home = beamng_home
         # This variable is essentially where (some) files created during the
         # simulation are placed and it is freely selectable. Due to some choices in
         # the SBST CPS competition code, we hard code it as follows (see
@@ -86,9 +84,8 @@ class SBSTSUT_base(SUT):
         self.beamng_user = os.path.join(
             os.environ["USERPROFILE"], "Documents/BeamNG.research"
         )
-        self.map_size = map_size
         self.oob_tolerance = 0.95  # This is used by the SBST code, but the value does not matter.
-        self.maxspeed = max_speed
+        self.maxspeed = self.max_speed
         self.max_speed_in_ms = self.maxspeed * 0.277778
 
         # Check for activation key.
@@ -279,20 +276,19 @@ class SBSTSUT_curvature(SBSTSUT_base):
     of the map and point initially directly upwards.
     """
 
-    def __init__(self, curvature_points, beamng_home, map_size, max_speed, check_key=True):
+    def __init__(self, parameters):
         """
         Args:
           curvature_points (int): How many curvature values specify a road.
           map_size (int): Map size in pixels (total map size map_size*map_size).
         """
 
-        if curvature_points <= 0:
-            raise ValueError("The number of curvature points must be positive.")
-        if map_size <= 0:
-            raise ValueError("The map size must be positive.")
+        super().__init__(parameters)
 
-        super().__init__(beamng_home, map_size, max_speed, check_key)
-        self.curvature_points = curvature_points
+        if self.curvature_points <= 0:
+            raise ValueError("The number of curvature points must be positive.")
+        if self.map_size <= 0:
+            raise ValueError("The map size must be positive.")
 
     def test_to_road_points(self, test):
         """
@@ -397,13 +393,7 @@ class SBSTSUT(SBSTSUT_curvature):
     """
 
     def __init__(self, parameters):
-        self.curvature_points = parameters["curvature_points"]
-        self.beamng_home = parameters["beamng_home"]
-        self.map_size = parameters["map_size"]
-        self.max_speed = parameters["max_speed"]
-
-        super().__init__(self.curvature_points, self.beamng_home, self.map_size, self.max_speed)
-
+        super().__init__(parameters)
 
     def _execute_test(self, test):
         """
@@ -465,8 +455,8 @@ class SBSTSUT_validator(SBSTSUT_curvature):
     middle of the bottom part of the map and point initially directly upwards.
     """
 
-    def __init__(self, map_size, curvature_points):
-        super().__init__(curvature_points, beamng_home="", map_size=map_size, max_speed=1, check_key=False)
+    def __init__(self, parameters):
+        super().__init__(parameters)
 
     def _execute_test(self, test):
         """

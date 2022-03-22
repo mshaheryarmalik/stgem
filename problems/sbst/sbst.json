@@ -14,12 +14,20 @@
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 60},
 
-"steps": ["step_wogan"],
+"steps": ["step_random_search", "step_wogan"],
+  "step_random_search": {
+    "step_parameters": {
+      "max_tests": 20,
+      "mode": "stop_at_first_objective"
+    },
+    "algorithm": "random.Random"
+  },
   "step_wogan": {
-    "step_parameters": {"max_tests": 80},
+    "step_parameters": {"max_tests": 80, "mode": "copy:step_random_search.step_parameters.mode"},
     "algorithm": "wogan.WOGAN",
     "algorithm_parameters": {
       "max_tests": "copy:step_wogan.step_parameters.max_tests",
+      "preceding_tests": "copy:step_wogan.step_parameters.max_tests",
       "input_dimension": 5,
       "use_predefined_random_data": false,
       "predefined_random_data": {"test_inputs": null, "test_outputs": null},
@@ -50,11 +58,11 @@
                              "loss": "MSE,logit",
                              "l2_regularization_coef": 0.001},
       "analyzer_mlm": "AnalyzerNetwork",
-      "analyzer_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "hidden_neurons": [64, 64], "layer_normalization": false},
+      "analyzer_mlm_parameters": {"input_shape": "copy:step_wogan.algorithm_parameters.input_dimension", "hidden_neurons": [64, 64], "layer_normalization": false},
       "generator_mlm": "GeneratorNetwork",
-      "generator_mlm_parameters": {"noise_dim": 10, "output_shape": "copy:algorithm_parameters.input_dimension", "hidden_neurons": [128, 128], "batch_normalization": false, "layer_normalization": false},
+      "generator_mlm_parameters": {"noise_dim": 10, "output_shape": "copy:step_wogan.algorithm_parameters.input_dimension", "hidden_neurons": [128, 128], "batch_normalization": false, "layer_normalization": false},
       "critic_mlm": "CriticNetwork",
-      "critic_mlm_parameters": {"input_shape": "copy:algorithm_parameters.input_dimension", "hidden_neurons": [128, 128]}
+      "critic_mlm_parameters": {"input_shape": "copy:step_wogan.algorithm_parameters.input_dimension", "hidden_neurons": [128, 128]}
       }
-}
+  }
 }
