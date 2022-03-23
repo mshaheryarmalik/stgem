@@ -131,7 +131,7 @@ class RoadPolygon:
                     logging.debug("The neighbouring polygons %s and %s have an intersection of type %s." % (
                         polygon, other, type(other.intersection(polygon))))
                     return False
-        logging.debug("The road is apparently valid.")
+        #logging.debug("The road is apparently valid.")
         return True
 
 

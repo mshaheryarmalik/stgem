@@ -43,7 +43,7 @@ class BeamNGBrewer:
         self.beamng = BeamNGpy('localhost', 64256, home=beamng_home, user=beamng_user)
 
         # TODO Why do we need to wait until this point? otherwise the loggers will be reconfigures?
-        log.info("Disabling BEAMNG logs")
+        #log.info("Disabling BEAMNG logs")
         LOGGER_ID = "beamngpy"
         bngpy_logger = log.getLogger(LOGGER_ID)
         module_logger = log.getLogger(f'{LOGGER_ID}.beamngpycommon')

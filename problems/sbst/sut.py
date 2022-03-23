@@ -12,6 +12,12 @@ import logging
 
 import numpy as np
 
+# Disable BeamNG logs etc.
+for id in ["shapely.geos", "beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle", "beamngpy.Camera", "matplotlib", "matplotlib.pyplot", "matplotlib.font_manager", "PIL.PngImagePlugin"]:
+    logger = logging.getLogger(id)
+    logger.setLevel(logging.CRITICAL)
+    logger.disabled = True
+
 from shapely.geometry import Point
 from shapely.geometry import LineString, Polygon
 from shapely.affinity import translate, rotate
@@ -90,13 +96,7 @@ class SBSTSUT_base(SUT):
         if not os.path.exists(os.path.join(self.beamng_user, "tech.key")):
             raise Exception("The activation key 'tech.key' must be in the directory {}.".format(self.beamng_user))
 
-        # Disable BeamNG logs etc.
-        for id in ["shapely.geos", "beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Scenario", "beamngpy.Vehicle", "beamngpy.Camera"]:
-            logger = logging.getLogger(id)
-            logger.setLevel(logging.CRITICAL)
-            logger.disabled = True
-
-        # For validating the executed roads.
+       # For validating the executed roads.
         self.validator = TestValidator(map_size=self.map_size)
 
         # Disable log messages from third party code.
