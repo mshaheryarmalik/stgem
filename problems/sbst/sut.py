@@ -96,7 +96,7 @@ class SBSTSUT_base(SUT):
         if not os.path.exists(os.path.join(self.beamng_user, "tech.key")):
             raise Exception("The activation key 'tech.key' must be in the directory {}.".format(self.beamng_user))
 
-       # For validating the executed roads.
+        # For validating the executed roads.
         self.validator = TestValidator(map_size=self.map_size)
 
         # Disable log messages from third party code.

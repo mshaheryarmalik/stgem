@@ -1,7 +1,7 @@
 {
 "sut": "SBSTSUT",
 "sut_parameters": {
-  "beamng_home":  "C:/Users/japeltom/BeamNG/BeamNG.tech.v0.24.0.1",
+  "beamng_home":  "C:/BeamNG/BeamNG.tech.v0.24.0.1",
   "curvature_points": 5,
   "map_size": 200,
   "max_speed": 75.0,
