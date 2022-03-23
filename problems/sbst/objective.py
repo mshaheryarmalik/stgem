@@ -12,5 +12,4 @@ class MaxOOB(Objective):
         self.dim = 1
 
     def __call__(self, timestamps, signals):
-        return 1 - min(signals[0])
-
+        return 1 - max(signals[0])
