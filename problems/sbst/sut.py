@@ -33,7 +33,6 @@ from code_pipeline.tests_generation import RoadTestFactory
 from code_pipeline.validation import TestValidator
 from code_pipeline.visualization import RoadTestVisualizer
 
-
 class SBSTSUT_base(SUT):
     """
     Implements a base class for SBST based systems under test. The purpose of
@@ -70,7 +69,7 @@ class SBSTSUT_base(SUT):
           check_key (bool):       Check if the activation key exists.
         """
 
-        SUT.__init__(self, parameters)
+        super().__init__(parameters)
 
         if self.map_size <= 0:
             raise ValueError("The map size must be positive.")
@@ -85,8 +84,7 @@ class SBSTSUT_base(SUT):
             os.environ["USERPROFILE"], "Documents/BeamNG.research"
         )
         self.oob_tolerance = 0.95  # This is used by the SBST code, but the value does not matter.
-        self.maxspeed = self.max_speed
-        self.max_speed_in_ms = self.maxspeed * 0.277778
+        self.max_speed_in_ms = self.max_speed * 0.277778
 
         # Check for activation key.
         if not os.path.exists(os.path.join(self.beamng_user, "tech.key")):
@@ -265,7 +263,6 @@ class SBSTSUT_base(SUT):
             oob[0, i] = state.oob_percentage
         return timestamps, oob
 
-
 class SBSTSUT_curvature(SBSTSUT_base):
     """
     A class to be inherited by all SBST SUTs which use input representation based
@@ -385,7 +382,6 @@ class SBSTSUT_curvature(SBSTSUT_base):
 
         return self._sample_input_space(self.curvature_points)
 
-
 class SBSTSUT(SBSTSUT_curvature):
     """
     Class for the SBST CPS competition SUT accepting tests which are vectors of
@@ -408,7 +404,7 @@ class SBSTSUT(SBSTSUT_curvature):
           oob (np.ndarray): Array of shape (1, M).
         """
 
-        return self._execute_test_beamng(self.test_to_road_points(test.reshape(-1)))[1]
+        return self._execute_test_beamng(self.test_to_road_points(test.reshape(-1)))
 
     def validity(self, test):
         """
@@ -445,7 +441,6 @@ class SBSTSUT(SBSTSUT_curvature):
 
         return frechet_distance(self.test_to_road_points(X), self.test_to_road_points(Y))
 
-
 class SBSTSUT_validator(SBSTSUT_curvature):
     """
     Class for the SUT of considering an SBST test valid or not. We use the
@@ -470,3 +465,4 @@ class SBSTSUT_validator(SBSTSUT_curvature):
         """
 
         return np.array(sbst_validate_test(self.test_to_road_points(test), self.map_size)).reshape(1)
+

@@ -3,13 +3,13 @@
 "sut_parameters": {
   "beamng_home":  "C:/BeamNG/BeamNG.tech.v0.24.0.1",
   "curvature_points": 5,
-  "map_size":  200,
-  "max_speed": 50.0,
-  "inputs": ["i1", "i2", "i3", "i4", "i5"],
-  "outputs":  [0.0, 1.0]
+  "map_size": 200,
+  "max_speed": 75.0,
+  "inputs": "copy:sut_parameters.curvature_points",
+  "outputs": [[0.0, 1.0]]
 },
+
 "objective_func": ["MaxOOB"],
-"objective_func_parameters": [{"selected": [0], "scale": false}],
 
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 60},
@@ -17,20 +17,18 @@
 "steps": ["step_random_search", "step_wogan"],
   "step_random_search": {
     "step_parameters": {
-      "max_tests": 20,
+      "max_tests": 50,
       "mode": "stop_at_first_objective"
     },
     "algorithm": "random.Random"
   },
   "step_wogan": {
-    "step_parameters": {"max_tests": 80, "mode": "copy:step_random_search.step_parameters.mode"},
+    "step_parameters": {"max_tests": 150, "mode": "copy:step_random_search.step_parameters.mode"},
     "algorithm": "wogan.WOGAN",
     "algorithm_parameters": {
       "max_tests": "copy:step_wogan.step_parameters.max_tests",
       "preceding_tests": "copy:step_wogan.step_parameters.max_tests",
-      "input_dimension": 5,
-      "use_predefined_random_data": false,
-      "predefined_random_data": {"test_inputs": null, "test_outputs": null},
+      "input_dimension": "copy:sut_parameters.curvature_points",
       "bins": 10,
       "wgan_batch_size": 32,
       "fitness_coef": 0.95,
