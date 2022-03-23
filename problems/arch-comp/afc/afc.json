@@ -1,15 +1,15 @@
 {
 "sut": "matlab.Matlab_Simulink",
-"sut_parameters": {"model_file": "problems/arch-comp/cc/cars",
-                   "inputs": ["THROTTLE", "BRAKE"],
-                   "outputs": ["Y1", "Y2", "Y3", "Y4", "Y5"],
-                   "input_range": [[0, 100], [0, 100]],
-                   "simulation_time": 100,
+"sut_parameters": {"model_file": "problems/arch-comp/afc/AbstractFuelControl_M1",
+                   "inputs": ["THROTTLE", "ENGINE"],
+                   "outputs": ["MU", "MODE"],
+                   "input_range": [[0, 61.1], [900, 1100]],
+                   "simulation_time": 50,
                    "time_slice": 5,
                    "sampling_step": 0.2},
 "objective_func": ["FalsifySTL"],
 "objective_func_parameters": [
-  {"specification": "(always[0,100](Y5 - Y4 <= 40))"}
+  {"specification": "(always[11,50](|MU| < 0.007))"}
 ],
 "objective_selector": "ObjectiveSelectorMAB",
 "objective_selector_parameters": {"warm_up": 30},
