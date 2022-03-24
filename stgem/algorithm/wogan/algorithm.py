@@ -12,8 +12,56 @@ class WOGAN(Algorithm):
     Implements the test suite generation based on online Wasserstein generative
     adversarial networks.
     """
+    default_parameters = parameters = {
+        "bins": 10,
+        "wgan_batch_size": 32,
+        "fitness_coef": 0.95,
+        "train_delay": 3,
+        "N_candidate_tests": 1,
+        "shift_function": "linear",
+        "shift_function_parameters": {"initial": 0, "final": 3},
+        "wogan_model": "WOGAN_Model",
+        "wogan_model_parameters": {"critic_optimizer": "Adam",
+                                   "critic_lr": 0.001,
+                                   "critic_betas": [0, 0.9],
+                                   "generator_optimizer": "Adam",
+                                   "generator_lr": 0.001,
+                                   "generator_betas": [0, 0.9],
+                                   "noise_batch_size": 32,
+                                   "gp_coefficient": 10,
+                                   "eps": 1e-6,
+                                   "report_wd": True},
+        "train_settings_init": {"epochs": 3, "analyzer_epochs": 20, "critic_steps": 5, "generator_steps": 1},
+        "train_settings": {"epochs": 10, "analyzer_epochs": 1, "critic_steps": 5, "generator_steps": 1},
+        "analyzer": "Analyzer_NN",
+        "analyzer_parameters": {"optimizer": "Adam",
+                                "lr": 0.005,
+                                "betas": [0, 0.9],
+                                "loss": "MSE,logit",
+                                "l2_regularization_coef": 0.001},
+        "analyzer_mlm": "AnalyzerNetwork",
+        "analyzer_mlm_parameters": {"input_shape": "copy:input_dimension",
+                                    "hidden_neurons": [64, 64], "layer_normalization": False},
+        "generator_mlm": "GeneratorNetwork",
+        "generator_mlm_parameters": {"noise_dim": 10,
+                                     "output_shape": "copy:input_dimension",
+                                     "hidden_neurons": [128, 128], "batch_normalization": False,
+                                     "layer_normalization": False},
+        "critic_mlm": "CriticNetwork",
+        "critic_mlm_parameters": {"input_shape": "copy:input_dimension",
+                                  "hidden_neurons": [128, 128]}
+    }
 
     def initialize(self):
+        self.N_models = sum(1 for f in self.objective_funcs)
+
+        # Setup the models.
+        # ---------------------------------------------------------------------
+        # Load the specified WOGAN model and initialize it.
+        module = importlib.import_module("stgem.algorithm.wogan.model")
+        self.model_class = getattr(module, self.wogan_model)
+        self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=self.logger) for _ in range(self.N_models)]
+
         # Setup the shift function for sampling training data.
         # ---------------------------------------------------------------------
         if self.shift_function is None:
@@ -216,15 +264,11 @@ class WOGAN(Algorithm):
             self.log("Chose test {} with predicted minimum objective {} on WGAN model {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, best_model + 1, rounds, invalid))
             self.log("Executing the test...")
 
-            sut_output = self.sut.execute_test(best_test)
+            sut_result = self.sut.execute_test(best_test)
 
-            # Check if the SUT output is a vector or a signal.
-            if np.isscalar(sut_output[0]):
-                output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
-            else:
-                output = [self.objective_funcs[i](*sut_output) for i in range(self.N_models)]
-  
-            self.log("Result from the SUT {}".format(sut_output))
+            output = [self.objective_funcs[i](sut_result) for i in range(self.N_models)]
+
+            self.log("Result from the SUT {}".format(sut_result))
             self.log("The actual objective {} for the generated test.".format(output))
 
             # Add the new test to the test suite.

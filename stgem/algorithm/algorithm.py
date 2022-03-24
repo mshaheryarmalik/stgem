@@ -33,7 +33,8 @@ class Algorithm:
             self.N_models=0
             self.models=[]
 
-    def setup(self, sut, test_repository, objective_funcs, objective_selector, device=None, logger=None):
+    def setup(self, sut, test_repository, objective_funcs, objective_selector, max_steps, device=None, logger=None):
+
         self.sut = sut
         self.test_repository = test_repository
         self.objective_funcs = objective_funcs
@@ -42,10 +43,29 @@ class Algorithm:
         self.logger = logger
         self.log = (lambda s: self.logger.algorithm.info(s) if logger is not None else None)
 
+        # Setup the device.
+        self.parameters["device"] = device
+        # Set input dimension, max_tests and preceding_tests in parameters
+        if not "input_dimension" in self.parameters:
+            self.parameters["input_dimension"] = self.sut.idim
+
+
+        self.parameters["max_tests"] = max_steps
+        if not "preceding_tests" in self.parameters:
+            self.parameters["preceding_tests"] = self.test_repository.tests
+
+        def copy_input_dimension(d, idim):
+            for k,v in d.items():
+                if v=="copy:input_dimension":
+                   d[k] = idim
+                if isinstance(v, dict):
+                    copy_input_dimension(v,idim)
+
+        copy_input_dimension(self.parameters, self.sut.idim)
         self.create_models()
 
         for m in self.models:
-            m.setup(sut, logger)
+            m.setup(self.sut, self.logger)
 
     def __getattr__(self, name):
         if "parameters" in self.__dict__:
