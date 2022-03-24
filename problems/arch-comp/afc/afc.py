@@ -31,9 +31,7 @@ sut_parameters = {"model_file": "problems/arch-comp/afc/run_powertrain",
 ogan_parameters = {"random_search_min_distance": 0.8,
                    "fitness_coef": 0.95,
                    "train_delay": 1,
-                   "N_candidate_tests": 1,
-                   "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
-                   "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32},
+                   "N_candidate_tests": 1
                    }
 
 ogan_model_parameters = {"optimizer": "Adam",
@@ -45,9 +43,11 @@ ogan_model_parameters = {"optimizer": "Adam",
                          "generator_loss": "MSE",
                          "discriminator_loss": "MSE",
                          "generator_mlm": "GeneratorNetwork",
-                         "generator_mlm_parameters": {"noise_dim": 20, "output_shape": 3, "neurons": 64},
+                         "generator_mlm_parameters": {"noise_dim": 20, "output_shape": 6, "neurons": 64},
                          "discriminator_mlm": "DiscriminatorNetwork",
-                         "discriminator_mlm_parameters": {"input_shape": 3, "neurons": 64, "discriminator_output_activation": "sigmoid"}
+                         "discriminator_mlm_parameters": {"input_shape": 6, "neurons": 64, "discriminator_output_activation": "sigmoid"},
+                         "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
+                         "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32}
                         }
 
 generator = STGEM(

@@ -16,7 +16,9 @@ class OGAN_Model(Model):
 
     def setup(self, sut, device, logger):
         super().setup(sut, device, logger)
+        self._initialize()
 
+    def _initialize(self):
         # Load the specified generator and discriminator machine learning
         # models and initialize them.
         module = importlib.import_module("stgem.algorithm.ogan.mlm")
