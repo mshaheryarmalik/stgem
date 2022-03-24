@@ -72,6 +72,7 @@ class Search(Step):
             test_repository=test_repository,
             objective_funcs=objective_funcs,
             objective_selector=objective_selector,
+            max_steps=self.max_tests,
             device=device,
             logger=logger)
 
@@ -153,16 +154,6 @@ class STGEM:
         # Setup the objective selector.
         self.objective_selector.setup(self.objectives)
 
-    def setup_steps(self):
-
-        for step in self.steps:
-            step.setup(
-                sut=self.sut,
-                test_repository=self.test_repository,
-                objective_funcs=self.objectives,
-                objective_selector=self.objective_selector,
-                device=self.device,
-                logger=self.logger)
 
     def setup_seed(self):
         # Setup seed.
@@ -193,7 +184,6 @@ class STGEM:
         self.test_repository = TestRepository()
 
         self.setup_objectives()
-        self.setup_steps()
 
     def run(self, seed=None) -> STGEMResult:
 
@@ -203,6 +193,13 @@ class STGEM:
         results = []
 
         for step in self.steps:
+            step.setup(
+                sut=self.sut,
+                test_repository=self.test_repository,
+                objective_funcs=self.objectives,
+                objective_selector=self.objective_selector,
+                device=self.device,
+                logger=self.logger)
             results.append(step.run())
 
         sr = STGEMResult(self.description, self.test_repository, results, self.sut.perf)
