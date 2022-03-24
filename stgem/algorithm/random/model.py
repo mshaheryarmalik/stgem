@@ -21,8 +21,8 @@ class LHS(Model):
     Implements a random test model based on Latin hypercube design.
     """
 
-    def setup(self, sut, logger=None):
-        super().setup(sut,logger)
+    def setup(self, sut, device, logger=None):
+        super().setup(sut, device, logger)
 
         try:
             from pyDOE import lhs
