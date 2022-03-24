@@ -5,7 +5,6 @@ import os
 import copy
 from stgem.performance import PerformanceData
 
-
 class Algorithm:
     """
     Base class for all test suite generation algorithms.
@@ -28,12 +27,8 @@ class Algorithm:
         if self.model_factory:
             self.N_models = sum(1 for f in self.objective_funcs)
             self.models = [self.model_factory() for _ in range(self.N_models)]
-        else:
-            self.N_models=0
-            self.models=[]
 
     def setup(self, sut, test_repository, objective_funcs, objective_selector, max_steps, device=None, logger=None):
-
         self.sut = sut
         self.test_repository = test_repository
         self.objective_funcs = objective_funcs
@@ -47,7 +42,6 @@ class Algorithm:
         # Set input dimension, max_tests and preceding_tests in parameters
         if not "input_dimension" in self.parameters:
             self.parameters["input_dimension"] = self.sut.idim
-
 
         self.parameters["max_tests"] = max_steps
         if not "preceding_tests" in self.parameters:
@@ -88,7 +82,6 @@ class Algorithm:
         will not be used anymore in that step.
         """
         pass
-
 
 class LoaderAlgorithm(Algorithm):
     """

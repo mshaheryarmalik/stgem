@@ -1,11 +1,10 @@
-import unittest
+import os, math, unittest
 
 from stgem.generator import STGEM, Search, STGEMResult
 from stgem.sut.python.sut import PythonFunction
 from stgem.objective import Minimize
 from stgem.algorithm.random.algorithm import Random
-import math
-
+from stgem.algorithm.random.model import Uniform
 
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
@@ -16,25 +15,29 @@ def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350],
 
     return [h1, h2, h3]
 
-
 class MyTestCase(unittest.TestCase):
     def test_dump(self):
+        mode = "stop_at_first_objective"
 
         generator = STGEM(
             description="test-dump",
             sut=PythonFunction(function=myfunction),
             objectives=[Minimize(selected=[0, 1, 2], scale=True)],
             steps=[
-                Search(max_tests=20, algorithm=Random())
+                Search(max_tests=20,
+                       mode=mode,
+                       algorithm=Random(model_factory=(lambda: Uniform())))
             ]
         )
 
         r = generator.run()
-        r.dump_to_file(generator.description + ".pickle")
-        result2 = STGEMResult.restore_from_file(generator.description + ".pickle")
+        file_name = generator.description + ".pickle"
+        r.dump_to_file(file_name)
+        result2 = STGEMResult.restore_from_file(file_name)
         for s in result2.step_results:
             print(s.success)
 
+        os.remove(file_name)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

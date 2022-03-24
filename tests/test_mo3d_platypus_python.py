@@ -1,4 +1,4 @@
-import unittest
+import math, os, unittest
 
 from stgem.generator import STGEM, Search
 from stgem.sut.python.sut import PythonFunction
@@ -7,9 +7,6 @@ from stgem.objective_selector import ObjectiveSelectorMAB
 from stgem.algorithm.platypus.algorithm import PlatypusOpt
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
-
-import math
-
 
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
@@ -39,9 +36,9 @@ class PlatypusTest(unittest.TestCase):
         )
 
         r = generator.run()
-        r.dump_to_file(generator.description+".pickle")
-
-
+        file_name = generator.description + ".pickle"
+        r.dump_to_file(file_name)
+        os.remove(file_name)
 
 if __name__ == "__main__":
     unittest.main()
