@@ -6,10 +6,10 @@ import numpy as np
 import inspect
 from stgem.sut import SUT, SUTResult
 
-
 class PythonFunction(SUT):
     """
-    A SUT which encapsulates a Python function.
+    A SUT which encapsulates a Python function which we assume to take vectors
+    as inputs and output vectors.
     """
 
     def __init__(self, function, parameters=None):
@@ -34,17 +34,17 @@ class PythonFunction(SUT):
         self.idim = len(self.input_range)
         self.odim = len(self.output_range)
 
-        self.inputs=inspect.getfullargspec(self.function).args
-        self.outputs=["o"+str(i) for i in range(self.odim)]
+        self.inputs = inspect.getfullargspec(self.function).args
 
     def _execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
-        output=[]
-        error=None
+        output = []
+        error = None
         # Add a exception handler
         try:
             output = self.function(test)
         except Exception as err:
-            error=err
+            error = err
 
-        return SUTResult(test,np.asarray(output),None,None, error)
+        return SUTResult(test, np.asarray(output), None, None, error)
+

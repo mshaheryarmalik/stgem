@@ -28,8 +28,7 @@ sut_parameters = {"model_file": "problems/arch-comp/afc/run_powertrain",
                   "sampling_step": 0.2
                  }
 
-ogan_parameters = {"random_search_min_distance": 0.8,
-                   "fitness_coef": 0.95,
+ogan_parameters = {"fitness_coef": 0.95,
                    "train_delay": 1,
                    "N_candidate_tests": 1
                    }
