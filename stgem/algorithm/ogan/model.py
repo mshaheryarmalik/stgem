@@ -14,9 +14,8 @@ class OGAN_Model(Model):
     Implements the WOGAN model.
     """
 
-    def setup(self,sut, logger):
-        super().setup(sut,logger)
-        self.noise_batch_size = self.parameters["noise_batch_size"]
+    def setup(self, sut, device, logger):
+        super().setup(sut, device, logger)
 
         # Load the specified generator and discriminator machine learning
         # models and initialize them.
@@ -29,10 +28,10 @@ class OGAN_Model(Model):
 
         # Load the specified optimizers.
         module = importlib.import_module("torch.optim")
-        optimizer_class = getattr(module, self.ogan_model_parameters["optimizer"])
-        generator_parameters = {k[10:]:v for k, v in self.ogan_model_parameters.items() if k.startswith("generator")}
+        optimizer_class = getattr(module, self.optimizer)
+        generator_parameters = {k[10:]:v for k, v in self.parameters.items() if k.startswith("generator")}
         self.optimizerG = optimizer_class(self.modelG.parameters(), **algorithm.filter_arguments(generator_parameters, optimizer_class))
-        discriminator_parameters = {k[14:]:v for k, v in self.ogan_model_parameters.items() if k.startswith("discriminator")}
+        discriminator_parameters = {k[14:]:v for k, v in self.parameters.items() if k.startswith("discriminator")}
         self.optimizerD = optimizer_class(self.modelD.parameters(), **algorithm.filter_arguments(discriminator_parameters, optimizer_class))
 
         # Loss functions.
@@ -61,8 +60,8 @@ class OGAN_Model(Model):
             return loss
 
         try:
-            self.lossG = get_loss(self.ogan_model_parameters["generator_loss"])
-            self.lossD = get_loss(self.ogan_model_parameters["discriminator_loss"])
+            self.lossG = get_loss(self.generator_loss)
+            self.lossD = get_loss(self.discriminator_loss)
         except:
             raise
 

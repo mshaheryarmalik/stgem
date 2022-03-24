@@ -9,15 +9,16 @@ class Model:
     Base class for all models.
     """
 
-    default_parameters={}
+    default_parameters = {}
 
     def __init__(self, parameters=None):
         if parameters is None:
-            parameters = copy.copy(self.default_parameters)
+            parameters = copy.deepcopy(self.default_parameters)
         self.parameters = parameters
 
-    def setup(self,sut, logger=None):
+    def setup(self, sut, device, logger=None):
         self.sut = sut
+        self.device = device
 
         self.logger = logger
         self.log = lambda s: self.logger.model.info(s) if logger is not None else None

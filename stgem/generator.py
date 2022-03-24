@@ -150,6 +150,7 @@ class STGEM:
         for o in self.objectives:
             o.setup(self.sut)
 
+        # Setup the objective selector.
         self.objective_selector.setup(self.objectives)
 
     def setup_steps(self):

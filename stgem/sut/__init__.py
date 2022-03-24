@@ -88,13 +88,72 @@ class SUT:
 
         raise AttributeError(name)
 
-
     def initialize(self):
         """
-        This is for SUTs which need two-step initialization.
+        This is for SUTs which need two-step initialization. Base class which
+        need and extend this functionality should always call this super class
+        initializer.
         """
 
-        pass
+        # Infer dimensions and names for inputs and outputs from impartial
+        # information.
+
+        # If self.inputs exists and is an integer, transform it into default
+        # input names i1, ...iN where N is this integer. This also determines
+        # idim if unset.
+        if hasattr(self, "inputs") and isinstance(self.inputs, int):
+            if not hasattr(self, "idim"):
+                self.idim = self.inputs
+            self.inputs = ["i{}".format(i) for i in range(self.inputs)]
+
+        # If idim is not set, it can be inferred from input names (a list of
+        # names) or input ranges.
+        if hasattr(self, "idim"):
+            # idim set already, set default input names if necessary.
+            if not hasattr(self, "inputs"):
+                self.inputs = ["i{}".format(i) for i in range(self.idim)]
+        else:
+            # idim can be inferred from input names, if defined.
+            if hasattr(self, "inputs"):
+                self.idim = len(self.inputs)
+            else:
+                # idim can be inferred from input ranges. Otherwise we do not
+                # know what to do.
+                if not hasattr(self, "input_range"):
+                    raise Exception("SUT input dimension not defined and cannot be inferred.")
+                self.idim = len(self.input_range)
+                self.inputs = ["i{}".format(i) for i in range(self.idim)]
+
+        # The same as above for outputs.
+        if hasattr(self, "outputs") and isinstance(self.outputs, int):
+            if not hasattr(self, "odim"):
+                self.odim = self.outputs
+            self.outputs = ["o{}".format(i) for i in range(self.outputs)]
+
+        if hasattr(self, "odim"):
+            if not hasattr(self, "outputs"):
+                self.outputs = ["o{}".format(i) for i in range(self.odim)]
+        else:
+            if hasattr(self, "outputs"):
+                self.odim = len(self.outputs)
+            else:
+                if not hasattr(self, "output_range"):
+                    raise Exception("SUT output dimension not defined and cannot be inferred.")
+                self.odim = len(self.output_range)
+                self.outputs = ["o{}".format(i) for i in range(self.odim)]
+
+        # Setup input and output ranges and fill unspecified input and output
+        # ranges with Nones.
+        if not hasattr(self, "input_range"):
+            self.input_range = []
+        if not isinstance(self.input_range, list):
+            raise Exception("The input_range attribute of the SUT must be a Python list.")
+        self.input_range += [None for _ in range(self.idim - len(self.input_range))]
+        if not hasattr(self, "output_range"):
+            self.output_range = []
+        if not isinstance(self.output_range, list):
+            raise Exception("The output attribute of the SUT must be a Python list.")
+        self.output_range += [None for _ in range(self.odim - len(self.output_range))]
 
     def scale(self, x, intervals, target_A=-1, target_B=1):
         """
@@ -102,6 +161,9 @@ class SUT:
         intervals are scaled to the interval [A, B] (default [-1, 1]). If an
         interval is None, then no scaling is done.
         """
+
+        if len(intervals) < x.shape[1]:
+            raise Exception("Not enough intervals ({}) for scaling a vector of length {}.".format(len(intervals), x.shape[1]))
 
         y = np.zeros_like(x)
         for i in range(x.shape[1]):
@@ -142,6 +204,9 @@ class SUT:
         are scaled to the given intervals. If an interval is None, then no
         scaling is done.
         """
+
+        if len(intervals) < x.shape[1]:
+            raise Exception("Not enough intervals ({}) for descaling a vector of length {}.".format(len(intervals), x.shape[1]))
 
         y = np.zeros_like(x)
         for i in range(x.shape[1]):

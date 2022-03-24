@@ -11,24 +11,23 @@ class Algorithm:
     Base class for all test suite generation algorithms.
     """
 
-    default_parameters={}
+    default_parameters = {}
 
     def __init__(self, model_factory=None, parameters=None):
-
-        self.model_factory=model_factory
+        self.model_factory = model_factory
         self.N_models = 0
         self.models = []
 
         if parameters is None:
-            parameters = copy.copy(self.default_parameters)
+            parameters = copy.deepcopy(self.default_parameters)
 
-        self.parameters=parameters
+        self.parameters = parameters
         self.perf = PerformanceData()
 
     def create_models(self):
         if self.model_factory:
             self.N_models = sum(1 for f in self.objective_funcs)
-            self.models = [ self.model_factory()  for _ in range(self.N_models)]
+            self.models = [self.model_factory() for _ in range(self.N_models)]
         else:
             self.N_models=0
             self.models=[]
@@ -45,7 +44,7 @@ class Algorithm:
         self.create_models()
 
         for m in self.models:
-            m.setup(sut, logger)
+            m.setup(sut, device, logger)
 
     def __getattr__(self, name):
         if "parameters" in self.__dict__:
@@ -53,8 +52,6 @@ class Algorithm:
                 return self.parameters.get(name)
 
         raise AttributeError(name)
-
-
 
     def initialize(self):
         """

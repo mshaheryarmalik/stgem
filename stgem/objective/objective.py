@@ -12,10 +12,7 @@ then the loss minimization might focus on the wrong thing.
 
 class Objective:
 
-    def __init__(self):
-        pass
-
-    def setup(self,sut):
+    def setup(self, sut):
         self.sut = sut
 
     def __call__(self, r: SUTResult):
