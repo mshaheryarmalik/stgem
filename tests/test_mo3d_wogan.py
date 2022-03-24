@@ -1,12 +1,15 @@
+import math
+
+import unittest
+
 from stgem.generator import STGEM, Search
 from stgem.sut.python.sut import PythonFunction
 from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorMAB
 from stgem.algorithm.wogan.algorithm import WOGAN
+from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.algorithm.random.algorithm import Random
-from stgem.algorithm.random.model import Uniform, LHS
-
-import math
+from stgem.algorithm.random.model import Uniform
 
 
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
@@ -18,12 +21,13 @@ def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350],
 
     return [h1, h2, h3]
 
-import unittest
 
 class TestPython(unittest.TestCase):
     def test_wogan(self):
+        mode = "stop_at_first_objective"
+
         generator = STGEM(
-            description="mo3d/OGAN",
+            description="mo3d/WOGAN",
             sut=PythonFunction(function=myfunction),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
@@ -32,17 +36,17 @@ class TestPython(unittest.TestCase):
             objective_selector=ObjectiveSelectorMAB(warm_up=5),
             steps=[
                 Search(max_tests=20,
+                       mode=mode,
                        algorithm=Random(model_factory=(lambda: Uniform()))),
                 Search(max_tests=5,
-                       mode="stop_at_first_objective",
-                       algorithm=WOGAN()
-                       )
+                       mode=mode,
+                       algorithm=WOGAN(model_factory=(lambda: WOGAN_Model())))
             ]
         )
 
         r = generator.run()
         r.dump_to_file("mo3k_python_wogan_results.pickle")
 
-
 if __name__ == "__main__":
     unittest.main()
+

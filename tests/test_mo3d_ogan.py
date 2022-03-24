@@ -43,7 +43,7 @@ class TestPython(unittest.TestCase):
         )
 
         r = generator.run()
-        r.dump_to_file("mo3k_python_wogan_results.pickle")
+        r.dump_to_file("mo3k_python_ogan_results.pickle")
 
 if __name__ == "__main__":
     unittest.main()
