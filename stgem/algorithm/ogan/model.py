@@ -14,8 +14,29 @@ class OGAN_Model(Model):
     Implements the WOGAN model.
     """
 
+    default_parameters = {"optimizer": "Adam",
+                          "discriminator_lr": 0.005,
+                          "discriminator_betas": [0.9, 0.999],
+                          "generator_lr": 0.001,
+                          "generator_betas": [0.9, 0.999],
+                          "noise_batch_size": 512,
+                          "generator_loss": "MSE",
+                          "discriminator_loss": "MSE",
+                          "generator_mlm": "GeneratorNetwork",
+                          "generator_mlm_parameters": {"noise_dim": 20, "neurons": 64},
+                          "discriminator_mlm": "DiscriminatorNetwork",
+                          "discriminator_mlm_parameters": {"neurons": 64, "discriminator_output_activation": "sigmoid"},
+                          "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
+                          "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32}
+                         }
+
     def setup(self, sut, device, logger):
         super().setup(sut, device, logger)
+
+        # Infer input and output dimensions for ML models.
+        self.parameters["generator_mlm_parameters"]["output_shape"] = self.sut.idim
+        self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.sut.idim
+
         self._initialize()
 
     def _initialize(self):

@@ -24,22 +24,6 @@ class TestPython(unittest.TestCase):
     def test_ogan(self):
         mode = "stop_at_first_objective"
 
-        ogan_model_parameters = {"optimizer": "Adam",
-                                 "discriminator_lr": 0.005,
-                                 "discriminator_betas": [0.9, 0.999],
-                                 "generator_lr": 0.0010,
-                                 "generator_betas": [0.9, 0.999],
-                                 "noise_batch_size": 512,
-                                 "generator_loss": "MSE",
-                                 "discriminator_loss": "MSE",
-                                 "generator_mlm": "GeneratorNetwork",
-                                 "generator_mlm_parameters": {"noise_dim": 20, "output_shape": 3, "neurons": 64},
-                                 "discriminator_mlm": "DiscriminatorNetwork",
-                                 "discriminator_mlm_parameters": {"input_shape": 3, "neurons": 64, "discriminator_output_activation": "sigmoid"},
-                                 "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
-                                 "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32}
-                                }
-
         generator = STGEM(
             description="mo3d/OGAN",
             sut=PythonFunction(function=myfunction),
@@ -54,7 +38,7 @@ class TestPython(unittest.TestCase):
                        algorithm=Random(model_factory=(lambda: Uniform()))),
                 Search(max_tests=5,
                        mode=mode,
-                       algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters))))
+                       algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
             ]
         )
 
