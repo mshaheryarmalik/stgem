@@ -14,7 +14,29 @@ elif afc_mode == "power":
     throttle_range = [61.2, 81.2]
 
 mode = "stop_at_first_objective"
-specification = "(always[11,50](abs(MU) < 0.007))" # AFC29/AFC33
+selected_specification = "AFC27"
+
+specifications = {
+    "AFC27": """(always[11,50](
+                (
+                ((THROTTLE < 8.8) and (eventually[0,0.05](THROTTLE > 40.0)))
+                or
+                ((THROTTLE > 40.0) and (eventually[0,0.05](THROTTLE < 8.8)))
+                )
+                implies
+                (always[1,5](abs(MU) < 0.008))))""", # AFC27, normal
+    "AFC29": "(always[11,50](abs(MU) < 0.007))" # AFC29/AFC33, normal/power
+}
+
+specification = specifications[selected_specification]
+
+# Some ARCH-COMP specifications have requirements whose horizon is longer than
+# the output signal for some reason. Disable strict horizon check to get
+# reasonable results.
+if selected_specification in ["AFC27"]:
+    strict_horizon_check = False
+else:
+    strict_horizon_check = True
 
 sut_parameters = {"model_file": "problems/arch-comp/afc/run_powertrain",
                   "init_model_file": "problems/arch-comp/afc/init_powertrain",
@@ -52,7 +74,7 @@ ogan_model_parameters = {"optimizer": "Adam",
 generator = STGEM(
                   description="Fuel Control of an Automotive Powertrain ({} mode)".format(afc_mode),
                   sut=Matlab(sut_parameters),
-                  objectives=[FalsifySTL(specification=specification)],
+                  objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
                   objective_selector=ObjectiveSelectorMAB(warm_up=5),
                   steps=[
                          Search(max_tests=20,

@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from itertools import chain
+
 import numpy as np
 
 from stgem.sut import SUTResult
@@ -74,12 +76,12 @@ class FalsifySTL(Objective):
     Objective function to falsify a STL specification.
     """
 
-    def __init__(self, specification):
+    def __init__(self, specification, strict_horizon_check=True):
         super().__init__()
 
         self.dim = 1
         self.specification = specification
-
+        self.strict_horizon_check = strict_horizon_check
 
     def setup(self, sut):
         # Create the RTAMT specification.
@@ -90,7 +92,6 @@ class FalsifySTL(Objective):
         # results otherwise.
         super().setup(sut)
 
-
         # rtamt may have dependency problems. We continue even if we cannot import it
         try:
             import rtamt
@@ -99,10 +100,9 @@ class FalsifySTL(Objective):
             import traceback
             traceback.print_exc()
 
-
         self.spec_dense = rtamt.STLDenseTimeSpecification()
         self.spec_discrete = rtamt.STLSpecification()
-        for var in self.sut.outputs:
+        for var in chain(self.sut.outputs, self.sut.inputs):
             self.spec_dense.declare_var(var, "float")
             self.spec_discrete.declare_var(var, "float")
         self.spec_dense.spec = self.specification
@@ -130,7 +130,7 @@ class FalsifySTL(Objective):
             # TODO: Handle errors.
             raise
 
-		# Use the online monitor to get the robustness. We evaluate at time 0.
+        # Use the online monitor to get the robustness. We evaluate at time 0.
         robustness = spec.update(0, zip(self.sut.outputs, output))
 
         # Clip the robustness to [0, 1].
@@ -138,7 +138,11 @@ class FalsifySTL(Objective):
 
         return robustness
 
-    def _evaluate_signal(self, timestamps, signals):
+    def _evaluate_signal(self, result):
+        input_timestamps = result.input_timestamps
+        output_timestamps = result.output_timestamps
+        input_signals = result.inputs
+        output_signals = result.outputs
         # Here we find the robustness at time 0.
         #
         # We assume that the user guarantees that time is increasing and that
@@ -146,13 +150,6 @@ class FalsifySTL(Objective):
         # difference between consecutive times is approximately constant.
 
         spec = self.spec_dense
-
-        if timestamps[0] != 0:
-            raise Exception("The first timestamp should be 0.")
-
-        # Scale the signals.
-        signals = [self.sut.scale_signal(signals[i], self.sut.output_range[i], target_A=0, target_B=1) for i in range(len(signals))]
-
         spec.reset()
 
         try:
@@ -161,10 +158,82 @@ class FalsifySTL(Objective):
             # TODO: Handle errors.
             raise
 
+        # Find out which variables are in the STL formula. Adjust input and
+        # output signals to have common timestamps if required.
+        # ---------------------------------------------------------------------
+        formula_variables = spec.top.out_vars.copy()
+        # Separate to input and output variables and create a mapping for easy
+        # access to correct signal.
+        input_var = []
+        output_var = []
+        M = {}
+        for var in formula_variables:
+            try:
+                M[var] = self.sut.outputs.index(var)
+                output_var.append(var)
+            except ValueError:
+                try:
+                    M[var] = self.sut.inputs.index(var)
+                    input_var.append(var)
+                except ValueError:
+                    raise Exception("Variable '{}' not in input or output variables.".format(var))
+
+        # These two checks make the adjustment code valid.
+        if output_timestamps[0] != 0 or (input_timestamps is not None and input_timestamps[0] != 0):
+            raise Exception("The first timestamp should be 0 in both input and output signals.")
+        if input_timestamps is not None and input_timestamps[-1] != output_timestamps[-1]:
+            raise Exception("The final timestamp should be equal for both input and output.")
+
+        if len(input_var) > 0 and len(output_var) > 0:
+            # Adjust signals.
+            timestamps = []
+            signals = {var:[] for var in formula_variables}
+            i = 0; j = 0
+            eps = 1e-6
+            while i < len(input_timestamps) and j < len(output_timestamps):
+                if abs(input_timestamps[i] - output_timestamps[j]) < eps:
+                    # Same timestamp in both.
+                    timestamps.append(output_timestamps[j])
+                    # Use input as is.
+                    for var in input_var:
+                        signals[var].append(input_signals[M[var]][i])
+                    # Use output as is.
+                    for var in output_var:
+                        signals[var].append(output_signals[M[var]][j])
+                    i += 1; j += 1
+                elif input_timestamps[i] - output_timestamps[j] >= eps:
+                    # First timestamp in outputs, i.e., we need to extrapolate
+                    # the input signal value.
+                    timestamps.append(output_timestamps[j])
+                    # Extrapolate input.
+                    for var in input_var:
+                        signals[var].append(signals[var][-1])
+                    # Use output as is.
+                    for var in output_var:
+                        signals[var].append(output_signals[M[var]][j])
+                    j += 1
+                else:
+                    # First timestamp in inputs, i.e., we need to extrapolate
+                    # the output signal value.
+                    timestamps.append(input_timestamps[i])
+                    # Use input as is.
+                    for var in input_var:
+                        signals[var].append(input_signals[M[var]][i])
+                    # Extrapolate output.
+                    for var in output_var:
+                        signals[var].append(signals[var][-1])
+                    i += 1
+        elif len(input_var) > 0:
+            timestamps = input_timestamps
+            signals = {var:input_signals[M[var]] for var in input_var}
+        else:
+            timestamps = output_timestamps
+            signals = {var:output_signals[M[var]] for var in output_var}
+
         # This needs to be fetched at this point.
         horizon = spec.top.horizon
 
-        if horizon > timestamps[-1]:
+        if self.strict_horizon_check and horizon > timestamps[-1]:
             raise Exception("The horizon of the formula is too long compared to input signal length. The robustness cannot be computed.")
 
         # Transform the STL formula to past temporal logic.
@@ -174,12 +243,20 @@ class FalsifySTL(Objective):
             # TODO: Handle errors.
             raise
 
+        # Scale the signals.
+        for var in input_var:
+            signals[var] = self.sut.scale_signal(signals[var], self.sut.input_range[M[var]], target_A=0, target_B=1) 
+        for var in output_var:
+            signals[var] = self.sut.scale_signal(signals[var], self.sut.output_range[M[var]], target_A=0, target_B=1) 
+
+        # Build trajectories in appropriate form.
         trajectories = []
-        for i, name in enumerate(self.sut.outputs):
-            trajectory = [[timestamps[j], signals[i][j]] for j in range(len(timestamps))]
-            trajectories.append([name, trajectory])
+        for var in formula_variables:
+            trajectory = [[timestamps[j], signals[var][j]] for j in range(len(timestamps))]
+            trajectories.append([var, trajectory])
 
         robustness_signal = spec.evaluate(*trajectories)
+
         robustness = None
         for t, r in robustness_signal:
             if t == horizon:
@@ -187,7 +264,10 @@ class FalsifySTL(Objective):
                 break
 
         if robustness is None:
-            raise Exception("Could not figure out correct robustness at horizon {} from robustness signal {}.".format(horizon, robustness_signal))
+            if self.strict_horizon_check:
+                raise Exception("Could not figure out correct robustness at horizon {} from robustness signal {}.".format(horizon, robustness_signal))
+            else:
+                robustness = robustness_signal[-1][1]
 
         # Clip the robustness to [0, 1].
         robustness = max(0, min(robustness, 1))
@@ -198,5 +278,5 @@ class FalsifySTL(Objective):
         if r.output_timestamps is None:
             return self._evaluate_vector(r.outputs)
         else:
-            return self._evaluate_signal(timestamps=r.output_timestamps, signals=r.outputs)
+            return self._evaluate_signal(r)
 

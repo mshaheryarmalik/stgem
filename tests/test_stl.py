@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from stgem.sut import SUT, SUTResult
@@ -11,12 +12,16 @@ class DummySUT(SUT):
         self.odim = odim
         self.outputs = outputs
         self.output_range = [None for _ in range(self.odim)]
+        self.idim = 2
+        self.inputs = ["i1", "i2"]
+        self.input_range = [None, None]
 
 class TestSTL(unittest.TestCase):
 
     def get(self, specification, variables, *args, **kwargs):
         sut = DummySUT(len(variables), variables)
-        objective = FalsifySTL(specification)
+        strict_horizon_check = kwargs["strict_horizon_check"] if "strict_horizon_check" in kwargs else True
+        objective = FalsifySTL(specification, strict_horizon_check=strict_horizon_check)
         objective.setup(sut)
         return objective(*args)
 
@@ -81,5 +86,40 @@ class TestSTL(unittest.TestCase):
         robustness = self.get(specification, variables, SUTResult(None, signals, t, t, None))
         assert robustness == correct_robustness
 
+        # Test time horizon.
+        # ---------------------------------------------------------------------
+        t = np.linspace(0, 10, 20)
+        #     0  0.52 1.05 1.57 2.10 2.63 3.15 3.68 4.21 4.73 5.26 5.78 6.31 6.84 7.36 7.89 8.42 8.94 9.47 10
+        s1 = [0, 0,   0,   6,   0,   0,   6,   0,   0,   6,   0,   0,   5,   0,   0,   0,   0,   0,   6,   0]
+        s2 = [0, 0,   0,   0,   0,   0,   4,   0,   0,   0,   4,   0,   4,   4,   0,   0,   0,   0,   4,   0]
+        variables = ["s1", "s2"]
+        signals = [s1, s2]
+        specification = "always[0,10]( (s1 > 5) implies (eventually[0,1](s2 < 3)) )"
+        correct_robustness = 0
+
+        # Check with strict horizon check.
+        try:
+            robustness = self.get(specification, variables, SUTResult(None, signals, None, t, None), strict_horizon_check=True)
+            assert False
+        except Exception:
+            pass
+        # Check without strict horizon check.
+        robustness = self.get(specification, variables, SUTResult(None, signals, None, t, None), strict_horizon_check=False)
+        assert robustness == correct_robustness
+
+        # Test time series adjustment.
+        # ---------------------------------------------------------------------
+        t1 = [0, 1, 2, 3]
+        i1 = [1, 3, 4, 1]
+        t2 = [0, 0.5, 1, 2, 2.5, 3]
+        s1 = [2, 2, 2, 2, 2, 2]
+        variables = ["s1"]
+        specification = "always[0,3](i1 > s1)"
+        correct_robustness = 0
+
+        robustness = self.get(specification, variables, SUTResult([i1], [s1], t1, t2, None))
+        assert robustness == correct_robustness
+
 if __name__ == "__main__":
     unittest.main()
+
