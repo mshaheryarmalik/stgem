@@ -25,7 +25,7 @@ from stgem.performance import PerformanceData
 # TODO Document this
 # TODO Consider a dataclass
 
-SUTResult=namedtuple('SUTResult','inputs outputs input_timestamps output_timestamps error')
+SUTResult = namedtuple("SUTResult", "inputs outputs input_timestamps output_timestamps error")
 
 class SUT:
     """
@@ -88,12 +88,14 @@ class SUT:
 
         raise AttributeError(name)
 
-    def initialize(self):
+    def setup(self, budget):
         """
-        This is for SUTs which need two-step initialization. Base class which
-        need and extend this functionality should always call this super class
-        initializer.
+        Setup the budget and perform steps necessary for two-step
+        initialization. Derived classes should always call this super class
+        setup method.
         """
+
+        self.budget = budget
 
         # Infer dimensions and names for inputs and outputs from impartial
         # information.
@@ -223,8 +225,13 @@ class SUT:
 
     def execute_test(self, test) -> SUTResult:
         self.perf.timer_start("execution")
+
         r = self._execute_test(test)
+
         self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
+        self.budget.consume("executions")
+        self.budget.consume("execution_time", self.perf.get_history("execution_time")[-1])
+
         return r
 
     def _execute_test(self, test) -> SUTResult:

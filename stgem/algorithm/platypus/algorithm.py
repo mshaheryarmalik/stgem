@@ -13,10 +13,26 @@ class PlatypusOpt(Algorithm):
     default_parameters = {"platypus_algorithm": "NSGAII"}
 
     def generate_test(self):
+        self.perf.timer_start("generation")
+
         self.lastIdx=0
         self.reportedIdx=0
 
+        # TODO: Add functionality related to invalid tests. Currently all tests
+        #       are treated as valid.
+
         def fitness_func(test):
+            # Save information on how many tests needed to be generated etc.
+            # -----------------------------------------------------------------
+            self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
+            self.perf.save_history("N_tests_generated", 1)
+            self.perf.save_history("N_invalid_tests_generated", 0)
+
+            # Execute the test on the SUT.
+            # -----------------------------------------------------------------
+            # Consume generation budget.
+            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1])
+
             sut_result = self.sut.execute_test(np.array(test))
             output = [self.objective_funcs[i](sut_result) for i in range(self.sut.odim)]
 
@@ -26,8 +42,10 @@ class PlatypusOpt(Algorithm):
             # Add the new test to the test suite.
             # -----------------------------------------------------------------
             idx = self.test_repository.record(test, output)
-            self.lastIdx=idx
+            self.lastIdx = idx
             self.objective_selector.update(np.argmin(output))
+
+            self.perf.timer_start("generation")
 
             return output
 
@@ -54,3 +72,4 @@ class PlatypusOpt(Algorithm):
             while self.reportedIdx <= self.lastIdx:
                 yield self.reportedIdx
                 self.reportedIdx += 1
+

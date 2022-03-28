@@ -6,6 +6,7 @@ from itertools import chain
 import numpy as np
 
 from stgem.sut import SUTResult
+
 """
 REMEMBER: Always clip the objective function values to [0, 1]. Otherwise we
 can get very wild losses when training neural networks. This is not good as

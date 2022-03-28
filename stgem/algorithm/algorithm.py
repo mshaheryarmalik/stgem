@@ -28,24 +28,21 @@ class Algorithm:
             self.N_models = sum(1 for f in self.objective_funcs)
             self.models = [self.model_factory() for _ in range(self.N_models)]
 
-    def setup(self, sut, test_repository, objective_funcs, objective_selector, max_steps, device=None, logger=None):
+    def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device=None, logger=None):
         self.sut = sut
         self.test_repository = test_repository
+        self.budget = budget
         self.objective_funcs = objective_funcs
         self.objective_selector = objective_selector
-        self.device=device
+        self.device = device
         self.logger = logger
         self.log = (lambda s: self.logger.algorithm.info(s) if logger is not None else None)
 
         # Setup the device.
         self.parameters["device"] = device
-        # Set input dimension, max_tests and preceding_tests in parameters
+        # Set input dimension.
         if not "input_dimension" in self.parameters:
             self.parameters["input_dimension"] = self.sut.idim
-
-        self.parameters["max_tests"] = max_steps
-        if not "preceding_tests" in self.parameters:
-            self.parameters["preceding_tests"] = self.test_repository.tests
 
         def copy_input_dimension(d, idim):
             for k,v in d.items():
@@ -68,19 +65,17 @@ class Algorithm:
         raise AttributeError(name)
 
     def initialize(self):
-        """
-           A Step calls this method before the first generate_test call
-        """
+        """A Step calls this method before the first generate_test call"""
+
         pass
 
     def generate_test(self):
         raise NotImplementedError()
 
     def finalize(self):
-        """
-        A Step calls this method after all tests have been generated and the algorithm
-        will not be used anymore in that step.
-        """
+        """A Step calls this method after the budget has been exhausted and the
+        algorithm will no longer be used."""
+
         pass
 
 class LoaderAlgorithm(Algorithm):

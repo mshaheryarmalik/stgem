@@ -1,5 +1,6 @@
 import os, math, unittest
 
+from stgem.budget import Budget
 from stgem.generator import STGEM, Search, STGEMResult
 from stgem.sut.python.sut import PythonFunction
 from stgem.objective import Minimize
@@ -21,10 +22,11 @@ class MyTestCase(unittest.TestCase):
 
         generator = STGEM(
             description="test-dump",
+            budget=Budget(),
             sut=PythonFunction(function=myfunction),
             objectives=[Minimize(selected=[0, 1, 2], scale=True)],
             steps=[
-                Search(max_tests=20,
+                Search(budget_threshold={"executions": 20},
                        mode=mode,
                        algorithm=Random(model_factory=(lambda: Uniform())))
             ]

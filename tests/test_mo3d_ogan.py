@@ -1,7 +1,7 @@
 import math
-
 import unittest
 
+from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.sut.python.sut import PythonFunction
 from stgem.objective import Minimize
@@ -27,16 +27,17 @@ class TestPython(unittest.TestCase):
         generator = STGEM(
             description="mo3d/OGAN",
             sut=PythonFunction(function=myfunction),
+            budget=Budget(),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
                         ],
             objective_selector=ObjectiveSelectorMAB(warm_up=5),
             steps=[
-                Search(max_tests=20,
+                Search(budget_threshold={"executions": 20},
                        mode=mode,
                        algorithm=Random(model_factory=(lambda: Uniform()))),
-                Search(max_tests=5,
+                Search(budget_threshold={"executions": 25},
                        mode=mode,
                        algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
             ]

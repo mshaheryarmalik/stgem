@@ -114,9 +114,9 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         # How many inputs we have for each signal.
         self.pieces = self.simulation_time // self.time_slice
 
-    def initialize(self):
-        # TODO Who calls this?
-        
+    def setup(self, budget):
+        super().setup(budget)
+
         # Redefine input dimension.
         self.signals = self.idim
         self.idim = self.idim*self.pieces
@@ -241,8 +241,8 @@ class Matlab(SUT):
         init = getattr(self.engine, self.INIT_MODEL_NAME)
         init(nargout=0)
 
-    def initialize(self):
-        super().initialize()
+    def setup(self, budget):
+        super().setup(budget)
 
         # Checks.
         if not len(self.time_slices) == self.idim:

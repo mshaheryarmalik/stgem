@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import importlib, heapq
+import heapq
 
 import numpy as np
 
@@ -13,14 +13,11 @@ class OGAN(Algorithm):
     """
 
     # Do not change the defaults
-    default_parameters = {"fitness_coef": 0.95, "train_delay": 0, "N_candidate_tests": 1}
+    default_parameters = {"fitness_coef": 0.95, "train_delay": 1, "N_candidate_tests": 1}
 
     def generate_test(self):
-        self.perf.timer_start("total")
-
-        tests_generated = 0  # how many tests have been generated so far
-        model_trained = [0 for m in range(
-            self.N_models)]  # keeps track how many tests were generated when a model was previously trained
+        tests_generated = 0                               # how many tests have been generated so far
+        model_trained = [0 for m in range(self.N_models)] # keeps track how many tests were generated when a model was previously trained
 
         # Take into account how many tests a previous step (usually random
         # search) has generated.
@@ -115,10 +112,11 @@ class OGAN(Algorithm):
             best_test = heap[0][2]
             best_estimated_objective = heap[0][0]
 
-            self.log(
-                "Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(
-                    best_test, best_estimated_objective, rounds, invalid))
+            self.log("Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
             self.log("Executing the test...")
+
+            # Consume generation budget.
+            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1] + self.perf.get_history("training_time")[-1])
 
             sut_result = self.sut.execute_test(best_test)
             output = [self.objective_funcs[i](sut_result) for i in range(self.N_models)]

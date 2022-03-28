@@ -17,7 +17,7 @@ class Random(Algorithm):
 
         while True:
             # Generate a new test.
-            # -----------------------------------------------------------------------
+            # -----------------------------------------------------------------
             self.perf.timer_start("generation")
             self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
             rounds = 0
@@ -34,15 +34,18 @@ class Random(Algorithm):
                 break
 
             # Save information on how many tests needed to be generated etc.
-            # -----------------------------------------------------------------------
+            # -----------------------------------------------------------------
             self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
             self.perf.save_history("N_tests_generated", rounds)
             self.perf.save_history("N_invalid_tests_generated", invalid)
 
             # Execute the test on the SUT.
-            # -----------------------------------------------------------------------
+            # -----------------------------------------------------------------
             self.log("Chose test {} with predicted maximum objective 1. Generated total {} tests of which {} were invalid.".format(new_test, rounds, invalid))
             self.log("Executing the test...")
+
+            # Consume generation budget.
+            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1])
 
             sut_output = self.sut.execute_test(new_test)
             output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
@@ -50,7 +53,7 @@ class Random(Algorithm):
             self.log("The actual fitness {} for the generated test.".format(output))
 
             # Add the new test to the test suite.
-            # -----------------------------------------------------------------------
+            # -----------------------------------------------------------------
             idx = self.test_repository.record(new_test.reshape(-1), output)
             self.objective_selector.update(np.argmax(output))
 

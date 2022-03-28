@@ -1,4 +1,5 @@
 from stgem.generator import STGEM, Search
+from stgem.budget import Budget
 from stgem.sut.matlab.sut import Matlab
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.ogan.algorithm import OGAN
@@ -74,14 +75,15 @@ ogan_model_parameters = {"optimizer": "Adam",
 generator = STGEM(
                   description="Fuel Control of an Automotive Powertrain ({} mode)".format(afc_mode),
                   sut=Matlab(sut_parameters),
+                  budget=Budget(),
                   objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
                   objective_selector=ObjectiveSelectorMAB(warm_up=5),
                   steps=[
-                         Search(max_tests=20,
-                                mode=mode,
+                         Search(mode=mode,
+                                budget_threshold={"executions": 20},
                                 algorithm=Random(model_factory=(lambda: Uniform()))),
-                         Search(max_tests=40,
-                                mode=mode,
+                         Search(mode=mode,
+                                budget_threshold={"executions": 40},
                                 algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters)), parameters=ogan_parameters))
                         ]
                   )
