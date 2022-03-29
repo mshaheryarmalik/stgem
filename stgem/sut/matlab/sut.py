@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import os
+import os, math
 
 import numpy as np
 
@@ -99,10 +99,11 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
     """
     Generic class for using Matlab Simulink models using piecewise constant
     inputs. We assume that the input is a vector of numbers in [-1, 1] and that
-    the first K numbers specify the pieces of the first signal, the next K
-    numbers the second signal, etc. The number K is specified by the simulation
-    time and the length of the time interval during which the signal must stay
-    constant.
+    the first K1 numbers specify the pieces of the first signal, the next K2
+    numbers the second signal, etc. The numbers K1, K2, ... are determined by
+    the simulation time and the lengths of time intervals during which the
+    signal must stay constant. This is controlled by the SUT parameter
+    time_slices which is a list of floats.
     """
 
     def __init__(self, parameters):
@@ -111,61 +112,50 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         except:
             raise
 
-        # How many inputs we have for each signal.
-        self.pieces = self.simulation_time // self.time_slice
+        if not "time_slices" in self.parameters:
+            raise Exception("Parameter 'time_slices' must be defined for piecewise constant signal inputs.")
+        if not "simulation_time" in self.parameters:
+            raise Exception("Parameter 'simulation_time' must be defined for piecewise constant signal inputs.")
+        if not "sampling_step" in self.parameters:
+            raise Exception("Parameter 'sampling_step' must be defined for piecewise constant signal inputs.")
+
+        # How often input signals are sampled for execution (in time units).
+        self.steps = int(self.simulation_time // self.sampling_step)
+        # How many inputs we have for each input signal.
+        self.pieces = [math.ceil(self.simulation_time // time_slice) for time_slice in self.time_slices]
 
     def setup(self, budget):
         super().setup(budget)
 
-        # Redefine input dimension.
-        self.signals = self.idim
-        self.idim = self.idim*self.pieces
+        if not len(self.time_slices) == self.idim:
+            raise Exception("Expected {} time slices, found {}.".format(self.idim, len(self.time_slices)))
 
-        # Redo input ranges for vector inputs.
-        new = []
+        self.N_signals = self.idim
+        self.idim = sum(self.pieces)
+
+        self.descaling_intervals = []
         for i in range(len(self.input_range)):
-            for _ in range(self.pieces):
-                new.append(self.input_range[i])
-        self.input_range = new
+            for _ in range(self.pieces[i]):
+                self.descaling_intervals.append(self.input_range[i])
 
     def _execute_test(self, test):
-        """
-        Execute the given test on the SUT.
+        test = self.descale(test.reshape(1, -1), self.descaling_intervals).reshape(-1)
 
-        Args:
-          test (np.ndarray): Array of floats with shape (1,N) or (N) with
-                             N = self.idim.
-
-        Returns:
-          timestamps (np.ndarray): Array of shape (M, 1).
-          signals (np.ndarray): Array of shape (self.odim, M).
-        """
-
-        test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
-
-        # Convert the test input to signals.
-        idx = lambda t: int(t // self.time_slice) if t < self.simulation_time else self.pieces - 1
-        signal_f = []
-        for i in range(self.signals):
-            signal_f.append(lambda t: test[i*self.pieces + idx(t)])
-        timestamps = np.linspace(0, self.simulation_time, int(self.steps))
-        signals = np.zeros(shape=(self.signals, len(timestamps)))
-        for i in range(self.signals):
-            signals[i] = np.asarray([signal_f[i](t) for t in timestamps])
+        # Common timestamps to all input signals.
+        timestamps = np.linspace(0, self.simulation_time, self.steps)
+        # Signals.
+        signals = np.zeros(shape=(self.N_signals, len(timestamps)))
+        offset = 0
+        for i in range(self.N_signals):
+            idx = lambda t: int(t // self.time_slices[i]) if t < self.simulation_time else self.pieces[i] - 1
+            signal_f = lambda t: test[offset + idx(t)]
+            signals[i] = np.asarray([signal_f(t) for t in timestamps])
+            offset += self.pieces[i]
 
         # Execute the test.
         return self._execute_test_simulink(timestamps, signals)
 
     def execute_random_test(self):
-        """
-        Execute a random tests and return it and its output.
-
-        Returns:
-          test (np.ndarray): Array of shape (2*self.pieces) of floats in [-1, 1].
-          timestamps (np.ndarray): Array of shape (N, 1).
-          signals (np.ndarray): Array of shape (3, N).
-        """
-
         test = self.sample_input_space()
         tr = self.execute_test(test)
         return tr
@@ -224,40 +214,41 @@ class Matlab(SUT):
             # How often input signals are sampled for execution (in time units).
             self.steps = int(self.simulation_time // self.sampling_step)
             # How many inputs we have for each input signal.
-            self.pieces = [int(self.simulation_time // time_slice) for time_slice in self.time_slices]
+            self.pieces = [math.ceil(self.simulation_time // time_slice) for time_slice in self.time_slices]
 
         self.MODEL_NAME = os.path.basename(self.model_file)
-        self.INIT_MODEL_NAME = os.path.basename(self.init_model_file)
+        self.INIT_MODEL_NAME = os.path.basename(self.init_model_file) if "init_model_file" in self.parameters else None
 
         # Initialize the Matlab engine (takes a lot of time).
         self.engine = matlab.engine.start_matlab()
         # The paths for the model files.
         self.engine.addpath(os.path.dirname(self.model_file))
-        self.engine.addpath(os.path.dirname(self.init_model_file))
+        if self.INIT_MODEL_NAME is not None:
+            self.engine.addpath(os.path.dirname(self.init_model_file))
         # Save the function into an object.
         self.matlab_func = getattr(self.engine, self.MODEL_NAME)
 
         # Run the initializer program.
-        init = getattr(self.engine, self.INIT_MODEL_NAME)
-        init(nargout=0)
+        if self.INIT_MODEL_NAME is not None:
+            init = getattr(self.engine, self.INIT_MODEL_NAME)
+            init(nargout=0)
 
     def setup(self, budget):
         super().setup(budget)
 
-        # Checks.
-        if not len(self.time_slices) == self.idim:
-            raise Exception("Expected {} time slices, found {}.".format(self.idim, len(self.time_slices)))
+        # Adjust the SUT parameters if the input is a piecewise constant
+        # signal.
+        if self.input_type == "piecewise constant signal":
+            if not len(self.time_slices) == self.idim:
+                raise Exception("Expected {} time slices, found {}.".format(self.idim, len(self.time_slices)))
 
-        # We need to adjust the SUT input settings if the input is a piecewise
-        # constant signal.
-        self.N_signals = self.idim
-        self.idim = sum(self.pieces)
+            self.N_signals = self.idim
+            self.idim = sum(self.pieces)
 
-        # Find adjusted input ranges for descaling.
-        self.descaling_intervals = []
-        for i in range(len(self.input_range)):
-            for _ in range(self.pieces[i]):
-                self.descaling_intervals.append(self.input_range[i])
+            self.descaling_intervals = []
+            for i in range(len(self.input_range)):
+                for _ in range(self.pieces[i]):
+                    self.descaling_intervals.append(self.input_range[i])
 
     def __del__(self):
         if hasattr(self, "engine"):

@@ -14,9 +14,8 @@ from stgem.budget import Budget
 
 class StepResult:
 
-    def __init__(self, description, test_repository, success):
+    def __init__(self, test_repository, success):
         self.timestamp = datetime.datetime.now()
-        self.description = description
         self.test_repository = test_repository
         self.success = success
         self.algorithm_performance = None
@@ -116,7 +115,7 @@ class Search(Step):
             print("Step minimum objective components:")
             print(np.min(np.asarray(outputs), axis=0))
 
-        step_result = StepResult(self, self.algorithm.test_repository, success)
+        step_result = StepResult(self.algorithm.test_repository, success)
         step_result.algorithm_performance = self.algorithm.perf
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
 
