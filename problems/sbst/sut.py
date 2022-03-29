@@ -82,6 +82,9 @@ class SBSTSUT_base(SUT):
         if self.max_speed <= 0:
             raise ValueError("The maximum speed should be positive.")
 
+        # Set idim etc. correctly.
+        self.inputs = self.curvature_points
+
         # This variable is essentially where (some) files created during the
         # simulation are placed and it is freely selectable. Due to some choices in
         # the SBST CPS competition code, we hard code it as follows (see

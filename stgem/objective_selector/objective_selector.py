@@ -3,7 +3,6 @@
 
 import numpy as np
 
-
 class ObjectiveSelector:
     def __init__(self):
         self.dim = 0
