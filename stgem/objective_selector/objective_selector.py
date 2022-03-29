@@ -3,9 +3,14 @@
 
 import numpy as np
 
-
 class ObjectiveSelector:
-    def __init__(self, N_objectives):
+    def __init__(self):
+        self.dim = 0
+
+    def setup(self, objectives):
+        N_objectives = 0
+        for of in objectives:
+            N_objectives += of.dim
         self.dim = N_objectives
 
     def select_all(self):
@@ -17,7 +22,6 @@ class ObjectiveSelector:
     def update(self, idx):
         return
 
-
 class ObjectiveSelectorAll(ObjectiveSelector):
     """
     Model selector which ignores everything an just returns all models.
@@ -26,7 +30,6 @@ class ObjectiveSelectorAll(ObjectiveSelector):
     def select(self):
         return self.select_all()
 
-
 class ObjectiveSelectorMAB(ObjectiveSelector):
     """
     Simple multi-armed bandit inspired model selector which uses the success
@@ -34,10 +37,14 @@ class ObjectiveSelectorMAB(ObjectiveSelector):
     model. A warm-up period can be defined where all models are returned.
     """
 
-    def __init__(self, N_objectives, warm_up=30):
-        super().__init__(N_objectives)
+    def __init__(self, warm_up=30):
+        super().__init__()
         self.warm_up = warm_up
         self.total_calls = 0
+        self.model_successes = []
+
+    def setup(self, objectives):
+        super().setup(objectives)
         self.model_successes = [0 for i in range(self.dim)]
 
     def select(self):

@@ -9,31 +9,43 @@ class PlatypusOpt(Algorithm):
     Implements the online generative adversarial network algorithm.
     """
 
-    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
-        self.platypus_algorithm = {"NSGAII": NSGAII, "EpsMOEA": EpsMOEA, "GDE3": GDE3, "SPEA2": SPEA2}
+    platypus_algorithm = {"NSGAII": NSGAII, "EpsMOEA": EpsMOEA, "GDE3": GDE3, "SPEA2": SPEA2}
+    default_parameters = {"platypus_algorithm": "NSGAII"}
 
     def generate_test(self):
+        self.perf.timer_start("generation")
+
         self.lastIdx=0
         self.reportedIdx=0
 
+        # TODO: Add functionality related to invalid tests. Currently all tests
+        #       are treated as valid.
+
         def fitness_func(test):
-            sut_output = self.sut.execute_test(np.array(test))
+            # Save information on how many tests needed to be generated etc.
+            # -----------------------------------------------------------------
+            self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
+            self.perf.save_history("N_tests_generated", 1)
+            self.perf.save_history("N_invalid_tests_generated", 0)
 
-            # Check if the SUT output is a vector or a signal.
-            if np.isscalar(sut_output[0]):
-                output = [self.objective_funcs[i](sut_output) for i in range(self.sut.odim)]
-            else:
-                output = [self.objective_funcs[i](**sut_output) for i in range(self.sut.odim)]
+            # Execute the test on the SUT.
+            # -----------------------------------------------------------------
+            # Consume generation budget.
+            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1])
 
-            self.log("Result from the SUT {}".format(sut_output))
+            sut_result = self.sut.execute_test(np.array(test))
+            output = [self.objective_funcs[i](sut_result) for i in range(self.sut.odim)]
+
+            self.log("Result from the SUT {}".format(sut_result))
             self.log("The actual objective {} for the generated test.".format(output))
 
             # Add the new test to the test suite.
             # -----------------------------------------------------------------
             idx = self.test_repository.record(test, output)
-            self.lastIdx=idx
+            self.lastIdx = idx
             self.objective_selector.update(np.argmin(output))
+
+            self.perf.timer_start("generation")
 
             return output
 
@@ -60,3 +72,4 @@ class PlatypusOpt(Algorithm):
             while self.reportedIdx <= self.lastIdx:
                 yield self.reportedIdx
                 self.reportedIdx += 1
+

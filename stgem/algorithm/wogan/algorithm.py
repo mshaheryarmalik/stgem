@@ -13,32 +13,34 @@ class WOGAN(Algorithm):
     adversarial networks.
     """
 
-    def __init__(self, sut, test_repository, objective_funcs, objective_selector, parameters, logger=None):
-        super().__init__(sut, test_repository, objective_funcs, objective_selector, parameters, logger)
+    default_parameters = {
+        "bins": 10,
+        "wgan_batch_size": 32,
+        "fitness_coef": 0.95,
+        "train_delay": 3,
+        "N_candidate_tests": 1,
+        "shift_function": "linear",
+        "shift_function_parameters": {"initial": 0, "final": 3},
+    }
 
-        self.N_models = sum(1 for f in self.objective_funcs)
-
-        # Setup the models.
-        # ---------------------------------------------------------------------
-        # Load the specified WOGAN model and initialize it.
-        module = importlib.import_module("stgem.algorithm.wogan.model")
-        self.model_class = getattr(module, self.wogan_model)
-        self.models = [self.model_class(sut=self.sut, parameters=self.parameters, logger=logger) for _ in range(self.N_models)]
-
+    def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device=None, logger=None):
+        super().setup(sut, test_repository, budget, objective_funcs, objective_selector, device, logger)
+   
         # Setup the shift function for sampling training data.
         # ---------------------------------------------------------------------
+        # The initial shift value is determined at the minimum budget left when
+        # this function is called. The final shift value is determined at
+        # budget 0.0.
         if self.shift_function is None:
             raise Exception("No shift function defined.")
         if self.shift_function_parameters is None:
             raise Exception("No shift function parameters defined.")
 
         if self.shift_function == "linear":
-            # We increase the shift linearly according to the given initial and given
-            # final value.
-            M1 = self.max_tests + self.preceding_tests # total number of tests after WOGAN has completed
-            M2 = self.preceding_tests                  # total number of tests before WOGAN started
-            alpha = (self.shift_function_parameters["final"] - self.shift_function_parameters["initial"])/(M1 - M2)
-            beta = self.shift_function_parameters["final"] - alpha * self.max_tests
+            # We increase the shift linearly according to the given initial and
+            # given final value.
+            alpha = (self.shift_function_parameters["initial"] - self.shift_function_parameters["final"])/self.budget.remaining()
+            beta = self.shift_function_parameters["final"]
             self.shift = lambda x: alpha * x + beta
         else:
             raise Exception("No shift function type '{}'.".format(self.shift_function))
@@ -108,8 +110,6 @@ class WOGAN(Algorithm):
         return sample_X
 
     def generate_test(self):
-        self.perf.timer_start("total")
-
         test_bins = [{i:[] for i in range(self.bins)} for _ in range(self.N_models)] # a dictionary to tell which test is in which bin for each model
         model_trained = [0 for _ in range(self.N_models)]                            # keeps track how many tests were generated when a model was previously trained
         tests_generated = 0                                                          # how many tests have been generated so far
@@ -146,10 +146,10 @@ class WOGAN(Algorithm):
                 # Train the WGAN.
                 self.log("Training WGAN model {}...".format(i + 1))
                 for epoch in range(self.models[i].train_settings_init["epochs"]):
-                    train_X = self.training_sample(min(self.wgan_batch_size, self.preceding_tests),
+                    train_X = self.training_sample(min(self.wgan_batch_size, self.test_repository.tests),
                                                    np.asarray(self.test_repository.get()[0]),
                                                    test_bins[i],
-                                                   self.shift(tests_generated),
+                                                   self.shift(self.budget.remaining()),
                                                   )
                     self.models[i].train_with_batch(train_X,
                                                     train_settings=self.models[i].train_settings_init,
@@ -227,15 +227,14 @@ class WOGAN(Algorithm):
             self.log("Chose test {} with predicted minimum objective {} on WGAN model {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, best_model + 1, rounds, invalid))
             self.log("Executing the test...")
 
-            sut_output = self.sut.execute_test(best_test)
+            # Consume generation budget.
+            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1] + self.perf.get_history("training_time")[-1])
 
-            # Check if the SUT output is a vector or a signal.
-            if np.isscalar(sut_output[0]):
-                output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
-            else:
-                output = [self.objective_funcs[i](*sut_output) for i in range(self.N_models)]
-  
-            self.log("Result from the SUT {}".format(sut_output))
+            sut_result = self.sut.execute_test(best_test)
+
+            output = [self.objective_funcs[i](sut_result) for i in range(self.N_models)]
+
+            self.log("Result from the SUT {}".format(sut_result))
             self.log("The actual objective {} for the generated test.".format(output))
 
             # Add the new test to the test suite.
@@ -275,18 +274,18 @@ class WOGAN(Algorithm):
                         for epoch in range(self.models[i].train_settings_init["epochs"]):
                             # We include the new tests to the batch with high
                             # probability if and only if they have low objective.
-                            BS = min(self.wgan_batch_size, self.preceding_tests)
+                            BS = min(self.wgan_batch_size, self.test_repository.tests)
                             train_X = np.zeros(shape=(BS, self.sut.idim))
                             c = 0
                             for j in range(self.train_delay):
                                 test, output = self.test_repository.get(self.test_repository.indices[-(j+1)])
-                                if self.get_bin(output[i]) >= self.bin_sample(1, self.shift(tests_generated))[0]:
+                                if self.get_bin(output[i]) >= self.bin_sample(1, self.shift(self.budget.remaining()))[0]:
                                     train_X[c] = test
                                     c += 1
                             train_X[c:] = self.training_sample(BS - c,
                                                                np.asarray(self.test_repository.get()[0]),
                                                                test_bins[i],
-                                                               self.shift(tests_generated),
+                                                               self.shift(self.budget.remaining()),
                                                               )
                             self.models[i].train_with_batch(train_X,
                                                             train_settings=self.models[i].train_settings,

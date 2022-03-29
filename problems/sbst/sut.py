@@ -23,7 +23,7 @@ from shapely.geometry import LineString, Polygon
 from shapely.affinity import translate, rotate
 from descartes import PolygonPatch
 
-from stgem.sut import SUT
+from stgem.sut import SUT, SUTResult
 from util import frechet_distance, sbst_validate_test
 
 from self_driving.beamng_brewer import BeamNGBrewer
@@ -81,6 +81,10 @@ class SBSTSUT_base(SUT):
             raise ValueError("The map size must be positive.")
         if self.max_speed <= 0:
             raise ValueError("The maximum speed should be positive.")
+
+        # Set idim, odim etc. correctly.
+        self.inputs = self.curvature_points
+        self.outputs = 1
 
         # This variable is essentially where (some) files created during the
         # simulation are placed and it is freely selectable. Due to some choices in
@@ -261,7 +265,8 @@ class SBSTSUT_base(SUT):
         for i, state in enumerate(states):
             timestamps[i] = state.timer
             oob[0, i] = state.oob_percentage
-        return timestamps, oob
+
+        return SUTResult(test, oob, None, timestamps, None)
 
 class SBSTSUT_curvature(SBSTSUT_base):
     """
@@ -272,20 +277,6 @@ class SBSTSUT_curvature(SBSTSUT_base):
     inputs are transformed to roads which begin at the middle of the bottom part
     of the map and point initially directly upwards.
     """
-
-    def __init__(self, parameters):
-        """
-        Args:
-          curvature_points (int): How many curvature values specify a road.
-          map_size (int): Map size in pixels (total map size map_size*map_size).
-        """
-
-        super().__init__(parameters)
-
-        if self.curvature_points <= 0:
-            raise ValueError("The number of curvature points must be positive.")
-        if self.map_size <= 0:
-            raise ValueError("The map size must be positive.")
 
     def test_to_road_points(self, test):
         """
@@ -339,8 +330,8 @@ class SBSTSUT_curvature(SBSTSUT_base):
         """
 
         test = self.sample_input_space()
-        timestamps, oob = self.execute_test(test)
-        return test, timestamps, oob
+        r = self.execute_test(test)
+        return test, r
 
     def _sample_input_space(self, curvature_points):
         """
@@ -387,9 +378,6 @@ class SBSTSUT(SBSTSUT_curvature):
     Class for the SBST CPS competition SUT accepting tests which are vectors of
     fixed length.
     """
-
-    def __init__(self, parameters):
-        super().__init__(parameters)
 
     def _execute_test(self, test):
         """
@@ -450,9 +438,6 @@ class SBSTSUT_validator(SBSTSUT_curvature):
     middle of the bottom part of the map and point initially directly upwards.
     """
 
-    def __init__(self, parameters):
-        super().__init__(parameters)
-
     def _execute_test(self, test):
         """
         Execute the given test on the SUT.
@@ -464,5 +449,5 @@ class SBSTSUT_validator(SBSTSUT_curvature):
           result (np.ndarray): Array of shape (1).
         """
 
-        return np.array(sbst_validate_test(self.test_to_road_points(test), self.map_size)).reshape(1)
-
+        valid = sbst_validate_test(self.test_to_road_points(test), self.map_size)
+        return SUTResult(test, valid, None, None, None)

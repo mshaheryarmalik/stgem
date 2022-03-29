@@ -14,10 +14,43 @@ class OGAN_Model(Model):
     Implements the WOGAN model.
     """
 
-    def __init__(self, sut, parameters, logger=None):
-        super().__init__(sut, parameters, logger)
+    default_parameters = {
+        "optimizer": "Adam",
+        "discriminator_lr": 0.005,
+        "discriminator_betas": [0.9, 0.999],
+        "generator_lr": 0.001,
+        "generator_betas": [0.9, 0.999],
+        "noise_batch_size": 512,
+        "generator_loss": "MSE",
+        "discriminator_loss": "MSE",
+        "generator_mlm": "GeneratorNetwork",
+        "generator_mlm_parameters": {
+            "noise_dim": 20,
+            "neurons": 64
+        },
+        "discriminator_mlm": "DiscriminatorNetwork",
+        "discriminator_mlm_parameters": {
+            "neurons": 64,
+            "discriminator_output_activation": "sigmoid"
+        },
+        "train_settings_init": {
+            "epochs": 2,
+            "discriminator_epochs": 20,
+            "generator_batch_size": 32
+        },
+        "train_settings": {
+            "epochs": 1,
+            "discriminator_epochs": 30,
+            "generator_batch_size": 32
+        }
+    }
 
-        self.noise_batch_size = self.ogan_model_parameters["noise_batch_size"]
+    def setup(self, sut, device, logger):
+        super().setup(sut, device, logger)
+
+        # Infer input and output dimensions for ML models.
+        self.parameters["generator_mlm_parameters"]["output_shape"] = self.sut.idim
+        self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.sut.idim
 
         self._initialize()
 
@@ -33,10 +66,10 @@ class OGAN_Model(Model):
 
         # Load the specified optimizers.
         module = importlib.import_module("torch.optim")
-        optimizer_class = getattr(module, self.ogan_model_parameters["optimizer"])
-        generator_parameters = {k[10:]:v for k, v in self.ogan_model_parameters.items() if k.startswith("generator")}
+        optimizer_class = getattr(module, self.optimizer)
+        generator_parameters = {k[10:]:v for k, v in self.parameters.items() if k.startswith("generator")}
         self.optimizerG = optimizer_class(self.modelG.parameters(), **algorithm.filter_arguments(generator_parameters, optimizer_class))
-        discriminator_parameters = {k[14:]:v for k, v in self.ogan_model_parameters.items() if k.startswith("discriminator")}
+        discriminator_parameters = {k[14:]:v for k, v in self.parameters.items() if k.startswith("discriminator")}
         self.optimizerD = optimizer_class(self.modelD.parameters(), **algorithm.filter_arguments(discriminator_parameters, optimizer_class))
 
         # Loss functions.
@@ -65,8 +98,8 @@ class OGAN_Model(Model):
             return loss
 
         try:
-            self.lossG = get_loss(self.ogan_model_parameters["generator_loss"])
-            self.lossD = get_loss(self.ogan_model_parameters["discriminator_loss"])
+            self.lossG = get_loss(self.generator_loss)
+            self.lossD = get_loss(self.discriminator_loss)
         except:
             raise
 

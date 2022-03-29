@@ -1,9 +1,13 @@
-import os, math, unittest
+import math
+import unittest
 
 from stgem.budget import Budget
-from stgem.generator import STGEM, Search, STGEMResult
+from stgem.generator import STGEM, Search
 from stgem.sut.python import PythonFunction
 from stgem.objective import Minimize
+from stgem.objective_selector import ObjectiveSelectorMAB
+from stgem.algorithm.wogan.algorithm import WOGAN
+from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform
 
@@ -16,30 +20,32 @@ def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350],
 
     return [h1, h2, h3]
 
-class MyTestCase(unittest.TestCase):
-    def test_dump(self):
+class TestPython(unittest.TestCase):
+    def test_wogan(self):
         mode = "stop_at_first_objective"
 
         generator = STGEM(
-            description="test-dump",
-            budget=Budget(),
+            description="mo3d/WOGAN",
             sut=PythonFunction(function=myfunction),
-            objectives=[Minimize(selected=[0, 1, 2], scale=True)],
+            budget=Budget(),
+            objectives=[Minimize(selected=[0], scale=True),
+                        Minimize(selected=[1], scale=True),
+                        Minimize(selected=[2], scale=True)
+                        ],
+            objective_selector=ObjectiveSelectorMAB(warm_up=5),
             steps=[
                 Search(budget_threshold={"executions": 20},
                        mode=mode,
-                       algorithm=Random(model_factory=(lambda: Uniform())))
+                       algorithm=Random(model_factory=(lambda: Uniform()))),
+                Search(budget_threshold={"executions": 25},
+                       mode=mode,
+                       algorithm=WOGAN(model_factory=(lambda: WOGAN_Model())))
             ]
         )
 
         r = generator.run()
-        file_name = generator.description + ".pickle"
-        r.dump_to_file(file_name)
-        result2 = STGEMResult.restore_from_file(file_name)
-        for s in result2.step_results:
-            print(s.success)
-
-        os.remove(file_name)
+        r.dump_to_file("mo3k_python_wogan_results.pickle")
 
 if __name__ == "__main__":
     unittest.main()
+

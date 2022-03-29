@@ -18,8 +18,14 @@ Discrete signals.
 """
 
 import numpy as np
+from collections import namedtuple
 
 from stgem.performance import PerformanceData
+
+# TODO Document this
+# TODO Consider a dataclass
+
+SUTResult = namedtuple("SUTResult", "inputs outputs input_timestamps output_timestamps error")
 
 class SUT:
     """
@@ -33,6 +39,7 @@ class SUT:
             self.parameters = parameters
 
         self.perf = PerformanceData()
+
         """
         All SUTs have the below variables which concern inputs and outputs,
         their ranges etc. We describe them here, but do not set them. They are
@@ -75,18 +82,80 @@ class SUT:
         """
 
     def __getattr__(self, name):
-        value = self.parameters.get(name)
-        if value is None:
-            raise AttributeError(name)
+        if "parameters" in self.__dict__:
+            if name in self.parameters:
+                return self.parameters.get(name)
 
-        return value
+        raise AttributeError(name)
 
-    def initialize(self):
+    def setup(self, budget):
         """
-        This is for SUTs which need two-step initialization.
+        Setup the budget and perform steps necessary for two-step
+        initialization. Derived classes should always call this super class
+        setup method.
         """
 
-        pass
+        self.budget = budget
+
+        # Infer dimensions and names for inputs and outputs from impartial
+        # information.
+
+        # If self.inputs exists and is an integer, transform it into default
+        # input names i1, ...iN where N is this integer. This also determines
+        # idim if unset.
+        if hasattr(self, "inputs") and isinstance(self.inputs, int):
+            if not hasattr(self, "idim"):
+                self.idim = self.inputs
+            self.inputs = ["i{}".format(i) for i in range(self.inputs)]
+
+        # If idim is not set, it can be inferred from input names (a list of
+        # names) or input ranges.
+        if hasattr(self, "idim"):
+            # idim set already, set default input names if necessary.
+            if not hasattr(self, "inputs"):
+                self.inputs = ["i{}".format(i) for i in range(self.idim)]
+        else:
+            # idim can be inferred from input names, if defined.
+            if hasattr(self, "inputs"):
+                self.idim = len(self.inputs)
+            else:
+                # idim can be inferred from input ranges. Otherwise we do not
+                # know what to do.
+                if not hasattr(self, "input_range"):
+                    raise Exception("SUT input dimension not defined and cannot be inferred.")
+                self.idim = len(self.input_range)
+                self.inputs = ["i{}".format(i) for i in range(self.idim)]
+
+        # The same as above for outputs.
+        if hasattr(self, "outputs") and isinstance(self.outputs, int):
+            if not hasattr(self, "odim"):
+                self.odim = self.outputs
+            self.outputs = ["o{}".format(i) for i in range(self.outputs)]
+
+        if hasattr(self, "odim"):
+            if not hasattr(self, "outputs"):
+                self.outputs = ["o{}".format(i) for i in range(self.odim)]
+        else:
+            if hasattr(self, "outputs"):
+                self.odim = len(self.outputs)
+            else:
+                if not hasattr(self, "output_range"):
+                    raise Exception("SUT output dimension not defined and cannot be inferred.")
+                self.odim = len(self.output_range)
+                self.outputs = ["o{}".format(i) for i in range(self.odim)]
+
+        # Setup input and output ranges and fill unspecified input and output
+        # ranges with Nones.
+        if not hasattr(self, "input_range"):
+            self.input_range = []
+        if not isinstance(self.input_range, list):
+            raise Exception("The input_range attribute of the SUT must be a Python list.")
+        self.input_range += [None for _ in range(self.idim - len(self.input_range))]
+        if not hasattr(self, "output_range"):
+            self.output_range = []
+        if not isinstance(self.output_range, list):
+            raise Exception("The output attribute of the SUT must be a Python list.")
+        self.output_range += [None for _ in range(self.odim - len(self.output_range))]
 
     def scale(self, x, intervals, target_A=-1, target_B=1):
         """
@@ -94,6 +163,9 @@ class SUT:
         intervals are scaled to the interval [A, B] (default [-1, 1]). If an
         interval is None, then no scaling is done.
         """
+
+        if len(intervals) < x.shape[1]:
+            raise Exception("Not enough intervals ({}) for scaling a vector of length {}.".format(len(intervals), x.shape[1]))
 
         y = np.zeros_like(x)
         for i in range(x.shape[1]):
@@ -135,6 +207,9 @@ class SUT:
         scaling is done.
         """
 
+        if len(intervals) < x.shape[1]:
+            raise Exception("Not enough intervals ({}) for descaling a vector of length {}.".format(len(intervals), x.shape[1]))
+
         y = np.zeros_like(x)
         for i in range(x.shape[1]):
             if intervals[i] is not None:
@@ -148,13 +223,18 @@ class SUT:
 
         return y
 
-    def execute_test(self, test):
+    def execute_test(self, test) -> SUTResult:
         self.perf.timer_start("execution")
+
         r = self._execute_test(test)
+
         self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
+        self.budget.consume("executions")
+        self.budget.consume("execution_time", self.perf.get_history("execution_time")[-1])
+
         return r
 
-    def _execute_test(self, test):
+    def _execute_test(self, test) -> SUTResult:
         raise NotImplementedError()
 
     def execute_random_test(self):

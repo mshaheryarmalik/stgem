@@ -3,15 +3,11 @@
 
 from stgem.algorithm import Model
 
-class Random_Model(Model):
+class Uniform(Model):
     """
     Implements a random test model which directly uses the sampling provided by
     the SUT.
     """
-
-    def __init__(self, sut, parameters, logger=None):
-        # TODO: describe the arguments
-        super().__init__(sut, parameters, logger)
 
     def generate_test(self):
         """
@@ -20,13 +16,13 @@ class Random_Model(Model):
 
         return self.sut.sample_input_space()
 
-class Random_LHS_Model(Model):
+class LHS(Model):
     """
     Implements a random test model based on Latin hypercube design.
     """
 
-    def __init__(self, sut, parameters, logger=None):
-        super().__init__(sut, parameters, logger)
+    def setup(self, sut, device, logger=None):
+        super().setup(sut, device, logger)
 
         try:
             from pyDOE import lhs
@@ -44,7 +40,7 @@ class Random_LHS_Model(Model):
     def generate_test(self):
         self.current += 1
 
-        if self.current > len(self.random_tests):
+        if self.current >= len(self.random_tests):
             raise Exception("Random sample exhausted.")
 
         return self.random_tests[self.current]

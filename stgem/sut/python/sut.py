@@ -3,16 +3,18 @@
 
 import math
 import numpy as np
-
-from stgem.sut import SUT
+import inspect
+from stgem.sut import SUT, SUTResult
 
 class PythonFunction(SUT):
     """
-    A SUT which encapsulates a Python function.
+    A SUT which encapsulates a Python function which we assume to take vectors
+    as inputs and output vectors.
     """
 
-    def __init__(self, parameters):
+    def __init__(self, function, parameters=None):
         super().__init__(parameters)
+        self.function = function
 
         # Use input parameters primarily and function annotation secondarily.
         if "input_range" in self.parameters and len(self.parameters["input_range"]) > 0:
@@ -29,9 +31,20 @@ class PythonFunction(SUT):
                 if k == "return":
                     self.output_range = v
 
+        self.idim = len(self.input_range)
+        self.odim = len(self.output_range)
+
+        self.inputs = inspect.getfullargspec(self.function).args
+
     def _execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
-        output = self.function(test)
+        output = []
+        error = None
+        # Add a exception handler
+        try:
+            output = self.function(test)
+        except Exception as err:
+            error = err
 
-        return np.asarray(output)
+        return SUTResult(test, np.asarray(output), None, None, error)
 

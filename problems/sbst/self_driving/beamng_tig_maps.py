@@ -71,8 +71,7 @@ class Maps:
 
     def __init__(self):
         self.beamng_levels = LevelsFolder(os.path.join(os.environ['USERPROFILE'], r'Documents/BeamNG.research/levels'))
-        #self.source_levels = LevelsFolder(os.getcwd()+'/levels_template')
-        self.source_levels = LevelsFolder(os.path.join(os.getcwd(), 'problems', 'sbst', 'levels_template'))
+        self.source_levels = LevelsFolder(os.getcwd()+'/levels_template')
         self.source_map = self.source_levels.get_map('tig')
         self.beamng_map = self.beamng_levels.get_map('tig')
         self.never_logged_path = True
