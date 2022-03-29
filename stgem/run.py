@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, json
+import sys
 
 from stgem.job import Job
 import dill as pickle
@@ -51,7 +52,7 @@ def start(files, n, seed, resume, multiprocess):
 
                 # Add the directory for loading user-written modules.
                 description["job_parameters"]["module_path"] = ".".join(x for x in split_path(os.path.dirname(file_name)))
-
+                sys.path.append(os.path.join(*[x for x in split_path(os.path.dirname(file_name))]))
                 # Now we add 1 to the seed for each consecutive copy of the job.
                 SEED = seed[i] + j if i < len(seed) else None
                 description["job_parameters"]["seed"] = SEED
