@@ -15,13 +15,13 @@ class MaxOOB(Objective):
     for minimization.
     """
 
-    def __init__(self, sut):
-        super().__init__(sut)
+    def __init__(self):
+        super().__init__()
 
         self.dim = 1
 
-    def __call__(self, timestamps, signals):
-        return 1 - max(signals[0])
+    def __call__(self, r):
+        return 1 - max(r.outputs[0])
 
 mode = "stop_at_first_objective"
 
@@ -59,7 +59,7 @@ wogan_model_parameters = {
         "lr": 0.005,
         "betas": [0, 0.9],
         "loss": "MSE,logit",
-        "l2_regularization_coef": 0.001
+        "l2_regularization_coef": 0.001,
         "analyzer_mlm": "AnalyzerNetwork",
         "analyzer_mlm_parameters": {
             "hidden_neurons": [64, 64],
@@ -92,18 +92,18 @@ wogan_model_parameters = {
 }
 
 generator = STGEM(
-                  description="Fuel Control of an Automotive Powertrain ({} mode)".format(afc_mode),
-                  sut=Matlab(sut_parameters),
+                  description="SBST 2022 BeamNG.tech simulator",
+                  sut=SBSTSUT(sut_parameters),
                   budget=Budget(),
                   objectives=[MaxOOB()],
                   objective_selector=ObjectiveSelectorAll(),
                   steps=[
                          Search(mode=mode,
-                                budget_threshold={"executions": 50},
+                                budget_threshold={"executions": 3},
                                 algorithm=Random(model_factory=(lambda: Uniform()))),
                          Search(mode=mode,
                                 budget_threshold={"executions": 200},
-                                algorithm=OGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)), parameters=wogan_parameters))
+                                algorithm=WOGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)), parameters=wogan_parameters))
                         ]
                   )
 
