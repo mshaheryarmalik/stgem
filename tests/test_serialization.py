@@ -2,7 +2,7 @@ import os, math, unittest
 
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search, STGEMResult
-from stgem.sut.python.sut import PythonFunction
+from stgem.sut.python import PythonFunction
 from stgem.objective import Minimize
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform

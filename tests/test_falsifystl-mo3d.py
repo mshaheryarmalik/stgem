@@ -3,7 +3,7 @@ import unittest
 
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search
-from stgem.sut.python.sut import PythonFunction
+from stgem.sut.python import PythonFunction
 from stgem.objective import FalsifySTL
 
 from stgem.algorithm.ogan.algorithm import OGAN

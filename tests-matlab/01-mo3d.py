@@ -2,7 +2,7 @@ import unittest
 
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search
-from stgem.sut.matlab.sut import Matlab
+from stgem.sut.matlab import Matlab
 from stgem.objective import Minimize
 from stgem.objective_selector.objective_selector import ObjectiveSelectorMAB
 

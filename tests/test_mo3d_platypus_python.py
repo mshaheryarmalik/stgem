@@ -2,7 +2,7 @@ import math, os, unittest
 
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search
-from stgem.sut.python.sut import PythonFunction
+from stgem.sut.python import PythonFunction
 from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorMAB
 from stgem.algorithm.platypus.algorithm import PlatypusOpt
