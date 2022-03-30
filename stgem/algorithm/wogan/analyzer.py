@@ -13,22 +13,27 @@ class Analyzer:
     Base class for WOGAN analyzers.
     """
 
-    def __init__(self, parameters, logger=None):
-        """
-        Initialize the analyzer base class.
-        """
+    default_parameters = {}
 
+    def __init__(self, parameters=None):
+        if parameters is None:
+            parameters = copy.deepcopy(self.default_parameters)
         self.parameters = parameters
+
+    def setup(self, device, logger=None):
+        self.device = device
+
         self.logger = logger
         self.log = lambda s: self.logger.model.info(s) if logger is not None else None
+
         self.modelA = None
 
     def __getattr__(self, name):
-        value = self.parameters.get(name)
-        if value is None:
-            raise AttributeError(name)
+        if "parameters" in self.__dict__:
+            if name in self.parameters:
+                return self.parameters.get(name)
 
-        return value
+        raise AttributeError(name)
 
     def train_with_batch(self, dataX, dataY, train_settings, log=False):
         raise NotImplementedError()
@@ -41,8 +46,8 @@ class Analyzer_NN(Analyzer):
     Analyzer based on a neural network for regression.
     """
 
-    def __init__(self, parameters, logger=None):
-        super().__init__(parameters, logger)
+    def setup(self, device, logger):
+        super().setup(device, logger)
 
         # Load the specified analyzer machine learning model and initialize it.
         module = importlib.import_module("stgem.algorithm.wogan.mlm")
@@ -51,8 +56,8 @@ class Analyzer_NN(Analyzer):
 
         # Load the specified optimizer.
         module = importlib.import_module("torch.optim")
-        optimizer_class = getattr(module, self.analyzer_parameters["optimizer"])
-        self.optimizerA = optimizer_class(self.modelA.parameters(), **algorithm.filter_arguments(self.analyzer_parameters, optimizer_class))
+        optimizer_class = getattr(module, self.optimizer)
+        self.optimizerA = optimizer_class(self.modelA.parameters(), **algorithm.filter_arguments(self.parameters, optimizer_class))
 
         # Loss functions.
         def get_loss(loss_s):
@@ -82,7 +87,7 @@ class Analyzer_NN(Analyzer):
             return loss
 
         try:
-            self.loss_A = get_loss(self.analyzer_parameters["loss"])
+            self.loss_A = get_loss(self.loss)
         except:
             raise
 
@@ -96,13 +101,13 @@ class Analyzer_NN(Analyzer):
 
         # Compute L2 regularization if needed.
         l2_regularization = 0
-        if "l2_regularization_coef" in self.analyzer_parameters and self.analyzer_parameters["l2_regularization_coef"] != 0:
+        if "l2_regularization_coef" in self.parameters and self.l2_regularization_coef != 0:
             for parameter in self.modelA.parameters():
                 l2_regularization += torch.sum(torch.square(parameter))
         else:
-            self.analyzer_parameters["l2_regularization_coef"] = 0
+            self.parameters["l2_regularization_coef"] = 0
 
-        A_loss = model_loss + self.analyzer_parameters["l2_regularization_coef"]*l2_regularization
+        A_loss = model_loss + self.l2_regularization_coef*l2_regularization
 
         return A_loss
 

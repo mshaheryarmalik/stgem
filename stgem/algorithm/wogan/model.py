@@ -5,7 +5,7 @@ import importlib
 
 import numpy as np
 import torch
-
+import copy
 from stgem import algorithm
 from stgem.algorithm import Model
 
@@ -14,16 +14,69 @@ class WOGAN_Model(Model):
     Implements the WOGAN model.
     """
 
-    def __init__(self, sut, parameters, logger=None):
-        super().__init__(sut, parameters, logger)
+    default_parameters = {
+        "critic_optimizer": "Adam",
+        "critic_lr": 0.001,
+        "critic_betas": [0, 0.9],
+        "generator_optimizer": "Adam",
+        "generator_lr": 0.001,
+        "generator_betas": [0, 0.9],
+        "noise_batch_size": 32,
+        "gp_coefficient": 10,
+        "eps": 1e-6,
+        "report_wd": True,
+        "analyzer": "Analyzer_NN",
+        "analyzer_parameters": {
+            "optimizer": "Adam",
+            "lr": 0.005,
+            "betas": [0, 0.9],
+            "loss": "MSE,logit",
+            "l2_regularization_coef": 0.001,
+            "analyzer_mlm": "AnalyzerNetwork",
+            "analyzer_mlm_parameters": {
+                "hidden_neurons": [64, 64],
+                "layer_normalization": False
+            },
+        },
+        "generator_mlm": "GeneratorNetwork",
+        "generator_mlm_parameters": {
+            "noise_dim": 20,
+            "hidden_neurons": [128, 128],
+            "batch_normalization": False,
+            "layer_normalization": False
+        },
+        "critic_mlm": "CriticNetwork",
+        "critic_mlm_parameters": {"hidden_neurons": [128, 128]},
+        "train_settings_init": {
+            "epochs": 3,
+            "analyzer_epochs": 20,
+            "critic_steps": 5,
+            "generator_steps": 1
+        },
+        "train_settings": {
+            "epochs": 10,
+            "analyzer_epochs": 1,
+            "critic_steps": 5,
+            "generator_steps": 1
+        }
+    }
+
+
+    def setup(self, sut, device, logger):
+        super().setup(sut, device, logger)
 
         self.noise_dim = self.generator_mlm_parameters["noise_dim"]
-        self.gp_coefficient = self.wogan_model_parameters["gp_coefficient"]
+
+        # Infer input and output dimensions for ML models.
+        self.parameters["analyzer_parameters"]["analyzer_mlm_parameters"]["input_shape"] = self.sut.idim
+        self.parameters["generator_mlm_parameters"]["output_shape"] = self.sut.idim
+        self.parameters["critic_mlm_parameters"]["input_shape"] = self.sut.idim
 
         # Load the specified analyzer and initialize it.
         module = importlib.import_module("stgem.algorithm.wogan.analyzer")
         analyzer_class = getattr(module, self.analyzer)
-        self.analyzer = analyzer_class(parameters=self.parameters, logger=logger)
+        self.analyzer = analyzer_class(parameters=self.analyzer_parameters)
+        self.analyzer.setup(device=self.device, logger=self.logger)
 
         # Load the specified generator and critic and initialize them.
         module = importlib.import_module("stgem.algorithm.wogan.mlm")
@@ -34,11 +87,11 @@ class WOGAN_Model(Model):
 
         # Load the specified optimizers.
         module = importlib.import_module("torch.optim")
-        generator_optimizer_class = getattr(module, self.wogan_model_parameters["generator_optimizer"])
-        generator_parameters = {k[10:]:v for k, v in self.wogan_model_parameters.items() if k.startswith("generator")}
+        generator_optimizer_class = getattr(module, self.generator_optimizer)
+        generator_parameters = {k[10:]:v for k, v in self.parameters.items() if k.startswith("generator")}
         self.optimizerG = generator_optimizer_class(self.modelG.parameters(), **algorithm.filter_arguments(generator_parameters, generator_optimizer_class))
-        critic_optimizer_class = getattr(module, self.wogan_model_parameters["critic_optimizer"])
-        critic_parameters = {k[7:]:v for k, v in self.wogan_model_parameters.items() if k.startswith("critic")}
+        critic_optimizer_class = getattr(module, self.critic_optimizer)
+        critic_parameters = {k[7:]:v for k, v in self.parameters.items() if k.startswith("critic")}
         self.optimizerC = critic_optimizer_class(self.modelC.parameters(), **algorithm.filter_arguments(critic_parameters, critic_optimizer_class))
 
     def train_analyzer_with_batch(self, data_X, data_Y, train_settings):
@@ -138,7 +191,7 @@ class WOGAN_Model(Model):
                                            )[0]
 
             # We add epsilon for stability.
-            epsilon = self.wogan_model_parameters["eps"] if "eps" in self.wogan_model_parameters else 1e-7
+            epsilon = self.eps if "eps" in self.parameters else 1e-7
             gradients_norms = torch.sqrt(torch.sum(gradients**2, dim=1) + epsilon)
             gradient_penalty = ((gradients_norms - 1) ** 2).mean()
             # gradient_penalty = ((torch.linalg.norm(gradients, dim=1) - 1)**2).mean()
@@ -163,7 +216,7 @@ class WOGAN_Model(Model):
         # ---------------------------------------------------------------------
         self.modelG.train(True)
         losses = torch.zeros(generator_steps)
-        noise_batch_size = self.wogan_model_parameters["noise_batch_size"]
+        noise_batch_size = self.noise_batch_size
         for m in range(generator_steps):
             noise = (2*torch.rand(size=(noise_batch_size, self.modelG.input_shape)) - 1).to(self.device)
             outputs = self.modelC(self.modelG(noise))
@@ -179,7 +232,7 @@ class WOGAN_Model(Model):
 
         self.modelG.train(False)
 
-        report_wd = self.wogan_model_parameters["report_wd"] if "report_wd" in self.wogan_model_parameters else False
+        report_wd = self.report_wd if "report_wd" in self.parameters else False
         if report_wd:
             # Same as above in critic training.
             real_inputs = data_X
@@ -219,7 +272,7 @@ class WOGAN_Model(Model):
 
         training_G = self.modelG.training
         # Generate uniform noise in [-1, 1].
-        noise = (2*torch.rand(size=(N, self.noise_dim)) - 1).to(self.device)
+        noise = (2*torch.rand(size=(N, self.modelG.input_shape)) - 1).to(self.device)
         self.modelG.train(False)
         result = self.modelG(noise).cpu().detach().numpy()
         self.modelG.train(training_G)

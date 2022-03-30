@@ -1,8 +1,15 @@
-import math
-from stgem.job import Job
-import unittest
+import math, os, unittest
 
-def myfunc(input):
+from stgem.budget import Budget
+from stgem.generator import STGEM, Search
+from stgem.sut.python import PythonFunction
+from stgem.objective import Minimize
+from stgem.objective_selector import ObjectiveSelectorMAB
+from stgem.algorithm.platypus.algorithm import PlatypusOpt
+from stgem.algorithm.random.algorithm import Random
+from stgem.algorithm.random.model import Uniform, LHS
+
+def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
     h1 = 305 - 100 * (math.sin(x1 / 3) + math.sin(x2 / 3) + math.sin(x3 / 3))
     h2 = 230 - 75 * (math.cos(x1 / 2.5 + 15) + math.cos(x2 / 2.5 + 15) + math.cos(x3 / 2.5 + 15))
@@ -11,25 +18,30 @@ def myfunc(input):
 
     return [h1, h2, h3]
 
-description = {
-    "sut": "python.PythonFunction",
-    "sut_parameters": {
-        "input_range": [[-15, 15], [-15, 15], [-15, 15]],
-        "output_range": [[0, 350], [0, 350], [0, 350]],
-        "function": myfunc
-    },
-    "objective_func": ["Minimize", "Minimize", "Minimize"],
-    "objective_func_parameters": [
-        {"selected": [0], "invert": False, "scale": True},
-        {"selected": [1], "invert": False, "scale": True},
-        {"selected": [2], "invert": False, "scale": True}],
-    "objective_selector": "ObjectiveSelectorMAB",
-    "objective_selector_parameters": {"warm_up": 30},
-    "steps": ["step_platypus"],
-    "step_platypus": {
-        "step_parameters": {"max_tests": 2000, "mode": "stop_at_first_objective"},
-        "algorithm": "platypus.PlatypusOpt"
-    }
-}
+class PlatypusTest(unittest.TestCase):
+    def test_plattypus1(self):
+        generator = STGEM(
+            description="mo3d-playpus",
+            budget=Budget(),
+            sut=PythonFunction(function=myfunction),
+            objectives=[Minimize(selected=[0], scale=True),
+                        Minimize(selected=[1], scale=True),
+                        Minimize(selected=[2], scale=True)
+                        ],
+            objective_selector=ObjectiveSelectorMAB(warm_up=5),
+            steps=[
+                Search(budget_threshold={"executions": 2000},
+                       mode="stop_at_first_objective",
+                       algorithm=PlatypusOpt()
+                )
+            ]
+        )
 
-Job(description).run()
+        r = generator.run()
+        file_name = generator.description + ".pickle"
+        r.dump_to_file(file_name)
+        os.remove(file_name)
+
+if __name__ == "__main__":
+    unittest.main()
+
