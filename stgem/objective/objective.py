@@ -134,7 +134,6 @@ class FalsifySTL(Objective):
         return robustness
 
     def _evaluate_signal(self, result, clip=True):
-        clip = False
         input_timestamps = result.input_timestamps
         output_timestamps = result.output_timestamps
         input_signals = result.inputs
@@ -265,7 +264,7 @@ class FalsifySTL(Objective):
 
         # Build trajectories in appropriate form.
         trajectories = {var:signals[var] for var in formula_variables}
-        trajectories["time"] = timestamps.tolist()
+        trajectories["time"] = list(timestamps)
 
         robustness_signal = self.spec.evaluate(trajectories)
 
