@@ -12,7 +12,7 @@ from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform
 
 sut_parameters = {
-    "model_file": "../problems/arch-comp/at/Autotrans_shift",
+    "model_file": "../problems/arch-comp-2021/at/Autotrans_shift",
     "inputs": ["THROTTLE", "BRAKE"],
     "outputs": ["SPEED", "RPM", "GEAR"],
     "input_range": [[0, 100], [0, 325]],

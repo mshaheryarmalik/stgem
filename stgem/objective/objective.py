@@ -86,11 +86,9 @@ class FalsifySTL(Objective):
 
     def setup(self, sut):
         # Create the RTAMT specification.
-        # For signals we use the dense time STL because it is unclear how to
-        # use the discrete version. The horizons are especially unclear in the 
-        # discrete case. For vector outputs we use discrete time STL because
-        # updating with a single signal value does not seem to give sensible
-        # results otherwise.
+        # We use discrete time for both vectors and signals. For vector outputs
+        # discrete time needs to be used as with dense time updating with a
+        # single signal value does not seem to give sensible values.
         super().setup(sut)
 
         # rtamt may have dependency problems. We continue even if we cannot import it
@@ -101,60 +99,75 @@ class FalsifySTL(Objective):
             import traceback
             traceback.print_exc()
 
-        self.spec_dense = rtamt.STLDenseTimeSpecification()
-        self.spec_discrete = rtamt.STLSpecification()
+        self.spec = rtamt.STLSpecification()
         for var in chain(self.sut.outputs, self.sut.inputs):
-            self.spec_dense.declare_var(var, "float")
-            self.spec_discrete.declare_var(var, "float")
-        self.spec_dense.spec = self.specification
-        self.spec_discrete.spec = self.specification
+            self.spec.declare_var(var, "float")
+        self.spec.spec = self.specification
 
-    def _evaluate_vector(self,  output):
+    def _evaluate_vector(self,  output, clip=True):
         # We assume that the output is a single observation of a signal. It
         # follows that not all STL formulas have a clear interpretation (like
         # always[0,30](x1 > 0 and x2 > 0). It is up to the user to ensure a
         # reasonable interpretation.
 
-        spec = self.spec_discrete
-
         # Scale the input.
         output = self.sut.scale(np.asarray(output).reshape(1, -1), self.sut.output_range, target_A=0, target_B=1).reshape(-1)
 
-        spec.reset()
+        self.spec.reset()
 
         # We need to parse only after setting the sampling period.
         try:
-            spec.parse()
+            self.spec.parse()
 	    # Transform the STL formula to past temporal logic.
-            spec.pastify()
+            self.spec.pastify()
         except:
             # TODO: Handle errors.
             raise
 
         # Use the online monitor to get the robustness. We evaluate at time 0.
-        robustness = spec.update(0, zip(self.sut.outputs, output))
+        robustness = self.spec.update(0, zip(self.sut.outputs, output))
 
         # Clip the robustness to [0, 1].
-        robustness = max(0, min(robustness, 1))
+        if clip:
+            robustness = max(0, min(robustness, 1))
 
         return robustness
 
-    def _evaluate_signal(self, result):
+    def _evaluate_signal(self, result, clip=True):
+        clip = False
         input_timestamps = result.input_timestamps
         output_timestamps = result.output_timestamps
         input_signals = result.inputs
         output_signals = result.outputs
-        # Here we find the robustness at time 0.
-        #
-        # We assume that the user guarantees that time is increasing and that
-        # timestamps do not overlap. It's best to use timestamps where the
-        # difference between consecutive times is approximately constant.
 
-        spec = self.spec_dense
-        spec.reset()
+        """
+        Here we find the robustness at time 0.
+        
+        We assume that the user guarantees that time is increasing. It is very
+        difficult to understand how RTAMT works. It seems that with discrete
+        time the actual timestamps are mostly ignored (at least as of
+        29.3.2022). At least if the first two observations of signals have,
+        say, timestamps 0 and 0.1, when evaluate (offline) or update (online)
+        is called, what is actually done is effectively the same as if the
+        timestamps were 0 and 1. The computed robustness signal uses the
+        original timestamps, but they are not processed in any way. Both
+        evaluate and update check the difference between the timestamps and
+        increment the violation counter if the difference is too small compared
+        to the sampling period (set by calling spec.set_sampling_period). Thus
+        it seems that setting the sampling period is unnecessary. Setting it
+        has the nasty consequence that then the formula time horizon is
+        scaled according to the sampling period. Moreover it seems that this
+        scaling works incorrectly. For example with a formula always[0,20] of
+        time horizon 20 and sampling period 0.01, the horizon is set to 200000
+        whereas it should be 2000 (it seems that the correct answer 2000 is
+        incorrectly divided by the sampling period 0.01). Thus we skip setting
+        the sampling period.
+        """
+
+        self.spec.reset()
 
         try:
-            spec.parse()
+            self.spec.parse()
         except:
             # TODO: Handle errors.
             raise
@@ -162,7 +175,7 @@ class FalsifySTL(Objective):
         # Find out which variables are in the STL formula. Adjust input and
         # output signals to have common timestamps if required.
         # ---------------------------------------------------------------------
-        formula_variables = spec.top.out_vars.copy()
+        formula_variables = self.spec.top.out_vars.copy()
         # Separate to input and output variables and create a mapping for easy
         # access to correct signal.
         input_var = []
@@ -232,14 +245,14 @@ class FalsifySTL(Objective):
             signals = {var:output_signals[M[var]] for var in output_var}
 
         # This needs to be fetched at this point.
-        horizon = spec.top.horizon
+        horizon = self.spec.top.horizon
 
         if self.strict_horizon_check and horizon > timestamps[-1]:
-            raise Exception("The horizon of the formula is too long compared to input signal length. The robustness cannot be computed.")
+            raise Exception("The horizon {} of the formula is too long compared to input signal length {}. The robustness cannot be computed.".format(horizon, timestamps[-1]))
 
         # Transform the STL formula to past temporal logic.
         try:
-            spec.pastify()
+            self.spec.pastify()
         except:
             # TODO: Handle errors.
             raise
@@ -251,12 +264,10 @@ class FalsifySTL(Objective):
             signals[var] = self.sut.scale_signal(signals[var], self.sut.output_range[M[var]], target_A=0, target_B=1) 
 
         # Build trajectories in appropriate form.
-        trajectories = []
-        for var in formula_variables:
-            trajectory = [[timestamps[j], signals[var][j]] for j in range(len(timestamps))]
-            trajectories.append([var, trajectory])
+        trajectories = {var:signals[var] for var in formula_variables}
+        trajectories["time"] = timestamps.tolist()
 
-        robustness_signal = spec.evaluate(*trajectories)
+        robustness_signal = self.spec.evaluate(trajectories)
 
         robustness = None
         for t, r in robustness_signal:
@@ -271,13 +282,15 @@ class FalsifySTL(Objective):
                 robustness = robustness_signal[-1][1]
 
         # Clip the robustness to [0, 1].
-        robustness = max(0, min(robustness, 1))
+        if clip:
+            robustness = max(0, min(robustness, 1))
 
         return robustness
 
-    def __call__(self, r: SUTResult):
+    def __call__(self, r: SUTResult, *args, **kwargs):
+        clip = kwargs["clip"] if "clip" in kwargs else True
         if r.output_timestamps is None:
-            return self._evaluate_vector(r.outputs)
+            return self._evaluate_vector(r.outputs, clip=clip)
         else:
-            return self._evaluate_signal(r)
+            return self._evaluate_signal(r, clip=clip)
 
