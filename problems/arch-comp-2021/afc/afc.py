@@ -77,7 +77,7 @@ generator = STGEM(
                   sut=Matlab(sut_parameters),
                   budget=Budget(),
                   objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
-                  objective_selector=ObjectiveSelectorMAB(warm_up=5),
+                  objective_selector=ObjectiveSelectorMAB(warm_up=20),
                   steps=[
                          Search(mode=mode,
                                 budget_threshold={"executions": 20},
