@@ -142,7 +142,7 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         test = self.descale(test.reshape(1, -1), self.descaling_intervals).reshape(-1)
 
         # Common timestamps to all input signals.
-        timestamps = np.linspace(0, self.simulation_time, self.steps)
+        timestamps = np.array([i*self.sampling_step for i in range(self.steps + 1)])
         # Signals.
         signals = np.zeros(shape=(self.N_signals, len(timestamps)))
         offset = 0

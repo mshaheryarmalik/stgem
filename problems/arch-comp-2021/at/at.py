@@ -11,7 +11,17 @@ from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorMAB
 
 mode = "stop_at_first_objective"
-selected_specification = "AT6ABC"
+specifications = ["AT1",
+                  "AT2",
+                  "AT51",
+                  "AT52",
+                  "AT53",
+                  "AT54",
+                  "AT6A",
+                  "AT6B",
+                  "AT6C",
+                  "AT6ABC",
+selected_specification = "AT1"
 
 if selected_specification == "AT1":
     # always[0,20](SPEED < 120)
