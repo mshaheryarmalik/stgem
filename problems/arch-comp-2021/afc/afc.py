@@ -1,3 +1,5 @@
+import tltk_mtl as STL
+
 from stgem.generator import STGEM, Search
 from stgem.budget import Budget
 from stgem.sut.matlab.sut import Matlab
@@ -15,32 +17,41 @@ elif afc_mode == "power":
     throttle_range = [61.2, 81.2]
 
 mode = "stop_at_first_objective"
-selected_specification = "AFC27"
-
-specifications = {
-    "AFC27": """(always[11,50](
-                (
-                ((THROTTLE < 8.8) and (eventually[0,0.05](THROTTLE > 40.0)))
-                or
-                ((THROTTLE > 40.0) and (eventually[0,0.05](THROTTLE < 8.8)))
-                )
-                implies
-                (always[1,5](abs(MU) < 0.008))))""", # AFC27, normal
-    "AFC29": "(always[11,50](abs(MU) < 0.007))" # AFC29/AFC33, normal/power
-}
-
-specification = specifications[selected_specification]
+specifications = ["AFC27", # AFC27, normal
+                  "AFC29"  # AFC29,AFC33 normal/power
+                 ]
+selected_specification = "AFC29"
 
 # Some ARCH-COMP specifications have requirements whose horizon is longer than
-# the output signal for some reason. Disable strict horizon check to get
-# reasonable results.
-if selected_specification in ["AFC27"]:
+# the output signal for some reason. Thus strict horizon check needs to be
+# disabled in some cases.
+if selected_specification == "AFC27":
+    beta = 0.008
+    # (THROTTLE < 8.8) and (eventually[0,0.05](THROTTLE > 40.0))
+    L = STL.LessThan(1, 0, 0, 8.8, STL.Signal("THROTTLE"))
+    R = STL.Finally(0, 0.05, STL.LessThan(-1, 0, 0, -40, STL.Signal("THROTTLE")))
+    rise = STL.And(L, R)
+    # (THROTTLE > 40.0) and (eventually[0,0.05](THROTTLE < 8.8))
+    L = STL.LessThan(-1, 0, 0, -40, STL.Signal("THROTTLE"))
+    R = STL.Finally(0, 0.05, STL.LessThan(1, 0, 0, 8.8, STL.Signal("THROTTLE")))
+    fall = STL.And(L, R)
+    # always[1,5](abs(MU) < beta)
+    tmp = STL.LessThan(1, 0, 0, beta, STL.Abs(STL.Signal("MU")))
+    consequence = STL.Global(1, 5, tmp)
+    # always[11,50]( (rise or fall) implies (consequence)
+    specification = STL.Global(11, 50, STL.Implication(STL.Or(rise, fall), consequence))
+    
     strict_horizon_check = False
-else:
+elif selected_specification == "AFC29":
+    gamma = 0.007
+    # always[11,50]( abs(MU) < gamma )
+    specification = STL.Global(11, 50, STL.LessThan(1, 0, 0, gamma, STL.Abs(STL.Signal("MU"))))
     strict_horizon_check = True
+else:
+    raise Exception("Unknown specification '{}'.".format(selected_specification))
 
-sut_parameters = {"model_file": "problems/arch-comp/afc/run_powertrain",
-                  "init_model_file": "problems/arch-comp/afc/init_powertrain",
+sut_parameters = {"model_file": "problems/arch-comp-2021/afc/run_powertrain",
+                  "init_model_file": "problems/arch-comp-2021/afc/init_powertrain",
                   "input_type": "piecewise constant signal",
                   "output_type": "signal",
                   "inputs": ["THROTTLE", "ENGINE"],
@@ -48,7 +59,7 @@ sut_parameters = {"model_file": "problems/arch-comp/afc/run_powertrain",
                   "input_range": [throttle_range, [900, 1100]],
                   "simulation_time": 50,
                   "time_slices": [10, 50],
-                  "sampling_step": 0.2
+                  "sampling_step": 0.5
                  }
 
 ogan_parameters = {"fitness_coef": 0.95,

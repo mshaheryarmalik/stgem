@@ -119,9 +119,9 @@ class OGAN(Algorithm):
             self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1] + self.perf.get_history("training_time")[-1])
 
             sut_result = self.sut.execute_test(best_test)
+            self.log("Result from the SUT {}".format(sut_result))
             output = [self.objective_funcs[i](sut_result) for i in range(self.N_models)]
 
-            self.log("Result from the SUT {}".format(sut_result))
             self.log("The actual objective {} for the generated test.".format(output))
 
             # Add the new test to the test suite.

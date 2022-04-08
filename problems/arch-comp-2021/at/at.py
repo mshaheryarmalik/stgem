@@ -1,3 +1,5 @@
+import tltk_mtl as STL
+
 from stgem.generator import STGEM, Search
 from stgem.budget import Budget
 from stgem.sut.matlab.sut import Matlab_Simulink
@@ -9,21 +11,56 @@ from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorMAB
 
 mode = "stop_at_first_objective"
-selected_specification = "AT1"
+selected_specification = "AT6ABC"
 
-# \circ = eventually[0.001,0.1]( )
-AT5_template = "(always[0,30]( ( not(GEAR == {0}) and (eventually[0.001,0.1](GEAR == {0})) ) implies ( eventually[0.001,0.1]( always[0,2.5](GEAR == {0}) ) ) ))"
-specifications = {
-    "AT1": "(always[0,20](SPEED < 120))",
-    "AT2": "(always[0,10](RPM < 4750))",
-    "AT51": AT5_template.format("1"),
-    "AT52": AT5_template.format("2"),
-    "AT53": AT5_template.format("3"),
-    "AT54": AT5_template.format("4"),
-    "AT6A": "",
-}
+if selected_specification == "AT1":
+    # always[0,20](SPEED < 120)
+    specification = STL.Global(0, 20, STL.LessThan(1, 0, 0, 120, STL.Signal("SPEED")))
 
-specification = specifications[selected_specification]
+    strict_horizon_check = True
+elif selected_specification == "AT2":
+    # always[0,10](RPM < 4750)
+    specification = STL.Global(0, 10, STL.LessThan(1, 0, 0, 4750, STL.Signal("RPM")))
+elif selected_specification.startswith("AT5"):
+    # This is modified from ARCH-COMP to include the next operator which is
+    # available as we use discrete time STL.
+    # always[0,30]( ( not(GEAR == {0}) and (eventually[0.001,0.1](GEAR == {0})) ) implies ( eventually[0.001,0.1]( always[0,2.5](GEAR == {0}) ) ) )"
+    G = int(selected_specification[-1])
+    # not(GEAR == {0}) and (eventually[0.001,0.1](GEAR == {0}))
+    L = STL.And(STL.Not(STL.Equals(1, 0, 0, G, STL.Signal("GEAR"))), STL.Next(STL.Equals(1, 0, 0, G, STL.Signal("GEAR"))))
+    # eventually[0.001,0.1]( always[0,2.5](GEAR == {0}) )
+    R = STL.Next(STL.Global(0, 2.5, STL.Equals(1, 0, 0, G, STL.Signal("GEAR"))))
+
+    specification = STL.Global(0, 30, STL.Implication(L, R))
+
+    strict_horizon_check = False
+elif selected_specification.startswith("AT6"):
+    A = selected_specification[-1]
+
+    def getSpecification(A):
+        if A == "A":
+            UB = 4
+            SL = 35
+        elif A == "B":
+            UB = 8
+            SL = 50
+        else:
+            UB = 20
+            SL = 65
+          
+        # (always[0,30](RPM < 3000)) implies (always[0,{0}](SPEED < {1}))
+        L = STL.Global(0, 30, STL.LessThan(1, 0, 0, 3000, STL.Signal("RPM")))
+        R = STL.Global(0, UB, STL.LessThan(1, 0, 0, SL, STL.Signal("SPEED")))
+        return STL.Implication(L, R)
+
+    if selected_specification.endswith("ABC"):
+        specification = STL.And(STL.And(getSpecification("A"), getSpecification("B")), getSpecification("C"))
+    else:
+        specification = getSpecification(A)
+
+    strict_horizon_check = False
+else:
+    raise Exception("Unknown specification '{}'.".format(selected_specification))
 
 sut_parameters = {"model_file": "problems/arch-comp-2021/at/Autotrans_shift",
                   "input_type": "piecewise constant signal",
@@ -95,7 +132,7 @@ generator = STGEM(
                   description="Automatic Transmission",
                   sut=Matlab_Simulink(sut_parameters),
                   budget=Budget(),
-                  objectives=[FalsifySTL(specification=specification)],
+                  objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
                   objective_selector=ObjectiveSelectorMAB(warm_up=20),
                   steps=[
                          Search(mode=mode,
