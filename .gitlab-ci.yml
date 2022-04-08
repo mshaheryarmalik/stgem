@@ -31,7 +31,7 @@ before_script:
   - pip install -r requirements.txt
   - pip install pytest-xdist 
   - git clone https://gitlab.abo.fi/japeltom/tltk.git # Install our own version of TLTk.
-  - cd tltk.git/robustness
+  - cd tltk/robustness
   - pip3 install -e .
   - cd ../..
 
