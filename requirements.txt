@@ -7,4 +7,3 @@ Platypus-Opt~=1.0.4
 pandas
 pydoe
 click
-rtamt

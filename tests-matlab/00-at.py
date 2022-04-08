@@ -1,5 +1,7 @@
 import unittest
 
+import tltk_mtl as STL
+
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.sut.matlab import Matlab_Simulink
@@ -21,8 +23,12 @@ sut_parameters = {
     "time_slices": [5, 5],
     "sampling_step": 0.2
 }
-specification = "(always[0,30](RPM < 3000)) implies (always[0,4](SPEED < 35))"
 mode = "stop_at_first_objective"
+
+# always[0,30](RPM < 3000)) implies (always[0,4](SPEED < 35)
+L = STL.Global(0, 30, STL.LessThan(1, 0, 0, 3000, STL.Signal("RPM")))
+R = STL.Global(0, 4, STL.LessThan(1, 0, 0, 35, STL.Signal("SPEED")))
+specification = STL.Implication(L, R)
 
 class TestPython(unittest.TestCase):
     def test_python(self):

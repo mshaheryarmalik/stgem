@@ -58,7 +58,7 @@ elif selected_specification.startswith("AT6"):
     else:
         specification = getSpecification(A)
 
-    strict_horizon_check = False
+    strict_horizon_check = True
 else:
     raise Exception("Unknown specification '{}'.".format(selected_specification))
 
