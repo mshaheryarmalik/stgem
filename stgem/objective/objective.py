@@ -107,7 +107,7 @@ class FalsifySTL(Objective):
                 return []
             elif isinstance(formula, (STL.Not, STL.Next, STL.Abs)):
                 return bounded(formula.subformula)
-            elif isinstance(formula, (STL.And, STL.Or, STL.Implication, STL.Sum, STL.LessThan, STL.Equals)):
+            elif isinstance(formula, (STL.And, STL.Or, STL.Implication, STL.Sum, STL.Subtract, STL.LessThan, STL.Equals)):
                 return bounded(formula.left_subformula) + bounded(formula.right_subformula)
             elif isinstance(formula, (STL.Global, STL.Finally)):
                 return [formula] + bounded(formula.subformula)
