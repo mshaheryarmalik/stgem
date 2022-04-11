@@ -32,6 +32,7 @@ if selected_specification == "NN":
     # always[1,37]( inequality implies (always[0,2]( eventually[0,1] not inequality )) )
     specification = STL.Global(1, 37, STL.Implication(inequality1, STL.Global(0, 2, STL.Finally(0, 1, STL.Not(inequality2)))))
 
+    ref_input_range = None
     strict_horizon_check = True
 elif selected_specification == "NNX":
     # eventually[0,1](POS > 3.2)
@@ -49,6 +50,7 @@ elif selected_specification == "NNX":
 
     specification = STL.And(F1, STL.And(F2, F3))
 
+    ref_input_range = [1.95, 2.05]
     strict_horizon_check = True
 else:
     raise Exception("Unknown specification '{}'.".format(selected_specification))
@@ -59,7 +61,7 @@ sut_parameters = {"model_file": "problems/arch-comp-2021/nn/run_neural",
                   "output_type": "signal",
                   "inputs": ["REF"],
                   "outputs": ["POS"],
-                  "input_range": [[1, 3]],
+                  "input_range": [ref_input_range],
                   "simulation_time": 40,
                   "time_slices": [13],
                   "sampling_step": 0.5
