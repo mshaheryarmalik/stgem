@@ -23,39 +23,40 @@ selected_specification = "CC1"
 # Some ARCH-COMP specifications have requirements whose horizon is longer than
 # the output signal for some reason. Thus strict horizon check needs to be
 # disabled in some cases.
+S = lambda var: STL.Signal(var)
 if selected_specification == "CC1":
     # always[0,100]( y5 - y4 <= 40 )
-    specification = STL.Global(0, 100, STL.LessThan(1, 0, 1, 40, STL.Signal("Y5"), STL.Signal("Y4")))
+    specification = STL.Global(0, 100, STL.LessThan(1, 0, 1, 40, S("Y5"), S("Y4")))
     
     strict_horizon_check = True
 elif selected_specification == "CC2":
     # always[0,70]( eventually[0,30]( y5 - y4 >= 15 ) )
-    specification = STL.Global(0, 70, STL.Finally(0, 30, STL.LessThan(-1, 0, -1, -15, STL.Signal("Y5"), STL.Signal("Y4"))))
+    specification = STL.Global(0, 70, STL.Finally(0, 30, FalsifySTL.GreaterThan(1, 0, 1, 15, S("Y5"), S("Y4"))))
 
     strict_horizon_check = True
 elif selected_specification == "CC3":
     # always[0,80]( (always[0,20]( y2 - y1 <= 20 )) or (eventually[0,20]( y5 - y4 >= 40 )) )
-    L = STL.Global(0, 20, STL.LessThan(1, 0, 1, 20, STL.Signal("Y2"), STL.Signal("Y1"))) 
-    R = STL.Finally(0, 20, STL.LessThan(-1, 0, -1, -40, STL.Signal("Y5"), STL.Signal("Y4")))
+    L = STL.Global(0, 20, STL.LessThan(1, 0, 1, 20, S("Y2"), S("Y1"))) 
+    R = STL.Finally(0, 20, FalsifySTL.GreaterThan(1, 0, 1, 40, S("Y5"), S("Y4")))
     specification = STL.Global(0, 80, STL.And(L, R))
 
     strict_horizon_check = True
 elif selected_specification == "CC4":
     # always[0,65]( eventually[0,30]( always[0,20]( y5 - y4 >= 8 ) ) )
-    specification = STL.Global(0, 65, STL.Finally(0, 30, STL.Global(0, 20, STL.LessThan(-1, 0, 1, -8, STL.Signal("Y5"), STL.Signal("Y4")))))
+    specification = STL.Global(0, 65, STL.Finally(0, 30, STL.Global(0, 20, FalsifySTL.GreaterThan(1, 0, 1, 8, S("Y5"), S("Y4")))))
 
     strict_horizon_check = False
 elif selected_specification == "CC5":
     # always[0,72]( eventually[0,8]( always[0,5]( y2 - y1 >= 9 ) implies always[5,20]( y5 - y4 >= 9 ) ) )
-    L = STL.Global(0, 5, STL.LessThan(-1, 0, -1, -9, STL.Signal("Y2"), STL.Signal("Y3")))
-    R = STL.Global(5, 20, STL.LessThan(-1, 0, -1, -9, STL.Signal("Y5"), STL.Signal("Y4")))
+    L = STL.Global(0, 5, FalsifySTL.GreaterThan(1, 0, 1, 9, S("Y2"), S("Y3")))
+    R = STL.Global(5, 20, FalsifySTL.GreaterThan(1, 0, 1, 9, S("Y5"), S("Y4")))
     specification = STL.Global(0, 72, STL.Finally(0, 8, STL.Implication(L, R)))
 
     strict_horizon_check = True
 elif selected_specification == "CCX":
     # always[0,50]( y2 - y1 > 7.5 ) and always[0,50]( y3 - y2 > 7.5 ) and always[0,50]( y4 - y3 > 7.5 ) and always[0,50]( y5 - y4 > 7.5 )
     def getSpecification(N):
-        return STL.Global(0, 50, STL.LessThan(-1, 0, -1, -7.5, STL.Signal("Y{}".format(N+1)), STL.Signal("Y{}".format(N))))
+        return STL.Global(0, 50, FalsifySTL.StrictlyGreaterThan(1, 0, 1, 7.5, S("Y{}".format(N+1)), S("Y{}".format(N))))
 
     F1 = getSpecification(1)
     F2 = getSpecification(2)

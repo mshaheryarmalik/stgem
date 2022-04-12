@@ -305,3 +305,34 @@ class FalsifySTL(Objective):
         else:
             return self._evaluate_signal(r)
 
+    @staticmethod
+    def GreaterThan(A, B, C, D, left_signal=None, right_signal=None):
+        """Static helper method for stating A*L + B >= C*R + D where L and R
+        respectively are the left and right signals."""
+
+        try:
+            import tltk_mtl as STL
+        except:
+            raise
+
+        return STL.LessThan(C, D, A, B, right_signal, left_signal)
+
+    @staticmethod
+    def StrictlyLessThan(A, B, C, D, left_signal=None, right_signal=None):
+        """Static helper method for stating A*L + B < C*R + D where L and R
+        respectively are the left and right signals."""
+
+        try:
+            import tltk_mtl as STL
+        except:
+            raise
+
+        return STL.Not(FalsifySTL.GreaterThan(A, B, C, D, left_signal, right_signal))
+
+    @staticmethod
+    def StrictlyGreaterThan(A, B, C, D, left_signal=None, right_signal=None):
+        """Static helper method for stating A*L + B > C*R + D where L and R
+        respectively are the left and right signals."""
+
+        return FalsifySTL.StrictlyLessThan(C, D, A, B, right_signal, left_signal)
+

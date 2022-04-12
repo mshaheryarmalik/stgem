@@ -120,7 +120,7 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
             raise Exception("Parameter 'sampling_step' must be defined for piecewise constant signal inputs.")
 
         # How often input signals are sampled for execution (in time units).
-        self.steps = int(self.simulation_time // self.sampling_step)
+        self.steps = int(self.simulation_time / self.sampling_step)
         # How many inputs we have for each input signal.
         self.pieces = [math.ceil(self.simulation_time / time_slice) for time_slice in self.time_slices]
 
@@ -212,7 +212,7 @@ class Matlab(SUT):
                 raise Exception("Parameter 'sampling_step' must be defined for piecewise constant signal inputs.")
 
             # How often input signals are sampled for execution (in time units).
-            self.steps = int(self.simulation_time // self.sampling_step)
+            self.steps = int(self.simulation_time / self.sampling_step)
             # How many inputs we have for each input signal.
             self.pieces = [math.ceil(self.simulation_time / time_slice) for time_slice in self.time_slices]
 

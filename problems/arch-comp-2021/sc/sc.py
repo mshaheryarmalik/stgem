@@ -20,10 +20,11 @@ selected_specification = "SC"
 # Notice that this only implements the Instance 2 version of the problem where
 # the input signal is split into exactly 20 segments.
 
+S = lambda var: STL.Signal(var)
 if selected_specification == "SC":
     # always[30,35](87 <= pressure <= 87.5)
-    L = STL.LessThan(0, 87, 1, 0, None, STL.Signal("PRESSURE"))
-    R = STL.LessThan(1, 0, 0, 87.5, STL.Signal("PRESSURE"))
+    L = STL.LessThan(0, 87, 1, 0, None, S("PRESSURE"))
+    R = STL.LessThan(1, 0, 0, 87.5, S("PRESSURE"))
     inequality = STL.And(L, R)
     specification = STL.Global(30, 35, inequality)
 

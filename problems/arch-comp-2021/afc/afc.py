@@ -20,24 +20,24 @@ mode = "stop_at_first_objective"
 specifications = ["AFC27", # AFC27, normal
                   "AFC29"  # AFC29,AFC33 normal/power
                  ]
-selected_specification = "AFC29"
+selected_specification = "AFC27"
 
 # Some ARCH-COMP specifications have requirements whose horizon is longer than
 # the output signal for some reason. Thus strict horizon check needs to be
 # disabled in some cases.
+S = lambda var: STL.Signal(var)
 if selected_specification == "AFC27":
     beta = 0.008
     # rise := (THROTTLE < 8.8) and (eventually[0,0.05](THROTTLE > 40.0))
-    L = STL.LessThan(1, 0, 0, 8.8, STL.Signal("THROTTLE"))
-    R = STL.Finally(0, 0.05, STL.LessThan(-1, 0, 0, -40, STL.Signal("THROTTLE")))
+    L = FalsifySTL.StrictlyLessThan(1, 0, 0, 8.8, S("THROTTLE"))
+    R = STL.Finally(0, 0.05, FalsifySTL.StrictlyGreaterThan(1, 0, 0, 40, S("THROTTLE")))
     rise = STL.And(L, R)
     # fall := (THROTTLE > 40.0) and (eventually[0,0.05](THROTTLE < 8.8))
-    L = STL.LessThan(-1, 0, 0, -40, STL.Signal("THROTTLE"))
-    R = STL.Finally(0, 0.05, STL.LessThan(1, 0, 0, 8.8, STL.Signal("THROTTLE")))
+    L = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 40, S("THROTTLE"))
+    R = STL.Finally(0, 0.05, FalsifySTL.StrictlyLessThan(1, 0, 0, 8.8, S("THROTTLE")))
     fall = STL.And(L, R)
     # consequence := always[1,5](abs(MU) < beta)
-    tmp = STL.LessThan(1, 0, 0, beta, STL.Abs(STL.Signal("MU")))
-    consequence = STL.Global(1, 5, tmp)
+    consequence = STL.Global(1, 5, FalsifySTL.StrictlyLessThan(1, 0, 0, beta, STL.Abs(S("MU"))))
     # always[11,50]( (rise or fall) implies (consequence)
     specification = STL.Global(11, 50, STL.Implication(STL.Or(rise, fall), consequence))
     
@@ -45,7 +45,7 @@ if selected_specification == "AFC27":
 elif selected_specification == "AFC29":
     gamma = 0.007
     # always[11,50]( abs(MU) < gamma )
-    specification = STL.Global(11, 50, STL.LessThan(1, 0, 0, gamma, STL.Abs(STL.Signal("MU"))))
+    specification = STL.Global(11, 50, FalsifySTL.StrictlyLessThan(1, 0, 0, gamma, STL.Abs(S("MU"))))
     strict_horizon_check = True
 else:
     raise Exception("Unknown specification '{}'.".format(selected_specification))

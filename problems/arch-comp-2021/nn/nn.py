@@ -19,13 +19,14 @@ selected_specification = "NN"
 # Notice that this only implements the Instance 2 version of the problem where
 # the input signal is split into exactly 3 segments.
 
+S = lambda var: STL.Signal(var)
 if selected_specification == "NN":
     alpha = 0.005
     beta = 0.03
     # inequality := |POS - REF| > alpha + beta*|REF|
     # We make two copies in order to not share state.
-    inequality1 = STL.Not(STL.LessThan(1, 0, beta, alpha, STL.Abs(STL.Subtract(STL.Signal("POS"), STL.Signal("REF"))), STL.Abs(STL.Signal("REF"))))
-    inequality2 = STL.Not(STL.LessThan(1, 0, beta, alpha, STL.Abs(STL.Subtract(STL.Signal("POS"), STL.Signal("REF"))), STL.Abs(STL.Signal("REF"))))
+    inequality1 = FalsifySTL.StrictlyGreaterThan(1, 0, beta, alpha, STL.Abs(STL.Subtract(S("POS"), S("REF"))), STL.Abs(S("REF")))
+    inequality2 = FalsifySTL.StrictlyGreaterThan(1, 0, beta, alpha, STL.Abs(STL.Subtract(S("POS"), S("REF"))), STL.Abs(S("REF")))
     # always[1,37]( inequality implies (always[0,2]( eventually[0,1] not inequality )) )
     specification = STL.Global(1, 37, STL.Implication(inequality1, STL.Global(0, 2, STL.Finally(0, 1, STL.Not(inequality2)))))
 
@@ -33,15 +34,15 @@ if selected_specification == "NN":
     strict_horizon_check = True
 elif selected_specification == "NNX":
     # eventually[0,1](POS > 3.2)
-    F1 = STL.Finally(0, 1, STL.Not(STL.LessThan(1, 0, 0, 3.2, STL.Signal("POS"))))
+    F1 = STL.Finally(0, 1, FalsifySTL.StrictlyGreaterThan(1, 0, 0, 3.2, S("POS")))
     # eventually[1,1.5]( always[0,0.5](1.75 < POS < 2.25) )
-    L = STL.Not(STL.LessThan(1, 0, 0, 1.75, STL.Signal("POS")))
-    R = STL.Not(STL.LessThan(0, 2.25, 1, 0, None, STL.Signal("POS")))
+    L = FalsifySTL.StrictlyLessThan(0, 1.75, 1, 0, None, S("POS"))
+    R = FalsifySTL.StrictlyLessThan(1, 0, 0, 2.25, S("POS"))
     inequality = STL.And(L, R)
     F2 = STL.Finally(1, 1.5, STL.Global(0, 0.5, inequality))
     # always[2,3](1.825 < POS < 2.175)
-    L = STL.Not(STL.LessThan(1, 0, 0, 1.825, STL.Signal("POS")))
-    R = STL.Not(STL.LessThan(0, 2.175, 1, 0, None, STL.Signal("POS")))
+    L = FalsifySTL.StrictlyLessThan(0, 1.825, 1, 0, None, S("POS"))
+    R = FalsifySTL.StrictlyLessThan(1, 0, 0, 2.175, S("POS"))
     inequality = STL.And(L, R)
     F3 = STL.Global(2, 3, inequality)
 

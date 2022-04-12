@@ -20,26 +20,33 @@ specifications = ["AT1",
                   "AT6A",
                   "AT6B",
                   "AT6C",
-                  "AT6ABC",
+                  "AT6ABC"
+                 ]
 selected_specification = "AT1"
 
+# Some ARCH-COMP specifications have requirements whose horizon is longer than
+# the output signal for some reason. Thus strict horizon check needs to be
+# disabled in some cases.
+S = lambda var: STL.Signal(var)
 if selected_specification == "AT1":
     # always[0,20](SPEED < 120)
-    specification = STL.Global(0, 20, STL.LessThan(1, 0, 0, 120, STL.Signal("SPEED")))
+    specification = STL.Global(0, 20, FalsifySTL.StrictlyLessThan(1, 0, 0, 120, S("SPEED")))
 
     strict_horizon_check = True
 elif selected_specification == "AT2":
     # always[0,10](RPM < 4750)
-    specification = STL.Global(0, 10, STL.LessThan(1, 0, 0, 4750, STL.Signal("RPM")))
+    specification = STL.Global(0, 10, FalsifySTL.StrictlyLessThan(1, 0, 0, 4750, S("RPM")))
+
+    strict_horizon_check = True
 elif selected_specification.startswith("AT5"):
     # This is modified from ARCH-COMP to include the next operator which is
     # available as we use discrete time STL.
     # always[0,30]( ( not(GEAR == {0}) and (eventually[0.001,0.1](GEAR == {0})) ) implies ( eventually[0.001,0.1]( always[0,2.5](GEAR == {0}) ) ) )"
     G = int(selected_specification[-1])
     # not(GEAR == {0}) and (eventually[0.001,0.1](GEAR == {0}))
-    L = STL.And(STL.Not(STL.Equals(1, 0, 0, G, STL.Signal("GEAR"))), STL.Next(STL.Equals(1, 0, 0, G, STL.Signal("GEAR"))))
+    L = STL.And(STL.Not(STL.Equals(1, 0, 0, G, S("GEAR"))), STL.Next(STL.Equals(1, 0, 0, G, S("GEAR"))))
     # eventually[0.001,0.1]( always[0,2.5](GEAR == {0}) )
-    R = STL.Next(STL.Global(0, 2.5, STL.Equals(1, 0, 0, G, STL.Signal("GEAR"))))
+    R = STL.Next(STL.Global(0, 2.5, STL.Equals(1, 0, 0, G, S("GEAR"))))
 
     specification = STL.Global(0, 30, STL.Implication(L, R))
 
@@ -59,8 +66,8 @@ elif selected_specification.startswith("AT6"):
             SL = 65
           
         # (always[0,30](RPM < 3000)) implies (always[0,{0}](SPEED < {1}))
-        L = STL.Global(0, 30, STL.LessThan(1, 0, 0, 3000, STL.Signal("RPM")))
-        R = STL.Global(0, UB, STL.LessThan(1, 0, 0, SL, STL.Signal("SPEED")))
+        L = STL.Global(0, 30, FalsifySTL.StrictlyLessThan(1, 0, 0, 3000, S("RPM")))
+        R = STL.Global(0, UB, FalsifySTL.StrictlyLessThan(1, 0, 0, SL, S("SPEED")))
         return STL.Implication(L, R)
 
     if selected_specification.endswith("ABC"):

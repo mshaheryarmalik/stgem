@@ -62,8 +62,8 @@ class TestSTL(unittest.TestCase):
         signals = [s1, s2]
         variables = ["s1", "s2"]
         # always[0,1](s1 >= 0 and s2 >= 0)
-        L = STL.LessThan(-1, 0, 0, 0, STL.Signal("s1"))
-        R = STL.LessThan(-1, 0, 0, 0, STL.Signal("s2"))
+        L = FalsifySTL.GreaterThan(1, 0, 0, 0, STL.Signal("s1"))
+        R = FalsifySTL.GreaterThan(1, 0, 0, 0, STL.Signal("s2"))
         specification = STL.And(L, R)
         specification = STL.Global(0, 1, specification)
         sp = 0.5
@@ -147,7 +147,7 @@ class TestSTL(unittest.TestCase):
         # always[0,3](i1 >= s1)
         L = STL.Signal("i1")
         R = STL.Signal("s1")
-        specification = STL.LessThan(-1, 0, -1, 0, L, R)
+        specification = FalsifySTL.GreaterThan(1, 0, 1, 0, L, R)
         specification = STL.Global(0, 3, specification)
         sp = 1
         correct_robustness = 0

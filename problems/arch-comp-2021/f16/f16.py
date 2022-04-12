@@ -24,7 +24,7 @@ selected_specification = "F16"
 
 if selected_specification == "F16":
     # always[0,15] ALTITUDE > 0
-    specification = STL.Not(STL.LessThan(1, 0, 0, 0, STL.Signal("ALTITUDE")))
+    specification = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("ALTITUDE"))
 
     strict_horizon_check = True
 else:
