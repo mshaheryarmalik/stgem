@@ -24,16 +24,16 @@ def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350],
 
 class TestFalsifySTL(unittest.TestCase):
     def test_python(self):
-        F1 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o0"))
-        F2 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o1"))
-        F3 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o2"))
+        F1 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o0", var_range=[0, 350]))
+        F2 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o1", var_range=[0, 350]))
+        F3 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o2", var_range=[0, 350]))
         specification = STL.And(F1, STL.And(F2, F3))
 
         generator = STGEM(
             description="mo3d/OGAN",
             sut=PythonFunction(function=myfunction),
             budget=Budget(),
-            objectives=[FalsifySTL(specification=specification) ],
+            objectives=[FalsifySTL(specification=specification, scale=True) ],
             steps=[
                 Search(budget_threshold={"executions": 20},
                        algorithm=Random(model_factory=(lambda: Uniform()))),
@@ -49,17 +49,17 @@ class TestFalsifySTL(unittest.TestCase):
     def test_python_multiple(self):
         from stgem.objective_selector.objective_selector import ObjectiveSelectorMAB
 
-        F1 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o0"))
-        F2 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o1"))
-        F3 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o2"))
+        F1 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o0", var_range=[0, 350]))
+        F2 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o1", var_range=[0, 350]))
+        F3 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o2", var_range=[0, 350]))
 
         generator = STGEM(
             description="mo3d/OGAN",
             sut=PythonFunction(function=myfunction),
             budget=Budget(),
-            objectives=[FalsifySTL(specification=F1),
-                       FalsifySTL(specification=F2),
-                       FalsifySTL(specification=F3) ],
+            objectives=[FalsifySTL(specification=F1, scale=True),
+                       FalsifySTL(specification=F2, scale=True),
+                       FalsifySTL(specification=F3, scale=True)],
             objective_selector=ObjectiveSelectorMAB(),
             steps=[
                 Search(budget_threshold={"executions": 20},
@@ -76,16 +76,16 @@ class TestFalsifySTL(unittest.TestCase):
     def test_MOD3D(self):
         from stgem.sut.mo3d.sut import MO3D
 
-        F1 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o0"))
-        F2 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o1"))
-        F3 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o2"))
+        F1 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o0", var_range=[0, 350]))
+        F2 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o1", var_range=[0, 350]))
+        F3 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o2", var_range=[0, 350]))
         specification = STL.And(F1, STL.And(F2, F3))
 
         generator = STGEM(
             description="mo3d/OGAN",
             sut=MO3D(),
             budget=Budget(),
-            objectives=[FalsifySTL(specification=specification)],
+            objectives=[FalsifySTL(specification=specification, scale=True)],
             steps=[
                 Search(budget_threshold={"executions": 20},
                        algorithm=Random(model_factory=(lambda: Uniform()))),
