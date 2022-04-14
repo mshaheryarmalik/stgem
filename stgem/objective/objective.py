@@ -70,7 +70,7 @@ class FalsifySTL(Objective):
     """Objective function to falsify a STL specification. By default the
     robustness is not scaled, but if scale is True and variable ranges have
     been specified for the signals, then the robustness is scaled to
-    [-1, 1]."""
+    [0, 1]."""
 
     def __init__(self, specification, scale=False, strict_horizon_check=True):
         super().__init__()
@@ -176,14 +176,12 @@ class FalsifySTL(Objective):
 
         robustness = robustness_signal[0]
 
-        # Scale the robustness to [-1, 1] if required.
+        # Scale the robustness to [0, 1] if required.
         if self.scale:
-            A = self.specification.var_range[0]
-            B = self.specification.var_range[1]
             if robustness < 0:
-                robustness *= -(1/A)
-                robustness = max(-1, robustness)
+                robustness = 0
             else:
+                B = self.specification.var_range[1]
                 robustness *= 1/B
                 robustness = min(1, robustness)
 
@@ -284,14 +282,12 @@ class FalsifySTL(Objective):
         # Reset time bounds. This allows reusing the specifications.
         self.reset_time_bounds()
 
-        # Scale the robustness to [-1, 1] if required.
+        # Scale the robustness to [0, 1] if required.
         if self.scale:
-            A = self.specification.var_range[0]
-            B = self.specification.var_range[1]
             if robustness < 0:
-                robustness *= -(1/A)
-                robustness = max(-1, robustness)
+                robustness = 0
             else:
+                B = self.specification.var_range[1]
                 robustness *= 1/B
                 robustness = min(1, robustness)
 
