@@ -20,10 +20,8 @@ class Objective:
         return r.outputs
 
 class Minimize(Objective):
-    """
-    Objective function for a SUT with fixed-length vector outputs which selects
-    the minimum among the specified components.
-    """
+    """Objective function for a SUT with fixed-length vector outputs which
+    selects the minimum among the specified components."""
 
     def __init__(self, selected=None, scale=False, invert=False):
         super().__init__()
@@ -57,10 +55,8 @@ class Minimize(Objective):
         return max(0, min(1, min(output)))
 
 class ObjectiveMinComponentwise(Objective):
-    """
-    Objective function for a SUT with signal outputs which outputs the minima
-    of the signals.
-    """
+    """Objective function for a SUT with signal outputs which outputs the
+    minima of the signals."""
 
     def __init__(self):
         super().__init__()
@@ -71,18 +67,20 @@ class ObjectiveMinComponentwise(Objective):
         return [min(output) for output in r.outputs]
 
 class FalsifySTL(Objective):
-    """
-    Objective function to falsify a STL specification.
-    """
+    """Objective function to falsify a STL specification. By default the
+    robustness is not scaled, but if scale is True and variable ranges have
+    been specified for the signals, then the robustness is scaled to
+    [-1, 1]."""
 
-    def __init__(self, specification, scale=True, clip=True, strict_horizon_check=True):
+    def __init__(self, specification, scale=False, strict_horizon_check=True):
         super().__init__()
 
         self.dim = 1
         self.specification = specification
 
         self.scale = scale
-        self.clip = clip
+        if self.scale and self.specification.var_range is None:
+            raise Exception("The specification does not include a range for robustness. This is needed for scaling.")
         self.strict_horizon_check = strict_horizon_check
 
     def setup(self, sut):
@@ -90,11 +88,10 @@ class FalsifySTL(Objective):
 
         try:
             import tltk_mtl as STL
-            self.STL = STL
         except:
             raise
 
-        if not isinstance(self.specification, (STL.Predicate, STL.Not, STL.Next, STL.Global, STL.Finally, STL.And, STL.Or, STL.Implication, STL.Until, STL.Expression, STL.LessThan, STL.Equals)):
+        if not isinstance(self.specification, STL.TLTK_MTL):
             raise Exception("Expected specification to be TLTK class not '{}'".format(type(self.specification)))
 
         self.horizon = self.specification.horizon
@@ -103,20 +100,18 @@ class FalsifySTL(Objective):
         # Find the objects with time bounds in the formula.
         # TODO: An iterator would be nice in TLTk for this.
         def bounded(formula):
-            if isinstance(formula, (STL.Predicate, STL.Signal)):
+            if isinstance(formula, (STL.Predicate, STL.Signal)) or formula is None:
                 return []
-            elif isinstance(formula, (STL.Not, STL.Next, STL.Abs)):
-                return bounded(formula.subformula)
-            elif isinstance(formula, (STL.And, STL.Or, STL.Implication, STL.Sum, STL.Subtract, STL.LessThan, STL.Equals)):
-                return bounded(formula.left_subformula) + bounded(formula.right_subformula)
             elif isinstance(formula, (STL.Global, STL.Finally)):
                 return [formula] + bounded(formula.subformula)
             elif isinstance(formula, STL.Until):
                 return [formula] + bounded(formula.left_subformula) + bounded(formula.right_subformula)
-            elif formula is None:
-                return []
-            else:
-                raise Exception("Unknown TLTK class '{}' in time bounded object lookup.".format(type(formula)))
+            elif not isinstance(formula, STL.TLTK_MTL):
+                raise Exception("Expected TLTK class not '{}' in time bounded object lookup.".format(type(formula)))
+            elif formula.arity == 1:
+                return bounded(formula.subformula)
+            else: #formula.arity == 2:
+                return bounded(formula.left_subformula) + bounded(formula.right_subformula)
 
         # Find the smallest positive time bound referred to in the formula and
         # use it divided by K as the unit time.
@@ -165,15 +160,11 @@ class FalsifySTL(Objective):
             x.lower_time_bound = x.old_lower_time_bound
             x.upper_time_bound = x.old_upper_time_bound
 
-    def _evaluate_vector(self, output, clip=True):
+    def _evaluate_vector(self, output):
         # We assume that the output is a single observation of a signal. It
         # follows that not all STL formulas have a clear interpretation (like
         # always[0,30](x1 > 0 and x2 > 0). It is up to the user to ensure a
         # reasonable interpretation.
-
-        # Scale the input.
-        if self.scale:
-            output = self.sut.scale(np.asarray(output).reshape(1, -1), self.sut.output_range, target_A=0, target_B=1).reshape(-1)
 
         self.specification.reset()
 
@@ -185,9 +176,16 @@ class FalsifySTL(Objective):
 
         robustness = robustness_signal[0]
 
-        # Clip the robustness to [0, 1].
-        if clip:
-            robustness = max(0, min(robustness, 1))
+        # Scale the robustness to [-1, 1] if required.
+        if self.scale:
+            A = self.specification.var_range[0]
+            B = self.specification.var_range[1]
+            if robustness < 0:
+                robustness *= -(1/A)
+                robustness = max(-1, robustness)
+            else:
+                robustness *= 1/B
+                robustness = min(1, robustness)
 
         return robustness
 
@@ -267,13 +265,6 @@ class FalsifySTL(Objective):
         if self.strict_horizon_check and self.horizon > timestamps[-1]:
             raise Exception("The horizon {} of the formula is too long compared to signal length {}. The robustness cannot be computed.".format(self.horizon, timestamps[-1]))
 
-        # Scale the signals.
-        if self.scale:
-            for var in self.input_variables:
-                signals[var] = self.sut.scale_signal(signals[var], self.sut.input_range[self.M[var][1]], target_A=0, target_B=1) 
-            for var in self.output_variables:
-                signals[var] = self.sut.scale_signal(signals[var], self.sut.output_range[self.M[var][1]], target_A=0, target_B=1) 
-
         # Adjust time bounds.
         self.adjust_time_bounds()
 
@@ -293,9 +284,16 @@ class FalsifySTL(Objective):
         # Reset time bounds. This allows reusing the specifications.
         self.reset_time_bounds()
 
-        # Clip the robustness to [0, 1] if necessary.
-        if self.clip:
-            robustness = max(0, min(robustness, 1))
+        # Scale the robustness to [-1, 1] if required.
+        if self.scale:
+            A = self.specification.var_range[0]
+            B = self.specification.var_range[1]
+            if robustness < 0:
+                robustness *= -(1/A)
+                robustness = max(-1, robustness)
+            else:
+                robustness *= 1/B
+                robustness = min(1, robustness)
 
         return robustness
 
