@@ -14,21 +14,12 @@ from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorMAB
 
 mode = "stop_at_first_objective"
+scale = True
 specifications = ["F16", # F16
                  ]
 selected_specification = "F16"
 
 # Running the model requires Control System Toolbox in Matlab.
-
-# Notice that here the input is a vector.
-
-if selected_specification == "F16":
-    # always[0,15] ALTITUDE > 0
-    specification = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("ALTITUDE"))
-
-    strict_horizon_check = True
-else:
-    raise Exception("Unknown specification '{}'.".format(selected_specification))
 
 roll_range = [0.2*pi, 0.2833*pi]
 pitch_range = [-0.4*pi, -0.35*pi]
@@ -43,6 +34,19 @@ sut_parameters = {"model_file": "problems/arch-comp-2021/f16/run_f16",
                   "output_range": [[0, 4040]], # Starting altitude defined in init_f16.m.
                   "simulation_time": 15,
                  }
+
+asut = Matlab(sut_parameters)
+
+# Notice that here the input is a vector.
+
+S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
+if selected_specification == "F16":
+    # always[0,15] ALTITUDE > 0
+    specification = STL.Global(0, 15, FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, S("ALTITUDE")))
+
+    strict_horizon_check = True
+else:
+    raise Exception("Unknown specification '{}'.".format(selected_specification))
 
 ogan_parameters = {"fitness_coef": 0.95,
                    "train_delay": 1,
@@ -67,9 +71,9 @@ ogan_model_parameters = {"optimizer": "Adam",
 
 generator = STGEM(
                   description="Airfract Ground Collision Avoidance System",
-                  sut=Matlab(sut_parameters),
+                  sut=asut,
                   budget=Budget(),
-                  objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
+                  objectives=[FalsifySTL(specification=specification, scale=scale, strict_horizon_check=strict_horizon_check)],
                   objective_selector=ObjectiveSelectorMAB(warm_up=20),
                   steps=[
                          Search(mode=mode,

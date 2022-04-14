@@ -11,6 +11,7 @@ from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorMAB
 
 mode = "stop_at_first_objective"
+scale = False
 specifications = ["CC1",
                   "CC2"
                   "CC3"
@@ -20,10 +21,23 @@ specifications = ["CC1",
                  ]
 selected_specification = "CC1"
 
+sut_parameters = {"model_file": "problems/arch-comp-2021/cc/cars",
+                  "input_type": "piecewise constant signal",
+                  "output_type": "signal",
+                  "inputs": ["THROTTLE", "BRAKE"],
+                  "outputs": ["Y1", "Y2", "Y3", "Y4", "Y5"],
+                  "input_range": [[0, 100], [0, 100]],
+                  "simulation_time": 100,
+                  "time_slices": [5, 5],
+                  "sampling_step": 0.5
+                 }
+
+asut = Matlab_Simulink(sut_parameters)
+
 # Some ARCH-COMP specifications have requirements whose horizon is longer than
 # the output signal for some reason. Thus strict horizon check needs to be
 # disabled in some cases.
-S = lambda var: STL.Signal(var)
+S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
 if selected_specification == "CC1":
     # always[0,100]( y5 - y4 <= 40 )
     specification = STL.Global(0, 100, STL.LessThan(1, 0, 1, 40, S("Y5"), S("Y4")))
@@ -68,17 +82,6 @@ elif selected_specification == "CCX":
 else:
     raise Exception("Unknown specification '{}'.".format(selected_specification))
 
-sut_parameters = {"model_file": "problems/arch-comp-2021/cc/cars",
-                  "input_type": "piecewise constant signal",
-                  "output_type": "signal",
-                  "inputs": ["THROTTLE", "BRAKE"],
-                  "outputs": ["Y1", "Y2", "Y3", "Y4", "Y5"],
-                  "input_range": [[0, 100], [0, 100]],
-                  "simulation_time": 100,
-                  "time_slices": [5, 5],
-                  "sampling_step": 0.5
-                 }
-
 ogan_parameters = {"fitness_coef": 0.95,
                    "train_delay": 1,
                    "N_candidate_tests": 1
@@ -102,9 +105,9 @@ ogan_model_parameters = {"optimizer": "Adam",
 
 generator = STGEM(
                   description="Chasing cars",
-                  sut=Matlab_Simulink(sut_parameters),
+                  sut=asut,
                   budget=Budget(),
-                  objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
+                  objectives=[FalsifySTL(specification=specification, scale=scale, strict_horizon_check=strict_horizon_check)],
                   objective_selector=ObjectiveSelectorMAB(warm_up=20),
                   steps=[
                          Search(mode=mode,

@@ -28,9 +28,7 @@ from stgem.performance import PerformanceData
 SUTResult = namedtuple("SUTResult", "inputs outputs input_timestamps output_timestamps error")
 
 class SUT:
-    """
-    Base class implementing a system under test.
-    """
+    """Base class implementing a system under test. """
 
     def __init__(self, parameters=None):
         if parameters is None:
@@ -43,42 +41,40 @@ class SUT:
         """
         All SUTs have the below variables which concern inputs and outputs,
         their ranges etc. We describe them here, but do not set them. They are
-        set by job.py and setting defaults for them here would complicate that
-        code. They can be set (and in some cases should be) by inheriting
+        set by generator.py and setting defaults for them here would complicate
+        that code. They can be set (and in some cases should be) by inheriting
         classes.
 
-        
+        self.idim
         The input dimension of the SUT (number of components for vector-valued
         inputs and number of signals for signal-valued inputs).
-        self.idim
+
+        self.odim
         The output dimension of the SUT (number of components for vector-valued
         outputs and number of signals for signal-valued outputs).
-        self.odim
 
         Names for inputs and outputs (strings).
         self.inputs
         self.outputs
 
         We always assume that inputs are scaled to [-1, 1], so a range for
-        inputs must be specified (a list of 2-element lissts representing
+        inputs must be specified (a list of 2-element lists representing
         intervals). For example, self.input_range = [[0, 2], [-15, 15]] would
         indicate range [0, 2] for the first component and [-15, 15] for the
         second.
-        self.input_range
         
         Outputs are not scaled to [-1, 1] by default, but this can be achieved
-        by specifying an output range and by using the self.scale method. If
-        the output range is unknown, the value None can be used to indicate
-        this. For example, self.output_range = [[-300, 100], None] specifies
-        output range [-300, 100] for the first component and the range of the
-        second component is unknown.
-        self.output_range
+        by specifying an output range and by using the self.scale or
+        self.scale_signal methods in _execute_test. If the output range is
+        unknown, the value None can be used to indicate this. For example,
+        self.output_range = [[-300, 100], None] specifies output range [-300,
+        100] for the first component and the range of the second component is
+        unknown.
         
-        NOTICE: While we support different ranges for each output value, they
-        should in fact be the same. This is because most algorithms we use
+        NOTICE: We support different ranges for each output value, but doing so
+        is not always a good idea. This is because most algorithms we use
         directly compare the objective function values in [0, 1], so they
-        should in some sense be comparable. This is approximately achieved by
-        having the same range and by clipping to [0, 1].
+        should in some sense be comparable.
         """
 
     def __getattr__(self, name):
@@ -156,6 +152,21 @@ class SUT:
         if not isinstance(self.output_range, list):
             raise Exception("The output attribute of the SUT must be a Python list.")
         self.output_range += [None for _ in range(self.odim - len(self.output_range))]
+
+    def variable_range(self, var_name):
+        """Return the range for the given variable (input or output)."""
+
+        # NOTICE: Attributes might not exist unless the setup method has been called.
+        if hasattr(self, "output_range"):
+            for n, v in enumerate(self.outputs):
+                if var_name == v:
+                    return self.output_range[n]
+        if hasattr(self, "input_range"):
+            for  n, v in enumerate(self.inputs):
+                if var_name == v:
+                    return self.input_range[n]
+
+        raise Exception("No variable '{}'.".format(var_name))
 
     def scale(self, x, intervals, target_A=-1, target_B=1):
         """

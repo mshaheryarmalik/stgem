@@ -11,6 +11,7 @@ from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorMAB
 
 mode = "stop_at_first_objective"
+scale = True
 specifications = ["AT1",
                   "AT2",
                   "AT51",
@@ -24,10 +25,24 @@ specifications = ["AT1",
                  ]
 selected_specification = "AT1"
 
+sut_parameters = {"model_file": "problems/arch-comp-2021/at/Autotrans_shift",
+                  "input_type": "piecewise constant signal",
+                  "output_type": "signal",
+                  "inputs": ["THROTTLE", "BRAKE"],
+                  "outputs": ["SPEED", "RPM", "GEAR"],
+                  "input_range": [[0, 100], [0, 325]],
+                  "output_range": [[0, 200], [0, 7000], [0, 4]],
+                  "simulation_time": 30,
+                  "time_slices": [5, 5],
+                  "sampling_step": 0.2
+                 }
+
+asut = Matlab_Simulink(sut_parameters)
+
 # Some ARCH-COMP specifications have requirements whose horizon is longer than
 # the output signal for some reason. Thus strict horizon check needs to be
 # disabled in some cases.
-S = lambda var: STL.Signal(var)
+S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
 if selected_specification == "AT1":
     # always[0,20](SPEED < 120)
     specification = STL.Global(0, 20, FalsifySTL.StrictlyLessThan(1, 0, 0, 120, S("SPEED")))
@@ -78,18 +93,6 @@ elif selected_specification.startswith("AT6"):
     strict_horizon_check = True
 else:
     raise Exception("Unknown specification '{}'.".format(selected_specification))
-
-sut_parameters = {"model_file": "problems/arch-comp-2021/at/Autotrans_shift",
-                  "input_type": "piecewise constant signal",
-                  "output_type": "signal",
-                  "inputs": ["THROTTLE", "BRAKE"],
-                  "outputs": ["SPEED", "RPM", "GEAR"],
-                  "input_range": [[0, 100], [0, 325]],
-                  "output_range": [[0, 200], [0, 7000], [0, 4]],
-                  "simulation_time": 30,
-                  "time_slices": [5, 5],
-                  "sampling_step": 0.2
-                 }
 
 ogan_parameters = {"fitness_coef": 0.95,
                    "train_delay": 1,
@@ -147,9 +150,9 @@ ogan_model_parameters = {
 
 generator = STGEM(
                   description="Automatic Transmission",
-                  sut=Matlab_Simulink(sut_parameters),
+                  sut=asut,
                   budget=Budget(),
-                  objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
+                  objectives=[FalsifySTL(specification=specification, scale=scale, strict_horizon_check=strict_horizon_check)],
                   objective_selector=ObjectiveSelectorMAB(warm_up=20),
                   steps=[
                          Search(mode=mode,

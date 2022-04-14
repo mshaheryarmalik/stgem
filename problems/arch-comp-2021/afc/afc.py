@@ -10,22 +10,37 @@ from stgem.algorithm.random.model import Uniform, LHS
 from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorMAB
 
+mode = "stop_at_first_objective"
+scale = False
+specifications = ["AFC27", # AFC27, normal
+                  "AFC29"  # AFC29,AFC33 normal/power
+                 ]
+selected_specification = "AFC27"
+
 afc_mode = "normal" # normal/power
 if afc_mode == "normal":
     throttle_range = [0, 61.2]
 elif afc_mode == "power":
     throttle_range = [61.2, 81.2]
 
-mode = "stop_at_first_objective"
-specifications = ["AFC27", # AFC27, normal
-                  "AFC29"  # AFC29,AFC33 normal/power
-                 ]
-selected_specification = "AFC27"
+sut_parameters = {"model_file": "problems/arch-comp-2021/afc/run_powertrain",
+                  "init_model_file": "problems/arch-comp-2021/afc/init_powertrain",
+                  "input_type": "piecewise constant signal",
+                  "output_type": "signal",
+                  "inputs": ["THROTTLE", "ENGINE"],
+                  "outputs": ["MU", "MODE"],
+                  "input_range": [throttle_range, [900, 1100]],
+                  "simulation_time": 50,
+                  "time_slices": [10, 50],
+                  "sampling_step": 0.5
+                 }
+
+asut = Matlab(sut_parameters)
 
 # Some ARCH-COMP specifications have requirements whose horizon is longer than
 # the output signal for some reason. Thus strict horizon check needs to be
 # disabled in some cases.
-S = lambda var: STL.Signal(var)
+S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
 if selected_specification == "AFC27":
     beta = 0.008
     # rise := (THROTTLE < 8.8) and (eventually[0,0.05](THROTTLE > 40.0))
@@ -50,18 +65,6 @@ elif selected_specification == "AFC29":
 else:
     raise Exception("Unknown specification '{}'.".format(selected_specification))
 
-sut_parameters = {"model_file": "problems/arch-comp-2021/afc/run_powertrain",
-                  "init_model_file": "problems/arch-comp-2021/afc/init_powertrain",
-                  "input_type": "piecewise constant signal",
-                  "output_type": "signal",
-                  "inputs": ["THROTTLE", "ENGINE"],
-                  "outputs": ["MU", "MODE"],
-                  "input_range": [throttle_range, [900, 1100]],
-                  "simulation_time": 50,
-                  "time_slices": [10, 50],
-                  "sampling_step": 0.5
-                 }
-
 ogan_parameters = {"fitness_coef": 0.95,
                    "train_delay": 1,
                    "N_candidate_tests": 1
@@ -85,9 +88,9 @@ ogan_model_parameters = {"optimizer": "Adam",
 
 generator = STGEM(
                   description="Fuel Control of an Automotive Powertrain ({} mode)".format(afc_mode),
-                  sut=Matlab(sut_parameters),
+                  sut=asut,
                   budget=Budget(),
-                  objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
+                  objectives=[FalsifySTL(specification=specification, scale=scale, strict_horizon_check=strict_horizon_check)],
                   objective_selector=ObjectiveSelectorMAB(warm_up=20),
                   steps=[
                          Search(mode=mode,

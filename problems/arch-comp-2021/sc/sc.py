@@ -11,6 +11,7 @@ from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorMAB
 
 mode = "stop_at_first_objective"
+scale = False
 specifications = ["SC", # SC
                  ]
 selected_specification = "SC"
@@ -19,18 +20,6 @@ selected_specification = "SC"
 
 # Notice that this only implements the Instance 2 version of the problem where
 # the input signal is split into exactly 20 segments.
-
-S = lambda var: STL.Signal(var)
-if selected_specification == "SC":
-    # always[30,35](87 <= pressure <= 87.5)
-    L = STL.LessThan(0, 87, 1, 0, None, S("PRESSURE"))
-    R = STL.LessThan(1, 0, 0, 87.5, S("PRESSURE"))
-    inequality = STL.And(L, R)
-    specification = STL.Global(30, 35, inequality)
-
-    strict_horizon_check = True
-else:
-    raise Exception("Unknown specification '{}'.".format(selected_specification))
 
 sut_parameters = {"model_file": "problems/arch-comp-2021/sc/run_steamcondenser",
                   "input_type": "piecewise constant signal",
@@ -41,6 +30,20 @@ sut_parameters = {"model_file": "problems/arch-comp-2021/sc/run_steamcondenser",
                   "time_slices": [1.75],
                   "sampling_step": 0.5
                  }
+
+asut = Matlab(sut_parameters)
+
+S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
+if selected_specification == "SC":
+    # always[30,35](87 <= pressure <= 87.5)
+    L = STL.LessThan(0, 87, 1, 0, None, S("PRESSURE"))
+    R = STL.LessThan(1, 0, 0, 87.5, S("PRESSURE"))
+    inequality = STL.And(L, R)
+    specification = STL.Global(30, 35, inequality)
+
+    strict_horizon_check = True
+else:
+    raise Exception("Unknown specification '{}'.".format(selected_specification))
 
 ogan_parameters = {"fitness_coef": 0.95,
                    "train_delay": 1,
@@ -65,9 +68,9 @@ ogan_model_parameters = {"optimizer": "Adam",
 
 generator = STGEM(
                   description="Steam Condenser with Recurrent Neural Network Controller",
-                  sut=Matlab(sut_parameters),
+                  sut=asut,
                   budget=Budget(),
-                  objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
+                  objectives=[FalsifySTL(specification=specification, scale=scale, strict_horizon_check=strict_horizon_check)],
                   objective_selector=ObjectiveSelectorMAB(warm_up=20),
                   steps=[
                          Search(mode=mode,

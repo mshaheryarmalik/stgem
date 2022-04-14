@@ -11,6 +11,7 @@ from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorMAB
 
 mode = "stop_at_first_objective"
+scale = False
 specifications = ["NN", # NN
                   "NNX" # NNX
                  ]
@@ -19,7 +20,28 @@ selected_specification = "NN"
 # Notice that this only implements the Instance 2 version of the problem where
 # the input signal is split into exactly 3 segments.
 
-S = lambda var: STL.Signal(var)
+if selected_specification == "NN":
+    ref_input_range = None
+elif selected_specification == "NNX":
+    ref_input_range = [1.95, 2.05]
+else:
+    raise Exception("Unknown specification '{}'.".format(selected_specification))
+
+sut_parameters = {"model_file": "problems/arch-comp-2021/nn/run_neural",
+                  "init_model_file": "problems/arch-comp-2021/nn/init_neural",
+                  "input_type": "piecewise constant signal",
+                  "output_type": "signal",
+                  "inputs": ["REF"],
+                  "outputs": ["POS"],
+                  "input_range": [ref_input_range],
+                  "simulation_time": 40,
+                  "time_slices": [13],
+                  "sampling_step": 0.5
+                 }
+
+asut = Matlab(sut_parameters)
+
+S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
 if selected_specification == "NN":
     alpha = 0.005
     beta = 0.03
@@ -28,9 +50,8 @@ if selected_specification == "NN":
     inequality1 = FalsifySTL.StrictlyGreaterThan(1, 0, beta, alpha, STL.Abs(STL.Subtract(S("POS"), S("REF"))), STL.Abs(S("REF")))
     inequality2 = FalsifySTL.StrictlyGreaterThan(1, 0, beta, alpha, STL.Abs(STL.Subtract(S("POS"), S("REF"))), STL.Abs(S("REF")))
     # always[1,37]( inequality implies (always[0,2]( eventually[0,1] not inequality )) )
-    specification = STL.Global(1, 37, STL.Implication(inequality1, STL.Global(0, 2, STL.Finally(0, 1, STL.Not(inequality2)))))
+    specification = STL.Global(1, 37, STL.Implication(inequality1, STL.Finally(0, 2, STL.Global(0, 1, inequality1))))
 
-    ref_input_range = None
     strict_horizon_check = True
 elif selected_specification == "NNX":
     # eventually[0,1](POS > 3.2)
@@ -48,22 +69,9 @@ elif selected_specification == "NNX":
 
     specification = STL.And(F1, STL.And(F2, F3))
 
-    ref_input_range = [1.95, 2.05]
     strict_horizon_check = True
 else:
     raise Exception("Unknown specification '{}'.".format(selected_specification))
-
-sut_parameters = {"model_file": "problems/arch-comp-2021/nn/run_neural",
-                  "init_model_file": "problems/arch-comp-2021/nn/init_neural",
-                  "input_type": "piecewise constant signal",
-                  "output_type": "signal",
-                  "inputs": ["REF"],
-                  "outputs": ["POS"],
-                  "input_range": [ref_input_range],
-                  "simulation_time": 40,
-                  "time_slices": [13],
-                  "sampling_step": 0.5
-                 }
 
 ogan_parameters = {"fitness_coef": 0.95,
                    "train_delay": 1,
@@ -88,9 +96,9 @@ ogan_model_parameters = {"optimizer": "Adam",
 
 generator = STGEM(
                   description="Neural-network Controller",
-                  sut=Matlab(sut_parameters),
+                  sut=asut,
                   budget=Budget(),
-                  objectives=[FalsifySTL(specification=specification, strict_horizon_check=strict_horizon_check)],
+                  objectives=[FalsifySTL(specification=specification, scale=scale, strict_horizon_check=strict_horizon_check)],
                   objective_selector=ObjectiveSelectorMAB(warm_up=20),
                   steps=[
                          Search(mode=mode,
