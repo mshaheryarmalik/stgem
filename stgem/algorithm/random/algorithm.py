@@ -47,8 +47,9 @@ class Random(Algorithm):
             # Consume generation budget.
             self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1])
 
-            sut_output = self.sut.execute_test(new_test)
-            output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
+            sut_result = self.sut.execute_test(new_test)
+            self.log("Result from the SUT {}".format(sut_result))
+            output = [self.objective_funcs[i](sut_result) for i in range(self.N_models)]
 
             self.log("The actual fitness {} for the generated test.".format(output))
 

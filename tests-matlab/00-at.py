@@ -1,5 +1,7 @@
 import unittest
 
+import tltk_mtl as STL
+
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.sut.matlab import Matlab_Simulink
@@ -21,8 +23,12 @@ sut_parameters = {
     "time_slices": [5, 5],
     "sampling_step": 0.2
 }
-specification = "(always[0,30](RPM < 3000)) implies (always[0,4](SPEED < 35))"
 mode = "stop_at_first_objective"
+
+# always[0,30](RPM < 3000)) implies (always[0,4](SPEED < 35)
+L = STL.Global(0, 30, FalsifySTL.StrictlyLessThan(1, 0, 0, 3000, STL.Signal("RPM", var_range=sut_parameters["output_range"][1])))
+R = STL.Global(0, 4, FalsifySTL.StrictlyLessThan(1, 0, 0, 35, STL.Signal("SPEED", var_range=sut_parameters["output_range"][0])))
+specification = STL.Implication(L, R)
 
 class TestPython(unittest.TestCase):
     def test_python(self):
@@ -30,7 +36,7 @@ class TestPython(unittest.TestCase):
             description="Matlab-AT/OGAN",
             sut=Matlab_Simulink(sut_parameters),
             budget=Budget(),
-            objectives=[FalsifySTL(specification=specification)],
+            objectives=[FalsifySTL(specification=specification, scale=True)],
             objective_selector=ObjectiveSelectorMAB(warm_up=60),
             steps=[
                 Search(budget_threshold={"executions": 50},

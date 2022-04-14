@@ -120,9 +120,9 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
             raise Exception("Parameter 'sampling_step' must be defined for piecewise constant signal inputs.")
 
         # How often input signals are sampled for execution (in time units).
-        self.steps = int(self.simulation_time // self.sampling_step)
+        self.steps = int(self.simulation_time / self.sampling_step)
         # How many inputs we have for each input signal.
-        self.pieces = [math.ceil(self.simulation_time // time_slice) for time_slice in self.time_slices]
+        self.pieces = [math.ceil(self.simulation_time / time_slice) for time_slice in self.time_slices]
 
     def setup(self, budget):
         super().setup(budget)
@@ -142,7 +142,7 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         test = self.descale(test.reshape(1, -1), self.descaling_intervals).reshape(-1)
 
         # Common timestamps to all input signals.
-        timestamps = np.linspace(0, self.simulation_time, self.steps)
+        timestamps = np.array([i*self.sampling_step for i in range(self.steps + 1)])
         # Signals.
         signals = np.zeros(shape=(self.N_signals, len(timestamps)))
         offset = 0
@@ -212,9 +212,9 @@ class Matlab(SUT):
                 raise Exception("Parameter 'sampling_step' must be defined for piecewise constant signal inputs.")
 
             # How often input signals are sampled for execution (in time units).
-            self.steps = int(self.simulation_time // self.sampling_step)
+            self.steps = int(self.simulation_time / self.sampling_step)
             # How many inputs we have for each input signal.
-            self.pieces = [math.ceil(self.simulation_time // time_slice) for time_slice in self.time_slices]
+            self.pieces = [math.ceil(self.simulation_time / time_slice) for time_slice in self.time_slices]
 
         self.MODEL_NAME = os.path.basename(self.model_file)
         self.INIT_MODEL_NAME = os.path.basename(self.init_model_file) if "init_model_file" in self.parameters else None
@@ -286,7 +286,7 @@ class Matlab(SUT):
                 test = self.descale(test.reshape(1, -1), self.descaling_intervals).reshape(-1)
 
                 # Common timestamps to all input signals.
-                timestamps = np.linspace(0, self.simulation_time, self.steps)
+                timestamps = np.array([i*self.sampling_step for i in range(self.steps + 1)])
                 # Signals.
                 signals = np.zeros(shape=(self.N_signals, len(timestamps)))
                 offset = 0
