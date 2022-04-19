@@ -11,7 +11,7 @@ from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorMAB
 
 mode = "stop_at_first_objective"
-scale = False
+scale = True
 specifications = ["AFC27", # AFC27, normal
                   "AFC29"  # AFC29,AFC33 normal/power
                  ]
@@ -23,6 +23,7 @@ if afc_mode == "normal":
 elif afc_mode == "power":
     throttle_range = [61.2, 81.2]
 
+# Notice that the output MODE is never used in the requirements.
 sut_parameters = {"model_file": "problems/arch-comp-2021/afc/run_powertrain",
                   "init_model_file": "problems/arch-comp-2021/afc/init_powertrain",
                   "input_type": "piecewise constant signal",
@@ -30,8 +31,9 @@ sut_parameters = {"model_file": "problems/arch-comp-2021/afc/run_powertrain",
                   "inputs": ["THROTTLE", "ENGINE"],
                   "outputs": ["MU", "MODE"],
                   "input_range": [throttle_range, [900, 1100]],
+                  "output_range": [[-1, 1], [0, 1]],
                   "simulation_time": 50,
-                  "time_slices": [10, 50],
+                  "time_slices": [5, 50],
                   "sampling_step": 0.5
                  }
 
