@@ -17,7 +17,7 @@ class TestRepository:
 
     def record(self, test, output, objective):
         self._tests.append(test)
-        self._output.append(sut_output)
+        self._outputs.append(output)
         self._objectives.append(objective)
 
         return len(self._tests) - 1

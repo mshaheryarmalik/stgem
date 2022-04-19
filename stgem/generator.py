@@ -95,7 +95,7 @@ class Search(Step):
             except StopIteration:
                 print("Generator finished before budget was exhausted.")
                 break
-            _, output = self.algorithm.test_repository.get(idx)
+            _, _, output = self.algorithm.test_repository.get(idx)
             outputs.append(output)
 
             if not success and np.min(output) == 0:
