@@ -124,7 +124,7 @@ class WOGAN(Algorithm):
         # Assign the initial tests to bins.
         for i in range(self.N_models):
             for j in self.test_repository.indices:
-                test_bins[i][self.get_bin(self.test_repository.get(j)[1][i])].append(j)
+                test_bins[i][self.get_bin(self.test_repository.get(j)[2][i])].append(j)
 
         # Train the models with the initial tests.
         # ---------------------------------------------------------------------
@@ -133,7 +133,7 @@ class WOGAN(Algorithm):
         # caller to ensure that all models are trained here if so desired.
         self.perf.timer_start("training")
         for i in self.objective_selector.select_all():
-            dataX, dataY = self.test_repository.get()
+            dataX, _, dataY = self.test_repository.get()
             dataX = np.array(dataX)
             dataY = np.array(dataY)[:,i].reshape(-1, 1)
             for _ in range(self.models[i].train_settings["epochs"]):
@@ -230,16 +230,15 @@ class WOGAN(Algorithm):
             # Consume generation budget.
             self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1] + self.perf.get_history("training_time")[-1])
 
-            sut_result = self.sut.execute_test(best_test)
+            sut_output = self.sut.execute_test(best_test)
+            self.log("Output from the SUT {}".format(sut_output))
+            output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
 
-            output = [self.objective_funcs[i](sut_result) for i in range(self.N_models)]
-
-            self.log("Result from the SUT {}".format(sut_result))
             self.log("The actual objective {} for the generated test.".format(output))
 
             # Add the new test to the test suite.
             # -----------------------------------------------------------------
-            idx = self.test_repository.record(best_test, output)
+            idx = self.test_repository.record(best_test, sut_output, output)
             self.objective_selector.update(np.argmin(output))
             tests_generated += 1
 
@@ -260,7 +259,7 @@ class WOGAN(Algorithm):
             for i in active_models:
                 if tests_generated - model_trained[i] >= self.train_delay:
                     self.log("Training analyzer {}...".format(i + 1))
-                    dataX, dataY = self.test_repository.get()
+                    dataX, _, dataY = self.test_repository.get()
                     dataX = np.array(dataX)
                     dataY = np.array(dataY)[:,i].reshape(-1, 1)
                     for _ in range(self.models[i].train_settings_init["epochs"]):
