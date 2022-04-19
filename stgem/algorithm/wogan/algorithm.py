@@ -277,7 +277,7 @@ class WOGAN(Algorithm):
                             train_X = np.zeros(shape=(BS, self.sut.idim))
                             c = 0
                             for j in range(self.train_delay):
-                                test, output = self.test_repository.get(self.test_repository.indices[-(j+1)])
+                                test, _, output = self.test_repository.get(self.test_repository.indices[-(j+1)])
                                 if self.get_bin(output[i]) >= self.bin_sample(1, self.shift(self.budget.remaining()))[0]:
                                     train_X[c] = test
                                     c += 1
