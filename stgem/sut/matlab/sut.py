@@ -14,9 +14,7 @@ except ImportError:
 from stgem.sut import SUT, SUTResult
 
 class Matlab_Simulink_Signal(SUT):
-    """
-    Generic class for using Matlab Simulink models using signal inputs.
-    """
+    """Generic class for using Matlab Simulink models using signal inputs."""
 
     def __init__(self, parameters):
         super().__init__(parameters)
@@ -27,6 +25,9 @@ class Matlab_Simulink_Signal(SUT):
         if not os.path.exists(self.model_file + ".mdl") and not os.path.exists(self.model_file + ".slx"):
             raise Exception("Neither '{0}.mdl' nor '{0}.slx' exists.".format(self.model_file))
 
+    def setup_matlab(self):
+        # As setting Matlab takes some time, we only spend this time if really
+        # needed.
         self.MODEL_NAME = os.path.basename(self.model_file)
         # Initialize the Matlab engine (takes a lot of time).
         self.engine = matlab.engine.start_matlab()
@@ -45,9 +46,10 @@ class Matlab_Simulink_Signal(SUT):
             self.engine.quit()
 
     def _execute_test_simulink(self, timestamps, signals):
-        """
-        Execute a test with the given input signals.
-        """
+        """Execute a test with the given input signals."""
+
+        if not hasattr(self, "engine"):
+            self.setup_matlab()
 
         # Setup the parameters for Matlab.
         simulation_time = matlab.double([0, timestamps[-1]])
@@ -96,15 +98,13 @@ class Matlab_Simulink_Signal(SUT):
         return self._execute_test_simulink(timestamps, signals)
 
 class Matlab_Simulink(Matlab_Simulink_Signal):
-    """
-    Generic class for using Matlab Simulink models using piecewise constant
+    """Generic class for using Matlab Simulink models using piecewise constant
     inputs. We assume that the input is a vector of numbers in [-1, 1] and that
     the first K1 numbers specify the pieces of the first signal, the next K2
     numbers the second signal, etc. The numbers K1, K2, ... are determined by
     the simulation time and the lengths of time intervals during which the
     signal must stay constant. This is controlled by the SUT parameter
-    time_slices which is a list of floats.
-    """
+    time_slices which is a list of floats."""
 
     def __init__(self, parameters):
         try:
@@ -161,9 +161,7 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         return tr
 
 class Matlab(SUT):
-    """
-    Generic class for using Matlab m files.
-    """
+    """Generic class for using Matlab m files."""
 
     """
     Currently we assume the following. The model_file parameter defines a
@@ -216,6 +214,9 @@ class Matlab(SUT):
             # How many inputs we have for each input signal.
             self.pieces = [math.ceil(self.simulation_time / time_slice) for time_slice in self.time_slices]
 
+    def setup_matlab(self):
+        # As setting Matlab takes some time, we only spend this time if really
+        # needed.
         self.MODEL_NAME = os.path.basename(self.model_file)
         self.INIT_MODEL_NAME = os.path.basename(self.init_model_file) if "init_model_file" in self.parameters else None
 
@@ -256,6 +257,8 @@ class Matlab(SUT):
 
     def _execute_test(self, *args, **kwargs):
         # TODO: Add error handling in case of wrong input or Matlab errors.
+        if not hasattr(self, "engine"):
+            self.setup_matlab()
 
         if self.input_type == "vector":
             test = args[0]
@@ -298,7 +301,7 @@ class Matlab(SUT):
             else:
                 timestamps = args[0]
                 signals = args[1]
-
+            
             # Prepare the input signals to a format expected by Matlab; see
             # above.
             model_input = matlab.double(np.column_stack((timestamps, *signals)).tolist())
