@@ -41,7 +41,7 @@ class Random(Algorithm):
 
             # Execute the test on the SUT.
             # -----------------------------------------------------------------
-            self.log("Chose test {} with predicted maximum objective 1. Generated total {} tests of which {} were invalid.".format(new_test, rounds, invalid))
+            self.log("Chose test {} with predicted objective 0. Generated total {} tests of which {} were invalid.".format(new_test, rounds, invalid))
             self.log("Executing the test...")
 
             # Consume generation budget.

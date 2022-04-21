@@ -6,6 +6,7 @@ class TestRepository:
         self._tests = []      # Test inputs in input representation to the SUT.
         self._outputs = []    # Outputs of the SUT given the inputs.
         self._objectives = [] # Objective function values of the outputs.
+        self.minimum_objective = float("inf")
 
     @property
     def tests(self):
@@ -19,6 +20,11 @@ class TestRepository:
         self._tests.append(test)
         self._outputs.append(output)
         self._objectives.append(objective)
+
+        # Save minimum objective component observed.
+        m = min(objective)
+        if m < self.minimum_objective:
+            self.minimum_objective = m
 
         return len(self._tests) - 1
 

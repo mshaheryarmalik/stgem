@@ -84,7 +84,7 @@ class SUT:
 
         raise AttributeError(name)
 
-    def setup(self, budget):
+    def setup(self, budget, rng):
         """
         Setup the budget and perform steps necessary for two-step
         initialization. Derived classes should always call this super class
@@ -92,6 +92,7 @@ class SUT:
         """
 
         self.budget = budget
+        self.rng = rng
 
         # Infer dimensions and names for inputs and outputs from impartial
         # information.
@@ -253,7 +254,7 @@ class SUT:
         return test, self._execute_test(test)
 
     def sample_input_space(self):
-        return np.random.uniform(-1, 1, size=(1, self.idim))
+        return self.rng.uniform(-1, 1, size=(1, self.idim))
 
     def validity(self, test):
         """

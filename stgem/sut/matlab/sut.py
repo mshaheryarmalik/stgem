@@ -124,8 +124,8 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         # How many inputs we have for each input signal.
         self.pieces = [math.ceil(self.simulation_time / time_slice) for time_slice in self.time_slices]
 
-    def setup(self, budget):
-        super().setup(budget)
+    def setup(self, budget, rng):
+        super().setup(budget, rng)
 
         if not len(self.time_slices) == self.idim:
             raise Exception("Expected {} time slices, found {}.".format(self.idim, len(self.time_slices)))
@@ -234,8 +234,8 @@ class Matlab(SUT):
             init = getattr(self.engine, self.INIT_MODEL_NAME)
             init(nargout=0)
 
-    def setup(self, budget):
-        super().setup(budget)
+    def setup(self, budget, rng):
+        super().setup(budget, rng)
 
         # Adjust the SUT parameters if the input is a piecewise constant
         # signal.
