@@ -190,7 +190,7 @@ class FalsifySTL(Objective):
             else:
                 B = self.specification.var_range[1]
                 robustness *= 1/B
-                robustness += epsilon
+                robustness += self.epsilon
                 robustness = min(1, robustness)
 
         return robustness
@@ -297,7 +297,7 @@ class FalsifySTL(Objective):
             else:
                 B = self.specification.var_range[1]
                 robustness *= 1/B
-                robustness += epsilon
+                robustness += self.epsilon
                 robustness = min(1, robustness)
 
         return robustness
