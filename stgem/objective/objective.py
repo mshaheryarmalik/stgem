@@ -5,12 +5,6 @@ import numpy as np
 
 from stgem.sut import SUTResult
 
-"""
-REMEMBER: Always clip the objective function values to [0, 1]. Otherwise we
-can get very wild losses when training neural networks. This is not good as
-then the loss minimization might focus on the wrong thing.
-"""
-
 class Objective:
 
     def setup(self, sut):
@@ -70,14 +64,27 @@ class FalsifySTL(Objective):
     """Objective function to falsify a STL specification. By default the
     robustness is not scaled, but if scale is True and variable ranges have
     been specified for the signals, then the robustness is scaled to
-    [0, 1]."""
+    [0, 1].
 
-    def __init__(self, specification, scale=False, strict_horizon_check=True):
+    The parameter strict_horizon_check controls if an exception is raised if
+    the signal is too short to determine the truth value of the specification.
+    If False and the signal is too short, then the best estimate for the
+    robustness is returned, but this value might be incorrect if the signal is
+    augmented with appropriate values.
+
+    The parameter epsilon is a value which is added to positive robustness
+    values. A positive epsilon value thus makes falsification harder. This is
+    sometimes useful if the observed values are very close to 0 but positive
+    and the machine learning models consider such a value to be 0. Raising the
+    bar a bit can encourage the models to work harder and eventually produce
+    robustness which is nonpositive."""
+
+    def __init__(self, specification, epsilon=0, scale=False, strict_horizon_check=True):
         super().__init__()
 
         self.dim = 1
         self.specification = specification
-
+        self.epsilon = epsilon
         self.scale = scale
         if self.scale and self.specification.var_range is None:
             raise Exception("The specification does not include a range for robustness. This is needed for scaling.")
@@ -183,6 +190,7 @@ class FalsifySTL(Objective):
             else:
                 B = self.specification.var_range[1]
                 robustness *= 1/B
+                robustness += epsilon
                 robustness = min(1, robustness)
 
         return robustness
@@ -289,6 +297,7 @@ class FalsifySTL(Objective):
             else:
                 B = self.specification.var_range[1]
                 robustness *= 1/B
+                robustness += epsilon
                 robustness = min(1, robustness)
 
         return robustness
