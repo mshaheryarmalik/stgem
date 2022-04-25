@@ -124,7 +124,11 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         # How many inputs we have for each input signal.
         self.pieces = [math.ceil(self.simulation_time / time_slice) for time_slice in self.time_slices]
 
+        self.has_been_setup = False
+
     def setup(self, budget, rng):
+        if self.has_been_setup: return
+
         super().setup(budget, rng)
 
         if not len(self.time_slices) == self.idim:
@@ -137,6 +141,8 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         for i in range(len(self.input_range)):
             for _ in range(self.pieces[i]):
                 self.descaling_intervals.append(self.input_range[i])
+
+        self.has_been_setup = True
 
     def _execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.descaling_intervals).reshape(-1)

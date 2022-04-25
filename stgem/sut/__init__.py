@@ -85,11 +85,12 @@ class SUT:
         raise AttributeError(name)
 
     def setup(self, budget, rng):
-        """
-        Setup the budget and perform steps necessary for two-step
+        """Setup the budget and perform steps necessary for two-step
         initialization. Derived classes should always call this super class
-        setup method.
-        """
+        setup method."""
+
+        # Make sure that it is safe to repeatedly call this function with
+        # different budgets and rngs. This ensures SUT reusage.
 
         self.budget = budget
         self.rng = rng
