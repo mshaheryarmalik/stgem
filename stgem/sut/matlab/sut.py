@@ -191,6 +191,8 @@ class Matlab(SUT):
     def __init__(self, parameters):
         super().__init__(parameters)
 
+        self.has_been_setup = False
+
         if not os.path.exists(self.model_file + ".m"):
             raise Exception("The file '{}.m' does not exist.".format(self.model_file))
 
@@ -241,6 +243,8 @@ class Matlab(SUT):
             init(nargout=0)
 
     def setup(self, budget, rng):
+        if self.has_been_setup: return
+
         super().setup(budget, rng)
 
         # Adjust the SUT parameters if the input is a piecewise constant
