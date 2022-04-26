@@ -131,11 +131,8 @@ class FalsifySTL(Objective):
             if x.upper_time_bound > 0 and x.upper_time_bound < self.sampling_period:
                 self.sampling_period = x.upper_time_bound
         self.sampling_period /= K
-        # We round to the closest power of 10 although the formula time bounds
-        # should be perfect powers already.
-        #from math import log10
-        #self.sampling_period = 10**(int(log10(self.sampling_period)))
-        # TODO: Implement variable constant scaling for predicates.
+        from math import log10, floor
+        self.precision = abs(floor(log10(self.sampling_period)))
 
         # Create a mapping for an easy access to correct signal. Save which
         # variables refer to input signals and which to output signals.
@@ -235,14 +232,13 @@ class FalsifySTL(Objective):
         1e-4, but this should be enough.
         """
 
-        if self.sampling_period is None:
-            raise Exception("STL sampling period must be defined for signal outputs.")
-
         # This check is necessary for validity.
         if output_timestamps[0] != 0 or (input_timestamps is not None and input_timestamps[0] != 0):
             raise Exception("The first timestamp should be 0 in both input and output signals.")
 
         T = max(output_timestamps[-1], 0 if input_timestamps is None else input_timestamps[-1])
+        # Round to the same scale as the sampling period.
+        T = round(T, self.precision)
         timestamps = [i*self.sampling_period for i in range(0, int(T/self.sampling_period) + 1)]
 
         # Fill in missing signal values for new timestamps by assuming constant
@@ -268,7 +264,8 @@ class FalsifySTL(Objective):
 
         self.specification.reset()
 
-        if self.strict_horizon_check and self.horizon > timestamps[-1]:
+        # Allow slight inaccuracy in horizon check.
+        if self.strict_horizon_check and self.horizon - 1e-4 > timestamps[-1]:
             raise Exception("The horizon {} of the formula is too long compared to signal length {}. The robustness cannot be computed.".format(self.horizon, timestamps[-1]))
 
         # Adjust time bounds.
