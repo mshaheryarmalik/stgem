@@ -261,6 +261,8 @@ class Matlab(SUT):
                 for _ in range(self.pieces[i]):
                     self.descaling_intervals.append(self.input_range[i])
 
+        self.has_been_setup = True
+
     def __del__(self):
         if hasattr(self, "engine"):
             self.engine.quit()
