@@ -127,9 +127,9 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         self.has_been_setup = False
 
     def setup(self, budget, rng):
-        if self.has_been_setup: return
-
         super().setup(budget, rng)
+
+        if self.has_been_setup: return
 
         if not len(self.time_slices) == self.idim:
             raise Exception("Expected {} time slices, found {}.".format(self.idim, len(self.time_slices)))
@@ -243,9 +243,9 @@ class Matlab(SUT):
             init(nargout=0)
 
     def setup(self, budget, rng):
-        if self.has_been_setup: return
-
         super().setup(budget, rng)
+
+        if self.has_been_setup: return
 
         # Adjust the SUT parameters if the input is a piecewise constant
         # signal.
