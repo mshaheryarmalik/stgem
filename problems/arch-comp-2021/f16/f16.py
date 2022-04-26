@@ -10,11 +10,12 @@ from stgem.sut.matlab import Matlab
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
+from stgem.algorithm.ogan.model_keras import OGANK_Model
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorAll
 
-from f16_python_sut import F16GCAS
+from f16_python_sut import F16GCAS_PYTHON2, F16GCAS_PYTHON3
 
 mode = "stop_at_first_objective"
 scale = True
@@ -25,9 +26,23 @@ selected_specification = "F16"
 # Running the model requires Control System Toolbox in Matlab.
 
 def build_specification(selected_specification, asut=None):
+    # ARCH-COMP
     roll_range = [0.2*pi, 0.2833*pi]
     pitch_range = [-0.4*pi, -0.35*pi]
     yaw_range = [-0.375*pi, -0.125*pi]
+    # PART-X
+    """
+    roll_range = [0.2*pi, 0.2833*pi]
+    pitch_range = [-0.5*pi, -0.54*pi]
+    yaw_range = [0.25*pi, 0.375*pi]
+    """
+    # FULL
+    """
+    roll_range = [-pi, pi]
+    pitch_range = [-pi, pi]
+    yaw_range = [-pi, pi]
+    """
+
     sut_parameters = {"model_file": "problems/arch-comp-2021/f16/run_f16",
                       "init_model_file": "problems/arch-comp-2021/f16/init_f16",
                       "input_type": "vector",
@@ -36,14 +51,16 @@ def build_specification(selected_specification, asut=None):
                       "outputs": ["ALTITUDE"],
                       "input_range": [roll_range, pitch_range, yaw_range],
                       "output_range": [[0, 4040]], # Starting altitude defined in init_f16.m.
-                      "simulation_time": 15,
+                      "initial_altitude": 4040, # Used by the Python SUTs.
+                      "simulation_time": 15
                      }
 
     # We allow reusing the SUT for memory conservation (Matlab takes a lot of
     # memory).
     if asut is None:
-        asut = Matlab(sut_parameters)
-        #asut = F16GCAS(sut_parameters)
+        #asut = Matlab(sut_parameters)
+        #asut = F16GCAS_PYTHON2(sut_parameters)
+        asut = F16GCAS_PYTHON3(sut_parameters)
 
     # Notice that here the input is a vector.
 

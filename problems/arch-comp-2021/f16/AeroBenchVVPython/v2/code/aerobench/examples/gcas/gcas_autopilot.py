@@ -73,8 +73,8 @@ class GcasAutopilot(Autopilot):
 
         rv = premode != self.mode
 
-        if rv:
-            self.log(f"GCAS transition {premode} -> {self.mode} at time {t}")
+        #if rv:
+        #    self.log(f"GCAS transition {premode} -> {self.mode} at time {t}")
 
         return rv
 

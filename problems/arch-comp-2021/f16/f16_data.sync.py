@@ -38,7 +38,7 @@ def load(path, prefix):
 output_path_base = os.path.join("..", "..", "..", "output")
 
 specification = "F16"
-experiments = ["F16", "F16_dense", "F16_batch", "F16_300", "F16_ne", "F16_lr1", "F16_uniform", "F16_python"]
+experiments = ["F16", "F16_dense", "F16_batch", "F16_300", "F16_ne", "F16_lr1", "F16_uniform", "F16_python", "F16_python_keras"]
 
 results = {}
 for experiment in experiments:
