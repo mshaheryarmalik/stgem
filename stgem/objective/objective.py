@@ -7,8 +7,18 @@ from stgem.sut import SUTResult
 
 class Objective:
 
+    def __init__(self):
+        self.parameters = {}
+
     def setup(self, sut):
         self.sut = sut
+
+    def __getattr__(self, name):
+        if "parameters" in self.__dict__:
+            if name in self.parameters:
+                return self.parameters.get(name)
+
+        raise AttributeError(name)
 
     def __call__(self, r: SUTResult):
         return r.outputs
@@ -23,9 +33,9 @@ class Minimize(Objective):
             raise Exception("The parameter 'selected' must be None or a list or a tuple.")
 
         self.dim = 1
-        self.selected = selected
-        self.scale = scale
-        self.invert = invert
+        self.parameters["selected"] = selected
+        self.parameters["scale"] = scale
+        self.parameters["invert"] = invert
 
     def __call__(self, r: SUTResult):
         assert r.output_timestamps is None
@@ -84,11 +94,11 @@ class FalsifySTL(Objective):
 
         self.dim = 1
         self.specification = specification
-        self.epsilon = epsilon
-        self.scale = scale
+        self.parameters["epsilon"] = epsilon
+        self.parameters["scale"] = scale
         if self.scale and self.specification.var_range is None:
             raise Exception("The specification does not include a range for robustness. This is needed for scaling.")
-        self.strict_horizon_check = strict_horizon_check
+        self.parameters["strict_horizon_check"] = strict_horizon_check
 
     def setup(self, sut):
         super().setup(sut)
@@ -120,17 +130,19 @@ class FalsifySTL(Objective):
             else: #formula.arity == 2:
                 return bounded(formula.left_subformula) + bounded(formula.right_subformula)
 
-        # Find the smallest positive time bound referred to in the formula and
-        # use it divided by K as the unit time.
+        # Sampling period equals the minimum of the smallest positive time
+        # bound referred to in the formula divided by K and the sampling step
+        # of the SUT. Compute the first number.
         K = 10
         self.time_bounded = bounded(self.specification)
-        self.sampling_period = 1
+        first = 1
         for x in self.time_bounded:
-            if x.lower_time_bound > 0 and x.lower_time_bound < self.sampling_period:
-                self.sampling_period = x.lower_time_bound
-            if x.upper_time_bound > 0 and x.upper_time_bound < self.sampling_period:
-                self.sampling_period = x.upper_time_bound
-        self.sampling_period /= K
+            if x.lower_time_bound > 0 and x.lower_time_bound < first:
+                first = x.lower_time_bound
+            if x.upper_time_bound > 0 and x.upper_time_bound < first:
+                first = x.upper_time_bound
+        first /= K
+        self.sampling_period = min(first, self.sut.sampling_step)
         from math import log10, floor
         self.precision = abs(floor(log10(self.sampling_period)))
 

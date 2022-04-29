@@ -1,4 +1,4 @@
-import os, time, datetime, random, logging
+import copy, os, time, datetime, random, logging
 
 from collections import namedtuple
 from multiprocessing import Pool
@@ -15,18 +15,21 @@ from stgem.budget import Budget
 
 class StepResult:
 
-    def __init__(self, test_repository, success):
+    def __init__(self, test_repository, success, parameters):
         self.timestamp = datetime.datetime.now()
         self.test_repository = test_repository
         self.success = success
+        self.parameters = parameters
         self.algorithm_performance = None
         self.model_performance = None
 
 class STGEMResult:
 
-    def __init__(self, description, seed, test_repository, step_results, sut_performance):
+    def __init__(self, description, sut_name, sut_parameters, seed, test_repository, step_results, sut_performance):
         self.timestamp = datetime.datetime.now()
         self.description = description
+        self.sut_name = sut_name
+        self.sut_parameters = sut_parameters
         self.seed = seed
         self.step_results = step_results
         self.test_repository = test_repository
@@ -115,7 +118,21 @@ class Search(Step):
         # report resuts
         print("Step minimum objective component: {}".format(self.algorithm.test_repository.minimum_objective))
 
-        step_result = StepResult(self.algorithm.test_repository, success)
+        # Save certain parameters in the StepResult object.
+        parameters = {}
+        parameters["algorithm_name"] = self.algorithm.__class__.__name__
+        parameters["algorithm"] = copy.deepcopy(self.algorithm.parameters)
+        if "device" in parameters["algorithm"]:
+            del parameters["algorithm"]["device"]
+        parameters["model_name"] = [self.algorithm.models[i].__class__.__name__ for i in range(self.algorithm.N_models)]
+        parameters["model"] = [copy.deepcopy(self.algorithm.models[i].parameters) for i in range(self.algorithm.N_models)]
+        parameters["objective_name"] = [objective.__class__.__name__ for objective in self.algorithm.objective_funcs]
+        parameters["objective"] = [copy.deepcopy(objective.parameters) for objective in self.algorithm.objective_funcs]
+        parameters["objective_selector_name"] = self.algorithm.objective_selector.__class__.__name__
+        parameters["objective_selector"] = copy.deepcopy(self.algorithm.objective_selector.parameters)
+
+        # Build the StepResult object.
+        step_result = StepResult(self.algorithm.test_repository, success, parameters)
         step_result.algorithm_performance = self.algorithm.perf
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
 
@@ -190,9 +207,8 @@ class STGEM:
         self.seed = seed
         self.setup()
 
-        results = []
-
         # Setup and run steps sequentially.
+        step_results = []
         for step in self.steps:
             step.setup(
                 sut=self.sut,
@@ -202,9 +218,9 @@ class STGEM:
                 objective_selector=self.objective_selector,
                 device=self.device,
                 logger=self.logger)
-            results.append(step.run())
+            step_results.append(step.run())
 
-        sr = STGEMResult(self.description, self.seed, self.test_repository, results, self.sut.perf)
+        sr = STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
 
         return sr
 

@@ -6,12 +6,20 @@ import numpy as np
 class ObjectiveSelector:
     def __init__(self):
         self.dim = 0
+        self.parameters = {}
 
     def setup(self, objectives):
         N_objectives = 0
         for of in objectives:
             N_objectives += of.dim
         self.dim = N_objectives
+
+    def __getattr__(self, name):
+        if "parameters" in self.__dict__:
+            if name in self.parameters:
+                return self.parameters.get(name)
+
+        raise AttributeError(name)
 
     def select_all(self):
         return list(range(self.dim))
@@ -39,7 +47,7 @@ class ObjectiveSelectorMAB(ObjectiveSelector):
 
     def __init__(self, warm_up=30):
         super().__init__()
-        self.warm_up = warm_up
+        self.parameters["warm_up"] = warm_up
         self.total_calls = 0
         self.model_successes = []
 
