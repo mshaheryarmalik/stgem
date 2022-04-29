@@ -6,6 +6,8 @@ from stgem.objective import FalsifySTL
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
+from stgem.algorithm.wogan.algorithm import WOGAN
+from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.objective_selector import ObjectiveSelectorAll, ObjectiveSelectorMAB
 
@@ -91,8 +93,8 @@ if __name__ == "__main__":
         objective_selector = ObjectiveSelectorMAB(warm_up=100)
         step_1 = Search(mode=mode,
                         budget_threshold={"executions": 75},
-                        algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 75})))
-                        #algorithm=Random(model_factory=(lambda: Uniform()))
+                        #algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 75})))
+                        algorithm=Random(model_factory=(lambda: Uniform()))
                        )      
         step_2 = Search(mode=mode,
                         budget_threshold={"executions": 300},

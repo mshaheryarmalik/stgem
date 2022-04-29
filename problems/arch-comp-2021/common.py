@@ -29,6 +29,38 @@ def falsification_rate(results):
 
     return c/len(results)
 
+def min_along(X, length=None):
+    # Return the minimum so far along X.
+    m = 1.0
+    A = []
+    for i in range(len(X) if length is None else length):
+        o = X[i] if i < len(X) else 1.0
+        if o < m:
+            m = o
+        A.append(m)
+    return A
+
+def mean_min_along(results, length=None):
+    A = []
+    for i in range(len(results)):
+        _, _, Y = results[i].test_repository.get()
+        Y = np.array(Y).reshape(-1)
+        B = min_along(Y, length=length)
+        A.append(B)
+
+    A = np.array(A)
+    C = np.mean(A, axis=0)
+
+    return C
+
+def first_falsification(result):
+    _, _, Y = result.test_repository.get()
+    for i in range(len(Y)):
+        if min(Y[i]) <= 0.0:
+            return i
+
+    return None
+
 def plotTest(result, idx):
     inputs = result.sut_parameters["inputs"]
     outputs = result.sut_parameters["outputs"]

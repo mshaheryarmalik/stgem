@@ -35,8 +35,36 @@ for specification in results:
     print("{}: {}".format(specification, falsification_rate(results[specification])))
 
 # %%
+experiment = "AT"
+print("First falsifications:")
+print([first_falsification(result) for result in results[experiment]])
+
+# %%
+# Plot objective values and minimum along them.
+experiment = "AT"
 replica = 0
-result = results["AT"][replica]
+
+_, _, Y = results[experiment][replica].test_repository.get()
+Y = np.array(Y).reshape(-1)
+
+figs, axs = plt.subplots(1, 2)
+axs[0].set_title("Overall minimum objective")
+axs[0].plot(min_along(Y))
+axs[1].set_title("Objective values")
+axs[1].plot(Y)
+
+# %%
+# Plot mean minimum objective values for all replicas.
+experiment = "AT"
+C = mean_min_along(results[experiment], length=300)
+
+fig, ax = plt.subplots(1, 1)
+ax.plot(C)
+
+# %%
+experiment = "AT"
+replica = 0
+result = results[experiment][replica]
 
 # %%
 plotTest(result, 100)
