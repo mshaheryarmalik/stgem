@@ -267,32 +267,74 @@ class Matlab(SUT):
         if hasattr(self, "engine"):
             self.engine.quit()
 
-    def _execute_test(self, *args, **kwargs):
-        # TODO: Add error handling in case of wrong input or Matlab errors.
+    def _execute_vector_vector(self, test):
         if not hasattr(self, "engine"):
             self.setup_matlab()
+
+        # Matlab does not like numpy data types, so we convert to floats.
+        matlab_result = self.matlab_func(*(float(x) for x in test), nargout=self.odim)
+        matlab_result = np.asarray(matlab_result)
+        matlab_result = np.asarray(matlab_result)
+
+        return SUTResult(test, matlab_result, None, None, None)
+
+    def _execute_vector_signal(self, test):
+        if not hasattr(self, "engine"):
+            self.setup_matlab()
+
+        matlab_result = self.matlab_func(*(float(x) for x in test), nargout=2)
+        output_timestamps = np.asarray(matlab_result[0]).flatten()
+        data = np.asarray(matlab_result[1])
+
+        # Reshape the data.
+        output_signals = np.zeros(shape=(self.odim, len(output_timestamps)))
+        for i in range(self.odim):
+            output_signals[i] = data[:, i]
+
+        return SUTResult(test, output_signals, None, output_timestamps, None)
+
+    def _execute_signal_vector(self, timestamps, signals):
+        if not hasattr(self, "engine"):
+            self.setup_matlab()
+
+        # Prepare the input signals to a format expected by Matlab; see
+        # above.
+        model_input = matlab.double(np.column_stack((timestamps, *signals)).tolist())
+
+        matlab_result = self.matlab_func(model_input, nargout=self.odim)
+
+        return SUTResult(signals, matlab_result, timestamps, None, None)
+
+    def _execute_signal_signal(self, timestamps, signals):
+        if not hasattr(self, "engine"):
+            self.setup_matlab()
+
+        # Prepare the input signals to a format expected by Matlab; see
+        # above.
+        model_input = matlab.double(np.column_stack((timestamps, *signals)).tolist())
+
+        matlab_result = self.matlab_func(model_input, nargout=2)
+        output_timestamps = np.asarray(matlab_result[0]).flatten()
+        data = np.asarray(matlab_result[1])
+
+        # Reshape the data.
+        output_signals = np.zeros(shape=(self.odim, len(output_timestamps)))
+        for i in range(self.odim):
+            output_signals[i] = data[:, i]
+
+        return SUTResult(signals, output_signals, timestamps, output_timestamps, None)
+
+    def _execute_test(self, *args, **kwargs):
+        # TODO: Add error handling in case of wrong input or Matlab errors.
 
         if self.input_type == "vector":
             test = args[0]
             test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
 
             if self.output_type == "vector":
-                # Matlab does not like numpy data types, so we convert to floats.
-                matlab_result = self.matlab_func(*(float(x) for x in test), nargout=self.odim)
-                matlab_result = np.asarray(matlab_result)
-
-                return SUTResult(test, matlab_result, None, None, None)
+                return self._execute_vector_vector(test)
             else:
-                matlab_result = self.matlab_func(*(float(x) for x in test), nargout=2)
-                output_timestamps = np.asarray(matlab_result[0]).flatten()
-                data = np.asarray(matlab_result[1])
-
-                # Reshape the data.
-                output_signals = np.zeros(shape=(self.odim, len(output_timestamps)))
-                for i in range(self.odim):
-                    output_signals[i] = data[:, i]
-
-                return SUTResult(test, output_signals, None, output_timestamps, None)
+                return self._execute_vector_signal(test)
         else:
             # If we have a piecewise constant signal, convert the input vector
             # to a constant signal.
@@ -314,23 +356,8 @@ class Matlab(SUT):
                 timestamps = args[0]
                 signals = args[1]
             
-            # Prepare the input signals to a format expected by Matlab; see
-            # above.
-            model_input = matlab.double(np.column_stack((timestamps, *signals)).tolist())
-
             if self.output_type == "vector":
-                matlab_result = self.matlab_func(model_input, nargout=self.odim)
-
-                return SUTResult(signals, matlab_result, timestamps, None, None)
+                return self._execute_signal_vector(timestamps, signals)
             else:
-                matlab_result = self.matlab_func(model_input, nargout=2)
-                output_timestamps = np.asarray(matlab_result[0]).flatten()
-                data = np.asarray(matlab_result[1])
-
-                # Reshape the data.
-                output_signals = np.zeros(shape=(self.odim, len(output_timestamps)))
-                for i in range(self.odim):
-                    output_signals[i] = data[:, i]
-
-                return SUTResult(signals, output_signals, timestamps, output_timestamps, None)
+                return self._execute_signal_signal(timestamps, signals)
 
