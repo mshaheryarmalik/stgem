@@ -166,7 +166,7 @@ class WOGAN_Model(Model):
         # ---------------------------------------------------------------------
         self.modelC.train(True)
         losses = torch.zeros(critic_steps)
-        gradient_penaltiess = torch.zeros(critic_steps)
+        gradient_penalties = torch.zeros(critic_steps)
         for m in range(critic_steps):
             # Here the mini batch size of the WGAN-GP is set to be the number
             # of training samples for the critic
