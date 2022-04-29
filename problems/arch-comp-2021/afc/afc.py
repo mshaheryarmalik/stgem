@@ -75,6 +75,7 @@ if __name__ == "__main__":
     N = int(sys.argv[2])
     init_seed = int(sys.argv[3])
 
+    afc_mode = "normal"
     description = "Fuel Control of an Automotive Powertrain ({} mode)".format(afc_mode)
 
     # Build a list of SUTs, Budgets, etc. to be used in factory calls in
@@ -87,7 +88,7 @@ if __name__ == "__main__":
     objective_selector_list = []
     step_list = []
     for i in range(N):
-        asut, specification, strict_horizon_check = build_specification(selected_specification, asut)
+        asut, specification, strict_horizon_check = build_specification(selected_specification, afc_mode, asut)
         budget = Budget()
         epsilon = 0.01
         objectives = [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
