@@ -132,7 +132,7 @@ class FalsifySTL(Objective):
 
         # Sampling period equals the minimum of the smallest positive time
         # bound referred to in the formula divided by K and the sampling step
-        # of the SUT. Compute the first number.
+        # of the SUT (if it exists). Compute the first number.
         K = 10
         self.time_bounded = bounded(self.specification)
         first = 1
@@ -142,7 +142,10 @@ class FalsifySTL(Objective):
             if x.upper_time_bound > 0 and x.upper_time_bound < first:
                 first = x.upper_time_bound
         first /= K
-        self.sampling_period = min(first, self.sut.sampling_step)
+        if hasattr(self.sut, "sampling_step"):
+            self.sampling_period = min(first, self.sut.sampling_step)
+        else:
+            self.sampling_period = first
         from math import log10, floor
         self.precision = abs(floor(log10(self.sampling_period)))
 
