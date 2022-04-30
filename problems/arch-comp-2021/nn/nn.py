@@ -2,6 +2,7 @@ import os, sys
 
 from stgem.generator import STGEM, Search, run_multiple_generators
 from stgem.budget import Budget
+from stgem.objective import FalsifySTL
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model

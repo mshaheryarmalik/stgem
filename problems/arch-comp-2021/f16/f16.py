@@ -2,6 +2,7 @@ import os, sys
 
 from stgem.generator import STGEM, Search, run_multiple_generators
 from stgem.budget import Budget
+from stgem.objective import FalsifySTL
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
@@ -67,10 +68,10 @@ if __name__ == "__main__":
     objective_selector_list = []
     step_list = []
     for i in range(N):
-        asut, specification, scale, strict_horizon_check = build_specification(selected_specification, asut)
+        asut, specifications, scale, strict_horizon_check = build_specification(selected_specification, asut)
         budget = Budget()
         epsilon = 0.0
-        objectives = [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check)]
+        objectives = [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
         objective_selector = ObjectiveSelectorAll()
         step_1 = Search(mode=mode,
                         budget_threshold={"executions": 75},

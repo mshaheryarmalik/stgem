@@ -88,7 +88,7 @@ if __name__ == "__main__":
     objective_selector_list = []
     step_list = []
     for i in range(N):
-        asut, specification, strict_horizon_check = build_specification(selected_specification, afc_mode, asut)
+        asut, specifications, scale, strict_horizon_check = build_specification(selected_specification, afc_mode, asut)
         budget = Budget()
         epsilon = 0.01
         objectives = [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
