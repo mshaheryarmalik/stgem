@@ -16,10 +16,10 @@ import os, importlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-common = importlib.import_module("problems.arch-comp-2021.common")
+from common import *
 
 # %%
-output_base_path = "output"
+output_base_path = os.path.join("..", "..", "output")
 
 experiments = ["ogan_uniform", "wogan_uniform", "random_uniform"]
 benchmarks = ["AFC27", "AFC29", "AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "CC1", "CC2", "CC3", "CC4", "CC5", "CCX", "F16", "NN", "NNX"]
@@ -31,7 +31,7 @@ load_sut_output = False
 for experiment in experiments:
     raw_data[experiment] = {}
     for benchmark in benchmarks:
-        raw_data[experiment][benchmark] = common.load(os.path.join(output_base_path, experiment), benchmark, load_sut_output=load_sut_output)
+        raw_data[experiment][benchmark] = load(os.path.join(output_base_path, experiment), benchmark, load_sut_output=load_sut_output)
 
 # %%
 data = raw_data
@@ -42,7 +42,7 @@ FR = {}
 for experiment in experiments:
     FR[experiment] = {}
     for benchmark in benchmarks:
-        FR[experiment][benchmark] = common.falsification_rate(data[experiment][benchmark])
+        FR[experiment][benchmark] = falsification_rate(data[experiment][benchmark])
         if FR[experiment][benchmark] is None:
             FR[experiment][benchmark] = 0
 
@@ -67,11 +67,11 @@ FF = {}
 for experiment in experiments:
     FF[experiment] = {}
     for benchmark in benchmarks:
-        X = [common.first_falsification(data[experiment][benchmark][i]) for i in range(len(data[experiment][benchmark]))]
+        X = [first_falsification(data[experiment][benchmark][i]) for i in range(len(data[experiment][benchmark]))]
         FF[experiment][benchmark] = [x for x in X if x is not None]
 
 X1 = [FF["ogan_uniform"][benchmark] for benchmark in benchmarks]
 X2 = [FF["wogan_uniform"][benchmark] for benchmark in benchmarks]
 X3 = [FF["random_uniform"][benchmark] for benchmark in benchmarks]
-common.condensed_boxplot([X1, X2, X3], benchmarks, ["OGAN", "WOGAN", "RANDOM"], ["blue", "orange", "green"])
+condensed_boxplot([X1, X2, X3], benchmarks, ["OGAN", "WOGAN", "RANDOM"], ["blue", "orange", "green"])
 

@@ -6,7 +6,7 @@ from matplotlib import cm
 from matplotlib import animation
 from IPython.display import HTML
 
-sys.path.append(os.path.join("..", "..", ".."))
+sys.path.append(os.path.join("..", ".."))
 from stgem.generator import STGEMResult
 
 def load_results(files, load_sut_output=True):
