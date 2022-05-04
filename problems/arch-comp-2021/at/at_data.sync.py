@@ -20,7 +20,7 @@ from common import *
 # %%
 output_path_base = os.path.join("..", "..", "..", "output")
 
-specification = "AT1"
+specification = "AT2"
 experiments = ["AT"]
 
 results = {}
@@ -67,7 +67,7 @@ replica = 0
 result = results[experiment][replica]
 
 # %%
-plotTest(result, 100)
+plotTest(result, 10)
 
 # %%
 anim = animateResult(result)

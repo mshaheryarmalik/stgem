@@ -1,13 +1,17 @@
-import os
+import os, sys
 
 from stgem.generator import STGEM, Search, run_multiple_generators
 from stgem.budget import Budget
+from stgem.objective import FalsifySTL
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
+from stgem.algorithm.wogan.algorithm import WOGAN
+from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.algorithm.random.model import Uniform, LHS
-from stgem.objective import FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorAll, ObjectiveSelectorMAB
+
+from util import build_specification
 
 mode = "stop_at_first_objective"
 
@@ -43,9 +47,9 @@ ogan_model_parameters = {
         "optimizer": "Adam",
         "discriminator_lr": 0.005,
         "discriminator_betas": [0.9, 0.999],
-        "generator_lr": 0.0010,
+        "generator_lr": 0.0005,
         "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 512,
+        "noise_batch_size": 2048,
         "generator_loss": "MSE,Logit",
         "discriminator_loss": "MSE,Logit",
         "generator_mlm": "GeneratorNetwork",
@@ -66,7 +70,10 @@ ogan_model_parameters = {
 }
 
 if __name__ == "__main__":
-    N = 1
+    selected_specification = sys.argv[1]
+    N = int(sys.argv[2])
+    init_seed = int(sys.argv[3])
+    identifier = sys.argv[4] if len(sys.argv) >= 5 else None
 
     description = "Chasing Cars"
 
@@ -82,18 +89,21 @@ if __name__ == "__main__":
     for i in range(N):
         asut, specifications, scale, strict_horizon_check = build_specification(selected_specification, asut)
         budget = Budget()
+        epsilon = 0.01
         objectives = [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
         objective_selector = ObjectiveSelectorAll()
         step_1 = Search(mode=mode,
-                        budget_threshold={"executions": 50},
-                        algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 50})))
+                        budget_threshold={"executions": 75},
+                        #algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 75})))
+                        algorithm=Random(model_factory=(lambda: Uniform()))
                        )      
         step_2 = Search(mode=mode,
-                        budget_threshold={"executions": 200},
-                        #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
+                        budget_threshold={"executions": 300},
+                        algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
                         #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                        algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
+                        #algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                        )
+        #steps = [step_1]
         steps = [step_1, step_2]
 
         sut_list.append(asut)
@@ -112,7 +122,7 @@ if __name__ == "__main__":
 
     def seed_factory():
         def seed_generator():
-            c = 25321
+            c = init_seed
             while True:
                 yield c
                 c += 1
@@ -128,7 +138,8 @@ if __name__ == "__main__":
     step_factory = generic_list_factory(step_list)
 
     def callback(result):
-        result.dump_to_file(os.path.join("output", "{}_{}.pickle".format(selected_specification, str(result.timestamp).replace(" ", "_"))))
+        file_name = "{}{}_{}.pickle".format(selected_specification, "_" + identifier if identifier is not None else "", str(result.timestamp).replace(" ", "_"))
+        result.dump_to_file(os.path.join("output", file_name))
 
     r = run_multiple_generators(N,
                                 description,

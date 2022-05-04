@@ -9,20 +9,28 @@ from IPython.display import HTML
 sys.path.append(os.path.join("..", "..", ".."))
 from stgem.generator import STGEMResult
 
-def load_results(files):
+def load_results(files, load_sut_output=True):
     results = []
     for file in files:
         results.append(STGEMResult.restore_from_file(file))
 
+    # This reduces memory usage if these values are not needed.
+    if not load_sut_output:
+        for result in results:
+            result.test_repository._outputs = None
+
     return results
 
-def load(path, prefix):
+def load(path, prefix, load_sut_output=True):
     files = [os.path.join(path, file) for file in os.listdir(path) if os.path.basename(file).startswith(prefix)]
     files.sort()
 
-    return load_results(files)
+    return load_results(files, load_sut_output)
 
 def falsification_rate(results):
+    if len(results) == 0:
+        return None
+
     c = 0
     for result in results:
         c += 1 if any(step.success for step in result.step_results) else 0
@@ -167,4 +175,29 @@ def animateResult(result):
     plt.close()
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(Y), interval=200, blit=True)
     return anim
+
+def condensed_boxplot(data, x_labels, pb_labels, colors):
+    def set_color(bp, color):
+        plt.setp(bp["boxes"], color=color)
+        plt.setp(bp["whiskers"], color=color)
+        plt.setp(bp["caps"], color=color)
+        plt.setp(bp["medians"], color=color)
+    
+    fig = plt.figure(figsize =(7, 5))
+    
+    # Create boxplots and set colors.
+    for i in range(len(data)):
+        #bp = plt.boxplot(data[i])
+        bp = plt.boxplot(data[i], positions=i+np.array(range(len(data[i])))*4-0.4, sym="", widths=0.6)
+        set_color(bp, colors[i])
+    
+    # Draw temporary lines and use them to create a legend.
+    for i in range(len(pb_labels)):
+        plt.plot([], c=colors[i], label=pb_labels[i])
+    plt.legend()
+    
+    plt.xticks(range(0, len(x_labels)*4, 4), x_labels)
+    plt.xlim(-2, len(x_labels)*4)
+    #plt.ylim(0, 8)
+    plt.tight_layout()
 

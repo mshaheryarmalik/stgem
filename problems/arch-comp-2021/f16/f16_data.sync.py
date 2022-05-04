@@ -11,11 +11,13 @@
 #     language: python
 #     name: python3
 # ---
+%matplotlib widget
 import os, sys
 
 sys.path.append(os.path.join("..", "..", ".."))
 
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import numpy as np
 
 from stgem.generator import STGEMResult
@@ -34,11 +36,10 @@ def load(path, prefix):
     files.sort()
     return load_results(files)
 
-
 output_path_base = os.path.join("..", "..", "..", "output")
 
 specification = "F16"
-experiments = ["F16", "F16_dense", "F16_batch", "F16_300", "F16_ne", "F16_lr1", "F16_uniform", "F16_python", "F16_python_keras"]
+experiments = ["F16", "F16_dense", "F16_batch", "F16_300", "F16_ne", "F16_lr1", "F16_uniform", "F16_uniform_keras"]
 
 results = {}
 for experiment in experiments:
@@ -109,3 +110,64 @@ axs.plot(Z[i][3], Z[i][1][0])
 
 print("Robustness: {}".format(Y[i]))
 
+# %%
+experiment = "F16_300"
+#experiment = "F16_uniform"
+idx = 5
+angle = 25
+
+X, _, Y = data = results[experiment][idx].test_repository.get()
+X = np.asarray(X)
+Y = np.asarray(Y).reshape(-1)
+
+#X = X[200:250,:]
+#Y = Y[200:250]
+
+fig = plt.figure(figsize=(10, 10))
+ax = fig.add_subplot(211, projection="3d")
+ax.azim = angle # rotate around the z axis
+#ax.dist = 1
+#ax.elev = elev
+
+# Map for transforming the objective value to a color.
+def transform_objective(x):
+    x = max(0, min(0.1, x))
+    return 1 - 5*x
+
+def transform_index(idx):
+    return (idx - 75)/150
+
+color_map = cm.get_cmap("Reds", 8)
+#colors = ["green" if i < 75 else color_map(transform_objective(Y[i])) for i in range(X.shape[0])]
+colors = []
+for i in range(X.shape[0]):
+    if Y[i] <= 0.0:
+        colors.append("purple")
+    elif i < 75:
+        colors.append("grey")
+    else:
+        colors.append(color_map(transform_index(i)))
+ax.scatter(X[:,0], X[:,1], X[:,2], s=50, alpha=0.6, edgecolors="w", c=colors)
+
+ax.set_xlabel("1")
+ax.set_xlim(-1, 1)
+ax.set_ylabel("2")
+ax.set_ylim(-1, 1)
+ax.set_zlabel("3")
+ax.set_zlim(-1, 1)
+
+ax = fig.add_subplot(212, projection="3d")
+ax.azim = angle
+
+A = [i for i in range(X.shape[0]) if Y[i] < 0.03]
+colors = ["green" if i < 75 else color_map(transform_index(i)) for i in A]
+ax.scatter(X[A,0], X[A,1], X[A,2], s=50, alpha=0.6, edgecolors="w", c=colors)
+
+ax.set_xlabel("1")
+ax.set_xlim(-1, 1)
+ax.set_ylabel("2")
+ax.set_ylim(-1, 1)
+ax.set_zlabel("3")
+ax.set_zlim(-1, 1)
+
+plt.show()

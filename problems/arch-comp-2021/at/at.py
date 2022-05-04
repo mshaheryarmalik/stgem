@@ -73,6 +73,7 @@ if __name__ == "__main__":
     selected_specification = sys.argv[1]
     N = int(sys.argv[2])
     init_seed = int(sys.argv[3])
+    identifier = sys.argv[4] if len(sys.argv) >= 5 else None
 
     description = "Automatic Transmission"
 
@@ -98,10 +99,11 @@ if __name__ == "__main__":
                        )      
         step_2 = Search(mode=mode,
                         budget_threshold={"executions": 300},
-                        #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
+                        algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
                         #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                        algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
+                        #algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                        )
+        #steps = [step_1]
         steps = [step_1, step_2]
 
         sut_list.append(asut)
@@ -136,7 +138,8 @@ if __name__ == "__main__":
     step_factory = generic_list_factory(step_list)
 
     def callback(result):
-        result.dump_to_file(os.path.join("output", "{}_{}.pickle".format(selected_specification, str(result.timestamp).replace(" ", "_"))))
+        file_name = "{}{}_{}.pickle".format(selected_specification, "_" + identifier if identifier is not None else "", str(result.timestamp).replace(" ", "_"))
+        result.dump_to_file(os.path.join("output", file_name))
 
     r = run_multiple_generators(N,
                                 description,

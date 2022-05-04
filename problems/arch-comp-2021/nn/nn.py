@@ -6,6 +6,8 @@ from stgem.objective import FalsifySTL
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
+from stgem.algorithm.wogan.algorithm import WOGAN
+from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.objective_selector import ObjectiveSelectorAll, ObjectiveSelectorMAB
 
@@ -101,10 +103,11 @@ if __name__ == "__main__":
                        )      
         step_2 = Search(mode=mode,
                         budget_threshold={"executions": 300},
-                        #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
+                        algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
                         #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                        algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
+                        #algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                        )
+        #steps = [step_1]
         steps = [step_1, step_2]
 
         sut_list.append(asut)
