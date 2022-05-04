@@ -30,6 +30,9 @@ def build_specification(selected_specification, asut=None):
     # Some ARCH-COMP specifications have requirements whose horizon is longer than
     # the output signal for some reason. Thus strict horizon check needs to be
     # disabled in some cases.
+    #
+    # The requirements ATX1* and ATX2 are from "Falsification of hybrid systems
+    # using adaptive probabilistic search" by Ernst et al.
     scale = True
     S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "AT1":
@@ -87,6 +90,27 @@ def build_specification(selected_specification, asut=None):
 
             specifications = [specification]
 
+        strict_horizon_check = True
+    elif selected_specification.startswith("ATX1"):
+        # always[0,30]( GEAR == {} implies SPEED > 10*{} )
+        # Only for {} == 3 or {} == 4.
+        G = int(selected_specification[-1])
+
+        L = STL.Equals(1, 0, 0, G, S("GEAR"))
+        R = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 10*G, S("SPEED"))
+
+        specification = STL.Global(0, 30, STL.Implication(L, R))
+
+        specifications = [specification]
+        strict_horizon_check = True
+    elif selected_specification == "ATX2":
+        # not(always[0,30]( 50 <= SPEED <= 60 ))
+        L = FalsifySTL.GreaterThan(1, 0, 0, 50, S("SPEED"))
+        R = STL.LessThan(1, 0, 0, 60, S("SPEED"))
+
+        specification = STL.Not(STL.Global(0, 30, STL.And(L, R)))
+
+        specifications = [specification]
         strict_horizon_check = True
     else:
         raise Exception("Unknown specification '{}'.".format(selected_specification))
