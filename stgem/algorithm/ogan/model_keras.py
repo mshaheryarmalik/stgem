@@ -62,7 +62,7 @@ class OGANK_Model(AlgModel):
         lf = "mean_squared_error"
         sizeD =  self.parameters["d_size"]
         sizeG =  self.parameters["g_size"]
-        input_shape = (self.sut.idim,)
+        input_shape = (self.n_inputs,)
         a = "relu"
 
 
@@ -70,7 +70,7 @@ class OGANK_Model(AlgModel):
         self.modelG.add(Dense(sizeG, input_dim=self.noise_dimensions))
         self.modelG.add(Dense(sizeG, activation=a))
         self.modelG.add(Dense(sizeG, activation=a))
-        self.modelG.add(Dense(self.sut.idim, activation="tanh"))
+        self.modelG.add(Dense(self.n_inputs, activation="tanh"))
 
         self.modelG.compile(
             loss=lf,
@@ -123,7 +123,7 @@ class OGANK_Model(AlgModel):
           N (int): Number of tests to be generated.
 
         Returns:
-          output (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          output (np.ndarray): Array of shape (N, self.n_inputs).
         """
 
         noise = np.random.normal(0, 1, size=(N, self.noise_dimensions))
@@ -137,7 +137,7 @@ class OGANK_Model(AlgModel):
         Predicts the objective function value of the given tests.
 
         Args:
-          test (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          test (np.ndarray): Array of shape (N, self.n_inputs).
 
         Returns:
           output (np.ndarray): Array of shape (N, 1).

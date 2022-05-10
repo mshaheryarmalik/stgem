@@ -16,8 +16,11 @@ class Model:
             parameters = copy.deepcopy(self.default_parameters)
         self.parameters = parameters
 
-    def setup(self, sut, device, logger=None):
-        self.sut = sut
+    def setup(self, n_inputs, n_outputs, device, logger=None):
+
+        self.n_inputs = n_inputs
+        self.n_outputs = n_outputs
+
         self.device = device
 
         self.logger = logger

@@ -67,12 +67,11 @@ class Search(Step):
         self.mode = mode
 
     def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device, logger):
+        self.sut=sut
+        self.test_repository=test_repository
         self.budget = budget
         self.budget.update_threshold(self.budget_threshold)
         self.algorithm.setup(
-            sut=sut,
-            test_repository=test_repository,
-            budget=budget,
             objective_funcs=objective_funcs,
             objective_selector=objective_selector,
             device=device,
@@ -90,13 +89,34 @@ class Search(Step):
         # generation and discard the final test if this is so.
         i = 0
         while self.budget.remaining() > 0:
+
+            self.perf.timer_start("training")
+            self.algorithm.train(self.objective_selector.select(), self.test_repository)
+            self.perf.save_history("training_time", self.perf.timer_reset("training"))
+
             try:
-                idx = next(generator)
+                self.perf.timer_start("generation")
+                next_test = self.algorithm.generate_next_test(self.test_repository)
+
             except StopIteration:
                 print("Generator finished before budget was exhausted.")
                 break
-            _, output = self.algorithm.test_repository.get(idx)
-            outputs.append(output)
+
+            finally:
+                self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
+
+            # Consume generation budget.
+            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1] +
+                                self.perf.get_history("training_time")[-1])
+
+            self.log("Executing the test...")
+            sut_result = self.sut.execute_test(next_test)
+            self.log("Result from the SUT {}".format(sut_result))
+            output = [objective(sut_result) for objective in self.objective_funcs]
+            self.log("The actual objective {} for the generated test.".format(output))
+
+            self.objective_selector.update(np.argmin(output))
+            self.test_repository.record(next_test,output)
 
             if not success and np.min(output) == 0:
                 print("First success at test {}.".format(i + 1))
@@ -110,16 +130,29 @@ class Search(Step):
         # allow the algorithm to store trained models or other generated data
         self.algorithm.finalize()
 
-        # report resuts
-        if len(outputs) > 0:
-            print("Step minimum objective components:")
-            print(np.min(np.asarray(outputs), axis=0))
+
 
         step_result = StepResult(self.algorithm.test_repository, success)
         step_result.algorithm_performance = self.algorithm.perf
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
 
         return step_result
+
+class LoaderStep(Step):
+    """
+    Step which simply loads pregenerated data from a file.
+    """
+
+    # TODO: Currently this is a placeholder and does nothing.
+
+    def __init__(self, parameters=None):
+        super().__init__(parameters)
+        return
+        # Check if the data file exists.
+        if not os.path.exists(self.data_file):
+            raise Exception("Pregenerated date file '{}' does not exist.".format(self.data_file))
+
+
 
 class STGEM:
 
@@ -201,6 +234,7 @@ class STGEM:
             results.append(step.run())
 
         sr = STGEMResult(self.description, self.test_repository, results, self.sut.perf)
+
 
         return sr
 

@@ -14,26 +14,23 @@ class Algorithm:
 
     def __init__(self, model_factory=None, parameters=None):
         self.model_factory = model_factory
-        self.N_models = 0
+        self.n_inputs = 0
+        self.n_outputs = 0
         self.models = []
 
         if parameters is None:
             parameters = copy.deepcopy(self.default_parameters)
 
         self.parameters = parameters
-        self.perf = PerformanceData()
 
     def create_models(self):
         if self.model_factory:
-            self.N_models = sum(1 for f in self.objective_funcs)
-            self.models = [self.model_factory() for _ in range(self.N_models)]
+            self.models = [self.model_factory() for _ in range(self.n_outputs)]
 
-    def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device=None, logger=None):
-        self.sut = sut
-        self.test_repository = test_repository
-        self.budget = budget
-        self.objective_funcs = objective_funcs
-        self.objective_selector = objective_selector
+    def setup(self,  n_inputs, n_outputs , device=None, logger=None):
+
+        self.n_inputs= n_inputs
+        self.n_outputs = n_outputs
         self.device = device
         self.logger = logger
         self.log = (lambda s: self.logger.algorithm.info(s) if logger is not None else None)
@@ -42,7 +39,7 @@ class Algorithm:
         self.parameters["device"] = device
         # Set input dimension.
         if not "input_dimension" in self.parameters:
-            self.parameters["input_dimension"] = self.sut.idim
+            self.parameters["input_dimension"] = self.n_inputs
 
         def copy_input_dimension(d, idim):
             for k,v in d.items():
@@ -69,8 +66,8 @@ class Algorithm:
 
         pass
 
-    def generate_test(self):
-        raise NotImplementedError()
+    def generate_next_test(self, test_repository):
+       raise NotImplementedError
 
     def finalize(self):
         """A Step calls this method after the budget has been exhausted and the
@@ -78,20 +75,4 @@ class Algorithm:
 
         pass
 
-class LoaderAlgorithm(Algorithm):
-    """
-    Algorithm which simply loads pregenerated data from a file.
-    """
 
-    # TODO: Currently this is a placeholder and does nothing.
-
-    def __init__(self, parameters=None):
-        super().__init__(parameters)
-        return
-        # Check if the data file exists.
-        if not os.path.exists(self.data_file):
-            raise Exception("Pregenerated date file '{}' does not exist.".format(self.data_file))
-
-    def generate_test(self):
-        return
-        yield

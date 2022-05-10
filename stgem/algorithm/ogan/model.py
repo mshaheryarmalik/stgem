@@ -45,12 +45,12 @@ class OGAN_Model(Model):
         }
     }
 
-    def setup(self, sut, device, logger):
-        super().setup(sut, device, logger)
+    def setup(self,  *args):
+        super().setup(*args)
 
         # Infer input and output dimensions for ML models.
-        self.parameters["generator_mlm_parameters"]["output_shape"] = self.sut.idim
-        self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.sut.idim
+        self.parameters["generator_mlm_parameters"]["output_shape"] = self.n_inputs
+        self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.n_inputs
 
         self._initialize()
 
@@ -183,6 +183,7 @@ class OGAN_Model(Model):
         while k < inputs.shape[0]:
             noise = torch.rand(1, self.modelG.input_shape)*2 - 1
             new_test = self.modelG(noise.to(self.device)).cpu().detach().numpy()
+            # TODO
             if self.sut.validity(new_test) == 0: continue
             inputs[k,:] = noise[0,:]
             k += 1
