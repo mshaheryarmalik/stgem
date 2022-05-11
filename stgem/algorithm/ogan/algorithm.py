@@ -34,7 +34,7 @@ class OGAN(Algorithm):
         self.perf.timer_start("training")
         for i in self.objective_selector.select_all():
             self.log("Training the OGAN model {}...".format(i + 1))
-            dataX, dataY = self.test_repository.get()
+            dataX, _, dataY = self.test_repository.get()
             dataX = np.array(dataX)
             dataY = np.array(dataY)[:, i].reshape(-1, 1)
             for epoch in range(self.models[i].train_settings_init["epochs"]):
@@ -118,15 +118,15 @@ class OGAN(Algorithm):
             # Consume generation budget.
             self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1] + self.perf.get_history("training_time")[-1])
 
-            sut_result = self.sut.execute_test(best_test)
-            self.log("Result from the SUT {}".format(sut_result))
-            output = [self.objective_funcs[i](sut_result) for i in range(self.N_models)]
+            sut_output = self.sut.execute_test(best_test)
+            self.log("Output from the SUT {}".format(sut_output))
+            output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
 
             self.log("The actual objective {} for the generated test.".format(output))
 
             # Add the new test to the test suite.
             # -----------------------------------------------------------------
-            idx = self.test_repository.record(best_test, output)
+            idx = self.test_repository.record(best_test, sut_output, output)
             self.objective_selector.update(np.argmin(output))
             tests_generated += 1
 
@@ -145,7 +145,7 @@ class OGAN(Algorithm):
                     self.log("Training the OGAN model {}...".format(i + 1))
                     # Reset the model.
                     self.models[i].reset()
-                    dataX, dataY = self.test_repository.get()
+                    dataX, _, dataY = self.test_repository.get()
                     dataX = np.array(dataX)
                     dataY = np.array(dataY)[:, i].reshape(-1, 1)
                     for epoch in range(self.models[i].train_settings["epochs"]):
