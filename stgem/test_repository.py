@@ -37,4 +37,3 @@ class TestRepository:
         Y = [self._outputs[i] for i in args]
 
         return X, Y
-

@@ -24,7 +24,7 @@ class OGAN(Algorithm):
 
         # Take into account how many tests a previous step (usually random
         # search) has generated.
-        tests_generated = test_repository.tests
+        self.tests_generated = test_repository.tests
 
         # TODO: Check that we have previously generated at least a couple of
         #       tests. Otherwise we get a cryptic error.
@@ -36,7 +36,7 @@ class OGAN(Algorithm):
         # caller to ensure that all models are trained here if so desired.
 
         for i in active_outputs:
-            if self.first_training or tests_generated - model_trained[i] >= self.train_delay:
+            if self.first_training or self.tests_generated - model_trained[i] >= self.train_delay:
                 self.log("Training the OGAN model {}...".format(i + 1))
                 if not self.first_training:
                     # Reset the model.
@@ -53,19 +53,17 @@ class OGAN(Algorithm):
                                                     dataY,
                                                     train_settings=self.models[i].train_settings_init,
                                                     )
-                model_trained[i] = tests_generated
+                model_trained[i] = self.tests_generated
         self.first_training = False
 
-    def generate_next_test(self, active_outputs, test_repository):
-
-        tests_generated = test_repository.tests
+    def generate_next_test(self, active_outputs):
 
         heap = []
         target_fitness = 0
         entry_count = 0  # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
         rounds = 0
         invalid = 0
-        self.log("Starting to generate test {} using the OGAN models {}.".format(tests_generated + 1, ",".join(
+        self.log("Starting to generate test {} using the OGAN models {}.".format(self.tests_generated + 1, ",".join(
             str(m + 1) for m in active_outputs)))
 
         while True:

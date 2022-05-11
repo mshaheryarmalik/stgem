@@ -66,7 +66,7 @@ class Algorithm:
 
         pass
 
-    def generate_next_test(self, test_repository):
+    def generate_next_test(self):
        raise NotImplementedError
 
     def finalize(self):

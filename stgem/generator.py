@@ -96,7 +96,7 @@ class Search(Step):
 
             try:
                 self.perf.timer_start("generation")
-                next_test = self.algorithm.generate_next_test(self.test_repository)
+                next_test = self.algorithm.generate_next_test()
 
             except StopIteration:
                 print("Generator finished before budget was exhausted.")
