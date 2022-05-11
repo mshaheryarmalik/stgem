@@ -41,7 +41,7 @@ class OGAN(Algorithm):
                 if not self.first_training:
                     # Reset the model.
                     self.models[i].reset()
-                dataX, dataY = self.test_repository.get()
+                dataX, _, dataY = self.test_repository.get()
                 dataX = np.array(dataX)
                 dataY = np.array(dataY)[:, i].reshape(-1, 1)
                 for epoch in range(self.models[i].train_settings_init["epochs"]):
@@ -109,5 +109,4 @@ class OGAN(Algorithm):
 
             self.log("Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
             return best_test
-
 

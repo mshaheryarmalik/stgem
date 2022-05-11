@@ -41,21 +41,21 @@ class Random(Algorithm):
 
             # Execute the test on the SUT.
             # -----------------------------------------------------------------
-            self.log("Chose test {} with predicted maximum objective 1. Generated total {} tests of which {} were invalid.".format(new_test, rounds, invalid))
+            self.log("Chose test {} with predicted objective 0. Generated total {} tests of which {} were invalid.".format(new_test, rounds, invalid))
             self.log("Executing the test...")
 
             # Consume generation budget.
             self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1])
 
-            sut_result = self.sut.execute_test(new_test)
-            self.log("Result from the SUT {}".format(sut_result))
-            output = [self.objective_funcs[i](sut_result) for i in range(self.N_models)]
+            sut_output = self.sut.execute_test(new_test)
+            self.log("Output from the SUT {}".format(sut_output))
+            output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
 
             self.log("The actual fitness {} for the generated test.".format(output))
 
             # Add the new test to the test suite.
             # -----------------------------------------------------------------
-            idx = self.test_repository.record(new_test.reshape(-1), output)
+            idx = self.test_repository.record(new_test.reshape(-1), sut_output, output)
             self.objective_selector.update(np.argmax(output))
 
             self.perf.save_history("training_time", 0)
