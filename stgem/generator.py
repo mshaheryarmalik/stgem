@@ -156,7 +156,8 @@ class STGEM:
         # Setup the objective selector.
         self.objective_selector.setup(self.objectives)
 
-    def setup_seed(self):
+    def setup_seed(self, seed=None):
+        self.seed = seed
         # We use a random seed unless it is specified.
         # Notice that making Pytorch deterministic makes it a lot slower.
         if self.seed:
@@ -169,8 +170,8 @@ class STGEM:
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
 
-    def setup(self):
-        self.setup_seed()
+    def setup(self, seed=None):
+        self.setup_seed(seed)
 
         self.setup_sut()
 
@@ -182,10 +183,8 @@ class STGEM:
 
         self.setup_objectives()
 
-    def run(self, seed=None) -> STGEMResult:
-        self.seed = seed
-        self.setup()
-
+    def _run(self) -> STGEMResult:
+        # Running this assumes that setup has been run.
         results = []
 
         # Setup and run steps sequentially.
@@ -203,4 +202,54 @@ class STGEM:
         sr = STGEMResult(self.description, self.test_repository, results, self.sut.perf)
 
         return sr
+
+    def run(self, seed=None) -> STGEMResult:
+        self.setup(seed)
+        return self._run()
+
+def run_one_job(parameters):
+    r = parameters[0].run(seed=parameters[1])
+
+    return r
+
+def run_multiple_generators(N, description, seed_factory, sut_factory, budget_factory, objective_factory, objective_selector_factory, step_factory, callback=None):
+    """Creates and runs multiple STGEM objects in parallel and collects
+    information on each run."""
+
+    # Create the STGEM objects to be run.
+    jobs = []
+    for i in range(N):
+        x = STGEM(description=description,
+                  sut=sut_factory(),
+                  budget=budget_factory(),
+                  objectives=objective_factory(),
+                  objective_selector=objective_selector_factory(),
+                  steps=step_factory()
+                 )
+        seed = seed_factory()
+        jobs.append((x, seed))
+
+    # Execute the generators.
+    # We remove the jobs from the list in order to free resources.
+    results = []
+    while len(jobs) > 0:
+        job = jobs.pop(0)
+        results.append(run_one_job(job))
+
+        if not callback is None:
+            callback(results[-1])
+
+    return results
+
+    """
+    # Matlab does not work with pickling used by multiprocessing.
+    # See https://stackoverflow.com/questions/55885741/how-to-run-matlab-function-with-spark
+    N_workers = 2
+    with Pool(N_workers) as pool:
+        r = pool.map(run_one_job, jobs)
+        pool.close()
+        pool.join()
+
+    return r
+    """
 
