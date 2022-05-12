@@ -36,6 +36,7 @@ class Minimize(Objective):
         self.parameters["selected"] = selected
         self.parameters["scale"] = scale
         self.parameters["invert"] = invert
+        self.parameters["clip"] = clip
 
     def __call__(self, r: SUTResult):
         assert r.output_timestamps is None
