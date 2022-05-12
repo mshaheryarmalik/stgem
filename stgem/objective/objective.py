@@ -5,16 +5,20 @@ import numpy as np
 
 from stgem.sut import SUTResult
 
-"""
-REMEMBER: Always clip the objective function values to [0, 1]. Otherwise we
-can get very wild losses when training neural networks. This is not good as
-then the loss minimization might focus on the wrong thing.
-"""
-
 class Objective:
+
+    def __init__(self):
+        self.parameters = {}
 
     def setup(self, sut):
         self.sut = sut
+
+    def __getattr__(self, name):
+        if "parameters" in self.__dict__:
+            if name in self.parameters:
+                return self.parameters.get(name)
+
+        raise AttributeError(name)
 
     def __call__(self, r: SUTResult):
         return r.outputs
@@ -29,10 +33,9 @@ class Minimize(Objective):
             raise Exception("The parameter 'selected' must be None or a list or a tuple.")
 
         self.dim = 1
-        self.selected = selected
-        self.scale = scale
-        self.invert = invert
-        self.clip = clip
+        self.parameters["selected"] = selected
+        self.parameters["scale"] = scale
+        self.parameters["invert"] = invert
 
     def __call__(self, r: SUTResult):
         assert r.output_timestamps is None
@@ -74,18 +77,31 @@ class FalsifySTL(Objective):
     """Objective function to falsify a STL specification. By default the
     robustness is not scaled, but if scale is True and variable ranges have
     been specified for the signals, then the robustness is scaled to
-    [0, 1]."""
+    [0, 1].
 
-    def __init__(self, specification, scale=False, strict_horizon_check=True):
+    The parameter strict_horizon_check controls if an exception is raised if
+    the signal is too short to determine the truth value of the specification.
+    If False and the signal is too short, then the best estimate for the
+    robustness is returned, but this value might be incorrect if the signal is
+    augmented with appropriate values.
+
+    The parameter epsilon is a value which is added to positive robustness
+    values. A positive epsilon value thus makes falsification harder. This is
+    sometimes useful if the observed values are very close to 0 but positive
+    and the machine learning models consider such a value to be 0. Raising the
+    bar a bit can encourage the models to work harder and eventually produce
+    robustness which is nonpositive."""
+
+    def __init__(self, specification, epsilon=0, scale=False, strict_horizon_check=True):
         super().__init__()
 
         self.dim = 1
         self.specification = specification
-
-        self.scale = scale
+        self.parameters["epsilon"] = epsilon
+        self.parameters["scale"] = scale
         if self.scale and self.specification.var_range is None:
             raise Exception("The specification does not include a range for robustness. This is needed for scaling.")
-        self.strict_horizon_check = strict_horizon_check
+        self.parameters["strict_horizon_check"] = strict_horizon_check
 
     def setup(self, sut):
         super().setup(sut)
@@ -117,22 +133,24 @@ class FalsifySTL(Objective):
             else: #formula.arity == 2:
                 return bounded(formula.left_subformula) + bounded(formula.right_subformula)
 
-        # Find the smallest positive time bound referred to in the formula and
-        # use it divided by K as the unit time.
+        # Sampling period equals the minimum of the smallest positive time
+        # bound referred to in the formula divided by K and the sampling step
+        # of the SUT (if it exists). Compute the first number.
         K = 10
         self.time_bounded = bounded(self.specification)
-        self.sampling_period = 1
+        first = 1
         for x in self.time_bounded:
-            if x.lower_time_bound > 0 and x.lower_time_bound < self.sampling_period:
-                self.sampling_period = x.lower_time_bound
-            if x.upper_time_bound > 0 and x.upper_time_bound < self.sampling_period:
-                self.sampling_period = x.upper_time_bound
-        self.sampling_period /= K
-        # We round to the closest power of 10 although the formula time bounds
-        # should be perfect powers already.
-        #from math import log10
-        #self.sampling_period = 10**(int(log10(self.sampling_period)))
-        # TODO: Implement variable constant scaling for predicates.
+            if x.lower_time_bound > 0 and x.lower_time_bound < first:
+                first = x.lower_time_bound
+            if x.upper_time_bound > 0 and x.upper_time_bound < first:
+                first = x.upper_time_bound
+        first /= K
+        if hasattr(self.sut, "sampling_step"):
+            self.sampling_period = min(first, self.sut.sampling_step)
+        else:
+            self.sampling_period = first
+        from math import log10, floor
+        self.precision = abs(floor(log10(self.sampling_period)))
 
         # Create a mapping for an easy access to correct signal. Save which
         # variables refer to input signals and which to output signals.
@@ -187,6 +205,7 @@ class FalsifySTL(Objective):
             else:
                 B = self.specification.var_range[1]
                 robustness *= 1/B
+                robustness += self.epsilon
                 robustness = min(1, robustness)
 
         return robustness
@@ -231,14 +250,13 @@ class FalsifySTL(Objective):
         1e-4, but this should be enough.
         """
 
-        if self.sampling_period is None:
-            raise Exception("STL sampling period must be defined for signal outputs.")
-
         # This check is necessary for validity.
         if output_timestamps[0] != 0 or (input_timestamps is not None and input_timestamps[0] != 0):
             raise Exception("The first timestamp should be 0 in both input and output signals.")
 
         T = max(output_timestamps[-1], 0 if input_timestamps is None else input_timestamps[-1])
+        # Round to the same scale as the sampling period.
+        T = round(T, self.precision)
         timestamps = [i*self.sampling_period for i in range(0, int(T/self.sampling_period) + 1)]
 
         # Fill in missing signal values for new timestamps by assuming constant
@@ -264,7 +282,8 @@ class FalsifySTL(Objective):
 
         self.specification.reset()
 
-        if self.strict_horizon_check and self.horizon > timestamps[-1]:
+        # Allow slight inaccuracy in horizon check.
+        if self.strict_horizon_check and self.horizon - 1e-4 > timestamps[-1]:
             raise Exception("The horizon {} of the formula is too long compared to signal length {}. The robustness cannot be computed.".format(self.horizon, timestamps[-1]))
 
         # Adjust time bounds.
@@ -293,6 +312,7 @@ class FalsifySTL(Objective):
             else:
                 B = self.specification.var_range[1]
                 robustness *= 1/B
+                robustness += self.epsilon
                 robustness = min(1, robustness)
 
         return robustness

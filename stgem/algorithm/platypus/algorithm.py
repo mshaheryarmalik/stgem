@@ -33,15 +33,15 @@ class PlatypusOpt(Algorithm):
             # Consume generation budget.
             self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1])
 
-            sut_result = self.sut.execute_test(np.array(test))
-            output = [self.objective_funcs[i](sut_result) for i in range(self.sut.odim)]
+            sut_output = self.sut.execute_test(np.array(test))
+            self.log("Output from the SUT {}".format(sut_output))
+            output = [self.objective_funcs[i](sut_output) for i in range(self.sut.odim)]
 
-            self.log("Result from the SUT {}".format(sut_result))
             self.log("The actual objective {} for the generated test.".format(output))
 
             # Add the new test to the test suite.
             # -----------------------------------------------------------------
-            idx = self.test_repository.record(test, output)
+            idx = self.test_repository.record(test, sut_output, output)
             self.lastIdx = idx
             self.objective_selector.update(np.argmin(output))
 

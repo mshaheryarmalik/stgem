@@ -1,6 +1,7 @@
-import os, time, datetime, random, logging
+import copy, os, time, datetime, random, logging
 
 from collections import namedtuple
+from multiprocessing import Pool
 import dill as pickle
 
 import numpy as np
@@ -14,18 +15,22 @@ from stgem.budget import Budget
 
 class StepResult:
 
-    def __init__(self, test_repository, success):
+    def __init__(self, test_repository, success, parameters):
         self.timestamp = datetime.datetime.now()
         self.test_repository = test_repository
         self.success = success
+        self.parameters = parameters
         self.algorithm_performance = None
         self.model_performance = None
 
 class STGEMResult:
 
-    def __init__(self, description, test_repository, step_results, sut_performance):
+    def __init__(self, description, sut_name, sut_parameters, seed, test_repository, step_results, sut_performance):
         self.timestamp = datetime.datetime.now()
         self.description = description
+        self.sut_name = sut_name
+        self.sut_parameters = sut_parameters
+        self.seed = seed
         self.step_results = step_results
         self.test_repository = test_repository
         self.sut_performance = sut_performance
@@ -82,40 +87,52 @@ class Search(Step):
         # allow the algorithm to initialize itself
         self.algorithm.initialize()
 
-        success = False
-        generator = self.algorithm.generate_test()
-        outputs = []
+        if not (self.mode == "stop_at_first_objective" and self.algorithm.test_repository.minimum_objective == 0.0):
+            success = False
+            generator = self.algorithm.generate_test()
 
-        # TODO: We should check if the budget was exhausted during the test
-        # generation and discard the final test if this is so.
-        i = 0
-        while self.budget.remaining() > 0:
-            try:
-                idx = next(generator)
-            except StopIteration:
-                print("Generator finished before budget was exhausted.")
-                break
-            _, output = self.algorithm.test_repository.get(idx)
-            outputs.append(output)
+            # TODO: We should check if the budget was exhausted during the test
+            # generation and discard the final test if this is so.
+            i = 0
+            while self.budget.remaining() > 0:
+                try:
+                    idx = next(generator)
+                except StopIteration:
+                    print("Generator finished before budget was exhausted.")
+                    break
 
-            if not success and np.min(output) == 0:
-                print("First success at test {}.".format(i + 1))
-                success = True
+                if not success and np.min(self.algorithm.test_repository.minimum_objective) == 0:
+                    print("First success at test {}.".format(i + 1))
+                    success = True
 
-            if success and self.mode == "stop_at_first_objective":
-                break
+                if success and self.mode == "stop_at_first_objective":
+                    break
 
-            i += 1
+                i += 1
+        else:
+            success = True
 
         # allow the algorithm to store trained models or other generated data
         self.algorithm.finalize()
 
         # report resuts
-        if len(outputs) > 0:
-            print("Step minimum objective components:")
-            print(np.min(np.asarray(outputs), axis=0))
+        print("Step minimum objective component: {}".format(self.algorithm.test_repository.minimum_objective))
 
-        step_result = StepResult(self.algorithm.test_repository, success)
+        # Save certain parameters in the StepResult object.
+        parameters = {}
+        parameters["algorithm_name"] = self.algorithm.__class__.__name__
+        parameters["algorithm"] = copy.deepcopy(self.algorithm.parameters)
+        if "device" in parameters["algorithm"]:
+            del parameters["algorithm"]["device"]
+        parameters["model_name"] = [self.algorithm.models[i].__class__.__name__ for i in range(self.algorithm.N_models)]
+        parameters["model"] = [copy.deepcopy(self.algorithm.models[i].parameters) for i in range(self.algorithm.N_models)]
+        parameters["objective_name"] = [objective.__class__.__name__ for objective in self.algorithm.objective_funcs]
+        parameters["objective"] = [copy.deepcopy(objective.parameters) for objective in self.algorithm.objective_funcs]
+        parameters["objective_selector_name"] = self.algorithm.objective_selector.__class__.__name__
+        parameters["objective_selector"] = copy.deepcopy(self.algorithm.objective_selector.parameters)
+
+        # Build the StepResult object.
+        step_result = StepResult(self.algorithm.test_repository, success, parameters)
         step_result.algorithm_performance = self.algorithm.perf
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
 
@@ -146,7 +163,7 @@ class STGEM:
         self.logger = namedtuple("Logger", logger_names)(**loggers)
 
     def setup_sut(self):
-        self.sut.setup(self.budget)
+        self.sut.setup(self.budget, self.sut_rng)
 
     def setup_objectives(self):
         # Setup the objective functions for optimization.
@@ -160,7 +177,7 @@ class STGEM:
         self.seed = seed
         # We use a random seed unless it is specified.
         # Notice that making Pytorch deterministic makes it a lot slower.
-        if self.seed:
+        if self.seed is not None:
             torch.use_deterministic_algorithms(mode=True)
             os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
         else:
@@ -170,8 +187,12 @@ class STGEM:
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
 
-    def setup(self, seed=None):
-        self.setup_seed(seed)
+        # A random source for SUT for deterministic random samples from the
+        # input space.
+        self.sut_rng = np.random.RandomState(seed=self.seed)
+
+    def setup(self):
+        self.setup_seed()
 
         self.setup_sut()
 
@@ -188,6 +209,7 @@ class STGEM:
         results = []
 
         # Setup and run steps sequentially.
+        step_results = []
         for step in self.steps:
             step.setup(
                 sut=self.sut,
@@ -197,9 +219,9 @@ class STGEM:
                 objective_selector=self.objective_selector,
                 device=self.device,
                 logger=self.logger)
-            results.append(step.run())
+            step_results.append(step.run())
 
-        sr = STGEMResult(self.description, self.test_repository, results, self.sut.perf)
+        sr = STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
 
         return sr
 

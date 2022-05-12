@@ -30,7 +30,7 @@ class WOGAN_Model(Model):
             "optimizer": "Adam",
             "lr": 0.005,
             "betas": [0, 0.9],
-            "loss": "MSE,logit",
+            "loss": "MSE,Logit",
             "l2_regularization_coef": 0.001,
             "analyzer_mlm": "AnalyzerNetwork",
             "analyzer_mlm_parameters": {
@@ -60,7 +60,6 @@ class WOGAN_Model(Model):
             "generator_steps": 1
         }
     }
-
 
     def setup(self, sut, device, logger):
         super().setup(sut, device, logger)
@@ -94,6 +93,16 @@ class WOGAN_Model(Model):
         critic_parameters = {k[7:]:v for k, v in self.parameters.items() if k.startswith("critic")}
         self.optimizerC = critic_optimizer_class(self.modelC.parameters(), **algorithm.filter_arguments(critic_parameters, critic_optimizer_class))
 
+        # Setup loss saving etc.
+        self.losses_A = []
+        self.losses_C = []
+        self.gradient_penalties = []
+        self.losses_G = []
+        self.perf.save_history("analyzer_loss", self.losses_A)
+        self.perf.save_history("critic_loss", self.losses_C)
+        self.perf.save_history("gradient_penalty", self.gradient_penalties)
+        self.perf.save_history("generator_loss", self.losses_G)
+
     def train_analyzer_with_batch(self, data_X, data_Y, train_settings):
         """
         Train the analyzer part of the model with a batch of training data.
@@ -119,6 +128,7 @@ class WOGAN_Model(Model):
             losses.append(loss)
 
         m = np.mean(losses)
+        self.losses_A += losses
         self.log("Analyzer epochs {}, Loss: {} -> {} (mean {})".format(train_settings["analyzer_epochs"], losses[0], losses[-1], m))
 
     def train_with_batch(self, data_X, train_settings):
@@ -156,7 +166,7 @@ class WOGAN_Model(Model):
         # ---------------------------------------------------------------------
         self.modelC.train(True)
         losses = torch.zeros(critic_steps)
-        gps = torch.zeros(critic_steps)
+        gradient_penalties = torch.zeros(critic_steps)
         for m in range(critic_steps):
             # Here the mini batch size of the WGAN-GP is set to be the number
             # of training samples for the critic
@@ -198,14 +208,16 @@ class WOGAN_Model(Model):
 
             C_loss = fake_loss - real_loss + self.gp_coefficient*gradient_penalty
             losses[m] = C_loss
-            gps[m] = self.gp_coefficient*gradient_penalty
+            gradient_penalties[m] = self.gp_coefficient*gradient_penalty
             self.optimizerC.zero_grad()
             C_loss.backward()
             self.optimizerC.step()
 
+        self.losses_C += losses
+        self.gradient_penalties += gradient_penalties
         m1 = losses.mean()
-        m2 = gps.mean()
-        self.log("Critic steps {}, Loss: {} -> {} (mean {}), GP: {} -> {} (mean {})".format(critic_steps, losses[0], losses[-1], m1, gps[0], gps[-1], m2))
+        m2 = gradient_penalties.mean()
+        self.log("Critic steps {}, Loss: {} -> {} (mean {}), GP: {} -> {} (mean {})".format(critic_steps, losses[0], losses[-1], m1, gradient_penalties[0], gradient_penalties[-1], m2))
 
         self.modelC.train(False)
 
@@ -228,6 +240,7 @@ class WOGAN_Model(Model):
             self.optimizerG.step()
 
         m = losses.mean()
+        self.losses_G += losses
         self.log("Generator steps {}, Loss: {} -> {} (mean {})".format(generator_steps, losses[0], losses[-1], m))
 
         self.modelG.train(False)
