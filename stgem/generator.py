@@ -73,7 +73,6 @@ class Search(Step):
 
     def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device, logger):
         self.budget = budget
-        self.budget.update_threshold(self.budget_threshold)
         self.algorithm.setup(
             sut=sut,
             test_repository=test_repository,
@@ -84,6 +83,8 @@ class Search(Step):
             logger=logger)
 
     def run(self, silent=False) -> StepResult:
+        self.budget.update_threshold(self.budget_threshold)
+
         # allow the algorithm to initialize itself
         self.algorithm.initialize()
 
@@ -94,7 +95,7 @@ class Search(Step):
             # TODO: We should check if the budget was exhausted during the test
             # generation and discard the final test if this is so.
             i = 0
-            while self.budget.remaining() > 0:
+            while self.budget.remaining():
                 try:
                     idx = next(generator)
                 except StopIteration:
