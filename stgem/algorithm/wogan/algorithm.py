@@ -209,7 +209,9 @@ class WOGAN(Algorithm):
                 target_fitness = 1 - self.fitness_coef*(1 - target_fitness)
 
                 # Check if the best predicted test is good enough.
-                if heap[0][0] <= target_fitness: break
+                # Without eps we could get stuck if prediction is always 1.0.
+                eps = 1e-4
+                if heap[0][0] - eps <= target_fitness: break
 
             # Save information on how many tests needed to be generated etc.
             # -----------------------------------------------------------------
