@@ -43,12 +43,12 @@ class TestPython(unittest.TestCase):
                    ]
 
         def objective_selector_factory():
-            return ObjectiveSelectorMAB(warm_up=65)
+            return ObjectiveSelectorMAB(warm_up=25)
 
         def step_factory():
-            return [Search(budget_threshold={"executions": 50},
+            return [Search(budget_threshold={"executions": 20},
                            algorithm=Random(model_factory=(lambda: Uniform()))),
-                    Search(budget_threshold={"executions": 200},
+                    Search(budget_threshold={"executions": 100},
                            algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
                    ]
 
