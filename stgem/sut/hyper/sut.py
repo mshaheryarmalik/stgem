@@ -3,6 +3,7 @@ import numpy as np
 from stgem.sut import SUT, SUTResult
 
 class Range:
+    """Continuous range [A, B]."""
 
     def __init__(self, A, B):
         self.A = A
@@ -11,6 +12,19 @@ class Range:
     def __call__(self, x):
         # Scale from [-1, 1] to [A, B].
         return 0.5*((self.B - self.A)*x + self.A + self.B)
+
+class Categorical:
+    """Categorical variable."""
+
+    def __init__(self, values):
+        self.values = values
+
+    def __call__(self, x):
+        # We split [-1, 1] into len(self.values) parts, the first part
+        # corresponds to the first variable value, second to second variable,
+        # etc.
+        idx = int(0.5*(x + 1)*len(self.values)) if x < 1 else len(self.values) - 1
+        return self.values[idx]
 
 class HyperParameter(SUT):
 
@@ -41,6 +55,7 @@ class HyperParameter(SUT):
             self.odim = 1
 
     def edit_generator(self, generator, test):
+        test = test.reshape(-1)
         for n, (hp_func, hp_domain) in enumerate(self.hyperparameters):
             hp_func(generator, hp_domain(test[n]))
 
