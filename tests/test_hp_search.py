@@ -1,9 +1,11 @@
 import unittest
 
+import numpy as np
+
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.experiment import Experiment
-from stgem.sut.hyper import HyperParameter, Range
+from stgem.sut.hyper import HyperParameter, Range, Categorical
 from stgem.sut.mo3d import MO3D
 from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorAll, ObjectiveSelectorMAB
@@ -16,10 +18,20 @@ from stgem.algorithm.random.model import Uniform, LHS
 class TestPython(unittest.TestCase):
 
     def test_hp_search(self):
-        # We change the fitness coefficient in the OGAN step.
-        def f(generator, value):
-            generator.steps[1].algorithm.fitness_coefficient = value
-        sut_parameters = {"hyperparameters": [[f, Range(0, 1)]]}
+        # We change the learning rates of the discriminator and the generator.
+        def f1(generator, value):
+            # Setup on generator has been called already, so the model objects
+            # exist. We edit their parameter dictionaries and resetup them.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["discriminator_lr"] = value
+                model.setup(model.sut, model.device, model.logger)
+        def f2(generator, value):
+            # Similar to above.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["generator_lr"] = value
+                model.setup(model.sut, model.device, model.logger)
+
+        hp_sut_parameters = {"hyperparameters": [[f1, Categorical([0.1, 0.01, 0.001, 0.0001])], [f2, Categorical([0.1, 0.01, 0.001, 0.0001])]]}
 
         def sut_factory():
             return MO3D()
@@ -31,17 +43,17 @@ class TestPython(unittest.TestCase):
                    ]
 
         def objective_selector_factory():
-            return ObjectiveSelectorMAB(warm_up=60)
+            return ObjectiveSelectorMAB(warm_up=65)
 
         def step_factory():
             return [Search(budget_threshold={"executions": 50},
                            algorithm=Random(model_factory=(lambda: Uniform()))),
-                    Search(budget_threshold={"executions": 300},
+                    Search(budget_threshold={"executions": 200},
                            algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
                    ]
 
-        def generator_factory(sut_factory, objective_factory, objective_selector_factory, step_factory):
-            def f():
+        def get_generator_factory(sut_factory, objective_factory, objective_selector_factory, step_factory):
+            def generator_factory():
                 return STGEM(description="",
                              sut=sut_factory(),
                              budget=Budget(),
@@ -49,11 +61,11 @@ class TestPython(unittest.TestCase):
                              objective_selector=objective_selector_factory(),
                              steps=step_factory())
 
-            return f
+            return generator_factory
 
         def get_seed_factory():
             def seed_generator():
-                c = 0
+                c = 25321
                 while True:
                     yield c
                     c += 1
@@ -62,27 +74,33 @@ class TestPython(unittest.TestCase):
             return lambda: next(g)
 
         def experiment_factory():
-            return Experiment(5, generator_factory(sut_factory, objective_factory, objective_selector_factory, step_factory), get_seed_factory())
+            N = 10
+            return Experiment(N, get_generator_factory(sut_factory, objective_factory, objective_selector_factory, step_factory), get_seed_factory())
+
+        # Note: Latin hypercube design makes sense with categorical values.
+        # Otherwise certain values can be never considered.
 
         mode = "falsification_rate"
         generator = STGEM(
                           description="Hyperparameter search",
-                          sut=HyperParameter(mode, experiment_factory, sut_parameters),
+                          sut=HyperParameter(mode, experiment_factory, hp_sut_parameters),
                           budget=Budget(),
                           objectives=[Minimize(selected=[0], scale=False)],
                           objective_selector=ObjectiveSelectorAll(),
                           steps=[
                               Search(budget_threshold={"executions": 5},
-                                     algorithm=Random(model_factory=(lambda: Uniform())))
+                                     algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 5}))))
+                                     #algorithm=Random(model_factory=(lambda: Uniform())))
                           ]
         )
 
         r = generator.run()
 
         X, Z, Y = generator.test_repository.get()
-        print(X)
-        print(Y)
-        print("--------")
+        Y = np.array(Y).reshape(-1)
+        for n in range(len(X)):
+            X2 = [hp_sut_parameters["hyperparameters"][i][1](x) for i, x in enumerate(X[n])]
+            print("{} -> {}".format(X2, 1 - Y[n]))
 
 if __name__ == "__main__":
     unittest.main()
