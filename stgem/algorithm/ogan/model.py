@@ -106,8 +106,9 @@ class OGAN_Model(Model):
         # Setup loss saving.
         self.losses_D = []
         self.losses_G = []
-        self.perf.save_history("discriminator_loss", self.losses_D)
-        self.perf.save_history("generator_loss", self.losses_G)
+        # We set single = True in case setup is called repeatedly.
+        self.perf.save_history("discriminator_loss", self.losses_D, single=True)
+        self.perf.save_history("generator_loss", self.losses_G, single=True)
 
     def reset(self):
         self._initialize()

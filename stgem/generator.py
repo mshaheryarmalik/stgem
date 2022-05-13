@@ -73,7 +73,6 @@ class Search(Step):
 
     def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device, logger):
         self.budget = budget
-        self.budget.update_threshold(self.budget_threshold)
         self.algorithm.setup(
             sut=sut,
             test_repository=test_repository,
@@ -83,7 +82,9 @@ class Search(Step):
             device=device,
             logger=logger)
 
-    def run(self) -> StepResult:
+    def run(self, silent=False) -> StepResult:
+        self.budget.update_threshold(self.budget_threshold)
+
         # allow the algorithm to initialize itself
         self.algorithm.initialize()
 
@@ -94,15 +95,17 @@ class Search(Step):
             # TODO: We should check if the budget was exhausted during the test
             # generation and discard the final test if this is so.
             i = 0
-            while self.budget.remaining() > 0:
+            while self.budget.remaining():
                 try:
                     idx = next(generator)
                 except StopIteration:
-                    print("Generator finished before budget was exhausted.")
+                    if not silent:
+                        print("Generator finished before budget was exhausted.")
                     break
 
                 if not success and np.min(self.algorithm.test_repository.minimum_objective) == 0:
-                    print("First success at test {}.".format(i + 1))
+                    if not silent:
+                        print("First success at test {}.".format(i + 1))
                     success = True
 
                 if success and self.mode == "stop_at_first_objective":
@@ -116,7 +119,8 @@ class Search(Step):
         self.algorithm.finalize()
 
         # report resuts
-        print("Step minimum objective component: {}".format(self.algorithm.test_repository.minimum_objective))
+        if not silent:
+            print("Step minimum objective component: {}".format(self.algorithm.test_repository.minimum_objective))
 
         # Save certain parameters in the StepResult object.
         parameters = {}
@@ -173,7 +177,8 @@ class STGEM:
         # Setup the objective selector.
         self.objective_selector.setup(self.objectives)
 
-    def setup_seed(self):
+    def setup_seed(self, seed=None):
+        self.seed = seed
         # We use a random seed unless it is specified.
         # Notice that making Pytorch deterministic makes it a lot slower.
         if self.seed is not None:
@@ -190,8 +195,20 @@ class STGEM:
         # input space.
         self.sut_rng = np.random.RandomState(seed=self.seed)
 
-    def setup(self):
-        self.setup_seed()
+    def setup_steps(self, silent=False):
+        logger = self.logger if not silent else None
+        for step in self.steps:
+            step.setup(
+                sut=self.sut,
+                test_repository=self.test_repository,
+                budget=self.budget,
+                objective_funcs=self.objectives,
+                objective_selector=self.objective_selector,
+                device=self.device,
+                logger=logger)
+
+    def setup(self, seed=None, silent=False):
+        self.setup_seed(seed=seed)
 
         self.setup_sut()
 
@@ -203,26 +220,24 @@ class STGEM:
 
         self.setup_objectives()
 
-    def run(self, seed=None) -> STGEMResult:
-        self.seed = seed
-        self.setup()
+        self.setup_steps(silent=silent)
+
+    def _run(self, silent=False) -> STGEMResult:
+        # Running this assumes that setup has been run.
+        results = []
 
         # Setup and run steps sequentially.
         step_results = []
         for step in self.steps:
-            step.setup(
-                sut=self.sut,
-                test_repository=self.test_repository,
-                budget=self.budget,
-                objective_funcs=self.objectives,
-                objective_selector=self.objective_selector,
-                device=self.device,
-                logger=self.logger)
-            step_results.append(step.run())
+            step_results.append(step.run(silent=silent))
 
         sr = STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
 
         return sr
+
+    def run(self, seed=None, silent=False) -> STGEMResult:
+        self.setup(seed, silent=silent)
+        return self._run(silent=silent)
 
 def run_one_job(parameters):
     r = parameters[0].run(seed=parameters[1])

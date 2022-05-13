@@ -23,11 +23,6 @@ class Algorithm:
         self.parameters = parameters
         self.perf = PerformanceData()
 
-    def create_models(self):
-        if self.model_factory:
-            self.N_models = sum(1 for f in self.objective_funcs)
-            self.models = [self.model_factory() for _ in range(self.N_models)]
-
     def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device=None, logger=None):
         self.sut = sut
         self.test_repository = test_repository
@@ -44,18 +39,13 @@ class Algorithm:
         if not "input_dimension" in self.parameters:
             self.parameters["input_dimension"] = self.sut.idim
 
-        def copy_input_dimension(d, idim):
-            for k,v in d.items():
-                if v=="copy:input_dimension":
-                   d[k] = idim
-                if isinstance(v, dict):
-                    copy_input_dimension(v,idim)
-
-        copy_input_dimension(self.parameters, self.sut.idim)
-        self.create_models()
-
-        for m in self.models:
-            m.setup(self.sut, self.device, self.logger)
+        # Create models.
+        if self.model_factory:
+            self.N_models = sum(1 for f in self.objective_funcs)
+            for _ in range(self.N_models):
+                model = self.model_factory()
+                model.setup(self.sut, self.device, self.logger)
+                self.models.append(model)
 
     def __getattr__(self, name):
         if "parameters" in self.__dict__:
