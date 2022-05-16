@@ -31,7 +31,7 @@ class Algorithm:
         self.objective_selector = objective_selector
         self.device = device
         self.logger = logger
-        self.log = (lambda s: self.logger.algorithm.info(s) if logger is not None else None)
+        self.log = lambda msg: (self.logger("algorithm", msg) if logger is not None else None)
 
         # Setup the device.
         self.parameters["device"] = device

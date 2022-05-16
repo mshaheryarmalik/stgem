@@ -1,4 +1,4 @@
-import copy, os, time, datetime, random, logging
+import copy, os, time, datetime, random
 
 from collections import namedtuple
 from multiprocessing import Pool
@@ -8,10 +8,11 @@ import numpy as np
 import torch
 
 from stgem.algorithm.algorithm import Algorithm
+from stgem.budget import Budget
+from stgem.logger import Logger
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut import SUT
 from stgem.test_repository import TestRepository
-from stgem.budget import Budget
 
 class StepResult:
 
@@ -66,13 +67,16 @@ class Search(Step):
         self.algorithm = algorithm
         self.budget = None
         self.budget_threshold = budget_threshold
+        self.logger = None
+
         if mode not in ["exhaust_budget", "stop_at_first_objective"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
-
         self.mode = mode
 
     def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device, logger):
         self.budget = budget
+        self.logger = logger
+        self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
         self.algorithm.setup(
             sut=sut,
             test_repository=test_repository,
@@ -82,7 +86,7 @@ class Search(Step):
             device=device,
             logger=logger)
 
-    def run(self, silent=False) -> StepResult:
+    def run(self) -> StepResult:
         self.budget.update_threshold(self.budget_threshold)
 
         # allow the algorithm to initialize itself
@@ -99,13 +103,11 @@ class Search(Step):
                 try:
                     idx = next(generator)
                 except StopIteration:
-                    if not silent:
-                        print("Generator finished before budget was exhausted.")
+                    self.log("Generator finished before budget was exhausted.")
                     break
 
                 if not success and np.min(self.algorithm.test_repository.minimum_objective) == 0:
-                    if not silent:
-                        print("First success at test {}.".format(i + 1))
+                    self.log("First success at test {}.".format(i + 1))
                     success = True
 
                 if success and self.mode == "stop_at_first_objective":
@@ -115,12 +117,11 @@ class Search(Step):
         else:
             success = True
 
-        # allow the algorithm to store trained models or other generated data
+        # Allow the algorithm to store trained models or other generated data.
         self.algorithm.finalize()
 
-        # report resuts
-        if not silent:
-            print("Step minimum objective component: {}".format(self.algorithm.test_repository.minimum_objective))
+        # Report results.
+        self.log("Step minimum objective component: {}".format(self.algorithm.test_repository.minimum_objective))
 
         # Save certain parameters in the StepResult object.
         parameters = {}
@@ -157,14 +158,7 @@ class STGEM:
         self.steps = steps
         self.device = None
 
-        # Setup loggers.
-        # ---------------------------------------------------------------------
-        logger_names = ["algorithm", "model"]
-        logging.basicConfig(level=logging.DEBUG, format="%(name)s: %(message)s")
-        loggers = {x: logging.getLogger(x) for x in ["algorithm", "model"]}
-        for logger in loggers.values():
-            logger.setLevel("DEBUG")
-        self.logger = namedtuple("Logger", logger_names)(**loggers)
+        self.logger = Logger()
 
     def setup_sut(self):
         self.sut.setup(self.budget, self.sut_rng)
@@ -195,8 +189,7 @@ class STGEM:
         # input space.
         self.sut_rng = np.random.RandomState(seed=self.seed)
 
-    def setup_steps(self, silent=False):
-        logger = self.logger if not silent else None
+    def setup_steps(self):
         for step in self.steps:
             step.setup(
                 sut=self.sut,
@@ -205,9 +198,9 @@ class STGEM:
                 objective_funcs=self.objectives,
                 objective_selector=self.objective_selector,
                 device=self.device,
-                logger=logger)
+                logger=self.logger)
 
-    def setup(self, seed=None, silent=False):
+    def setup(self, seed=None):
         self.setup_seed(seed=seed)
 
         self.setup_sut()
@@ -220,68 +213,27 @@ class STGEM:
 
         self.setup_objectives()
 
-        self.setup_steps(silent=silent)
+        self.setup_steps()
 
     def _run(self, silent=False) -> STGEMResult:
         # Running this assumes that setup has been run.
         results = []
 
+        silent_tmp = self.logger.silent
+        self.logger.silent = silent
+
         # Setup and run steps sequentially.
         step_results = []
         for step in self.steps:
-            step_results.append(step.run(silent=silent))
+            step_results.append(step.run())
 
         sr = STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
+
+        self.logger.silent = silent_tmp
 
         return sr
 
     def run(self, seed=None, silent=False) -> STGEMResult:
-        self.setup(seed, silent=silent)
+        self.setup(seed)
         return self._run(silent=silent)
-
-def run_one_job(parameters):
-    r = parameters[0].run(seed=parameters[1])
-
-    return r
-
-def run_multiple_generators(N, description, seed_factory, sut_factory, budget_factory, objective_factory, objective_selector_factory, step_factory, callback=None):
-    """Creates and runs multiple STGEM objects in parallel and collects
-    information on each run."""
-
-    # Create the STGEM objects to be run.
-    jobs = []
-    for i in range(N):
-        x = STGEM(description=description,
-                  sut=sut_factory(),
-                  budget=budget_factory(),
-                  objectives=objective_factory(),
-                  objective_selector=objective_selector_factory(),
-                  steps=step_factory()
-                 )
-        seed = seed_factory()
-        jobs.append((x, seed))
-
-    # Execute the generators.
-    # We remove the jobs from the list in order to free resources.
-    results = []
-    while len(jobs) > 0:
-        job = jobs.pop(0)
-        results.append(run_one_job(job))
-
-        if not callback is None:
-            callback(results[-1])
-
-    return results
-
-    """
-    # Matlab does not work with pickling used by multiprocessing.
-    # See https://stackoverflow.com/questions/55885741/how-to-run-matlab-function-with-spark
-    N_workers = 2
-    with Pool(N_workers) as pool:
-        r = pool.map(run_one_job, jobs)
-        pool.close()
-        pool.join()
-
-    return r
-    """
 

@@ -21,7 +21,7 @@ class Model:
         self.device = device
 
         self.logger = logger
-        self.log = lambda s: self.logger.model.info(s) if logger is not None else None
+        self.log = lambda msg: (self.logger("model", msg) if logger is not None else None)
 
         self.perf = PerformanceData()
 
