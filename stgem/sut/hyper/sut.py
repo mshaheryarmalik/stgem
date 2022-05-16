@@ -40,7 +40,7 @@ class HyperParameter(SUT):
         if self.mode == "falsification_rate":
             self.stored = []
 
-            def callback(self, result):
+            def callback(_, result):
                 """Append 1 if falsified, 0 otherwise."""
 
                 self.stored.append(any(step.success for step in result.step_results))
