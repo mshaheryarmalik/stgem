@@ -27,7 +27,7 @@ from stgem.algorithm.algorithm import SearchSpace
 
 SUTResult = namedtuple("SUTResult", "inputs outputs input_timestamps output_timestamps error")
 
-class SUT(SearchSpace):
+class SUT:
     """Base class implementing a system under test. """
 
     def __init__(self, parameters=None):
@@ -77,17 +77,6 @@ class SUT(SearchSpace):
         should in some sense be comparable.
         """
 
-    def is_valid(self,test) -> bool:
-        return self.validity(test)
-
-    @property
-    def input_dimensions(self):
-        return self.idim
-
-    @property
-    def output_dimensions(self):
-        return self.odim
-
     def __getattr__(self, name):
         if "parameters" in self.__dict__:
             if name in self.parameters:
@@ -95,16 +84,10 @@ class SUT(SearchSpace):
 
         raise AttributeError(name)
 
-    def setup(self, budget, rng):
+    def setup(self):
         """Setup the budget and perform steps necessary for two-step
         initialization. Derived classes should always call this super class
         setup method."""
-
-        # Make sure that it is safe to repeatedly call this function with
-        # different budgets and rngs. This ensures SUT reusage.
-
-        self.budget = budget
-        self.rng = rng
 
         # Infer dimensions and names for inputs and outputs from impartial
         # information.
@@ -251,17 +234,6 @@ class SUT(SearchSpace):
         return self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
 
     def execute_test(self, test) -> SUTResult:
-        self.perf.timer_start("execution")
-
-        r = self._execute_test(test)
-        assert r
-        self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
-        self.budget.consume("executions")
-        self.budget.consume("execution_time", self.perf.get_history("execution_time")[-1])
-
-        return r
-
-    def _execute_test(self, test) -> SUTResult:
         raise NotImplementedError()
 
     def execute_random_test(self):

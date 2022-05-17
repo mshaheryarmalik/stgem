@@ -29,8 +29,6 @@ class OGANK_Model(AlgModel):
         "train_settings": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}
     }
 
-
-
     def train_with_batch(self, dataX, dataY, train_settings):
         """
         Train the OGAN with a batch of training data.
@@ -61,15 +59,14 @@ class OGANK_Model(AlgModel):
         lf = "mean_squared_error"
         sizeD =  self.parameters["d_size"]
         sizeG =  self.parameters["g_size"]
-        input_shape = (self.n_inputs,)
+        input_shape = (self.search_space.input_dimension,)
         a = "relu"
-
 
         self.modelG = Sequential()
         self.modelG.add(Dense(sizeG, input_dim=self.noise_dimensions))
         self.modelG.add(Dense(sizeG, activation=a))
         self.modelG.add(Dense(sizeG, activation=a))
-        self.modelG.add(Dense(self.n_inputs, activation="tanh"))
+        self.modelG.add(Dense(self.search_space.input_dimension, activation="tanh"))
 
         self.modelG.compile(
             loss=lf,
@@ -112,8 +109,6 @@ class OGANK_Model(AlgModel):
 
         gloss = self.gan.fit(noise, yGen, epochs=train_settings["generator_epochs"], verbose=True)
 
-
-
     def generate_test(self, N=1):
         """
         Generate N random tests.
@@ -129,8 +124,6 @@ class OGANK_Model(AlgModel):
         tests = self.modelG.predict(noise)
         return tests
 
-
-
     def predict_objective(self, test):
         """
         Predicts the objective function value of the given tests.
@@ -142,5 +135,4 @@ class OGANK_Model(AlgModel):
           output (np.ndarray): Array of shape (N, 1).
         """
         return self.modelD.predict(test)
-
 

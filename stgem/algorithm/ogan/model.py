@@ -45,12 +45,12 @@ class OGAN_Model(Model):
         }
     }
 
-    def setup(self,  *args):
-        super().setup(*args)
+    def setup(self, search_space, device, logger=None):
+        super().setup(search_space, device, logger)
 
         # Infer input and output dimensions for ML models.
-        self.parameters["generator_mlm_parameters"]["output_shape"] = self.search_space.output_dimensions
-        self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.search_space.input_dimensions
+        self.parameters["generator_mlm_parameters"]["output_shape"] = self.search_space.output_dimension
+        self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
 
         self._initialize()
 
@@ -231,7 +231,7 @@ class OGAN_Model(Model):
           N (int): Number of tests to be generated.
 
         Returns:
-          output (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          output (np.ndarray): Array of shape (N, self.sut.ndimension).
         """
 
         if N <= 0:
@@ -250,7 +250,7 @@ class OGAN_Model(Model):
         Predicts the objective function value of the given tests.
 
         Args:
-          test (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          test (np.ndarray): Array of shape (N, self.sut.ndimension).
 
         Returns:
           output (np.ndarray): Array of shape (N, 1).

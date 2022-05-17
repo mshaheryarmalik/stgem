@@ -3,23 +3,32 @@
 
 import os
 import copy
+
 from stgem.performance import PerformanceData
 
 class SearchSpace:
-    @property
-    def input_dimensions(self):
-        raise NotImplementedError
+
+    def __init__(self):
+        self.sut = None
+        self.rng = None
+
+    def setup(self, sut, rng):
+        self.sut = sut
+        self.rng = rng
 
     @property
-    def output_dimensions(self):
-        raise NotImplementedError
+    def input_dimension(self):
+        return self.sut.idim
 
-    def is_valid(self,test) -> bool:
-        raise NotImplementedError
+    @property
+    def output_dimension(self):
+        return self.sut.odim
+
+    def is_valid(self, test) -> bool:
+        return self.sut.validity(test)
 
     def sample_input_space(self):
-        raise NotImplementedError
-
+        return self.rng.uniform(-1, 1, size=self.input_dimension)
 
 class Algorithm:
     """
@@ -39,11 +48,8 @@ class Algorithm:
 
         self.parameters = parameters
 
-
-    def setup(self,  search_space: SearchSpace , device=None, logger=None):
-
+    def setup(self, search_space: SearchSpace, device=None, logger=None):
         self.search_space =  search_space
-        print(self.search_space)
         self.device = device
         self.logger = logger
         self.log = (lambda s: self.logger.algorithm.info(s) if logger is not None else None)
@@ -52,20 +58,12 @@ class Algorithm:
         self.parameters["device"] = device
         # Set input dimension.
         if not "input_dimension" in self.parameters:
-            self.parameters["input_dimension"] = self.search_space.input_dimensions
-
-        def copy_input_dimension(d, idim):
-            for k,v in d.items():
-                if v=="copy:input_dimension":
-                   d[k] = idim
-                if isinstance(v, dict):
-                    copy_input_dimension(v,idim)
-
-        copy_input_dimension(self.parameters, self.search_space.input_dimensions)
+            self.parameters["input_dimension"] = self.search_space.input_dimension
 
         # create models
         if self.model_factory:
-            self.models = [self.model_factory() for _ in range(self.search_space.output_dimensions)]
+            self.models = [self.model_factory() for _ in range(self.search_space.output_dimension)]
+        self.N_models = len(self.models)
 
         for m in self.models:
             m.setup(self.search_space, self.device, self.logger)
@@ -87,16 +85,16 @@ class Algorithm:
         self.perf.save_history("training_time", self.perf.timer_reset("training"))
 
     def do_train(self, active_outputs, test_repository):
-        pass
+        raise NotImplementedError
 
-    def generate_next_test(self):
+    def generate_next_test(self, active_outputs, test_repository):
         self.perf.timer_start("generation")
-        r=self.do_generate_next_test()
-        assert r
+        r = self.do_generate_next_test(active_outputs, test_repository)
         self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
+
         return r
 
-    def do_generate_next_test(self):
+    def do_generate_next_test(self, active_outputs, test_repository):
        raise NotImplementedError
 
     def finalize(self):

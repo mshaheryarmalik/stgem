@@ -31,7 +31,7 @@ class TestPython(unittest.TestCase):
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
                         ],
-            objective_selector=ObjectiveSelectorMAB(warm_up=5),
+            objective_selector=ObjectiveSelectorMAB(warm_up=41),
             steps=[
                 Search(budget_threshold={"executions": 20},
                        algorithm=Random(model_factory=(lambda: Uniform()))),

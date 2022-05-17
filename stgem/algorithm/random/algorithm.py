@@ -14,8 +14,7 @@ class Random(Algorithm):
         self.active_outputs= active_outputs
         self.test_repository= test_repository
 
-    def do_generate_next_test(self):
-
+    def do_generate_next_test(self, active_outputs, test_repository):
         self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
         rounds = 0
         invalid = 0
@@ -26,7 +25,6 @@ class Random(Algorithm):
         while True:
             rounds += 1
             new_test = self.models[m].generate_test()
-            assert new_test
             if self.search_space.is_valid(new_test) == 0:
                 invalid += 1
                 continue
@@ -35,8 +33,8 @@ class Random(Algorithm):
 
         # Save information on how many tests needed to be generated etc.
         # -----------------------------------------------------------------
-
         self.perf.save_history("N_tests_generated", rounds)
         self.perf.save_history("N_invalid_tests_generated", invalid)
 
         return new_test
+

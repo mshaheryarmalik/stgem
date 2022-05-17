@@ -15,12 +15,12 @@ class OGAN(Algorithm):
     # Do not change the defaults
     default_parameters = {"fitness_coef": 0.95, "train_delay": 1, "N_candidate_tests": 1}
 
-    def setup(self, n_inputs, n_outputs, device=None, logger=None):
-        super().setup(n_inputs, n_outputs, device=None, logger=None)
+    def setup(self, search_space, device=None, logger=None):
+        super().setup(search_space, device, logger)
         self.first_training = True
 
     def do_train(self, active_outputs, test_repository):
-        model_trained = [0 for m in range(self.search_space.output_dimensions)] # keeps track how many tests were generated when a model was previously trained
+        model_trained = [0 for m in range(self.search_space.output_dimension)] # keeps track how many tests were generated when a model was previously trained
 
         # Take into account how many tests a previous step (usually random
         # search) has generated.
@@ -41,7 +41,7 @@ class OGAN(Algorithm):
                 if not self.first_training:
                     # Reset the model.
                     self.models[i].reset()
-                _, dataX, _, dataY = self.test_repository.get()
+                _, dataX, _, dataY = test_repository.get()
                 dataX = np.array(dataX)
                 dataY = np.array(dataY)[:, i].reshape(-1, 1)
                 for epoch in range(self.models[i].train_settings_init["epochs"]):
@@ -56,15 +56,13 @@ class OGAN(Algorithm):
                 model_trained[i] = self.tests_generated
         self.first_training = False
 
-    def do_generate_next_test(self):
-
+    def do_generate_next_test(self, active_outputs, test_repository):
         heap = []
         target_fitness = 0
         entry_count = 0  # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
         rounds = 0
         invalid = 0
-        self.log("Starting to generate test {} using the OGAN models {}.".format(self.tests_generated + 1, ",".join(
-            str(m + 1) for m in active_outputs)))
+        self.log("Starting to generate test {} using the OGAN models {}.".format(self.tests_generated + 1, ",".join(str(m + 1) for m in active_outputs)))
 
         while True:
             # TODO: Avoid selecting similar or same tests.
@@ -77,7 +75,7 @@ class OGAN(Algorithm):
                     candidate_tests = self.models[i].generate_test(self.N_candidate_tests)
 
                     # Pick only the valid tests.
-                    valid_idx = [i for i in range(self.N_candidate_tests) if self.sut.validity(candidate_tests[i]) == 1]
+                    valid_idx = [i for i in range(self.N_candidate_tests) if self.search_space.is_valid(candidate_tests[i]) == 1]
                     candidate_tests = candidate_tests[valid_idx]
                     invalid += self.N_candidate_tests - len(valid_idx)
                     if candidate_tests.shape[0] == 0:
@@ -98,15 +96,15 @@ class OGAN(Algorithm):
             # Check if the best predicted test is good enough.
             if heap[0][0] <= target_fitness: break
 
-            # Save information on how many tests needed to be generated etc.
-            # -----------------------------------------------------------------
-            N_generated = rounds * self.N_candidate_tests
-            self.perf.save_history("N_tests_generated", N_generated)
-            self.perf.save_history("N_invalid_tests_generated", invalid)
+        # Save information on how many tests needed to be generated etc.
+        # -----------------------------------------------------------------
+        N_generated = rounds * self.N_candidate_tests
+        self.perf.save_history("N_tests_generated", N_generated)
+        self.perf.save_history("N_invalid_tests_generated", invalid)
 
-            best_test = heap[0][2]
-            best_estimated_objective = heap[0][0]
+        best_test = heap[0][2]
+        best_estimated_objective = heap[0][0]
 
-            self.log("Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
-            return best_test
+        self.log("Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
+        return best_test
 

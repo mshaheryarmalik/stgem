@@ -71,15 +71,16 @@ class Search(Step):
             raise Exception("Unknown test generation mode '{}'.".format(mode))
         self.mode = mode
 
-    def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device, logger):
+    def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
         self.sut = sut
+        self.search_space = search_space
         self.test_repository = test_repository
         self.budget = budget
         self.budget.update_threshold(self.budget_threshold)
-        self.objetive_funcs = objective_funcs
+        self.objective_funcs = objective_funcs
         self.objective_selector = objective_selector
         self.algorithm.setup(
-            search_space=sut,
+            search_space=self.search_space,
             device=device,
             logger=logger)
         self.logger = logger
@@ -97,12 +98,10 @@ class Search(Step):
             # generation and discard the final test if this is so.
             i = 0
             while self.budget.remaining() > 0:
-
                 self.algorithm.train(self.objective_selector.select(), self.test_repository)
 
                 try:
-                    next_test = self.algorithm.generate_next_test()
-
+                    next_test = self.algorithm.generate_next_test(self.objective_selector.select(), self.test_repository)
                 except StopIteration:
                     print("Generator finished before budget was exhausted.")
                     break
@@ -112,9 +111,11 @@ class Search(Step):
                                     self.algorithm.perf.get_history("training_time")[-1])
 
                 self.log("Executing the test...")
-                # TODO sut uses np in inputs
-                assert next_test
-                sut_result = self.sut.execute_test(np.array(next_test))
+                self.algorithm.perf.timer_start("execution")
+                sut_result = self.sut.execute_test(next_test)
+                self.algorithm.perf.save_history("execution_time", self.algorithm.perf.timer_reset("execution"))
+                self.budget.consume("executions")
+                self.budget.consume("execution_time", self.algorithm.perf.get_history("execution_time")[-1])
                 self.log("Result from the SUT {}".format(sut_result))
                 output = [objective(sut_result) for objective in self.objective_funcs]
                 self.log("The actual objective {} for the generated test.".format(output))
@@ -137,7 +138,7 @@ class Search(Step):
         self.algorithm.finalize()
 
         # report resuts
-        print("Step minimum objective component: {}".format(self.algorithm.test_repository.minimum_objective))
+        print("Step minimum objective component: {}".format(self.test_repository.minimum_normalized_output))
 
         # Save certain parameters in the StepResult object.
         parameters = {}
@@ -147,13 +148,13 @@ class Search(Step):
             del parameters["algorithm"]["device"]
         parameters["model_name"] = [self.algorithm.models[i].__class__.__name__ for i in range(self.algorithm.N_models)]
         parameters["model"] = [copy.deepcopy(self.algorithm.models[i].parameters) for i in range(self.algorithm.N_models)]
-        parameters["objective_name"] = [objective.__class__.__name__ for objective in self.algorithm.objective_funcs]
-        parameters["objective"] = [copy.deepcopy(objective.parameters) for objective in self.algorithm.objective_funcs]
-        parameters["objective_selector_name"] = self.algorithm.objective_selector.__class__.__name__
-        parameters["objective_selector"] = copy.deepcopy(self.algorithm.objective_selector.parameters)
+        parameters["objective_name"] = [objective.__class__.__name__ for objective in self.objective_funcs]
+        parameters["objective"] = [copy.deepcopy(objective.parameters) for objective in self.objective_funcs]
+        parameters["objective_selector_name"] = self.objective_selector.__class__.__name__
+        parameters["objective_selector"] = copy.deepcopy(self.objective_selector.parameters)
 
         # Build the StepResult object.
-        step_result = StepResult(self.algorithm.test_repository, success, parameters)
+        step_result = StepResult(self.test_repository, success, parameters)
         step_result.algorithm_performance = self.algorithm.perf
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
 
@@ -200,7 +201,11 @@ class STGEM:
         self.logger = namedtuple("Logger", logger_names)(**loggers)
 
     def setup_sut(self):
-        self.sut.setup(self.budget, self.sut_rng)
+        self.sut.setup()
+
+    def setup_search_space(self):
+        self.search_space = SearchSpace()
+        self.search_space.setup(sut=self.sut, rng=self.search_space_rng)
 
     def setup_objectives(self):
         # Setup the objective functions for optimization.
@@ -225,12 +230,14 @@ class STGEM:
 
         # A random source for SUT for deterministic random samples from the
         # input space.
-        self.sut_rng = np.random.RandomState(seed=self.seed)
+        self.search_space_rng = np.random.RandomState(seed=self.seed)
 
     def setup(self):
         self.setup_seed()
 
         self.setup_sut()
+
+        self.setup_search_space()
 
         # Setup the device.
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -249,6 +256,7 @@ class STGEM:
         for step in self.steps:
             step.setup(
                 sut=self.sut,
+                search_space=self.search_space,
                 test_repository=self.test_repository,
                 budget=self.budget,
                 objective_funcs=self.objectives,
