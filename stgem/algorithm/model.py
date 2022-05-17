@@ -16,10 +16,9 @@ class Model:
             parameters = copy.deepcopy(self.default_parameters)
         self.parameters = parameters
 
-    def setup(self, n_inputs, n_outputs, device, logger=None):
+    def setup(self, search_space, device, logger=None):
 
-        self.n_inputs = n_inputs
-        self.n_outputs = n_outputs
+        self.search_space= search_space
 
         self.device = device
 
@@ -46,7 +45,7 @@ class Model:
           N (int): Number of tests to be generated.
 
         Returns:
-          output (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          output (np.ndarray): Array of shape (N, self.search_space.input_dimensions).
         """
 
         raise NotImplementedError()
@@ -56,7 +55,7 @@ class Model:
         Predicts the objective function value of the given tests.
 
         Args:
-          test (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          test (np.ndarray): Array of shape (N, self.search_space.input_dimensions).
 
         Returns:
           output (np.ndarray): Array of shape (N, 1).

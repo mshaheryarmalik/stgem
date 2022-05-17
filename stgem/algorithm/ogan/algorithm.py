@@ -19,8 +19,8 @@ class OGAN(Algorithm):
         super().setup(n_inputs, n_outputs, device=None, logger=None)
         self.first_training = True
 
-    def train(self, active_outputs, test_repository):
-        model_trained = [0 for m in range(self.n_objectives)] # keeps track how many tests were generated when a model was previously trained
+    def do_train(self, active_outputs, test_repository):
+        model_trained = [0 for m in range(self.search_space.output_dimensions)] # keeps track how many tests were generated when a model was previously trained
 
         # Take into account how many tests a previous step (usually random
         # search) has generated.
@@ -41,7 +41,7 @@ class OGAN(Algorithm):
                 if not self.first_training:
                     # Reset the model.
                     self.models[i].reset()
-                dataX, dataY = self.test_repository.get()
+                _, dataX, _, dataY = self.test_repository.get()
                 dataX = np.array(dataX)
                 dataY = np.array(dataY)[:, i].reshape(-1, 1)
                 for epoch in range(self.models[i].train_settings_init["epochs"]):
@@ -56,7 +56,7 @@ class OGAN(Algorithm):
                 model_trained[i] = self.tests_generated
         self.first_training = False
 
-    def generate_next_test(self, active_outputs):
+    def do_generate_next_test(self):
 
         heap = []
         target_fitness = 0
@@ -109,5 +109,4 @@ class OGAN(Algorithm):
 
             self.log("Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
             return best_test
-
 

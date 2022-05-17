@@ -18,7 +18,6 @@ class OGANK_Model(AlgModel):
     default_parameters = {
         "optimizer": "Adam",
         "d_epochs": 10,
-        "noise_bs": 10000,
         "g_epochs": 1,
         "d_size": 512,
         "g_size": 512,
@@ -107,7 +106,7 @@ class OGANK_Model(AlgModel):
             optimizer=Adam(learning_rate=self.parameters["g_adam_lr"]),
         )
 
-        batchSize =self.parameters["noise_bs"]
+        batchSize =self.parameters["noise_batch_size"]
         noise = np.random.normal(0, 1, size=[batchSize, self.noise_dimensions])
         yGen = np.zeros(batchSize)
 
