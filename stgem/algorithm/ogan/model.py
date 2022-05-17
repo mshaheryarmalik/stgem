@@ -49,8 +49,8 @@ class OGAN_Model(Model):
         super().setup(*args)
 
         # Infer input and output dimensions for ML models.
-        self.parameters["generator_mlm_parameters"]["output_shape"] = self.n_inputs
-        self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.n_inputs
+        self.parameters["generator_mlm_parameters"]["output_shape"] = self.search_space.output_dimensions
+        self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.search_space.input_dimensions
 
         self._initialize()
 
@@ -184,7 +184,7 @@ class OGAN_Model(Model):
             noise = torch.rand(1, self.modelG.input_shape)*2 - 1
             new_test = self.modelG(noise.to(self.device)).cpu().detach().numpy()
             # TODO
-            if self.sut.validity(new_test) == 0: continue
+            if self.search_space.is_valid(new_test) == 0: continue
             inputs[k,:] = noise[0,:]
             k += 1
         self.modelG.train(True)

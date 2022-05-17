@@ -12,19 +12,19 @@ class Uniform(Model):
     def generate_test(self):
         """Generates a test for the SUT."""
 
-        return self.sut.sample_input_space()
+        return self.search_space.sample_input_space()
 
 class LHS(Model):
     """Implements a random test model based on Latin hypercube design."""
 
-    def setup(self, sut, device, logger=None):
-        super().setup(sut, device, logger)
+    def setup(self, search_space, device, logger=None):
+        super().setup(search_space, device, logger)
 
         if not "samples" in self.parameters:
             raise Exception("The 'samples' key must be provided for the algorithm for determining random sample size.")
 
         # Create the design immediately.
-        self.random_tests = 2*(self.lhs(self.sut.idim, samples=self.samples) - 0.5)
+        self.random_tests = 2*(self.lhs(self.search_space.input_dimensions, samples=self.samples) - 0.5)
 
         self.current = -1
 

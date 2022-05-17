@@ -15,12 +15,12 @@ class OGAN(Algorithm):
     # Do not change the defaults
     default_parameters = {"fitness_coef": 0.95, "train_delay": 1, "N_candidate_tests": 1}
 
-    def __init__(self,*args):
+    def __init__(self,**args):
         super().__init__(*args)
         self.first_training = True
 
-    def train(self, active_outputs, test_repository):
-        model_trained = [0 for m in range(self.n_objectives)] # keeps track how many tests were generated when a model was previously trained
+    def do_train(self, active_outputs, test_repository):
+        model_trained = [0 for m in range(self.search_space.output_dimensions)] # keeps track how many tests were generated when a model was previously trained
 
         # Take into account how many tests a previous step (usually random
         # search) has generated.
@@ -41,7 +41,7 @@ class OGAN(Algorithm):
                 if not self.first_training:
                     # Reset the model.
                     self.models[i].reset()
-                dataX, _, dataY = self.test_repository.get()
+                _, dataX, _, dataY = self.test_repository.get()
                 dataX = np.array(dataX)
                 dataY = np.array(dataY)[:, i].reshape(-1, 1)
                 for epoch in range(self.models[i].train_settings_init["epochs"]):
@@ -56,7 +56,7 @@ class OGAN(Algorithm):
                 model_trained[i] = self.tests_generated
         self.first_training = False
 
-    def generate_next_test(self, active_outputs):
+    def do_generate_next_test(self):
 
         heap = []
         target_fitness = 0

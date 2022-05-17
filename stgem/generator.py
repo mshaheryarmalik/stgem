@@ -7,11 +7,12 @@ import dill as pickle
 import numpy as np
 import torch
 
-from stgem.algorithm.algorithm import Algorithm
+from stgem.algorithm.algorithm import Algorithm, SearchSpace
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut import SUT
 from stgem.test_repository import TestRepository
 from stgem.budget import Budget
+
 
 class StepResult:
 
@@ -68,7 +69,6 @@ class Search(Step):
         self.budget_threshold = budget_threshold
         if mode not in ["exhaust_budget", "stop_at_first_objective"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
-
         self.mode = mode
 
     def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device, logger):
@@ -76,54 +76,53 @@ class Search(Step):
         self.test_repository=test_repository
         self.budget = budget
         self.budget.update_threshold(self.budget_threshold)
+        self.objetive_funcs = objective_funcs
+        self.objective_selector = objective_selector
         self.algorithm.setup(
-            objective_funcs=objective_funcs,
-            objective_selector=objective_selector,
+            search_space=sut,
             device=device,
             logger=logger)
+        self.logger = logger
+        self.log = (lambda s: self.logger.algorithm.info(s) if logger is not None else None)
+
 
     def run(self) -> StepResult:
         # allow the algorithm to initialize itself
         self.algorithm.initialize()
 
-        if not (self.mode == "stop_at_first_objective" and self.algorithm.test_repository.minimum_objective == 0.0):
+        if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_normalized_output == 0.0):
             success = False
-            generator = self.algorithm.generate_test()
 
-        # TODO: We should check if the budget was exhausted during the test
-        # generation and discard the final test if this is so.
-        i = 0
-        while self.budget.remaining() > 0:
+            # TODO: We should check if the budget was exhausted during the test
+            # generation and discard the final test if this is so.
+            i = 0
+            while self.budget.remaining() > 0:
 
-            self.perf.timer_start("training")
-            self.algorithm.train(self.objective_selector.select(), self.test_repository)
-            self.perf.save_history("training_time", self.perf.timer_reset("training"))
+                self.algorithm.train(self.objective_selector.select(), self.test_repository)
 
-            try:
-                self.perf.timer_start("generation")
-                next_test = self.algorithm.generate_next_test()
+                try:
+                    next_test = self.algorithm.generate_next_test()
 
-            except StopIteration:
-                print("Generator finished before budget was exhausted.")
-                break
+                except StopIteration:
+                    print("Generator finished before budget was exhausted.")
+                    break
 
-            finally:
-                self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
+                # Consume generation budget.
+                self.budget.consume("generation_time", self.algorithm.perf.get_history("generation_time")[-1] +
+                                    self.algorithm.perf.get_history("training_time")[-1])
 
-            # Consume generation budget.
-            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1] +
-                                self.perf.get_history("training_time")[-1])
+                self.log("Executing the test...")
+                # TODO sut uses np in inputs
+                assert next_test
+                sut_result = self.sut.execute_test(np.array(next_test))
+                self.log("Result from the SUT {}".format(sut_result))
+                output = [objective(sut_result) for objective in self.objective_funcs]
+                self.log("The actual objective {} for the generated test.".format(output))
 
-            self.log("Executing the test...")
-            sut_result = self.sut.execute_test(next_test)
-            self.log("Result from the SUT {}".format(sut_result))
-            output = [objective(sut_result) for objective in self.objective_funcs]
-            self.log("The actual objective {} for the generated test.".format(output))
+                self.objective_selector.update(np.argmin(output))
+                self.test_repository.record(self.sut.denormalize_test(next_test) , next_test,sut_result,output)
 
-            self.objective_selector.update(np.argmin(output))
-            self.test_repository.record(next_test,output)
-
-                if not success and np.min(self.algorithm.test_repository.minimum_objective) == 0:
+                if not success and np.min(self.test_repository.minimum_normalized_output) == 0:
                     print("First success at test {}.".format(i + 1))
                     success = True
 

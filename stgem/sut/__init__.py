@@ -19,15 +19,15 @@ Discrete signals.
 
 import numpy as np
 from collections import namedtuple
-
 from stgem.performance import PerformanceData
+from stgem.algorithm.algorithm import SearchSpace
 
 # TODO Document this
 # TODO Consider a dataclass
 
 SUTResult = namedtuple("SUTResult", "inputs outputs input_timestamps output_timestamps error")
 
-class SUT:
+class SUT(SearchSpace):
     """Base class implementing a system under test. """
 
     def __init__(self, parameters=None):
@@ -76,6 +76,17 @@ class SUT:
         directly compare the objective function values in [0, 1], so they
         should in some sense be comparable.
         """
+
+    def is_valid(self,test) -> bool:
+        return self.validity(test)
+
+    @property
+    def input_dimensions(self):
+        return self.idim
+
+    @property
+    def output_dimensions(self):
+        return self.odim
 
     def __getattr__(self, name):
         if "parameters" in self.__dict__:
@@ -236,11 +247,14 @@ class SUT:
 
         return y
 
+    def denormalize_test(self,test):
+        return self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
+
     def execute_test(self, test) -> SUTResult:
         self.perf.timer_start("execution")
 
         r = self._execute_test(test)
-
+        assert r
         self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
         self.budget.consume("executions")
         self.budget.consume("execution_time", self.perf.get_history("execution_time")[-1])
@@ -254,8 +268,6 @@ class SUT:
         test = self.sample_input_space()
         return test, self._execute_test(test)
 
-    def sample_input_space(self):
-        return self.rng.uniform(-1, 1, size=(1, self.idim))
 
     def validity(self, test):
         """
