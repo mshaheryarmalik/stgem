@@ -27,9 +27,8 @@ class Algorithm:
         if self.model_factory:
             self.models = [self.model_factory() for _ in range(self.n_outputs)]
 
-    def setup(self,  n_inputs, n_outputs , device=None, logger=None):
-
-        self.n_inputs= n_inputs
+    def setup(self, n_inputs, n_outputs, device=None, logger=None):
+        self.n_inputs = n_inputs
         self.n_outputs = n_outputs
         self.device = device
         self.logger = logger

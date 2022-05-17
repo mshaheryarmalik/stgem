@@ -15,8 +15,8 @@ class OGAN(Algorithm):
     # Do not change the defaults
     default_parameters = {"fitness_coef": 0.95, "train_delay": 1, "N_candidate_tests": 1}
 
-    def __init__(self,*args):
-        super().__init__(*args)
+    def setup(self, n_inputs, n_outputs, device=None, logger=None):
+        super().setup(n_inputs, n_outputs, device=None, logger=None)
         self.first_training = True
 
     def train(self, active_outputs, test_repository):

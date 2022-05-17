@@ -67,13 +67,13 @@ class Search(Step):
         self.mode = mode
 
     def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device, logger):
-        self.sut=sut
-        self.test_repository=test_repository
+        self.sut = sut
+        self.test_repository = test_repository
         self.budget = budget
         self.budget.update_threshold(self.budget_threshold)
         self.algorithm.setup(
-            objective_funcs=objective_funcs,
-            objective_selector=objective_selector,
+            n_inputs=,
+            n_outputs=,
             device=device,
             logger=logger)
 
