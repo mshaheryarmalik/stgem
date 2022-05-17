@@ -1,6 +1,6 @@
 import gc
 from multiprocess import Process, Queue
-
+from collections import defaultdict
 # Notice that the callbacks need to understand that calls can arrive out of
 # order.
 
@@ -12,6 +12,7 @@ class Experiment:
         self.seed_factory = seed_factory
         self.generator_callback = generator_callback
         self.result_callback = result_callback
+        self.done = defaultdict(lambda: False)
 
     def run(self, N_workers=1, silent=False):
         if N_workers < 1:
@@ -29,7 +30,7 @@ class Experiment:
                 r = generator._run(silent=silent)
 
                 if not self.result_callback is None:
-                    self.result_callback(self, r)
+                    self.result_callback(self, r, self.done)
 
                 # Delete generator and force garbage collection. This is
                 # especially important when using Matleb SUTs as several
@@ -51,11 +52,12 @@ class Experiment:
                         generator_callback(generator)
 
                     r = generator._run(silent=silent)
-
+                    self.done[generator] = True
                     if not result_callback is None:
-                        result_callback(None, generator)
+                        result_callback(None, generator, self.done)
 
                     # Delete and garbage collect. See above.
+
                     del generator
                     gc.collect()
                     
