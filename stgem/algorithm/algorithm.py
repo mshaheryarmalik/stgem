@@ -52,7 +52,7 @@ class Algorithm:
         self.search_space =  search_space
         self.device = device
         self.logger = logger
-        self.log = (lambda s: self.logger.algorithm.info(s) if logger is not None else None)
+        self.log = lambda msg: (self.logger("algorithm", msg) if logger is not None else None)
 
         # Setup the device.
         self.parameters["device"] = device

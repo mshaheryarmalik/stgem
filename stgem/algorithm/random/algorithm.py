@@ -15,7 +15,6 @@ class Random(Algorithm):
         self.test_repository= test_repository
 
     def do_generate_next_test(self, active_outputs, test_repository):
-        self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
         rounds = 0
         invalid = 0
         # Select a model randomly and generate a random valid test for it.

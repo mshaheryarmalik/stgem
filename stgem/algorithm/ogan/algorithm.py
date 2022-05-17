@@ -62,7 +62,7 @@ class OGAN(Algorithm):
         entry_count = 0  # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
         rounds = 0
         invalid = 0
-        self.log("Starting to generate test {} using the OGAN models {}.".format(self.tests_generated + 1, ",".join(str(m + 1) for m in active_outputs)))
+        self.log("Generating using OGAN models {}.".format(",".join(str(m + 1) for m in active_outputs)))
 
         while True:
             # TODO: Avoid selecting similar or same tests.
