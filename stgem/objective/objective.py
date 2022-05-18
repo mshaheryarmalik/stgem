@@ -68,7 +68,11 @@ class ObjectiveMinComponentwise(Objective):
 
     def __init__(self):
         super().__init__()
-        self.dim = 1
+        self.dim = 0
+
+    def setup(self, sut):
+        super().setup(sut)
+        self.dim = self.sut.odim
 
     def __call__(self, r: SUTResult):
         assert r.output_timestamps is not None
