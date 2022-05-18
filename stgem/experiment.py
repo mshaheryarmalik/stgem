@@ -14,12 +14,21 @@ class Experiment:
         self.result_callback = result_callback
         self.done = defaultdict(lambda: False)
 
-    def run(self, N_workers=1, silent=False):
+    def run(self, N_workers=1, silent=False, resume = True):
+        if resume:
+            try:
+                with open("done.pickle", "rb") as f:
+                    self.done = pickle.load(f)
+                for i in range(len(self.done)):
+                    self.stgem_factory()
+                    self.seed_factory()
+            except EOFError:
+                print("No file to load")
         if N_workers < 1:
             raise SystemExit("The number of workers must be positive.")
         elif N_workers == 1:
             # Do not use multiprocessing.
-            for _ in range(self.N):
+            for _ in range(self.N-len(self.done)):
                 generator = self.stgem_factory()
                 seed = self.seed_factory()
                 generator.setup(seed=seed)
@@ -28,9 +37,9 @@ class Experiment:
                     self.generator_callback(generator)
 
                 r = generator._run(silent=silent)
-
+                self.done[generator] = True
                 if not self.result_callback is None:
-                    self.result_callback(self, r, self.done)
+                    self.result_callback(r, generator, self.done)
 
                 # Delete generator and force garbage collection. This is
                 # especially important when using Matleb SUTs as several
@@ -54,7 +63,10 @@ class Experiment:
                     r = generator._run(silent=silent)
                     self.done[generator] = True
                     if not result_callback is None:
-                        result_callback(None, generator, self.done)
+                        retdone = defaultdict(lambda: False)
+                        for key, value in self.done.items():
+                            retdone[key] = value
+                        result_callback(r, generator, retdone)
 
                     # Delete and garbage collect. See above.
 
@@ -62,7 +74,7 @@ class Experiment:
                     gc.collect()
                     
             def producer(queue, N_workers, N, stgem_factory, seed_factory):
-                for _ in range(N):
+                for _ in range(N-len(self.done)):
                     queue.put((stgem_factory(), seed_factory()))
 
                 for _ in range(N_workers):
