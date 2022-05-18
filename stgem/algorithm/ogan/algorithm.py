@@ -19,7 +19,7 @@ class OGAN(Algorithm):
         super().setup(search_space, device, logger)
         self.first_training = True
 
-    def do_train(self, active_outputs, test_repository):
+    def do_train(self, active_outputs, test_repository, budget_remaining):
         model_trained = [0 for m in range(self.search_space.output_dimension)] # keeps track how many tests were generated when a model was previously trained
 
         # Take into account how many tests a previous step (usually random
@@ -56,7 +56,7 @@ class OGAN(Algorithm):
                 model_trained[i] = self.tests_generated
         self.first_training = False
 
-    def do_generate_next_test(self, active_outputs, test_repository):
+    def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
         heap = []
         target_fitness = 0
         entry_count = 0  # this is to avoid comparing tests when two tests added to the heap have the same predicted objective

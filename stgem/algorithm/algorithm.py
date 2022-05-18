@@ -94,7 +94,7 @@ class Algorithm:
 
         return r
 
-    def do_generate_next_test(self, active_outputs, test_repository):
+    def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
        raise NotImplementedError
 
     def finalize(self):
