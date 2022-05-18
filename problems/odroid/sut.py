@@ -67,7 +67,7 @@ class OdroidSUT(SUT):
         self.scaleY3 = self.dataY[:, 2].max(axis=0)
         self.dataY[:, 2] = self.dataY[:, 2] / self.scaleY3
 
-    def _execute_test(self, test):
+    def execute_test(self, test):
         """
         Execute the given tests on the SUT. As not all possible parameters have a
         test value in the data, we find the closest test from the test data
@@ -87,27 +87,3 @@ class OdroidSUT(SUT):
         distances = np.sum((self.dataX - test)**2, axis=1)
         return self.dataY[np.argmin(distances)]
 
-    def execute_random_test(self):
-        """
-        Execute a random test and return its output.
-
-        Returns:
-          test (np.ndarray): Array with shape (1,N) or (N) with
-                             N = self.ndimensions of floats in [-1, 1].
-          output (np.ndarray): Array of shape (3) of floats in [0, 1].
-        """
-
-        idx = np.random.randint(0, self.dataX.shape[0])
-        return self.dataX[idx], self.dataY[idx]
-
-    def sample_input_space(self):
-        """
-        Return a sample (test) from the input space.
-
-        Returns:
-          test (np.ndarray): Array with shape (1,N) or (N) with
-                             N = self.ndimensions of floats in [-1, 1].
-        """
-
-        idx = np.random.randint(0, self.dataX.shape[0])
-        return self.dataX[idx]

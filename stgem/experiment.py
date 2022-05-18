@@ -11,12 +11,15 @@ class Experiment:
         for _ in range(self.N):
             generator = self.stgem_factory()
             seed = self.seed_factory()
-            generator.setup(seed=seed, silent=silent)
+            generator.setup(seed=seed)
+
+            if silent:
+                generator.logger.silent = True
 
             if not self.generator_callback is None:
                 self.generator_callback(generator)
 
-            r = generator._run(silent=silent)
+            r = generator._run()
 
             if not self.result_callback is None:
                 self.result_callback(r)

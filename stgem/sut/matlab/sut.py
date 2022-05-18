@@ -94,7 +94,7 @@ class Matlab_Simulink_Signal(SUT):
 
         return SUTResult(signals, result, timestamps, output_timestamps, None)
 
-    def _execute_test(self, timestamps, signals):
+    def execute_test(self, timestamps, signals):
         return self._execute_test_simulink(timestamps, signals)
 
 class Matlab_Simulink(Matlab_Simulink_Signal):
@@ -144,7 +144,7 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
 
         self.has_been_setup = True
 
-    def _execute_test(self, test):
+    def execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.descaling_intervals).reshape(-1)
 
         # Common timestamps to all input signals.
@@ -160,11 +160,6 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
 
         # Execute the test.
         return self._execute_test_simulink(timestamps, signals)
-
-    def execute_random_test(self):
-        test = self.sample_input_space()
-        tr = self.execute_test(test)
-        return tr
 
 class Matlab(SUT):
     """Generic class for using Matlab m files."""
@@ -324,7 +319,7 @@ class Matlab(SUT):
 
         return SUTResult(signals, output_signals, timestamps, output_timestamps, None)
 
-    def _execute_test(self, *args, **kwargs):
+    def execute_test(self, *args, **kwargs):
         # TODO: Add error handling in case of wrong input or Matlab errors.
 
         if self.input_type == "vector":

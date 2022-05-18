@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import copy
+
 from stgem.performance import PerformanceData
 
 class Model:
@@ -16,12 +17,11 @@ class Model:
             parameters = copy.deepcopy(self.default_parameters)
         self.parameters = parameters
 
-    def setup(self, sut, device, logger=None):
-        self.sut = sut
+    def setup(self, search_space, device, logger=None):
+        self.search_space = search_space
         self.device = device
-
         self.logger = logger
-        self.log = lambda s: self.logger.model.info(s) if logger is not None else None
+        self.log = lambda msg: (self.logger("model", msg) if logger is not None else None)
 
         self.perf = PerformanceData()
 
@@ -43,7 +43,7 @@ class Model:
           N (int): Number of tests to be generated.
 
         Returns:
-          output (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          output (np.ndarray): Array of shape (N, self.search_space.input_dimension).
         """
 
         raise NotImplementedError()
@@ -53,7 +53,7 @@ class Model:
         Predicts the objective function value of the given tests.
 
         Args:
-          test (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          test (np.ndarray): Array of shape (N, self.search_space.input_dimension).
 
         Returns:
           output (np.ndarray): Array of shape (N, 1).

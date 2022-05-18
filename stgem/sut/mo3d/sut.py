@@ -31,7 +31,7 @@ class MO3D(SUT):
         self.idim=3
         self.odim=3
 
-    def _execute_test(self, test):
+    def execute_test(self, test):
         #print("unscaled",test)
         test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
         #print("descaled", test)

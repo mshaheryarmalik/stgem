@@ -1,75 +1,62 @@
-from stgem.algorithm import Algorithm
+from multiprocess import Process, JoinableQueue
 
 import numpy as np
+from platypus import NSGAII, EpsMOEA, GDE3, SPEA2, Problem, Real
 
-from platypus import NSGAII, EpsMOEA, GDE3, SPEA2, Problem, Real, Integer, nondominated
+from stgem.algorithm import Algorithm
 
 class PlatypusOpt(Algorithm):
-    """
-    Implements the online generative adversarial network algorithm.
-    """
 
-    platypus_algorithm = {"NSGAII": NSGAII, "EpsMOEA": EpsMOEA, "GDE3": GDE3, "SPEA2": SPEA2}
+    platypus_algorithms = {"NSGAII": NSGAII, "EpsMOEA": EpsMOEA, "GDE3": GDE3, "SPEA2": SPEA2}
     default_parameters = {"platypus_algorithm": "NSGAII"}
 
-    def generate_test(self):
-        self.perf.timer_start("generation")
+    def initialize(self):
+        self.queue = JoinableQueue()
 
-        self.lastIdx=0
-        self.reportedIdx=0
+        problem = Problem(self.search_space.input_dimension, self.search_space.output_dimension, 0)
 
-        # TODO: Add functionality related to invalid tests. Currently all tests
-        #       are treated as valid.
-
-        def fitness_func(test):
-            # Save information on how many tests needed to be generated etc.
-            # -----------------------------------------------------------------
-            self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
-            self.perf.save_history("N_tests_generated", 1)
-            self.perf.save_history("N_invalid_tests_generated", 0)
-
-            # Execute the test on the SUT.
-            # -----------------------------------------------------------------
-            # Consume generation budget.
-            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1])
-
-            sut_output = self.sut.execute_test(np.array(test))
-            self.log("Output from the SUT {}".format(sut_output))
-            output = [self.objective_funcs[i](sut_output) for i in range(self.sut.odim)]
-
-            self.log("The actual objective {} for the generated test.".format(output))
-
-            # Add the new test to the test suite.
-            # -----------------------------------------------------------------
-            idx = self.test_repository.record(test, sut_output, output)
-            self.lastIdx = idx
-            self.objective_selector.update(np.argmin(output))
-
-            self.perf.timer_start("generation")
-
-            return output
-
-        problem = Problem(self.sut.idim, self.sut.odim, 0)
-
-        for i in range(self.sut.idim):
+        for i in range(self.search_space.input_dimension):
             problem.types[i] = Real(-1, 1)
 
-        problem.function = fitness_func
+        problem.function = None
         problem.directions[:] = Problem.MINIMIZE
 
-        algorithm = self.platypus_algorithm[self.parameters.get("platypus_algorithm", "NSGAII")](
+        self.algorithm = PlatypusOpt.platypus_algorithms[self.platypus_algorithm](
             problem,
             population_size=self.parameters.get("population_size", 100)
         )
 
-        # It seems that NSGAII works in batches of more or less 100 evals
-        # So each step generates many tests
-        # We report them one by one. It is not the best solution, but it
-        # kind of works for now.
+        self.subprocess = Process(target=self._subprocess, args=[self.queue, self.algorithm], daemon=True)
+        self.subprocess.start()
+
+        self.first_training = True
+
+    def _subprocess(self, queue, algorithm):
+        def fitness_func(test):
+            self.queue.put(test)
+            self.queue.join()
+            fitness = self.queue.get()
+
+            return fitness
+
+        algorithm.problem.function = fitness_func
+
+        # It seems that NSGAII works in batches of more or less 100 evals, so
+        # each step generates many tests. We report them one by one. It is not
+        # the best solution, but it kind of works for now.
 
         while True:
-            algorithm.step()
-            while self.reportedIdx <= self.lastIdx:
-                yield self.reportedIdx
-                self.reportedIdx += 1
+            self.algorithm.step()
+
+    def do_train(self, active_outputs, test_repository, budget_remaining):
+        if not self.first_training:
+            self.queue.put(test_repository.get(-1)[-1])
+            self.queue.task_done()
+
+        self.first_training = False
+
+    def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
+        test = self.queue.get()
+
+        return np.array(test)
 

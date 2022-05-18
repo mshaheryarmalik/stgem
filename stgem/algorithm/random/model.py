@@ -12,19 +12,19 @@ class Uniform(Model):
     def generate_test(self):
         """Generates a test for the SUT."""
 
-        return self.sut.sample_input_space()
+        return self.search_space.sample_input_space()
 
 class LHS(Model):
     """Implements a random test model based on Latin hypercube design."""
 
-    def setup(self, sut, device, logger=None):
-        super().setup(sut, device, logger)
+    def setup(self, search_space, device, logger=None):
+        super().setup(search_space, device, logger)
 
         if not "samples" in self.parameters:
             raise Exception("The 'samples' key must be provided for the algorithm for determining random sample size.")
 
         # Create the design immediately.
-        self.random_tests = 2*(self.lhs(self.sut.idim, samples=self.samples) - 0.5)
+        self.random_tests = 2*(self.lhs(self.search_space.input_dimension, samples=self.samples) - 0.5)
 
         self.current = -1
 
@@ -150,7 +150,7 @@ class LHS(Model):
         cut = np.linspace(0, 1, samples + 1)    
         
         # Fill points uniformly in each interval
-        u = self.sut.rng.rand(samples, n)
+        u = self.search_space.rng.rand(samples, n)
         a = cut[:samples]
         b = cut[1:samples + 1]
         rdpoints = np.zeros_like(u)
@@ -160,7 +160,7 @@ class LHS(Model):
         # Make the random pairings
         H = np.zeros_like(rdpoints)
         for j in range(n):
-            order = self.sut.rng.permutation(range(samples))
+            order = self.search_space.rng.permutation(range(samples))
             H[:, j] = rdpoints[order, j]
         
         return H
@@ -178,7 +178,7 @@ class LHS(Model):
         # Make the random pairings
         H = np.zeros_like(u)
         for j in range(n):
-            H[:, j] = self.sut.rng.permutation(_center)
+            H[:, j] = self.search_space.rng.permutation(_center)
         
         return H
         
@@ -209,7 +209,7 @@ class LHS(Model):
             R = np.corrcoef(Hcandidate)
             if np.max(np.abs(R[R!=1]))<mincorr:
                 mincorr = np.max(np.abs(R-np.eye(R.shape[0])))
-                print('new candidate solution found with max,abs corrcoef = {}'.format(mincorr))
+                #print('new candidate solution found with max,abs corrcoef = {}'.format(mincorr))
                 H = Hcandidate.copy()
         
         return H

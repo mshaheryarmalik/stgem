@@ -12,7 +12,6 @@ from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
 
-
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
     h1 = 305 - 100 * (math.sin(x1 / 3) + math.sin(x2 / 3) + math.sin(x3 / 3))
@@ -32,7 +31,7 @@ class TestPython(unittest.TestCase):
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
                         ],
-            objective_selector=ObjectiveSelectorMAB(warm_up=5),
+            objective_selector=ObjectiveSelectorMAB(warm_up=41),
             steps=[
                 Search(budget_threshold={"executions": 20},
                        algorithm=Random(model_factory=(lambda: Uniform()))),

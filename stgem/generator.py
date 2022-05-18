@@ -1,17 +1,17 @@
 import copy, os, time, datetime, random, logging
 
 from collections import namedtuple
-from multiprocessing import Pool
 import dill as pickle
 
 import numpy as np
 import torch
 
-from stgem.algorithm.algorithm import Algorithm
+from stgem.algorithm.algorithm import Algorithm, SearchSpace
+from stgem.budget import Budget
+from stgem.logger import Logger
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut import SUT
 from stgem.test_repository import TestRepository
-from stgem.budget import Budget
 
 class StepResult:
 
@@ -54,13 +54,11 @@ class Step:
     def run(self) -> StepResult:
         raise NotImplementedError
 
-    def setup(self, sut, test_repository, objective_funcs, objective_selector, device, logger):
+    def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
         pass
 
 class Search(Step):
-    """
-    A search step.
-    """
+    """A search step."""
 
     def __init__(self, algorithm: Algorithm, budget_threshold, mode="exhaust_budget"):
         self.algorithm = algorithm
@@ -68,59 +66,76 @@ class Search(Step):
         self.budget_threshold = budget_threshold
         if mode not in ["exhaust_budget", "stop_at_first_objective"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
-
         self.mode = mode
 
-    def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device, logger):
+    def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
+        self.sut = sut
+        self.search_space = search_space
+        self.test_repository = test_repository
         self.budget = budget
+        self.budget.update_threshold(self.budget_threshold)
+        self.objective_funcs = objective_funcs
+        self.objective_selector = objective_selector
         self.algorithm.setup(
-            sut=sut,
-            test_repository=test_repository,
-            budget=budget,
-            objective_funcs=objective_funcs,
-            objective_selector=objective_selector,
+            search_space=self.search_space,
             device=device,
             logger=logger)
+        self.logger = logger
+        self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
 
-    def run(self, silent=False) -> StepResult:
+    def run(self) -> StepResult:
         self.budget.update_threshold(self.budget_threshold)
 
-        # allow the algorithm to initialize itself
+        # Allow the algorithm to initialize itself.
         self.algorithm.initialize()
 
-        if not (self.mode == "stop_at_first_objective" and self.algorithm.test_repository.minimum_objective == 0.0):
+        success = True
+        if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_normalized_output == 0.0):
             success = False
-            generator = self.algorithm.generate_test()
 
             # TODO: We should check if the budget was exhausted during the test
             # generation and discard the final test if this is so.
             i = 0
-            while self.budget.remaining():
-                try:
-                    idx = next(generator)
-                except StopIteration:
-                    if not silent:
-                        print("Generator finished before budget was exhausted.")
-                    break
+            while self.budget.remaining() > 0:
+                self.algorithm.train(self.objective_selector.select(), self.test_repository, self.budget.remaining())
+                self.budget.consume("training_time", self.algorithm.perf.get_history("training_time")[-1])
+                if not self.budget.remaining() > 0: break
 
-                if not success and np.min(self.algorithm.test_repository.minimum_objective) == 0:
-                    if not silent:
-                        print("First success at test {}.".format(i + 1))
+                # TODO: Should we catch any exceptions here?
+                self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
+                next_test = self.algorithm.generate_next_test(self.objective_selector.select(), self.test_repository, self.budget.remaining())
+                self.budget.consume("generation_time", self.algorithm.perf.get_history("generation_time")[-1])
+                self.log("Generated test {}.".format(next_test))
+                if not self.budget.remaining() > 0: break
+
+                self.log("Executing the test...")
+                self.algorithm.perf.timer_start("execution")
+                sut_result = self.sut.execute_test(next_test)
+                self.algorithm.perf.save_history("execution_time", self.algorithm.perf.timer_reset("execution"))
+                self.budget.consume("executions")
+                self.budget.consume("execution_time", self.algorithm.perf.get_history("execution_time")[-1])
+                self.log("Result from the SUT: {}".format(sut_result))
+                output = [objective(sut_result) for objective in self.objective_funcs]
+                self.log("The actual objective: {}".format(output))
+
+                # TODO: Argmin does not take different scales into account.
+                self.objective_selector.update(np.argmin(output))
+                self.test_repository.record(self.sut.denormalize_test(next_test), next_test, sut_result, output)
+
+                if not success and self.test_repository.minimum_normalized_output == 0:
+                    self.log("First success at test {}.".format(i + 1))
                     success = True
 
                 if success and self.mode == "stop_at_first_objective":
                     break
 
                 i += 1
-        else:
-            success = True
 
-        # allow the algorithm to store trained models or other generated data
+        # Allow the algorithm to store trained models or other generated data.
         self.algorithm.finalize()
 
-        # report resuts
-        if not silent:
-            print("Step minimum objective component: {}".format(self.algorithm.test_repository.minimum_objective))
+        # Report results.
+        self.log("Step minimum objective component: {}".format(self.test_repository.minimum_normalized_output))
 
         # Save certain parameters in the StepResult object.
         parameters = {}
@@ -130,17 +145,35 @@ class Search(Step):
             del parameters["algorithm"]["device"]
         parameters["model_name"] = [self.algorithm.models[i].__class__.__name__ for i in range(self.algorithm.N_models)]
         parameters["model"] = [copy.deepcopy(self.algorithm.models[i].parameters) for i in range(self.algorithm.N_models)]
-        parameters["objective_name"] = [objective.__class__.__name__ for objective in self.algorithm.objective_funcs]
-        parameters["objective"] = [copy.deepcopy(objective.parameters) for objective in self.algorithm.objective_funcs]
-        parameters["objective_selector_name"] = self.algorithm.objective_selector.__class__.__name__
-        parameters["objective_selector"] = copy.deepcopy(self.algorithm.objective_selector.parameters)
+        parameters["objective_name"] = [objective.__class__.__name__ for objective in self.objective_funcs]
+        parameters["objective"] = [copy.deepcopy(objective.parameters) for objective in self.objective_funcs]
+        parameters["objective_selector_name"] = self.objective_selector.__class__.__name__
+        parameters["objective_selector"] = copy.deepcopy(self.objective_selector.parameters)
 
         # Build the StepResult object.
-        step_result = StepResult(self.algorithm.test_repository, success, parameters)
+        step_result = StepResult(self.test_repository, success, parameters)
         step_result.algorithm_performance = self.algorithm.perf
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
 
         return step_result
+
+class LoaderStep(Step):
+    """Step which simply loads pregenerated data from a file."""
+
+    # TODO: Currently this is a placeholder and does nothing.
+
+    def __init__(self, data_file, budget_threshold):
+        self.data_file = data_file
+        return
+        # Check if the data file exists.
+        if not os.path.exists(self.data_file):
+            raise Exception("Pregenerated date file '{}' does not exist.".format(self.data_file))
+
+    def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
+        raise NotImplementedError()
+
+    def run(self) -> StepResult:
+        raise NotImplementedError()
 
 class STGEM:
 
@@ -157,25 +190,7 @@ class STGEM:
         self.steps = steps
         self.device = None
 
-        # Setup loggers.
-        # ---------------------------------------------------------------------
-        logger_names = ["algorithm", "model"]
-        logging.basicConfig(level=logging.DEBUG, format="%(name)s: %(message)s")
-        loggers = {x: logging.getLogger(x) for x in ["algorithm", "model"]}
-        for logger in loggers.values():
-            logger.setLevel("DEBUG")
-        self.logger = namedtuple("Logger", logger_names)(**loggers)
-
-    def setup_sut(self):
-        self.sut.setup(self.budget, self.sut_rng)
-
-    def setup_objectives(self):
-        # Setup the objective functions for optimization.
-        for o in self.objectives:
-            o.setup(self.sut)
-
-        # Setup the objective selector.
-        self.objective_selector.setup(self.objectives)
+        self.logger = Logger()
 
     def setup_seed(self, seed=None):
         self.seed = seed
@@ -185,7 +200,7 @@ class STGEM:
             torch.use_deterministic_algorithms(mode=True)
             os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
         else:
-            self.seed = random.randint(0, 2 ** 15)
+            self.seed = random.randint(0, 2**15)
 
         random.seed(self.seed)
         np.random.seed(self.seed)
@@ -193,95 +208,58 @@ class STGEM:
 
         # A random source for SUT for deterministic random samples from the
         # input space.
-        self.sut_rng = np.random.RandomState(seed=self.seed)
+        self.search_space_rng = np.random.RandomState(seed=self.seed)
 
-    def setup_steps(self, silent=False):
-        logger = self.logger if not silent else None
+    def setup_sut(self):
+        self.sut.setup()
+
+    def setup_search_space(self):
+        self.search_space = SearchSpace()
+        self.search_space.setup(sut=self.sut, rng=self.search_space_rng)
+
+    def setup_objectives(self):
+        for o in self.objectives:
+            o.setup(self.sut)
+
+        self.objective_selector.setup(self.objectives)
+
+    def setup_steps(self):
         for step in self.steps:
             step.setup(
                 sut=self.sut,
+                search_space=self.search_space,
                 test_repository=self.test_repository,
                 budget=self.budget,
                 objective_funcs=self.objectives,
                 objective_selector=self.objective_selector,
                 device=self.device,
-                logger=logger)
+                logger=self.logger)
 
-    def setup(self, seed=None, silent=False):
+    def setup(self, seed=None):
         self.setup_seed(seed=seed)
 
         self.setup_sut()
-
-        # Setup the device.
+        self.setup_search_space()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        # Setup the test repository.
         self.test_repository = TestRepository()
-
         self.setup_objectives()
 
-        self.setup_steps(silent=silent)
+        self.setup_steps()
 
-    def _run(self, silent=False) -> STGEMResult:
+    def _run(self) -> STGEMResult:
         # Running this assumes that setup has been run.
         results = []
 
         # Setup and run steps sequentially.
         step_results = []
         for step in self.steps:
-            step_results.append(step.run(silent=silent))
+            step_results.append(step.run())
 
         sr = STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
 
         return sr
 
-    def run(self, seed=None, silent=False) -> STGEMResult:
-        self.setup(seed, silent=silent)
-        return self._run(silent=silent)
-
-def run_one_job(parameters):
-    r = parameters[0].run(seed=parameters[1])
-
-    return r
-
-def run_multiple_generators(N, description, seed_factory, sut_factory, budget_factory, objective_factory, objective_selector_factory, step_factory, callback=None):
-    """Creates and runs multiple STGEM objects in parallel and collects
-    information on each run."""
-
-    # Create the STGEM objects to be run.
-    jobs = []
-    for i in range(N):
-        x = STGEM(description=description,
-                  sut=sut_factory(),
-                  budget=budget_factory(),
-                  objectives=objective_factory(),
-                  objective_selector=objective_selector_factory(),
-                  steps=step_factory()
-                 )
-        seed = seed_factory()
-        jobs.append((x, seed))
-
-    # Execute the generators.
-    # We remove the jobs from the list in order to free resources.
-    results = []
-    while len(jobs) > 0:
-        job = jobs.pop(0)
-        results.append(run_one_job(job))
-
-        if not callback is None:
-            callback(results[-1])
-
-    return results
-
-    """
-    # Matlab does not work with pickling used by multiprocessing.
-    # See https://stackoverflow.com/questions/55885741/how-to-run-matlab-function-with-spark
-    N_workers = 2
-    with Pool(N_workers) as pool:
-        r = pool.map(run_one_job, jobs)
-        pool.close()
-        pool.join()
-
-    return r
-    """
+    def run(self, seed=None) -> STGEMResult:
+        self.setup(seed)
+        return self._run()
 

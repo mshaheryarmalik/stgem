@@ -61,15 +61,15 @@ class WOGAN_Model(Model):
         }
     }
 
-    def setup(self, sut, device, logger):
-        super().setup(sut, device, logger)
+    def setup(self, search_space, device, logger):
+        super().setup(search_space, device, logger)
 
         self.noise_dim = self.generator_mlm_parameters["noise_dim"]
 
         # Infer input and output dimensions for ML models.
-        self.parameters["analyzer_parameters"]["analyzer_mlm_parameters"]["input_shape"] = self.sut.idim
-        self.parameters["generator_mlm_parameters"]["output_shape"] = self.sut.idim
-        self.parameters["critic_mlm_parameters"]["input_shape"] = self.sut.idim
+        self.parameters["analyzer_parameters"]["analyzer_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
+        self.parameters["generator_mlm_parameters"]["output_shape"] = self.search_space.input_dimension
+        self.parameters["critic_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
 
         # Load the specified analyzer and initialize it.
         module = importlib.import_module("stgem.algorithm.wogan.analyzer")
