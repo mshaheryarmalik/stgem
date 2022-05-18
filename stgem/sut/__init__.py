@@ -243,16 +243,3 @@ class SUT:
 
         return 1
 
-    def _min_distance(self, tests, x):
-        # We use the Euclidean distance.
-        tests = np.asarray(tests)
-        d = np.linalg.norm(tests - x, axis=1)
-        return min(d)
-
-    def min_distance(self, tests, x):
-        """
-        Returns the minimum distance of the given tests to the specified test.
-        """
-
-        return self._min_distance(tests, x)
-
