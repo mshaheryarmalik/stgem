@@ -29,6 +29,8 @@ class PlatypusOpt(Algorithm):
         self.subprocess = Process(target=self._subprocess, args=[self.queue, self.algorithm], daemon=True)
         self.subprocess.start()
 
+        self.first_training = True
+
     def _subprocess(self, queue, algorithm):
         def fitness_func(test):
             self.queue.put(test)
@@ -47,8 +49,11 @@ class PlatypusOpt(Algorithm):
             self.algorithm.step()
 
     def do_train(self, active_outputs, test_repository, budget_remaining):
-        self.queue.put(test_repository.get(-1)[-1])
-        self.queue.task_done()
+        if not self.first_training:
+            self.queue.put(test_repository.get(-1)[-1])
+            self.queue.task_done()
+
+        self.first_training = False
 
     def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
         test = self.queue.get()
