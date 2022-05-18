@@ -24,12 +24,12 @@ class TestPython(unittest.TestCase):
             # exist. We edit their parameter dictionaries and resetup them.
             for model in generator.steps[1].algorithm.models:
                 model.parameters["discriminator_lr"] = value
-                model.setup(model.sut, model.device, model.logger)
+                model.setup(model.search_space, model.device, model.logger)
         def f2(generator, value):
             # Similar to above.
             for model in generator.steps[1].algorithm.models:
                 model.parameters["generator_lr"] = value
-                model.setup(model.sut, model.device, model.logger)
+                model.setup(model.search_space, model.device, model.logger)
 
         hp_sut_parameters = {"hyperparameters": [[f1, Categorical([0.1, 0.01, 0.001, 0.0001])], [f2, Categorical([0.1, 0.01, 0.001, 0.0001])]]}
 
@@ -74,7 +74,7 @@ class TestPython(unittest.TestCase):
             return lambda: next(g)
 
         def experiment_factory():
-            N = 10
+            N = 2
             return Experiment(N, get_generator_factory(sut_factory, objective_factory, objective_selector_factory, step_factory), get_seed_factory())
 
         # Note: Latin hypercube design makes sense with categorical values.
@@ -88,19 +88,13 @@ class TestPython(unittest.TestCase):
                           objectives=[Minimize(selected=[0], scale=False)],
                           objective_selector=ObjectiveSelectorAll(),
                           steps=[
-                              Search(budget_threshold={"executions": 5},
+                              Search(budget_threshold={"executions": 2},
                                      algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 5}))))
                                      #algorithm=Random(model_factory=(lambda: Uniform())))
                           ]
         )
 
         r = generator.run()
-
-        X, Z, Y = generator.test_repository.get()
-        Y = np.array(Y).reshape(-1)
-        for n in range(len(X)):
-            X2 = [hp_sut_parameters["hyperparameters"][i][1](x) for i, x in enumerate(X[n])]
-            print("{} -> {}".format(X2, 1 - Y[n]))
 
 if __name__ == "__main__":
     unittest.main()
