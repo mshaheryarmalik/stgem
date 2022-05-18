@@ -23,10 +23,13 @@ class Experiment:
                 seed = self.seed_factory()
                 generator.setup(seed=seed)
 
+                if silent:
+                    generator.logger.silent = True
+
                 if not self.generator_callback is None:
                     self.generator_callback(generator)
 
-                r = generator._run(silent=silent)
+                r = generator._run()
 
                 if not self.result_callback is None:
                     self.result_callback(r)
@@ -47,10 +50,13 @@ class Experiment:
 
                     generator.setup(seed=seed)
 
+                    if silent:
+                        generator.logger.silent = True
+
                     if not generator_callback is None:
                         generator_callback(generator)
 
-                    r = generator._run(silent=silent)
+                    r = generator._run()
 
                     if not result_callback is None:
                         result_callback(r)
