@@ -104,7 +104,7 @@ class OGAN(Algorithm):
         self.perf.save_history("N_tests_generated", N_generated)
         self.perf.save_history("N_invalid_tests_generated", invalid)
 
-        best_test = heap[0][2]
+        best_test = heap[0][3]
         best_model = heap[0][2]
         best_estimated_objective = heap[0][0]
 
