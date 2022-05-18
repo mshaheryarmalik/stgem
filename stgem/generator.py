@@ -94,17 +94,17 @@ class Search(Step):
             # TODO: We should check if the budget was exhausted during the test
             # generation and discard the final test if this is so.
             i = 0
-            while self.budget.remaining():
-                self.algorithm.train(self.objective_selector.select(), self.test_repository)
+            while self.budget.remaining() > 0:
+                self.algorithm.train(self.objective_selector.select(), self.test_repository, self.budget.remaining())
                 self.budget.consume("training_time", self.algorithm.perf.get_history("training_time")[-1])
-                if not self.budget.remaining(): break
+                if not self.budget.remaining() > 0: break
 
                 # TODO: Should we catch any exceptions here?
                 self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
-                next_test = self.algorithm.generate_next_test(self.objective_selector.select(), self.test_repository)
+                next_test = self.algorithm.generate_next_test(self.objective_selector.select(), self.test_repository, self.budget.remaining())
                 self.budget.consume("generation_time", self.algorithm.perf.get_history("generation_time")[-1])
                 self.log("Generated test {}.".format(next_test))
-                if not self.budget.remaining(): break
+                if not self.budget.remaining() > 0: break
 
                 self.log("Executing the test...")
                 self.algorithm.perf.timer_start("execution")

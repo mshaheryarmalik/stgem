@@ -85,7 +85,7 @@ class OGAN(Algorithm):
                     # to heap.
                     tests_predicted_objective = self.models[i].predict_objective(candidate_tests)
                     for j in range(tests_predicted_objective.shape[0]):
-                        heapq.heappush(heap, (tests_predicted_objective[j, 0], entry_count, candidate_tests[j]))
+                        heapq.heappush(heap, (tests_predicted_objective[j,0], entry_count, i, candidate_tests[j]))
                         entry_count += 1
 
                     break
@@ -94,17 +94,21 @@ class OGAN(Algorithm):
             target_fitness = 1 - self.fitness_coef * (1 - target_fitness)
 
             # Check if the best predicted test is good enough.
-            if heap[0][0] <= target_fitness: break
+            # Without eps we could get stuck if prediction is always 1.0.
+            eps = 1e-4
+            if heap[0][0] - eps <= target_fitness: break
 
         # Save information on how many tests needed to be generated etc.
         # -----------------------------------------------------------------
-        N_generated = rounds * self.N_candidate_tests
+        N_generated = rounds*self.N_candidate_tests
         self.perf.save_history("N_tests_generated", N_generated)
         self.perf.save_history("N_invalid_tests_generated", invalid)
 
         best_test = heap[0][2]
+        best_model = heap[0][2]
         best_estimated_objective = heap[0][0]
 
-        self.log("Chose test {} with predicted minimum objective {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, rounds, invalid))
+        self.log("Chose test {} with predicted minimum objective {} on OGAN model {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, best_model + 1, rounds, invalid))
+
         return best_test
 

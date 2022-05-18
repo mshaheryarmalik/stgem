@@ -12,7 +12,6 @@ class PlatypusOpt(Algorithm):
 
     def initialize(self):
         self.queue = JoinableQueue()
-        self.first_training = True
 
         problem = Problem(self.search_space.input_dimension, self.search_space.output_dimension, 0)
 
@@ -26,6 +25,9 @@ class PlatypusOpt(Algorithm):
             problem,
             population_size=self.parameters.get("population_size", 100)
         )
+
+        self.subprocess = Process(target=self._subprocess, args=[self.queue, self.algorithm], daemon=True)
+        self.subprocess.start()
 
     def _subprocess(self, queue, algorithm):
         def fitness_func(test):
@@ -44,16 +46,11 @@ class PlatypusOpt(Algorithm):
         while True:
             self.algorithm.step()
 
-    def do_train(self, active_outputs, test_repository):
-        if self.first_training:
-            self.subprocess = Process(target=self._subprocess, args=[self.queue, self.algorithm], daemon=True)
-            self.subprocess.start()
-            self.first_training = False
-        else:
-            self.queue.put(test_repository.get(-1)[-1])
-            self.queue.task_done()
+    def do_train(self, active_outputs, test_repository, budget_remaining):
+        self.queue.put(test_repository.get(-1)[-1])
+        self.queue.task_done()
 
-    def do_generate_next_test(self, active_outputs, test_repository):
+    def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
         test = self.queue.get()
 
         return np.array(test)

@@ -79,17 +79,17 @@ class Algorithm:
         """A Step calls this method before the first generate_test call"""
         pass
 
-    def train(self, active_outputs, test_repository):
+    def train(self, active_outputs, test_repository, budget_remaining):
         self.perf.timer_start("training")
-        self.do_train(active_outputs,test_repository)
+        self.do_train(active_outputs, test_repository, budget_remaining)
         self.perf.save_history("training_time", self.perf.timer_reset("training"))
 
-    def do_train(self, active_outputs, test_repository):
+    def do_train(self, active_outputs, test_repository, budget_remaining):
         raise NotImplementedError
 
-    def generate_next_test(self, active_outputs, test_repository):
+    def generate_next_test(self, active_outputs, test_repository, budget_remaining):
         self.perf.timer_start("generation")
-        r = self.do_generate_next_test(active_outputs, test_repository)
+        r = self.do_generate_next_test(active_outputs, test_repository, budget_remaining)
         self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
 
         return r

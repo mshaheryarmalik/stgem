@@ -8,10 +8,10 @@ from stgem.algorithm import Algorithm
 class Random(Algorithm):
     """Baseline random algorithm for generating a test suite."""
 
-    def do_train(self, active_outputs, test_repository):
+    def do_train(self, active_outputs, test_repository, budget_remaining):
         pass
 
-    def do_generate_next_test(self, active_outputs, test_repository):
+    def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
         rounds = 0
         invalid = 0
         # Select a model randomly and generate a random valid test for it.
