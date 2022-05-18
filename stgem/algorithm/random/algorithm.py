@@ -6,13 +6,10 @@ import numpy as np
 from stgem.algorithm import Algorithm
 
 class Random(Algorithm):
-    """
-    Baseline random algorithm for generating a test suite.
-    """
+    """Baseline random algorithm for generating a test suite."""
 
     def do_train(self, active_outputs, test_repository):
-        self.active_outputs= active_outputs
-        self.test_repository= test_repository
+        pass
 
     def do_generate_next_test(self, active_outputs, test_repository):
         rounds = 0
