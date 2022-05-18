@@ -236,11 +236,6 @@ class SUT:
     def execute_test(self, test) -> SUTResult:
         raise NotImplementedError()
 
-    def execute_random_test(self):
-        test = self.sample_input_space()
-        return test, self._execute_test(test)
-
-
     def validity(self, test):
         """
         Basic validator which deems all tests valid.
