@@ -98,10 +98,12 @@ class WOGAN_Model(Model):
         self.losses_C = []
         self.gradient_penalties = []
         self.losses_G = []
-        self.perf.save_history("analyzer_loss", self.losses_A)
-        self.perf.save_history("critic_loss", self.losses_C)
-        self.perf.save_history("gradient_penalty", self.gradient_penalties)
-        self.perf.save_history("generator_loss", self.losses_G)
+
+        # We set single = True in case setup is called repeatedly.
+        self.perf.save_history("analyzer_loss", self.losses_A, single=True)
+        self.perf.save_history("critic_loss", self.losses_C, single=True)
+        self.perf.save_history("gradient_penalty", self.gradient_penalties, single=True)
+        self.perf.save_history("generator_loss", self.losses_G, single=True)
 
     def train_analyzer_with_batch(self, data_X, data_Y, train_settings):
         """

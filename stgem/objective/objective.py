@@ -27,7 +27,7 @@ class Minimize(Objective):
     """Objective function for a SUT with fixed-length vector outputs which
     selects the minimum among the specified components."""
 
-    def __init__(self, selected=None, scale=False, invert=False):
+    def __init__(self, selected=None, scale=False, invert=False, clip=True):
         super().__init__()
         if not (isinstance(selected, list) or isinstance(selected, tuple) or selected is None):
             raise Exception("The parameter 'selected' must be None or a list or a tuple.")
@@ -36,6 +36,7 @@ class Minimize(Objective):
         self.parameters["selected"] = selected
         self.parameters["scale"] = scale
         self.parameters["invert"] = invert
+        self.parameters["clip"] = clip
 
     def __call__(self, r: SUTResult):
         assert r.output_timestamps is None
@@ -56,7 +57,10 @@ class Minimize(Objective):
         else:
             output = r.outputs[idx]
 
-        return max(0, min(1, min(output)))
+        if self.clip:
+            return max(0, min(1, min(output)))
+        else:
+            return output
 
 class ObjectiveMinComponentwise(Objective):
     """Objective function for a SUT with signal outputs which outputs the

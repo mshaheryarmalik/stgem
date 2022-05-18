@@ -60,7 +60,7 @@ class Algorithm:
         if not "input_dimension" in self.parameters:
             self.parameters["input_dimension"] = self.search_space.input_dimension
 
-        # create models
+        # Create models.
         if self.model_factory:
             self.models = [self.model_factory() for _ in range(self.search_space.output_dimension)]
         self.N_models = len(self.models)

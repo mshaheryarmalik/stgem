@@ -12,12 +12,12 @@ class PerformanceData:
         return self.histories[id]
 
     def save_history(self, id, value, single=False):
-        if not single:
+        if single:
+            self.histories[id] = value
+        else:
             if not id in self.histories:
                 self.histories[id] = []
             self.histories[id].append(value)
-        else:
-            self.histories[id] = value
 
     def timer_start(self, id):
         # TODO: Implement a good time for all platforms.

@@ -84,6 +84,8 @@ class Search(Step):
         self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
 
     def run(self) -> StepResult:
+        self.budget.update_threshold(self.budget_threshold)
+
         # Allow the algorithm to initialize itself.
         self.algorithm.initialize()
 
@@ -190,7 +192,8 @@ class STGEM:
 
         self.logger = Logger()
 
-    def setup_seed(self):
+    def setup_seed(self, seed=None):
+        self.seed = seed
         # We use a random seed unless it is specified.
         # Notice that making Pytorch deterministic makes it a lot slower.
         if self.seed is not None:
@@ -220,20 +223,7 @@ class STGEM:
 
         self.objective_selector.setup(self.objectives)
 
-    def setup(self):
-        self.setup_seed()
-        self.setup_sut()
-        self.setup_search_space()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.test_repository = TestRepository()
-        self.setup_objectives()
-
-    def run(self, seed=None) -> STGEMResult:
-        self.seed = seed
-        self.setup()
-
-        # Setup and run steps sequentially.
-        step_results = []
+    def setup_steps(self):
         for step in self.steps:
             step.setup(
                 sut=self.sut,
@@ -244,9 +234,32 @@ class STGEM:
                 objective_selector=self.objective_selector,
                 device=self.device,
                 logger=self.logger)
+
+    def setup(self, seed=None):
+        self.setup_seed(seed=seed)
+
+        self.setup_sut()
+        self.setup_search_space()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.test_repository = TestRepository()
+        self.setup_objectives()
+
+        self.setup_steps()
+
+    def _run(self) -> STGEMResult:
+        # Running this assumes that setup has been run.
+        results = []
+
+        # Setup and run steps sequentially.
+        step_results = []
+        for step in self.steps:
             step_results.append(step.run())
 
         sr = STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
 
         return sr
+
+    def run(self, seed=None) -> STGEMResult:
+        self.setup(seed)
+        return self._run()
 
