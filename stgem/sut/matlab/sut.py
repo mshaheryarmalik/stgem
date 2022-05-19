@@ -99,7 +99,7 @@ class Matlab_Simulink_Signal(SUT):
 
         return SUTResult(signals, result, timestamps, output_timestamps, None)
 
-    def execute_test(self, timestamps, signals):
+    def _execute_test(self, timestamps, signals):
         return self._execute_test_simulink(timestamps, signals)
 
 class Matlab_Simulink(Matlab_Simulink_Signal):
@@ -145,7 +145,7 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
 
         self.has_been_setup = True
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.descaling_intervals).reshape(-1)
 
         # Common timestamps to all input signals.
@@ -316,7 +316,7 @@ class Matlab(SUT):
 
         return SUTResult(signals, output_signals, timestamps, output_timestamps, None)
 
-    def execute_test(self, *args, **kwargs):
+    def _execute_test(self, *args, **kwargs):
         # TODO: Add error handling in case of wrong input or Matlab errors.
 
         if self.input_type == "vector":

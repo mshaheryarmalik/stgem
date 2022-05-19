@@ -61,7 +61,7 @@ class HyperParameter(SUT):
         for n, (hp_func, hp_domain) in enumerate(self.hyperparameters):
             hp_func(generator, hp_domain(test[n]))
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         experiment = self.experiment_factory()
         experiment.generator_callback = lambda g: self.edit_generator(g, test)
         experiment.result_callback = self.stgem_result_callback

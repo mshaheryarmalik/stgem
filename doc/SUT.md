@@ -20,15 +20,26 @@ The parameter `input_range` specifies the ranges for the inputs as a list of 2-t
 
 Neither `inputs` nor `input_range` needs to be specified in the `parameters` dictionary if they are set in the SUT class `__init__` method.
 
-In addition to the above parameters, each SUT has attributes `idim` and `odim` available after `setup` has been called. These simply contain number of inputs (dimension of a vector or number of signals) and number of outputs (dimension of a vector or number of signals) respectively.
+In addition to the above parameters, each SUT has attributes `idim` and `odim` available after `setup` has been called. These simply contain number of inputs (dimension of a vector or number of signals) and number of outputs (dimension of a vector or number of signals) respectively. Input and output types of a SUT can be signaled using the strings `"vector"` and `"signal"` as values for the SUT attributes `input_type` and `output_type`. By default `input_type` and `output_type` are `None`, and they must be explicitly set in SUT initialization if desired.
 
 ## Common SUT Methods
+- denormalization; see input normalization
+- variable_range
+
+## Input Normalization
+We take the convention that the machine learning related parts of our code deal exclusively with normalized inputs. This means that the numerical values in the SUTInput object `inputs` attribute (see below) must be given as elements of the interval [-1, 1] meaning that input vectors are lists of numbers in [-1, 1] and input signals are functions taking values in [-1, 1]. Obviously the SUT itself may deal with other ranges and needs to denormalize. This is handled by the SUT internally based on the `input_range` specified when initializing and setuping the SUT.
+
+TODO: Decide what happens when a range is unknow (`None`). Currently the behavior is undefined.
 
 ## Inputs and Outputs
+The number of inputs and outputs (dimension of a vector or number of signals) and optionally input and output ranges need to be specified for every SUT; see above. The inputs and outputs are handled via the objects `SUTInput` and `SUTOutput`.
 
-## Input and Output Normalization
+The `SUTInput` object has three attributes: `inputs`, `input_denormalized`, and `input_timestamps`. If the input is of vector type, then the vector is defined as a 1D numpy array in `inputs` and `input_timestamps` is `None`. If the input is of signal type, then `inputs` is a 2D numpy array whose each row determines signal values and the corresponding timestamps (common to all signals) are given as a 1D numpy array in `input_timestamps`. The attribute `input_denormalized` is to contain the denormalized version of `inputs`. As the denormalization is internal to the SUT, the convention is that `input_denormalized` is `None` when given to the method `execute_test` of a SUT and is available after `execute_test` has finished. The denormalized input is mainly available for debugging purposes, so it can be set to `None` in order to conserve memory.
+
+The `SUTOutput` object has three attributes: `outputs`, `output_timestamps` and `error`. The `error` attribute is a string describing what error occurred during the SUT execution (if any); if there was no error, its value is `None`. The attributes `outputs` and `output_timestamps` behave as `inputs` and `input_timestamps` above. Notice that the output numerical values are unnormalized, it is up to the user to decide whether to normalize based on SUT output ranges or something else.
 
 ## Input Validity
+TODO
 
 ## Exceptions
 TODO

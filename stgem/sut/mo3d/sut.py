@@ -27,7 +27,7 @@ class MO3D(SUT):
         self.input_range = [[-15, 15], [-15, 15], [-15, 15]]
         self.output_range = [[0, 350], [0, 350], [0, 350]]
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         #print("unscaled",test)
         test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
         #print("descaled", test)

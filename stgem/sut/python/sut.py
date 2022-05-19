@@ -34,7 +34,7 @@ class PythonFunction(SUT):
         self.idim = len(self.input_range)
         self.odim = len(self.output_range)
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
         output = []
         error = None
