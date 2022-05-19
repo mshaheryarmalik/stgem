@@ -32,12 +32,15 @@ class TestPython(unittest.TestCase):
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
                         ],
-            objective_selector=ObjectiveSelectorMAB(warm_up=5),
+            objective_selector=ObjectiveSelectorMAB(warm_up=41),
             steps=[
                 Search(budget_threshold={"executions": 20},
                        mode=mode,
                        algorithm=Random(model_factory=(lambda: Uniform()))),
-                Search(budget_threshold={"executions": 25},
+                Search(budget_threshold={"executions": 40},
+                       mode=mode,
+                       algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 20})))),
+                Search(budget_threshold={"executions": 45},
                        mode=mode,
                        algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
             ]

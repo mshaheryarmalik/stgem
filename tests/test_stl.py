@@ -5,7 +5,7 @@ import pandas as pd
 
 import tltk_mtl as STL
 
-from stgem.sut import SUT, SUTResult
+from stgem.sut import SUT, SUTInput, SUTOutput
 from stgem.objective.objective import FalsifySTL
 
 class DummySUT(SUT):
@@ -20,13 +20,11 @@ class DummySUT(SUT):
 
 class TestSTL(unittest.TestCase):
 
-    def get(self, specification, variables, *args, **kwargs):
+    def get(self, specification, variables, sut_input, sut_output, scale=False, strict_horizon_check=True):
         sut = DummySUT(len(variables), variables)
-        scale = kwargs["scale"] if "scale" in kwargs else False
-        strict_horizon_check = kwargs["strict_horizon_check"] if "strict_horizon_check" in kwargs else True
         objective = FalsifySTL(specification, scale=scale, strict_horizon_check=strict_horizon_check)
         objective.setup(sut)
-        return objective(*args), objective
+        return objective(sut_input, sut_output), objective
 
     def test_stl(self):
         # Test vector-valued output.
@@ -39,7 +37,7 @@ class TestSTL(unittest.TestCase):
         specification = STL.And(L, R)
         correct_robustness = 0.5
 
-        robustness, _ = self.get(specification, variables, SUTResult(None, output, None, None, None))
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None))
         assert robustness == correct_robustness
 
         output = [3, -0.5]
@@ -50,7 +48,7 @@ class TestSTL(unittest.TestCase):
         specification = STL.Global(0, 1, STL.And(L, R))
         correct_robustness = -0.5
 
-        robustness, _ = self.get(specification, variables, SUTResult(None, output, None, None, None))
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None))
         assert robustness == correct_robustness
 
         # Test signal outputs.
@@ -67,7 +65,7 @@ class TestSTL(unittest.TestCase):
         specification = STL.Global(0, 1, specification)
         correct_robustness = 1.0
 
-        robustness, _ = self.get(specification, variables, SUTResult(None, signals, None, t, None))
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None))
         assert robustness == correct_robustness
 
         data = pd.read_csv("data/stl_at.csv")
@@ -88,7 +86,7 @@ class TestSTL(unittest.TestCase):
         specification = STL.Implication(L, R)
         correct_robustness = -4.55048
 
-        robustness, objective = self.get(specification, variables, SUTResult(None, signals, None, t, None), scale=scale)
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
         # always[0,30](RPM < 3000)) implies (always[0,8](SPEED < 50)
@@ -96,7 +94,7 @@ class TestSTL(unittest.TestCase):
         specification = STL.Implication(L, R)
         correct_robustness = 4.936960098864567
 
-        robustness, _ = self.get(specification, variables, SUTResult(None, signals, None, t, None), scale=scale)
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
         # always[0,30](RPM < 3000)) implies (always[0,20](SPEED < 65)
@@ -104,7 +102,7 @@ class TestSTL(unittest.TestCase):
         specification = STL.Implication(L, R)
         correct_robustness = 19.936958
 
-        robustness, _ = self.get(specification, variables, SUTResult(None, signals, None, t, None), scale=scale)
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
         assert abs(robustness == correct_robustness) < 1e-5
 
         # Test time horizon.
@@ -123,13 +121,13 @@ class TestSTL(unittest.TestCase):
 
         # Check with strict horizon check.
         try:
-            robustness, _ = self.get(specification, variables, SUTResult(None, signals, None, t, None), scale=scale, strict_horizon_check=True)
+            robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale, strict_horizon_check=True)
         except Exception as E:
             if not E.args[0].startswith("The horizon"):
                 traceback.print_exc()
                 raise
         # Check without strict horizon check.
-        robustness, objective = self.get(specification, variables, SUTResult(None, signals, None, t, None), scale=scale, strict_horizon_check=False)
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale, strict_horizon_check=False)
         assert objective.horizon == 11
         assert robustness == correct_robustness
 
@@ -147,7 +145,7 @@ class TestSTL(unittest.TestCase):
         specification = STL.Global(0, 3, specification)
         correct_robustness = -1.0
 
-        robustness, objective = self.get(specification, variables, SUTResult([i1], [s1], t1, t2, None), scale=scale)
+        robustness, objective = self.get(specification, variables, SUTInput(None, [i1], t1), SUTOutput([s1], t2, None), scale=scale)
         assert objective.horizon == 3
         assert robustness == correct_robustness
 
@@ -163,7 +161,7 @@ class TestSTL(unittest.TestCase):
         R = STL.Signal("s2", var_range=[-200, 4500])
         specification = STL.LessThan(3, 0, 1, 0, L, R)
 
-        robustness, objective = self.get(specification, variables, SUTResult(None, signals, None, t, None), scale=scale)
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
         assert objective.specification.var_range == [-800, 4500]
 
 if __name__ == "__main__":

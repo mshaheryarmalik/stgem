@@ -13,13 +13,24 @@ objective function values in [0, 1], so they should in some sense be
 comparable.
 """
 
+from dataclasses import dataclass
+
 import numpy as np
-from collections import namedtuple
+
 from stgem.performance import PerformanceData
 from stgem.algorithm.algorithm import SearchSpace
 
-SUTInput = namedtuple("SUTInput", "inputs input_denormalized input_timestamps")
-SUTOutput = namedtuple("SUTOutput", "outputs output_timestamps error")
+@dataclass
+class SUTInput:
+    inputs: ...
+    input_denormalized: ...
+    input_timestamps: ...
+
+@dataclass
+class SUTOutput:
+    outputs: ...
+    output_timestamps: ...
+    error: ...
 
 class SUT:
     """Base class implementing a system under test. """
@@ -198,20 +209,18 @@ class SUT:
     def denormalize_test(self,test):
         return self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
 
-    def _execute_test(self, test SUTInput) -> SUTOutput:
+    def _execute_test(self, test: SUTInput) -> SUTOutput:
         raise NotImplementedError()
 
-    def execute_test(self, test SUTInput) -> SUTOutput:
+    def execute_test(self, test: SUTInput) -> SUTOutput:
         # Check for correct input type if specified.
         if self.input_type is not None:
-            if self.input_type == "vector".
+            if self.input_type == "vector":
                 if test.input_timestamps is not None or len(test.inputs.shape) > 1:
                     raise Exception("Signal input given for vector input SUT.")
             elif self.input_type == "signal":
                 if test.input_timestamps is None or len(test.inputs.shape) == 1:
                     raise Exception("Vector input given for vector input SUT.")
-            else:
-                raise Exception("Unknown input type '{}'.".format(self.input_type))
 
         # TODO: Check for output.error.
         try:
@@ -221,16 +230,16 @@ class SUT:
 
         # Check for correct output type if specified.
         if self.output_type is not None:
-            if self.output_type == "vector".
-                if test.output_timestamps is not None or len(test.outputs.shape) > 1:
+            if self.output_type == "vector":
+                if output.output_timestamps is not None or len(output.outputs.shape) > 1:
                     raise Exception("Signal output for vector output SUT.")
             elif self.output_type == "signal":
-                if test.output_timestamps is None or len(test.outputs.shape) == 1:
+                if output.output_timestamps is None or len(output.outputs.shape) == 1:
                     raise Exception("Vector output for vector output SUT.")
-            else:
-                raise Exception("Unknown output type '{}'.".format(self.output_type))
+        
+        return output
 
-    def validity(self, test SUTInput) -> int:
+    def validity(self, test: SUTInput) -> int:
         """Basic validator which deems all tests valid."""
 
         return 1

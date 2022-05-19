@@ -129,16 +129,16 @@ class WOGAN(Algorithm):
         idx = test_repository.indices if self.first_training else [test_repository.tests - 1]
         for i in range(self.N_models):
             for j in idx:
-                self.test_bins[i][self.get_bin(test_repository.get(j)[3][i])].append(j)
+                self.test_bins[i][self.get_bin(test_repository.get(j)[-1][i])].append(j)
 
         # We train only the models corresponding to active outputs and only if
         # there has been enough delay since the last training. During the first
         # training, we ignore the delay.
         for i in active_outputs:
             if self.first_training or tests_generated - self.model_trained[i] >= self.train_delay:
-                dataX, _, _, dataY = test_repository.get()
-                dataX = np.array(dataX)
-                dataY = np.array(dataY)[:,i].reshape(-1, 1)
+                X, _, Y = test_repository.get()
+                dataX = np.asarray([sut_input.inputs for sut_input in X])
+                dataY = np.array(Y)[:,i].reshape(-1, 1)
                 epochs = self.models[i].train_settings_init["epochs"] if self.first_training else self.models[i].train_settings["epochs"]
                 train_settings = self.models[i].train_settings_init if self.first_training else self.models[i].train_settings
                 for _ in range(epochs):
@@ -160,12 +160,12 @@ class WOGAN(Algorithm):
                     latest = 0 if self.first_training else self.train_delay
                     c = 0
                     for j in range(latest):
-                        test, _, _, output = test_repository.get(test_repository.indices[-(j+1)])
+                        test, _, output = test_repository.get(test_repository.indices[-(j+1)])
                         if self.get_bin(output[i]) >= self.bin_sample(1, self.shift(budget_remaining))[0]:
-                            train_X[c] = test
+                            train_X[c] = test.inputs
                             c += 1
                     train_X[c:] = self.training_sample(BS - c,
-                                                       np.asarray(test_repository.get()[0]),
+                                                       np.asarray([sut_input.inputs for sut_input in test_repository.get()[0]]),
                                                        self.test_bins[i],
                                                        self.shift(budget_remaining),
                                                       )

@@ -11,13 +11,15 @@ try:
 except ImportError:
     raise Exception("Error importing Python Matlab engine.")
 
-from stgem.sut import SUT, SUTResult
+from stgem.sut import SUT, SUTOutput
 
 class Matlab_Simulink_Signal(SUT):
     """Generic class for using Matlab Simulink models using signal inputs."""
 
     def __init__(self, parameters):
         super().__init__(parameters)
+
+        self.input_type = "signal"
 
         mandatory_parameters = ["simulation_time", "sampling_step", "model_file"]
         for p in mandatory:
@@ -97,10 +99,7 @@ class Matlab_Simulink_Signal(SUT):
 
         output_timestamps = np.array(out_timestamps).flatten()
 
-        return SUTResult(signals, result, timestamps, output_timestamps, None)
-
-    def _execute_test(self, timestamps, signals):
-        return self._execute_test_simulink(timestamps, signals)
+        return SUTOutput(result, output_timestamps, None)
 
 class Matlab_Simulink(Matlab_Simulink_Signal):
     """Generic class for using Matlab Simulink models using piecewise constant
@@ -116,6 +115,8 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
             super().__init__(parameters)
         except:
             raise
+
+        self.input_type = "vector"
 
         mandatory_parameters = ["time_slices", "simulation_time", "sampling_step"]
         for p in mandatory_parameters:
@@ -146,7 +147,7 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         self.has_been_setup = True
 
     def _execute_test(self, test):
-        test = self.descale(test.reshape(1, -1), self.descaling_intervals).reshape(-1)
+        denormalized = self.descale(test.inputs.reshape(1, -1), self.descaling_intervals).reshape(-1)
 
         # Common timestamps to all input signals.
         timestamps = np.array([i*self.sampling_step for i in range(self.steps + 1)])
@@ -155,9 +156,12 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         offset = 0
         for i in range(self.N_signals):
             idx = lambda t: int(t // self.time_slices[i]) if t < self.simulation_time else self.pieces[i] - 1
-            signal_f = lambda t: test[offset + idx(t)]
+            signal_f = lambda t: denormalized[offset + idx(t)]
             signals[i] = np.asarray([signal_f(t) for t in timestamps])
             offset += self.pieces[i]
+
+        test.input_timestamps = timestamps
+        test.input_denormalized = signals
 
         # Execute the test.
         return self._execute_test_simulink(timestamps, signals)
@@ -266,9 +270,8 @@ class Matlab(SUT):
         # Matlab does not like numpy data types, so we convert to floats.
         matlab_result = self.matlab_func(*(float(x) for x in test), nargout=self.odim)
         matlab_result = np.asarray(matlab_result)
-        matlab_result = np.asarray(matlab_result)
 
-        return SUTResult(test, matlab_result, None, None, None)
+        return SUTResult(matlab_result, None, None)
 
     def _execute_vector_signal(self, test):
         if not hasattr(self, "engine"):
@@ -283,7 +286,7 @@ class Matlab(SUT):
         for i in range(self.odim):
             output_signals[i] = data[:, i]
 
-        return SUTResult(test, output_signals, None, output_timestamps, None)
+        return SUTResult(output_signals, output_timestamps, None)
 
     def _execute_signal_vector(self, timestamps, signals):
         if not hasattr(self, "engine"):
@@ -295,7 +298,7 @@ class Matlab(SUT):
 
         matlab_result = self.matlab_func(model_input, nargout=self.odim)
 
-        return SUTResult(signals, matlab_result, timestamps, None, None)
+        return SUTResult(matlab_result, None, None)
 
     def _execute_signal_signal(self, timestamps, signals):
         if not hasattr(self, "engine"):
@@ -314,14 +317,13 @@ class Matlab(SUT):
         for i in range(self.odim):
             output_signals[i] = data[:, i]
 
-        return SUTResult(signals, output_signals, timestamps, output_timestamps, None)
+        return SUTResult(output_signals, output_timestamps, None)
 
-    def _execute_test(self, *args, **kwargs):
+    def _execute_test(self, test):
         # TODO: Add error handling in case of wrong input or Matlab errors.
 
         if self.input_type == "vector":
-            test = args[0]
-            test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
+            test.input_denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
 
             if self.output_type == "vector":
                 return self._execute_vector_vector(test)
@@ -331,8 +333,7 @@ class Matlab(SUT):
             # If we have a piecewise constant signal, convert the input vector
             # to a constant signal.
             if self.input_type == "piecewise constant signal":
-                test = args[0]
-                test = self.descale(test.reshape(1, -1), self.descaling_intervals).reshape(-1)
+                denormalized = self.descale(test.inputs.reshape(1, -1), self.descaling_intervals).reshape(-1)
 
                 # Common timestamps to all input signals.
                 timestamps = np.array([i*self.sampling_step for i in range(self.steps + 1)])
@@ -341,12 +342,17 @@ class Matlab(SUT):
                 offset = 0
                 for i in range(self.N_signals):
                     idx = lambda t: int(t // self.time_slices[i]) if t < self.simulation_time else self.pieces[i] - 1
-                    signal_f = lambda t: test[offset + idx(t)]
+                    signal_f = lambda t: denormalized[offset + idx(t)]
                     signals[i] = np.asarray([signal_f(t) for t in timestamps])
                     offset += self.pieces[i]
+
+                test.input_timestamps = timestamps
+                test.input_denormalized = signals
             else:
-                timestamps = args[0]
-                signals = args[1]
+                timestamps = test.input_timestamps
+                signals = test.inputs
+
+                test.input_denormalized = signals
             
             if self.output_type == "vector":
                 return self._execute_signal_vector(timestamps, signals)

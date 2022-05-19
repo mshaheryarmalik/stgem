@@ -3,8 +3,6 @@
 
 import numpy as np
 
-from stgem.sut import SUTResult
-
 class Objective:
 
     def __init__(self):
@@ -20,7 +18,7 @@ class Objective:
 
         raise AttributeError(name)
 
-    def __call__(self, r: SUTResult):
+    def __call__(self, t, r):
         return r.outputs
 
 class Minimize(Objective):
@@ -38,7 +36,7 @@ class Minimize(Objective):
         self.parameters["invert"] = invert
         self.parameters["clip"] = clip
 
-    def __call__(self, r: SUTResult):
+    def __call__(self, t, r):
         assert r.output_timestamps is None
 
         if self.selected is None:
@@ -74,7 +72,7 @@ class ObjectiveMinComponentwise(Objective):
         super().setup(sut)
         self.dim = self.sut.odim
 
-    def __call__(self, r: SUTResult):
+    def __call__(self, t, r):
         assert r.output_timestamps is not None
         return [min(output) for output in r.outputs]
 
@@ -187,7 +185,7 @@ class FalsifySTL(Objective):
             x.lower_time_bound = x.old_lower_time_bound
             x.upper_time_bound = x.old_upper_time_bound
 
-    def _evaluate_vector(self, output):
+    def _evaluate_vector(self, test, output):
         # We assume that the output is a single observation of a signal. It
         # follows that not all STL formulas have a clear interpretation (like
         # always[0,30](x1 > 0 and x2 > 0). It is up to the user to ensure a
@@ -196,7 +194,12 @@ class FalsifySTL(Objective):
         self.specification.reset()
 
         timestamps = np.array([0], dtype=np.float32)
-        trajectories = {var:np.array([output[self.M[var][1]]], dtype=np.float32) for var in self.formula_variables}
+        trajectories = {}
+        for var in self.formula_variables:
+            if self.M[var][0] == "output":
+                trajectories[var] = np.array([output[self.M[var][1]]], dtype=np.float32)
+            else:
+                trajectories[var] = np.array([test[self.M[var][1]]], dtype=np.float32)
 
         # Notice that the return value is a Cython MemoryView.
         robustness_signal = self.specification.eval_interval(trajectories, timestamps)
@@ -215,10 +218,10 @@ class FalsifySTL(Objective):
 
         return robustness
 
-    def _evaluate_signal(self, result):
-        input_timestamps = result.input_timestamps
+    def _evaluate_signal(self, test, result):
+        input_timestamps = test.input_timestamps
         output_timestamps = result.output_timestamps
-        input_signals = result.inputs
+        input_signals = test.input_denormalized
         output_signals = result.outputs
 
         """
@@ -322,11 +325,11 @@ class FalsifySTL(Objective):
 
         return robustness
 
-    def __call__(self, r: SUTResult, *args, **kwargs):
+    def __call__(self, t, r):
         if r.output_timestamps is None:
-            return self._evaluate_vector(r.outputs)
+            return self._evaluate_vector(t.inputs, r.outputs)
         else:
-            return self._evaluate_signal(r)
+            return self._evaluate_signal(t, r)
 
     @staticmethod
     def GreaterThan(A, B, C, D, left_signal=None, right_signal=None):

@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from stgem.sut import SUT
+from stgem.sut import SUT, SUTOutput
 from .util import generate_odroid_data
 
 class OdroidSUT(SUT):
