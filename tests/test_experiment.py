@@ -11,6 +11,7 @@ import random
 import dill as pickle
 
 
+
 class TestExperiment(unittest.TestCase):
 
     def myfunction(self, input: [[0, 120]]) -> [[-200, 200]]:
@@ -38,14 +39,16 @@ class TestExperiment(unittest.TestCase):
         return random.randint(0, 1000)
 
     def myCallback(self, result, generator, done):
-
+        print("running")
         output = pickle.dumps(done)
         with open("done.pickle", "wb") as f:
             f.write(output)
+        with open("done.pickle", "rb") as f:
+            print(pickle.load(f))
 
 
     def test_experiment(self):
-        print("running")
+
         experiment = Experiment(2, stgem_factory = self.factory, seed_factory = self.seed, result_callback = self.myCallback)
         experiment.run()
     #   experiment2 = Experiment(1, self.factory, self.seed, generator_callback = self.myCallback2)

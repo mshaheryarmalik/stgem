@@ -1,6 +1,7 @@
 import gc
 from multiprocess import Process, Queue
 from collections import defaultdict
+import dill as pickle
 # Notice that the callbacks need to understand that calls can arrive out of
 # order.
 
@@ -12,7 +13,7 @@ class Experiment:
         self.seed_factory = seed_factory
         self.generator_callback = generator_callback
         self.result_callback = result_callback
-        self.done = defaultdict(lambda: False)
+        self.done = []
 
     def run(self, N_workers=1, silent=False, resume = True):
         if resume:
@@ -22,13 +23,13 @@ class Experiment:
                 for i in range(len(self.done)):
                     self.stgem_factory()
                     self.seed_factory()
-            except EOFError:
+            except (EOFError, FileNotFoundError):
                 print("No file to load")
         if N_workers < 1:
             raise SystemExit("The number of workers must be positive.")
         elif N_workers == 1:
             # Do not use multiprocessing.
-            for _ in range(self.N-len(self.done)):
+            for _ in range(self.N):
                 generator = self.stgem_factory()
                 seed = self.seed_factory()
                 generator.setup(seed=seed)
@@ -37,7 +38,7 @@ class Experiment:
                     self.generator_callback(generator)
 
                 r = generator._run(silent=silent)
-                self.done[generator] = True
+                self.done.append(0)
                 if not self.result_callback is None:
                     self.result_callback(r, generator, self.done)
 
@@ -63,10 +64,7 @@ class Experiment:
                     r = generator._run(silent=silent)
                     self.done[generator] = True
                     if not result_callback is None:
-                        retdone = defaultdict(lambda: False)
-                        for key, value in self.done.items():
-                            retdone[key] = value
-                        result_callback(r, generator, retdone)
+                        result_callback(r, generator, self.done)
 
                     # Delete and garbage collect. See above.
 
@@ -74,7 +72,7 @@ class Experiment:
                     gc.collect()
                     
             def producer(queue, N_workers, N, stgem_factory, seed_factory):
-                for _ in range(N-len(self.done)):
+                for _ in range(N):
                     queue.put((stgem_factory(), seed_factory()))
 
                 for _ in range(N_workers):

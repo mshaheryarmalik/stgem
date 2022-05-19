@@ -5,6 +5,25 @@ import numpy as np
 
 from stgem.algorithm import Model
 
+class MinimumDistance(Model):
+
+    def setup(self, sut, device, logger=None, mindist = 0.01):
+        super().setup(sut, device, logger)
+        self.existingPoints = set()
+        self.mindist = mindist
+    def testOK(self, candidate):
+        for p in self.existingPoints:
+            if np.linalg.norm(np.asarray(p)-candidate) < self.mindist:
+                return False
+        return True
+    def generate_test(self):
+        ret = self.sut.sample_input_space()
+        while not self.testOK(ret):
+            ret = self.sut.sample_input_space()
+        self.existingPoints.add(tuple(map(tuple, ret)))
+        return ret
+
+
 class Uniform(Model):
     """Implements a random test model which directly uses the sampling provided by
     the SUT."""
