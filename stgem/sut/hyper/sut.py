@@ -1,6 +1,6 @@
 import numpy as np
 
-from stgem.sut import SUT, SUTResult
+from stgem.sut import SUT, SUTOutput
 
 class Range:
     """Continuous range [A, B]."""
@@ -35,8 +35,10 @@ class HyperParameter(SUT):
         self.experiment_factory = experiment_factory
 
         self.idim = len(self.hyperparameters)
+        self.input_type = "vector"
+        self.output_type = "vector"
 
-        # Check what type of thing is computed FR etc.
+        # Check what type of thing is computed: FR etc.
         if self.mode == "falsification_rate":
             self.stored = []
 
@@ -53,18 +55,23 @@ class HyperParameter(SUT):
             self.report = report
 
             self.odim = 1
+        else:
+            raise Exception("Unknown mode '{}'.".format(falsification_rate))
 
     def edit_generator(self, generator, test):
-        test = test.reshape(-1)
+        denormalized = np.zeros_like(test.inputs)
         for n, (hp_func, hp_domain) in enumerate(self.hyperparameters):
-            hp_func(generator, hp_domain(test[n]))
+            denormalized[n] = hp_domain(test.inputs[n])
+            hp_func(generator, denormalized[n])
 
-    def execute_test(self, test):
+        test.input_denormalized = denormalized
+
+    def _execute_test(self, test):
         experiment = self.experiment_factory()
         experiment.generator_callback = lambda g: self.edit_generator(g, test)
         experiment.result_callback = self.stgem_result_callback
 
         experiment.run(silent=True)
 
-        return SUTResult(test, np.array([self.report()]), None, None, None)
+        return SUTOutput(np.array([self.report()]), None, None)
 

@@ -5,7 +5,7 @@ import math
 
 import numpy as np
 
-from stgem.sut import SUT,  SUTResult
+from stgem.sut import SUT, SUTOutput
 
 class MO3D(SUT):
     """
@@ -21,28 +21,28 @@ class MO3D(SUT):
     3-tuples of numbers in [-1, 1] which are scaled to [-15, 15] internally.
     """
 
-    def __init__(self,parameters=None):
-        SUT.__init__(self,parameters)
+    def __init__(self, parameters=None):
+        super().__init__(parameters)
 
         self.input_range = [[-15, 15], [-15, 15], [-15, 15]]
         self.output_range = [[0, 350], [0, 350], [0, 350]]
-        self.inputs=["i0","i1","i2"]
-        self.outputs=["o0","o1","o2"]
-        self.idim=3
-        self.odim=3
+        self.input_type = "vector"
+        self.output_type = "vector"
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         #print("unscaled",test)
-        test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
+        denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
         #print("descaled", test)
 
-        x1 = test[0]
-        x2 = test[1]
-        x3 = test[2]
+        x1 = denormalized[0]
+        x2 = denormalized[1]
+        x3 = denormalized[2]
 
         h1 = 305-100*(math.sin(x1/3)+math.sin(x2/3)+math.sin(x3/3))
         h2 = 230-75*(math.cos(x1/2.5+15)+math.cos(x2/2.5+15)+math.cos(x3/2.5+15))
         h3 = (x1-7)**2+(x2-7)**2+(x3-7)**2 - (math.cos((x1-7)/2.75) + math.cos((x2-7)/2.75) + math.cos((x3-7)/2.75))
 
-        return SUTResult(test,np.asarray([h1, h2, h3]),None,None, None)
+        test.input_denormalized = denormalized
+
+        return SUTOutput(np.asarray([h1, h2, h3]), None, None)
 

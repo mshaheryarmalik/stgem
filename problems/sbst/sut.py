@@ -379,7 +379,7 @@ class SBSTSUT(SBSTSUT_curvature):
     fixed length.
     """
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         """
         Execute the given test on the SUT.
 
@@ -438,7 +438,7 @@ class SBSTSUT_validator(SBSTSUT_curvature):
     middle of the bottom part of the map and point initially directly upwards.
     """
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         """
         Execute the given test on the SUT.
 

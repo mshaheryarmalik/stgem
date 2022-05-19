@@ -10,7 +10,7 @@ from stgem.algorithm.algorithm import Algorithm, SearchSpace
 from stgem.budget import Budget
 from stgem.logger import Logger
 from stgem.objective_selector import ObjectiveSelectorAll
-from stgem.sut import SUT
+from stgem.sut import SUT, SUTInput
 from stgem.test_repository import TestRepository
 
 class StepResult:
@@ -90,7 +90,7 @@ class Search(Step):
         self.algorithm.initialize()
 
         success = True
-        if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_normalized_output == 0.0):
+        if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_objective == 0.0):
             success = False
 
             # TODO: We should check if the budget was exhausted during the test
@@ -110,19 +110,20 @@ class Search(Step):
 
                 self.log("Executing the test...")
                 self.algorithm.perf.timer_start("execution")
-                sut_result = self.sut.execute_test(next_test)
+                sut_input = SUTInput(next_test, None, None)
+                sut_result = self.sut.execute_test(sut_input)
                 self.algorithm.perf.save_history("execution_time", self.algorithm.perf.timer_reset("execution"))
                 self.budget.consume("executions")
                 self.budget.consume("execution_time", self.algorithm.perf.get_history("execution_time")[-1])
                 self.log("Result from the SUT: {}".format(sut_result))
-                output = [objective(sut_result) for objective in self.objective_funcs]
+                output = [objective(sut_input, sut_result) for objective in self.objective_funcs]
                 self.log("The actual objective: {}".format(output))
 
                 # TODO: Argmin does not take different scales into account.
                 self.objective_selector.update(np.argmin(output))
-                self.test_repository.record(self.sut.denormalize_test(next_test), next_test, sut_result, output)
+                self.test_repository.record(sut_input, sut_result, output)
 
-                if not success and self.test_repository.minimum_normalized_output == 0:
+                if not success and self.test_repository.minimum_objective == 0:
                     self.log("First success at test {}.".format(i + 1))
                     success = True
 
@@ -135,7 +136,7 @@ class Search(Step):
         self.algorithm.finalize()
 
         # Report results.
-        self.log("Step minimum objective component: {}".format(self.test_repository.minimum_normalized_output))
+        self.log("Step minimum objective component: {}".format(self.test_repository.minimum_objective))
 
         # Save certain parameters in the StepResult object.
         parameters = {}

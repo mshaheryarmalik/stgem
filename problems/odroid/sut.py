@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from stgem.sut import SUT
+from stgem.sut import SUT, SUTOutput
 from .util import generate_odroid_data
 
 class OdroidSUT(SUT):
@@ -16,8 +16,8 @@ class OdroidSUT(SUT):
     is a 3-tuple (power, performance, efficiency) scaled to [0, 1].
     """
 
-    def __init__(self,parameters):
-        SUT.__init__(self,parameters)
+    def __init__(self, parameters):
+        super().__init__(parameters)
 
         self.idim = 6
         self.odim = 3
@@ -67,7 +67,7 @@ class OdroidSUT(SUT):
         self.scaleY3 = self.dataY[:, 2].max(axis=0)
         self.dataY[:, 2] = self.dataY[:, 2] / self.scaleY3
 
-    def execute_test(self, test):
+    def _execute_test(self, test):
         """
         Execute the given tests on the SUT. As not all possible parameters have a
         test value in the data, we find the closest test from the test data

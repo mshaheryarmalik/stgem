@@ -41,9 +41,9 @@ class OGAN(Algorithm):
                 if not self.first_training:
                     # Reset the model.
                     self.models[i].reset()
-                _, dataX, _, dataY = test_repository.get()
-                dataX = np.array(dataX)
-                dataY = np.array(dataY)[:, i].reshape(-1, 1)
+                X, _, Y = test_repository.get()
+                dataX = np.asarray([sut_input.inputs for sut_input in X])
+                dataY = np.array(Y)[:, i].reshape(-1, 1)
                 for epoch in range(self.models[i].train_settings_init["epochs"]):
                     if self.first_training:
                         train_settings = self.models[i].train_settings_init

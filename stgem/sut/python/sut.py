@@ -4,7 +4,7 @@
 import math
 import numpy as np
 import inspect
-from stgem.sut import SUT, SUTResult
+from stgem.sut import SUT, SUTOutput
 
 class PythonFunction(SUT):
     """
@@ -34,17 +34,17 @@ class PythonFunction(SUT):
         self.idim = len(self.input_range)
         self.odim = len(self.output_range)
 
-        self.inputs = inspect.getfullargspec(self.function).args
-
-    def execute_test(self, test):
-        test = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
+    def _execute_test(self, test):
+        denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
         output = []
         error = None
         # Add a exception handler
         try:
-            output = self.function(test)
+            output = self.function(denormalized)
         except Exception as err:
             error = err
 
-        return SUTResult(test, np.asarray(output), None, None, error)
+        test.input_denormalized = denormalized
+
+        return SUTOutput(np.asarray(output), None, error)
 
