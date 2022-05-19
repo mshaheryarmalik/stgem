@@ -38,7 +38,7 @@ class TestExperiment(unittest.TestCase):
     def seed(self):
         return random.randint(0, 1000)
 
-    def myCallback(self, result, generator, done):
+    def myCallback(self, result, done):
         print("running")
         output = pickle.dumps(done)
         with open("done.pickle", "wb") as f:
@@ -50,7 +50,7 @@ class TestExperiment(unittest.TestCase):
     def test_experiment(self):
 
         experiment = Experiment(2, stgem_factory = self.factory, seed_factory = self.seed, result_callback = self.myCallback)
-        experiment.run()
+        experiment.run(1)
     #   experiment2 = Experiment(1, self.factory, self.seed, generator_callback = self.myCallback2)
     #  experiment2.run()
 

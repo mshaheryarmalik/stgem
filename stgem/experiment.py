@@ -14,33 +14,57 @@ class Experiment:
         self.generator_callback = generator_callback
         self.result_callback = result_callback
         self.done = []
+        self.notrun = []
+        self.count = -1
 
     def run(self, N_workers=1, silent=False, resume = True):
         if resume:
             try:
                 with open("done.pickle", "rb") as f:
                     self.done = pickle.load(f)
-                for i in range(len(self.done)):
-                    self.stgem_factory()
-                    self.seed_factory()
+                    self.count = max(self.done)
             except (EOFError, FileNotFoundError):
                 print("No file to load")
         if N_workers < 1:
             raise SystemExit("The number of workers must be positive.")
         elif N_workers == 1:
             # Do not use multiprocessing.
-            for _ in range(self.N):
+            if resume:
+                for i in range(max(self.done)):
+                    if i not in self.done:
+                        generator = stgem_factory()
+                        seed = seed_factory()
+                        generator.setup(seed=seed)
+
+                        if not self.generator_callback is None:
+                            self.generator_callback(generator)
+
+                        r = generator._run(silent=silent)
+                        self.done.append(i)
+                        if not self.result_callback is None:
+                            self.result_callback(r, self.done)
+
+                        # Delete generator and force garbage collection. This is
+                        # especially important when using Matleb SUTs as several
+                        # Matlab instances take quite lot of memory.
+                        del generator
+                        gc.collect()
+                    else:
+                        self.stgem_factory()
+                        self.seed_factory()
+
+            for _ in range(max(self.done), self.N):
                 generator = self.stgem_factory()
                 seed = self.seed_factory()
                 generator.setup(seed=seed)
 
                 if not self.generator_callback is None:
                     self.generator_callback(generator)
-
+                self.count += 1
+                self.done.append(self.count)
                 r = generator._run(silent=silent)
-                self.done.append(0)
                 if not self.result_callback is None:
-                    self.result_callback(r, generator, self.done)
+                    self.result_callback(r, self.done)
 
                 # Delete generator and force garbage collection. This is
                 # especially important when using Matleb SUTs as several
@@ -62,9 +86,11 @@ class Experiment:
                         generator_callback(generator)
 
                     r = generator._run(silent=silent)
-                    self.done[generator] = True
+                    self.count += 1
+                    self.done.append(self.count)
+
                     if not result_callback is None:
-                        result_callback(r, generator, self.done)
+                        result_callback(r, self.done)
 
                     # Delete and garbage collect. See above.
 
