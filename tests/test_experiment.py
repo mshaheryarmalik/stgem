@@ -39,18 +39,13 @@ class TestExperiment(unittest.TestCase):
         return random.randint(0, 1000)
 
     def myCallback(self, result, done):
-        print("running")
-        output = pickle.dumps(done)
-        with open("done.pickle", "wb") as f:
-            f.write(output)
-        with open("done.pickle", "rb") as f:
-            print(pickle.load(f))
+        print("this is running")
 
 
     def test_experiment(self):
 
-        experiment = Experiment(2, stgem_factory = self.factory, seed_factory = self.seed, result_callback = self.myCallback)
-        experiment.run(1)
+        experiment = Experiment(10, stgem_factory = self.factory, seed_factory = self.seed, result_callback = self.myCallback)
+        experiment.run(2, done = [1, 3])
     #   experiment2 = Experiment(1, self.factory, self.seed, generator_callback = self.myCallback2)
     #  experiment2.run()
 

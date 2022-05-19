@@ -1,5 +1,6 @@
 import gc
 from multiprocess import Process, Queue
+import numpy as np
 from collections import defaultdict
 import dill as pickle
 # Notice that the callbacks need to understand that calls can arrive out of
@@ -13,67 +14,43 @@ class Experiment:
         self.seed_factory = seed_factory
         self.generator_callback = generator_callback
         self.result_callback = result_callback
-        self.done = []
-        self.notrun = []
-        self.count = -1
 
-    def run(self, N_workers=1, silent=False, resume = True):
-        if resume:
-            try:
-                with open("done.pickle", "rb") as f:
-                    self.done = pickle.load(f)
-                    self.count = max(self.done)
-            except (EOFError, FileNotFoundError):
-                print("No file to load")
+    def run(self, N_workers=1, silent=False, done: list = []):
+        self.count = 0
         if N_workers < 1:
             raise SystemExit("The number of workers must be positive.")
         elif N_workers == 1:
             # Do not use multiprocessing.
-            if resume:
-                for i in range(max(self.done)):
-                    if i not in self.done:
-                        generator = stgem_factory()
-                        seed = seed_factory()
-                        generator.setup(seed=seed)
 
-                        if not self.generator_callback is None:
-                            self.generator_callback(generator)
+            count = 0
+            for i in range(self.N):
 
-                        r = generator._run(silent=silent)
-                        self.done.append(i)
-                        if not self.result_callback is None:
-                            self.result_callback(r, self.done)
+                if i in done:
+                    self.stgem_factory()
+                    self.seed_factory()
+                else:
+                    generator = self.stgem_factory()
+                    seed = self.seed_factory()
+                    generator.setup(seed=seed)
 
-                        # Delete generator and force garbage collection. This is
-                        # especially important when using Matleb SUTs as several
-                        # Matlab instances take quite lot of memory.
-                        del generator
-                        gc.collect()
-                    else:
-                        self.stgem_factory()
-                        self.seed_factory()
+                    if not self.generator_callback is None:
+                        self.generator_callback(generator)
 
-            for _ in range(max(self.done), self.N):
-                generator = self.stgem_factory()
-                seed = self.seed_factory()
-                generator.setup(seed=seed)
+                    done.append(self.count)
+                    r = generator._run(silent=silent)
+                    done.append(count)
+                    if not self.result_callback is None:
+                        self.result_callback(r, done)
 
-                if not self.generator_callback is None:
-                    self.generator_callback(generator)
-                self.count += 1
-                self.done.append(self.count)
-                r = generator._run(silent=silent)
-                if not self.result_callback is None:
-                    self.result_callback(r, self.done)
-
-                # Delete generator and force garbage collection. This is
-                # especially important when using Matleb SUTs as several
-                # Matlab instances take quite lot of memory.
-                del generator
-                gc.collect()
+                    # Delete generator and force garbage collection. This is
+                    # especially important when using Matleb SUTs as several
+                    # Matlab instances take quite lot of memory.
+                    del generator
+                    gc.collect()
+                count += 1
         else:
             # Use multiprocessing.
-            def consumer(queue, silent, generator_callback, result_callback):
+            def consumer(queue, silent, generator_callback, result_callback, done):
                 while True:
                     msg = queue.get()
                     if msg == "STOP": break
@@ -81,25 +58,30 @@ class Experiment:
                     generator, seed = msg
 
                     generator.setup(seed=seed)
+                    done.append(self.count)
+                    self.count += 1
 
                     if not generator_callback is None:
                         generator_callback(generator)
 
                     r = generator._run(silent=silent)
-                    self.count += 1
-                    self.done.append(self.count)
-
                     if not result_callback is None:
-                        result_callback(r, self.done)
+                        result_callback(r, done)
 
                     # Delete and garbage collect. See above.
 
                     del generator
                     gc.collect()
                     
-            def producer(queue, N_workers, N, stgem_factory, seed_factory):
-                for _ in range(N):
-                    queue.put((stgem_factory(), seed_factory()))
+            def producer(queue, N_workers, N, stgem_factory, seed_factory, done):
+                for i in range(N):
+                    if i not in done:
+                        queue.put((stgem_factory(), seed_factory()))
+                    else:
+                        stgem_factory()
+                        seed_factory()
+                        self.count += 1
+
 
                 for _ in range(N_workers):
                     queue.put("STOP")
@@ -108,11 +90,11 @@ class Experiment:
 
             workers = []
             for _ in range(N_workers):
-                consumer_process = Process(target=consumer, args=[queue, silent, self.generator_callback, self.result_callback], daemon=True)
+                consumer_process = Process(target=consumer, args=[queue, silent, self.generator_callback, self.result_callback, done], daemon=True)
                 workers.append(consumer_process)
                 consumer_process.start()
 
-            producer(queue, N_workers, self.N, self.stgem_factory, self.seed_factory)
+            producer(queue, N_workers, self.N, self.stgem_factory, self.seed_factory, done)
 
             for consumer_process in workers:
                 consumer_process.join()
