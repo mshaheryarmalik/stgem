@@ -16,8 +16,8 @@ class OdroidSUT(SUT):
     is a 3-tuple (power, performance, efficiency) scaled to [0, 1].
     """
 
-    def __init__(self,parameters):
-        SUT.__init__(self,parameters)
+    def __init__(self, parameters):
+        super().__init__(parameters)
 
         self.idim = 6
         self.odim = 3

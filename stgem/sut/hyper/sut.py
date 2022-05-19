@@ -36,7 +36,7 @@ class HyperParameter(SUT):
 
         self.idim = len(self.hyperparameters)
 
-        # Check what type of thing is computed FR etc.
+        # Check what type of thing is computed: FR etc.
         if self.mode == "falsification_rate":
             self.stored = []
 
@@ -53,6 +53,8 @@ class HyperParameter(SUT):
             self.report = report
 
             self.odim = 1
+        else:
+            raise Exception("Unknown mode '{}'.".format(falsification_rate))
 
     def edit_generator(self, generator, test):
         test = test.reshape(-1)

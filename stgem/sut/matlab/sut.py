@@ -19,6 +19,11 @@ class Matlab_Simulink_Signal(SUT):
     def __init__(self, parameters):
         super().__init__(parameters)
 
+        mandatory_parameters = ["simulation_time", "sampling_step", "model_file"]
+        for p in mandatory:
+            if not p in self.parameters:
+                raise Exception("Parameter '{}' not specified.".format(p))
+
         # How often input signals are sampled for execution (in time units).
         self.steps = self.simulation_time // self.sampling_step
 
@@ -112,22 +117,18 @@ class Matlab_Simulink(Matlab_Simulink_Signal):
         except:
             raise
 
-        if not "time_slices" in self.parameters:
-            raise Exception("Parameter 'time_slices' must be defined for piecewise constant signal inputs.")
-        if not "simulation_time" in self.parameters:
-            raise Exception("Parameter 'simulation_time' must be defined for piecewise constant signal inputs.")
-        if not "sampling_step" in self.parameters:
-            raise Exception("Parameter 'sampling_step' must be defined for piecewise constant signal inputs.")
+        mandatory_parameters = ["time_slices", "simulation_time", "sampling_step"]
+        for p in mandatory_parameters:
+            if not p in self.parameters:
+                raise Exception("Parameter '{}' must be defined for piecewise constant signal inputs.".format(p))
 
-        # How often input signals are sampled for execution (in time units).
-        self.steps = int(self.simulation_time / self.sampling_step)
         # How many inputs we have for each input signal.
         self.pieces = [math.ceil(self.simulation_time / time_slice) for time_slice in self.time_slices]
 
         self.has_been_setup = False
 
-    def setup(self, budget, rng):
-        super().setup(budget, rng)
+    def setup(self):
+        super().setup()
 
         if self.has_been_setup: return
 
@@ -186,36 +187,33 @@ class Matlab(SUT):
     def __init__(self, parameters):
         super().__init__(parameters)
 
-        self.has_been_setup = False
+        mandatory_parameters = ["model_file", "input_type", "output_type"]
+        for p in mandatory:
+            if not p in self.parameters:
+                raise Exception("Parameter '{}' not specified.".format(p))
 
         if not os.path.exists(self.model_file + ".m"):
             raise Exception("The file '{}.m' does not exist.".format(self.model_file))
-
         if "init_model_file" in self.parameters and not os.path.exists(self.init_model_file + ".m"):
             raise Exception("The file '{}.m' does not exist.".format(self.init_model_file))
 
-        if not "input_type" in self.parameters:
-            raise Exception("Matlab call input type not specified.")
         if not self.input_type.lower() in ["vector", "piecewise constant signal", "signal"]:
             raise Exception("Unknown Matlab call input type '{}'.".format(self.input_type))
-
-        if not "output_type" in self.parameters:
-            raise Exception("Matlab call output type not specified.")
         if not self.output_type.lower() in ["vector", "signal"]:
             raise Exception("Unknown Matlab call output type '{}'.".format(self.output_type))
 
         if self.input_type == "piecewise constant signal":
-            if not "time_slices" in self.parameters:
-                raise Exception("Parameter 'time_slices' must be defined for piecewise constant signal inputs.")
-            if not "simulation_time" in self.parameters:
-                raise Exception("Parameter 'simulation_time' must be defined for piecewise constant signal inputs.")
-            if not "sampling_step" in self.parameters:
-                raise Exception("Parameter 'sampling_step' must be defined for piecewise constant signal inputs.")
+            mandatory_parameters = ["time_slices", "simulation_time", "sampling_step"]
+            for p in mandatory_parameters:
+                if not p in self.parameters:
+                    raise Exception("Parameter '{}' must be defined for piecewise constant signal inputs.".format(p))
 
             # How often input signals are sampled for execution (in time units).
             self.steps = int(self.simulation_time / self.sampling_step)
             # How many inputs we have for each input signal.
             self.pieces = [math.ceil(self.simulation_time / time_slice) for time_slice in self.time_slices]
+
+        self.has_been_setup = False
 
     def setup_matlab(self):
         # As setting Matlab takes some time, we only spend this time if really
@@ -237,13 +235,12 @@ class Matlab(SUT):
             init = getattr(self.engine, self.INIT_MODEL_NAME)
             init(nargout=0)
 
-    def setup(self, budget, rng):
-        super().setup(budget, rng)
+    def setup(self):
+        super().setup()
 
         if self.has_been_setup: return
 
-        # Adjust the SUT parameters if the input is a piecewise constant
-        # signal.
+        # Adjust the SUT parameters if the input is a piecewise constant signal.
         if self.input_type == "piecewise constant signal":
             if not len(self.time_slices) == self.idim:
                 raise Exception("Expected {} time slices, found {}.".format(self.idim, len(self.time_slices)))

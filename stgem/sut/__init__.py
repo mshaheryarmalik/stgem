@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
+See SUT.md for detailed documentation and ideas. Remember to edit this
+documentation if you make changes to SUTs!
+"""
+
+"""
 Here is a base class implementation for systems under test (SUTs). We do not
 strictly enforce the input and output representations for flexibility, but we
 have the following conventions which should be followed if possible.
@@ -22,9 +27,7 @@ from collections import namedtuple
 from stgem.performance import PerformanceData
 from stgem.algorithm.algorithm import SearchSpace
 
-# TODO Document this
-# TODO Consider a dataclass
-
+SUTInput = namedtuple("SUTInput", "inputs input_timestamps")
 SUTResult = namedtuple("SUTResult", "inputs outputs input_timestamps output_timestamps error")
 
 class SUT:
@@ -37,6 +40,7 @@ class SUT:
             self.parameters = parameters
 
         self.perf = PerformanceData()
+        self.base_has_been_setup = False
 
         """
         All SUTs have the below variables which concern inputs and outputs,
@@ -88,6 +92,10 @@ class SUT:
         """Setup the budget and perform steps necessary for two-step
         initialization. Derived classes should always call this super class
         setup method."""
+
+        # We skip setup if it has been done before since inheriting classes
+        # may alter idim, odim, ranges, etc.
+        if self.base_has_been_setup: return
 
         # Infer dimensions and names for inputs and outputs from impartial
         # information.
@@ -148,6 +156,8 @@ class SUT:
         if not isinstance(self.output_range, list):
             raise Exception("The output attribute of the SUT must be a Python list.")
         self.output_range += [None for _ in range(self.odim - len(self.output_range))]
+
+        self.base_has_been_setup = True
 
     def variable_range(self, var_name):
         """Return the range for the given variable (input or output)."""
