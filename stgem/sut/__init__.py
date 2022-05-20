@@ -225,9 +225,6 @@ class SUT:
 
         return y
 
-    def denormalize_test(self,test):
-        return self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
-
     def _execute_test(self, test: SUTInput) -> SUTOutput:
         raise NotImplementedError()
 
