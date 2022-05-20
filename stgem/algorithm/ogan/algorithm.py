@@ -13,10 +13,12 @@ class OGAN(Algorithm):
     """
 
     # Do not change the defaults
-    default_parameters = {"fitness_coef": 0.95, "train_delay": 1, "N_candidate_tests": 1}
+    default_parameters = {"fitness_coef": 0.95, "train_delay": 1, "N_candidate_tests": 1, "reset_each_training": False}
 
     def setup(self, search_space, device=None, logger=None):
         super().setup(search_space, device, logger)
+        if not "reset_each_training" in self.parameters:
+            self.parameters["reset_each_training"] = False
         self.first_training = True
 
     def do_train(self, active_outputs, test_repository, budget_remaining):
@@ -38,7 +40,7 @@ class OGAN(Algorithm):
         for i in active_outputs:
             if self.first_training or self.tests_generated - model_trained[i] >= self.train_delay:
                 self.log("Training the OGAN model {}...".format(i + 1))
-                if not self.first_training:
+                if not self.first_training and self.reset_each_training:
                     # Reset the model.
                     self.models[i].reset()
                 X, _, Y = test_repository.get()

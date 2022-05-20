@@ -18,7 +18,8 @@ mode = "stop_at_first_objective"
 
 ogan_parameters = {"fitness_coef": 0.95,
                    "train_delay": 1,
-                   "N_candidate_tests": 1
+                   "N_candidate_tests": 1,
+                   "reset_each_training": True
                    }
 
 ogan_model_parameters = {
