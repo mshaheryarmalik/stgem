@@ -1,5 +1,4 @@
-import math
-import unittest
+import math, os, unittest
 
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search
