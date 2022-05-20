@@ -18,7 +18,6 @@ from dataclasses import dataclass
 import numpy as np
 
 from stgem.performance import PerformanceData
-from stgem.algorithm.algorithm import SearchSpace
 
 @dataclass
 class SUTInput:
@@ -31,6 +30,29 @@ class SUTOutput:
     outputs: ...
     output_timestamps: ...
     error: ...
+
+class SearchSpace:
+    def __init__(self):
+        self.sut = None
+        self.rng = None
+
+    def setup(self, sut, rng):
+        self.sut = sut
+        self.rng = rng
+
+    @property
+    def input_dimension(self):
+        return self.sut.idim
+
+    @property
+    def output_dimension(self):
+        return self.sut.odim
+
+    def is_valid(self, test) -> bool:
+        return self.sut.validity(test)
+
+    def sample_input_space(self):
+        return self.rng.uniform(-1, 1, size=self.input_dimension)
 
 class SUT:
     """Base class implementing a system under test. """

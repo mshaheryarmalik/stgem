@@ -6,11 +6,11 @@ import dill as pickle
 import numpy as np
 import torch
 
-from stgem.algorithm.algorithm import Algorithm, SearchSpace
+from stgem.algorithm.algorithm import Algorithm
 from stgem.budget import Budget
 from stgem.logger import Logger
 from stgem.objective_selector import ObjectiveSelectorAll
-from stgem.sut import SUT, SUTInput
+from stgem.sut import SearchSpace, SUT, SUTInput
 from stgem.test_repository import TestRepository
 
 class StepResult:
