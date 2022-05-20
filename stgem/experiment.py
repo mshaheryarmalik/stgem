@@ -12,6 +12,9 @@ class Experiment:
         self.seed_factory = seed_factory
         self.generator_callback = generator_callback
         self.result_callback = result_callback
+        # This is because the CI pipeline gets a segmentation fault for calling
+        # garbage collection for some reason.
+        self.garbage_collect = True
 
     def run(self, N_workers=1, silent=False):
         if N_workers < 1:
@@ -38,7 +41,8 @@ class Experiment:
                 # especially important when using Matleb SUTs as several
                 # Matlab instances take quite lot of memory.
                 del generator
-                gc.collect()
+                if self.garbage_collect:
+                    gc.collect()
         else:
             # Use multiprocessing.
             def consumer(queue, silent, generator_callback, result_callback):
@@ -63,7 +67,8 @@ class Experiment:
 
                     # Delete and garbage collect. See above.
                     del generator
-                    gc.collect()
+                    if self.garbage_collect:
+                        gc.collect()
                     
             def producer(queue, N_workers, N, stgem_factory, seed_factory):
                 for _ in range(N):

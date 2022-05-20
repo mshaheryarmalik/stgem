@@ -55,6 +55,8 @@ class TestPython(unittest.TestCase):
 
         N = 4
         experiment = Experiment(N, stgem_factory, get_seed_factory(), result_callback=result_callback)
+        # The following works around a CI pipeline segfault.
+        experiment.garbage_collect = False
         experiment.run(N_workers=2)
 
         for i in range(N):
