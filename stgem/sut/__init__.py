@@ -63,8 +63,10 @@ class SUT:
         else:
             self.parameters = parameters
 
-        self.input_type = None
-        self.output_type = None
+        if not "input_type" in self.parameters:
+            self.parameters["input_type"] = None
+        if not "output_type" in self.parameters:
+            self.parameters["output_type"] = None
 
         self.perf = PerformanceData()
         self.base_has_been_setup = False
