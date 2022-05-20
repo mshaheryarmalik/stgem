@@ -36,8 +36,9 @@ class SearchSpace:
         self.sut = None
         self.rng = None
 
-    def setup(self, sut, rng):
+    def setup(self, sut, objectives, rng):
         self.sut = sut
+        self.odim = len(objectives)
         self.rng = rng
 
     @property
@@ -46,7 +47,7 @@ class SearchSpace:
 
     @property
     def output_dimension(self):
-        return self.sut.odim
+        return self.odim
 
     def is_valid(self, test) -> bool:
         return self.sut.validity(test)
