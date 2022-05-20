@@ -48,17 +48,18 @@ class Minimize(Objective):
             outputs = r.outputs*(-1)
             ranges = np.asarray([[-self.sut.output_range[i][1], -self.sut.output_range[i][0]] for i in idx])
         else:
+            outputs = r.outputs
             ranges = [self.sut.output_range[i] for i in idx]
 
         if self.scale:
-            output = self.sut.scale(r.outputs[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
+            output = self.sut.scale(outputs[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
         else:
             output = r.outputs[idx]
 
         if self.clip:
-            return max(0, min(1, min(output)))
+            return np.array([max(0, min(1, min(output)))])
         else:
-            return output
+            return np.array([min(output)])
 
 class ObjectiveMinComponentwise(Objective):
     """Objective function for a SUT with signal outputs which outputs the
@@ -74,7 +75,7 @@ class ObjectiveMinComponentwise(Objective):
 
     def __call__(self, t, r):
         assert r.output_timestamps is not None
-        return [min(output) for output in r.outputs]
+        return np.array([min(output) for output in r.outputs])
 
 class FalsifySTL(Objective):
     """Objective function to falsify a STL specification. By default the
@@ -216,7 +217,7 @@ class FalsifySTL(Objective):
                 robustness += self.epsilon
                 robustness = min(1, robustness)
 
-        return robustness
+        return np.array([robustness])
 
     def _evaluate_signal(self, test, result):
         input_timestamps = test.input_timestamps
@@ -323,7 +324,7 @@ class FalsifySTL(Objective):
                 robustness += self.epsilon
                 robustness = min(1, robustness)
 
-        return robustness
+        return np.array([robustness])
 
     def __call__(self, t, r):
         if r.output_timestamps is None:

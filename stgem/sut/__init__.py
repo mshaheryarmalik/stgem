@@ -192,18 +192,15 @@ class SUT:
         then no scaling is done.
         """
 
-        y = []
-        for v in signal:
-            if interval is not None:
-                A = interval[0]
-                B = interval[1]
-                C = (target_B-target_A)/(B-A)
-                D = target_A - C*A
-                y.append(C*v + D)
-            else:
-                y.append(v)
-
-        return y
+        y = np.asarray(signal)
+        if interval is not None:
+            A = interval[0]
+            B = interval[1]
+            C = (target_B-target_A)/(B-A)
+            D = target_A - C*A
+            return C*y + D
+        else:
+            return y
 
     def descale(self, x, intervals, A=-1, B=1):
         """

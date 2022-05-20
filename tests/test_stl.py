@@ -24,7 +24,7 @@ class TestSTL(unittest.TestCase):
         sut = DummySUT(len(variables), variables)
         objective = FalsifySTL(specification, scale=scale, strict_horizon_check=strict_horizon_check)
         objective.setup(sut)
-        return objective(sut_input, sut_output), objective
+        return objective(sut_input, sut_output)[0], objective
 
     def test_stl(self):
         # Test vector-valued output.
