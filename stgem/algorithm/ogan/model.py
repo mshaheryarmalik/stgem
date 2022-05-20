@@ -49,7 +49,7 @@ class OGAN_Model(Model):
         super().setup(search_space, device, logger)
 
         # Infer input and output dimensions for ML models.
-        self.parameters["generator_mlm_parameters"]["output_shape"] = self.search_space.output_dimension
+        self.parameters["generator_mlm_parameters"]["output_shape"] = self.search_space.input_dimension
         self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
 
         self._initialize()
