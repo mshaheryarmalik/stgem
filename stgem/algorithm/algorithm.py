@@ -30,8 +30,6 @@ class Algorithm:
         self.logger = logger
         self.log = lambda msg: (self.logger("algorithm", msg) if logger is not None else None)
 
-        # Setup the device.
-        self.parameters["device"] = device
         # Set input dimension.
         if not "input_dimension" in self.parameters:
             self.parameters["input_dimension"] = self.search_space.input_dimension

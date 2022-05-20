@@ -142,8 +142,6 @@ class Search(Step):
         parameters = {}
         parameters["algorithm_name"] = self.algorithm.__class__.__name__
         parameters["algorithm"] = copy.deepcopy(self.algorithm.parameters)
-        if "device" in parameters["algorithm"]:
-            del parameters["algorithm"]["device"]
         parameters["model_name"] = [self.algorithm.models[i].__class__.__name__ for i in range(self.algorithm.N_models)]
         parameters["model"] = [copy.deepcopy(self.algorithm.models[i].parameters) for i in range(self.algorithm.N_models)]
         parameters["objective_name"] = [objective.__class__.__name__ for objective in self.objective_funcs]
