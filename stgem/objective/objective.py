@@ -1,6 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+"""
+All objectives must output a single number. If several outputs are required
+for a single input, multiple objectives must be specified.
+"""
+
 import numpy as np
 
 class Objective:
@@ -19,63 +24,46 @@ class Objective:
         raise AttributeError(name)
 
     def __call__(self, t, r):
-        return r.outputs
+        raise NotImplementedError
 
 class Minimize(Objective):
-    """Objective function for a SUT with fixed-length vector outputs which
-    selects the minimum among the specified components."""
+    """Objective function which selects the minimum of the specified components
+    for vector outputs and minimum value of the selected signals for signal
+    outputs."""
 
     def __init__(self, selected=None, scale=False, invert=False, clip=True):
         super().__init__()
         if not (isinstance(selected, list) or isinstance(selected, tuple) or selected is None):
             raise Exception("The parameter 'selected' must be None or a list or a tuple.")
 
-        self.dim = 1
         self.parameters["selected"] = selected
         self.parameters["scale"] = scale
         self.parameters["invert"] = invert
         self.parameters["clip"] = clip
 
     def __call__(self, t, r):
-        assert r.output_timestamps is None
-
-        if self.selected is None:
-            idx = list(range(len(r.outputs)))
+        idx = self.selected if self.selected is not None else list(range(len(r.outputs)))
+        if r.output_timestamps is not None:
+            # Find the minimum value of the selected signals and form a vector
+            # from them.
+            v = np.array([min(signal) for signal in r.outputs[idx,:]])
         else:
-            idx = self.selected
+            # Just select the desired comporents.
+            v = r.outputs[idx]
 
         if self.invert:
-            outputs = r.outputs*(-1)
+            v = v*(-1)
             ranges = np.asarray([[-self.sut.output_range[i][1], -self.sut.output_range[i][0]] for i in idx])
         else:
-            outputs = r.outputs
             ranges = [self.sut.output_range[i] for i in idx]
 
         if self.scale:
-            output = self.sut.scale(outputs[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
-        else:
-            output = r.outputs[idx]
+            output = self.sut.scale(v.reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
 
         if self.clip:
-            return np.array([max(0, min(1, min(output)))])
+            return max(0, min(1, min(v)))
         else:
-            return np.array([min(output)])
-
-class ObjectiveMinComponentwise(Objective):
-    """Objective function for a SUT with signal outputs which outputs the
-    minima of the signals."""
-
-    def __init__(self):
-        super().__init__()
-        self.dim = 0
-
-    def setup(self, sut):
-        super().setup(sut)
-        self.dim = self.sut.odim
-
-    def __call__(self, t, r):
-        assert r.output_timestamps is not None
-        return np.array([min(output) for output in r.outputs])
+            return min(v)
 
 class FalsifySTL(Objective):
     """Objective function to falsify a STL specification. By default the
@@ -217,7 +205,7 @@ class FalsifySTL(Objective):
                 robustness += self.epsilon
                 robustness = min(1, robustness)
 
-        return np.array([robustness])
+        return robustness
 
     def _evaluate_signal(self, test, result):
         input_timestamps = test.input_timestamps
@@ -324,7 +312,7 @@ class FalsifySTL(Objective):
                 robustness += self.epsilon
                 robustness = min(1, robustness)
 
-        return np.array([robustness])
+        return robustness
 
     def __call__(self, t, r):
         if r.output_timestamps is None:
