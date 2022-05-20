@@ -28,10 +28,9 @@ class Categorical:
 
 class HyperParameter(SUT):
 
-    def __init__(self, mode, experiment_factory, parameters=None):
+    def __init__(self, experiment_factory, parameters=None):
         super().__init__(parameters)
 
-        self.mode = mode
         self.experiment_factory = experiment_factory
 
         self.idim = len(self.hyperparameters)
@@ -71,7 +70,7 @@ class HyperParameter(SUT):
         experiment.generator_callback = lambda g: self.edit_generator(g, test)
         experiment.result_callback = self.stgem_result_callback
 
-        experiment.run(silent=True)
+        experiment.run(N_workers=self.N_workers, silent=True)
 
         return SUTOutput(np.array([self.report()]), None, None)
 
