@@ -192,7 +192,7 @@ class Matlab(SUT):
         super().__init__(parameters)
 
         mandatory_parameters = ["model_file", "input_type", "output_type"]
-        for p in mandatory:
+        for p in mandatory_parameters:
             if not p in self.parameters:
                 raise Exception("Parameter '{}' not specified.".format(p))
 
@@ -271,7 +271,7 @@ class Matlab(SUT):
         matlab_result = self.matlab_func(*(float(x) for x in test), nargout=self.odim)
         matlab_result = np.asarray(matlab_result)
 
-        return SUTResult(matlab_result, None, None)
+        return SUTOutput(matlab_result, None, None)
 
     def _execute_vector_signal(self, test):
         if not hasattr(self, "engine"):
@@ -286,7 +286,7 @@ class Matlab(SUT):
         for i in range(self.odim):
             output_signals[i] = data[:, i]
 
-        return SUTResult(output_signals, output_timestamps, None)
+        return SUTOutput(output_signals, output_timestamps, None)
 
     def _execute_signal_vector(self, timestamps, signals):
         if not hasattr(self, "engine"):
@@ -298,7 +298,7 @@ class Matlab(SUT):
 
         matlab_result = self.matlab_func(model_input, nargout=self.odim)
 
-        return SUTResult(matlab_result, None, None)
+        return SUTOutput(matlab_result, None, None)
 
     def _execute_signal_signal(self, timestamps, signals):
         if not hasattr(self, "engine"):
@@ -317,7 +317,7 @@ class Matlab(SUT):
         for i in range(self.odim):
             output_signals[i] = data[:, i]
 
-        return SUTResult(output_signals, output_timestamps, None)
+        return SUTOutput(output_signals, output_timestamps, None)
 
     def _execute_test(self, test):
         # TODO: Add error handling in case of wrong input or Matlab errors.
@@ -326,9 +326,9 @@ class Matlab(SUT):
             test.input_denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
 
             if self.output_type == "vector":
-                return self._execute_vector_vector(test)
+                return self._execute_vector_vector(test.inputs)
             else:
-                return self._execute_vector_signal(test)
+                return self._execute_vector_signal(test.inputs)
         else:
             # If we have a piecewise constant signal, convert the input vector
             # to a constant signal.
