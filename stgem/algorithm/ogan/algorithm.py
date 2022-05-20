@@ -17,8 +17,6 @@ class OGAN(Algorithm):
 
     def setup(self, search_space, device=None, logger=None):
         super().setup(search_space, device, logger)
-        if not "reset_each_training" in self.parameters:
-            self.parameters["reset_each_training"] = False
         self.first_training = True
 
     def do_train(self, active_outputs, test_repository, budget_remaining):
