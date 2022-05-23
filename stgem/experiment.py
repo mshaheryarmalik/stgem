@@ -53,6 +53,7 @@ class Experiment:
             def consumer(queue, silent, generator_callback, result_callback, done):
                 while True:
                     msg = queue.get()
+
                     if msg == "STOP": break
 
                     generator, seed = msg
