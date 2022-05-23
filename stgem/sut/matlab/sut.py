@@ -326,9 +326,9 @@ class Matlab(SUT):
             test.input_denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
 
             if self.output_type == "vector":
-                return self._execute_vector_vector(test.inputs_denormalized)
+                return self._execute_vector_vector(test.input_denormalized)
             else:
-                return self._execute_vector_signal(test.inputs_denormalized)
+                return self._execute_vector_signal(test.input_denormalized)
         else:
             # If we have a piecewise constant signal, convert the input vector
             # to a constant signal.
