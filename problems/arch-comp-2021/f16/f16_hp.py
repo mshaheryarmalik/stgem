@@ -16,12 +16,12 @@ from stgem.objective import Minimize, FalsifySTL
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut.hyper import HyperParameter, Range, Categorical
 
-from util import build_specification
+from util import build_specification, get_sut_objective_factory
 
 sys.path.append(os.path.join("problems", "arch-comp-2021"))
 sys.path.append(os.path.join("problems", "arch-comp-2021", "f16"))
 from common import get_generator_factory, get_seed_factory
-from f16 import mode, ogan_parameters, ogan_model_parameters
+from f16 import mode, ogan_parameters, ogan_model_parameters, objective_selector_factory, step_factory
 
 if __name__ == "__main__":
     selected_specification = sys.argv[1]
@@ -44,39 +44,14 @@ if __name__ == "__main__":
     hp_sut_parameters = {"hyperparameters": [[f1, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])],
                                              [f2, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])]],
                          "mode":            "falsification_rate",
-                         "N_workers":       10}
+                         "N_workers":       2}
 
     epsilon = 0.0
-    sut, specifications, scale, strict_horizon_check = build_specification(selected_specification)
-
-    def sut_factory():
-        return sut
-
-    def objective_factory():
-        return [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
-
-    def objective_selector_factory():
-        return ObjectiveSelectorAll()
-
-    def step_factory():
-        step_1 = Search(mode=mode,
-                        budget_threshold={"executions": 75},
-                        #algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 75})))
-                        algorithm=Random(model_factory=(lambda: Uniform()))
-                       )      
-        step_2 = Search(mode=mode,
-                        budget_threshold={"executions": 300},
-                        #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
-                        #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                        algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["dense"])), parameters=ogan_parameters)
-                       )
-        #steps = [step_1]
-        steps = [step_1, step_2]
-        return steps
 
     def experiment_factory():
         N = 25
-        return Experiment(N, get_generator_factory(sut_factory, objective_factory, objective_selector_factory, step_factory), get_seed_factory(init_seed_experiments))
+        sut_factory, objective_factory = get_sut_objective_factory(selected_specification, epsilon)
+        return Experiment(N, get_generator_factory("", sut_factory, objective_factory, objective_selector_factory, step_factory), get_seed_factory(init_seed_experiments))
 
     generator = STGEM(
                       description="Hyperparameter search for F16",
@@ -86,7 +61,7 @@ if __name__ == "__main__":
                       objective_selector=ObjectiveSelectorAll(),
                       steps=[
                           Search(budget_threshold={"executions": 64},
-                                 algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 5}))))
+                                 algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 64}))))
                       ]
     )
 

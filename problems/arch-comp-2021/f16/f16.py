@@ -1,9 +1,7 @@
 import os, sys
 
-from stgem.budget import Budget
-from stgem.generator import STGEM, Search
+from stgem.generator import Search
 from stgem.experiment import Experiment
-from stgem.objective import FalsifySTL
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
@@ -13,7 +11,10 @@ from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.objective_selector import ObjectiveSelectorAll
 
-from util import build_specification
+from util import build_specification, get_sut_objective_factory
+
+sys.path.append(os.path.join("problems", "arch-comp-2021"))
+from common import get_generator_factory, get_seed_factory
 
 # Running the model requires Control System Toolbox in Matlab.
 
@@ -54,6 +55,25 @@ ogan_model_parameters = {
     }
 }
 
+def objective_selector_factory():
+    return ObjectiveSelectorAll()
+
+def step_factory():
+    step_1 = Search(mode=mode,
+                    budget_threshold={"executions": 75},
+                    #algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 75})))
+                    algorithm=Random(model_factory=(lambda: Uniform()))
+                   )      
+    step_2 = Search(mode=mode,
+                    budget_threshold={"executions": 300},
+                    #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
+                    #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
+                    algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["dense"])), parameters=ogan_parameters)
+                   )
+    #steps = [step_1]
+    steps = [step_1, step_2]
+    return steps
+
 if __name__ == "__main__":
     selected_specification = sys.argv[1]
     N = int(sys.argv[2])
@@ -62,78 +82,14 @@ if __name__ == "__main__":
 
     description = "Aircraft Ground Collision Avoidance System"
 
-    # Build a list of SUTs, Budgets, etc. to be used in factory calls in
-    # run_multiple_generators.
-    asut = None
-    sut_list = []
-    budget_list = []
-    specification_list = []
-    objective_list = []
-    objective_selector_list = []
-    step_list = []
-    for i in range(N):
-        asut, specifications, scale, strict_horizon_check = build_specification(selected_specification, asut)
-        budget = Budget()
-        epsilon = 0.0
-        objectives = [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
-        objective_selector = ObjectiveSelectorAll()
-        step_1 = Search(mode=mode,
-                        budget_threshold={"executions": 75},
-                        #algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 75})))
-                        algorithm=Random(model_factory=(lambda: Uniform()))
-                       )      
-        step_2 = Search(mode=mode,
-                        budget_threshold={"executions": 300},
-                        algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
-                        #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                        #algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["dense"])), parameters=ogan_parameters)
-                       )
-        #steps = [step_1]
-        steps = [step_1, step_2]
-
-        sut_list.append(asut)
-        budget_list.append(budget)
-        objective_list.append(objectives)
-        objective_selector_list.append(objective_selector)
-        step_list.append(steps)
-
-    def generic_list_factory(lst):
-        def factory():
-            for x in lst:
-                yield x
-
-        g = factory()
-        return lambda: next(g)
-
-    def seed_factory():
-        def seed_generator():
-            c = init_seed
-            while True:
-                yield c
-                c += 1
-
-        g = seed_generator()
-        return lambda: next(g)
-
-    seed_factory = seed_factory()
-    sut_factory = generic_list_factory(sut_list)
-    budget_factory = generic_list_factory(budget_list)
-    objective_factory = generic_list_factory(objective_list)
-    objective_selector_factory = generic_list_factory(objective_selector_list)
-    step_factory = generic_list_factory(step_list)
-
     def callback(result):
         file_name = "{}{}_{}.pickle".format(selected_specification, "_" + identifier if identifier is not None else "", str(result.timestamp).replace(" ", "_"))
         result.dump_to_file(os.path.join("output", file_name))
 
-    r = run_multiple_generators(N,
-                                description,
-                                seed_factory,
-                                sut_factory,
-                                budget_factory,
-                                objective_factory,
-                                objective_selector_factory,
-                                step_factory,
-                                callback=callback
-                               )
+    epsilon = 0.0
+    sut_factory, objective_factory = get_sut_objective_factory(selected_specification, epsilon)
+    experiment = Experiment(N, get_generator_factory(description, sut_factory, objective_factory, objective_selector_factory, step_factory), get_seed_factory(init_seed), result_callback=callback)
+
+    N_workers = 1
+    experiment.run(N_workers=N_workers, silent=False)
 

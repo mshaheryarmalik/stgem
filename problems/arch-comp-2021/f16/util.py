@@ -59,3 +59,15 @@ def build_specification(selected_specification, asut=None):
 
     return asut, specifications, scale, strict_horizon_check
 
+def get_sut_objective_factory(selected_specification, epsilon):
+    sut, _, _, _ = build_specification(selected_specification)
+
+    def sut_factory():
+        return sut
+
+    def objective_factory():
+        _, specifications, scale, strict_horizon_check = build_specification(selected_specification, sut)
+        return [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
+
+    return sut_factory, objective_factory
+

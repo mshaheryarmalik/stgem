@@ -10,9 +10,9 @@ sys.path.append(os.path.join("..", ".."))
 from stgem.generator import STGEM, STGEMResult
 from stgem.budget import Budget
 
-def get_generator_factory(sut_factory, objective_factory, objective_selector_factory, step_factory):
+def get_generator_factory(description, sut_factory, objective_factory, objective_selector_factory, step_factory):
     def generator_factory():
-        return STGEM(description="",
+        return STGEM(description=description,
                      sut=sut_factory(),
                      budget=Budget(),
                      objectives=objective_factory(),
