@@ -36,8 +36,9 @@ class SearchSpace:
         self.sut = None
         self.rng = None
 
-    def setup(self, sut, rng):
+    def setup(self, sut, objectives, rng):
         self.sut = sut
+        self.odim = len(objectives)
         self.rng = rng
 
     @property
@@ -46,7 +47,7 @@ class SearchSpace:
 
     @property
     def output_dimension(self):
-        return self.sut.odim
+        return self.odim
 
     def is_valid(self, test) -> bool:
         return self.sut.validity(test)
@@ -57,14 +58,20 @@ class SearchSpace:
 class SUT:
     """Base class implementing a system under test. """
 
+    default_parameters = {}
+
     def __init__(self, parameters=None):
         if parameters is None:
-            self.parameters = {}
-        else:
-            self.parameters = parameters
+            parameters = {}
 
-        self.input_type = None
-        self.output_type = None
+        # merge deafult_parameters and parameters, the later takes priority if a key appears in both dictionaries
+        # the result is a new dictionary
+        self.parameters = self.default_parameters | parameters
+
+        if not "input_type" in self.parameters:
+            self.parameters["input_type"] = None
+        if not "output_type" in self.parameters:
+            self.parameters["output_type"] = None
 
         self.perf = PerformanceData()
         self.base_has_been_setup = False

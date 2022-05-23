@@ -45,9 +45,9 @@ class Experiment:
                     gc.collect()
         else:
             # Use multiprocessing.
-            def consumer(queue, silent, generator_callback, result_callback):
+            def consumer(queue_generators, queue_results, silent, generator_callback):
                 while True:
-                    msg = queue.get()
+                    msg = queue_generators.get()
                     if msg == "STOP": break
 
                     generator, seed = msg
@@ -61,32 +61,42 @@ class Experiment:
                         generator_callback(generator)
 
                     r = generator._run()
-
-                    if not result_callback is None:
-                        result_callback(r)
+                    queue_results.put(r)
 
                     # Delete and garbage collect. See above.
                     del generator
                     if self.garbage_collect:
                         gc.collect()
                     
-            def producer(queue, N_workers, N, stgem_factory, seed_factory):
+            def producer(queue_generators, N_workers, N, stgem_factory, seed_factory):
                 for _ in range(N):
-                    queue.put((stgem_factory(), seed_factory()))
+                    queue_generators.put((stgem_factory(), seed_factory()))
 
                 for _ in range(N_workers):
-                    queue.put("STOP")
+                    queue_generators.put("STOP")
 
-            queue = Queue(maxsize=N_workers)
+            queue_generators = Queue(maxsize=N_workers)
+            queue_results = Queue()
 
+            # Workers that actually run generators.
             workers = []
             for _ in range(N_workers):
-                consumer_process = Process(target=consumer, args=[queue, silent, self.generator_callback, self.result_callback], daemon=True)
+                consumer_process = Process(target=consumer, args=[queue_generators, queue_results, silent, self.generator_callback], daemon=True)
                 workers.append(consumer_process)
                 consumer_process.start()
+            # A worker that hands out generators to other workers.
+            producer_worker = Process(target=producer, args=[queue_generators, N_workers, self.N, self.stgem_factory, self.seed_factory], daemon=True)
+            producer_worker.start()
 
-            producer(queue, N_workers, self.N, self.stgem_factory, self.seed_factory)
+            # Wait for results and process them via the callback.
+            total_results = 0
+            while total_results < self.N:
+                r = queue_results.get()
+                self.result_callback(r)
+                total_results += 1
 
             for consumer_process in workers:
                 consumer_process.join()
+
+            producer_worker.join()
 

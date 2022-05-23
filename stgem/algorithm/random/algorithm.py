@@ -15,8 +15,7 @@ class Random(Algorithm):
         rounds = 0
         invalid = 0
         # Select a model randomly and generate a random valid test for it.
-        # TODO: I don't understand this: m = np.random.choice(self.objective_selector.select())
-        m = int(np.random.uniform(0, len(self.models)))
+        m = np.random.choice(active_outputs)
 
         while True:
             rounds += 1

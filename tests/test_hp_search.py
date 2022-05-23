@@ -31,7 +31,9 @@ class TestPython(unittest.TestCase):
                 model.parameters["generator_lr"] = value
                 model.setup(model.search_space, model.device, model.logger)
 
-        hp_sut_parameters = {"hyperparameters": [[f1, Categorical([0.1, 0.01, 0.001, 0.0001])], [f2, Categorical([0.1, 0.01, 0.001, 0.0001])]]}
+        hp_sut_parameters = {"hyperparameters": [[f1, Categorical([0.1, 0.01, 0.001, 0.0001])], [f2, Categorical([0.1, 0.01, 0.001, 0.0001])]],
+                             "mode":            "falsification_rate"
+                            }
 
         def sut_factory():
             return MO3D()
@@ -80,10 +82,9 @@ class TestPython(unittest.TestCase):
         # Note: Latin hypercube design makes sense with categorical values.
         # Otherwise certain values can be never considered.
 
-        mode = "falsification_rate"
         generator = STGEM(
                           description="Hyperparameter search",
-                          sut=HyperParameter(mode, experiment_factory, hp_sut_parameters),
+                          sut=HyperParameter(experiment_factory, hp_sut_parameters),
                           budget=Budget(),
                           objectives=[Minimize(selected=[0], scale=False)],
                           objective_selector=ObjectiveSelectorAll(),

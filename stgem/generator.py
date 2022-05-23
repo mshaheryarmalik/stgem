@@ -214,7 +214,7 @@ class STGEM:
 
     def setup_search_space(self):
         self.search_space = SearchSpace()
-        self.search_space.setup(sut=self.sut, rng=self.search_space_rng)
+        self.search_space.setup(sut=self.sut, objectives=self.objectives, rng=self.search_space_rng)
 
     def setup_objectives(self):
         for o in self.objectives:
