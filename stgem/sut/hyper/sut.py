@@ -28,6 +28,9 @@ class Categorical:
 
 class HyperParameter(SUT):
 
+    default_parameters = {"mode": "falsification_rate",
+                          "N_workers": 1}
+
     def __init__(self, experiment_factory, parameters=None):
         super().__init__(parameters)
 

@@ -58,11 +58,15 @@ class SearchSpace:
 class SUT:
     """Base class implementing a system under test. """
 
+    default_parameters = {}
+
     def __init__(self, parameters=None):
         if parameters is None:
-            self.parameters = {}
-        else:
-            self.parameters = parameters
+            parameters = {}
+
+        # merge deafult_parameters and parameters, the later takes priority if a key appears in both dictionaries
+        # the result is a new dictionary
+        self.parameters = self.default_parameters | parameters
 
         if not "input_type" in self.parameters:
             self.parameters["input_type"] = None
