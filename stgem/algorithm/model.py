@@ -14,8 +14,11 @@ class Model:
 
     def __init__(self, parameters=None):
         if parameters is None:
-            parameters = copy.deepcopy(self.default_parameters)
-        self.parameters = parameters
+            parameters = {}
+
+        # merge deafult_parameters and parameters, the later takes priority if a key appears in both dictionaries
+        # the result is a new dictionary
+        self.parameters = self.default_parameters | parameters
 
     def setup(self, search_space, device, logger=None):
         self.search_space = search_space

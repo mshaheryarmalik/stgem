@@ -74,8 +74,8 @@ class WOGAN_Model(Model):
         # Load the specified analyzer and initialize it.
         module = importlib.import_module("stgem.algorithm.wogan.analyzer")
         analyzer_class = getattr(module, self.analyzer)
-        self.analyzer = analyzer_class(parameters=self.analyzer_parameters)
-        self.analyzer.setup(device=self.device, logger=self.logger)
+        self.modelA = analyzer_class(parameters=self.analyzer_parameters)
+        self.modelA.setup(device=self.device, logger=self.logger)
 
         # Load the specified generator and critic and initialize them.
         module = importlib.import_module("stgem.algorithm.wogan.mlm")
@@ -126,7 +126,7 @@ class WOGAN_Model(Model):
 
         losses = []
         for _ in range(train_settings["analyzer_epochs"]):
-            loss = self.analyzer.train_with_batch(data_X, data_Y, train_settings)
+            loss = self.modelA.train_with_batch(data_X, data_Y, train_settings)
             losses.append(loss)
 
         m = np.mean(losses)
@@ -304,5 +304,5 @@ class WOGAN_Model(Model):
           output (float)
         """
 
-        return self.analyzer.predict(test)
+        return self.modelA.predict(test)
 

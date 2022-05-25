@@ -22,12 +22,12 @@ class Matlab_Simulink_Signal(SUT):
         self.input_type = "signal"
 
         mandatory_parameters = ["simulation_time", "sampling_step", "model_file"]
-        for p in mandatory:
+        for p in mandatory_parameters:
             if not p in self.parameters:
                 raise Exception("Parameter '{}' not specified.".format(p))
 
         # How often input signals are sampled for execution (in time units).
-        self.steps = self.simulation_time // self.sampling_step
+        self.steps = int(self.simulation_time // self.sampling_step)
 
         if not os.path.exists(self.model_file + ".mdl") and not os.path.exists(self.model_file + ".slx"):
             raise Exception("Neither '{0}.mdl' nor '{0}.slx' exists.".format(self.model_file))
