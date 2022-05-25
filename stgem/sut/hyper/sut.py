@@ -65,7 +65,7 @@ class HyperParameter(SUT):
             hp_func(generator, test[n])
 
     def _execute_test(self, test):
-        denormalized = [hp_domain(test.inputs[n]) for n, (_, hp_domain) in enumerate(self.hyperparameters)]
+        denormalized = np.array([hp_domain(test.inputs[n]) for n, (_, hp_domain) in enumerate(self.hyperparameters)])
         experiment = self.experiment_factory()
         experiment.generator_callback = lambda g: self.edit_generator(g, denormalized)
         experiment.result_callback = self.stgem_result_callback
