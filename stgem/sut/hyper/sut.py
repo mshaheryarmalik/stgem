@@ -61,19 +61,17 @@ class HyperParameter(SUT):
             raise Exception("Unknown mode '{}'.".format(falsification_rate))
 
     def edit_generator(self, generator, test):
-        denormalized = np.zeros_like(test.inputs)
-        for n, (hp_func, hp_domain) in enumerate(self.hyperparameters):
-            denormalized[n] = hp_domain(test.inputs[n])
-            hp_func(generator, denormalized[n])
-
-        test.input_denormalized = denormalized
+        for n, (hp_func, _) in enumerate(self.hyperparameters):
+            hp_func(generator, test[n])
 
     def _execute_test(self, test):
+        denormalized = [hp_domain(test.inputs[n]) for n, (_, hp_domain) in enumerate(self.hyperparameters)]
         experiment = self.experiment_factory()
-        experiment.generator_callback = lambda g: self.edit_generator(g, test)
+        experiment.generator_callback = lambda g: self.edit_generator(g, denormalized)
         experiment.result_callback = self.stgem_result_callback
 
         experiment.run(N_workers=self.N_workers, silent=True)
 
+        test.input_denormalized = denormalized
         return SUTOutput(np.array([self.report()]), None, None)
 
