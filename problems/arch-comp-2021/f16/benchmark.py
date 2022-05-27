@@ -52,7 +52,7 @@ ogan_model_parameters = {
     }
 }
 
-def build_specification(selected_specification, mode, asut=None):
+def build_specification(selected_specification, mode=None, asut=None):
     from math import pi
 
     # ARCH-COMP

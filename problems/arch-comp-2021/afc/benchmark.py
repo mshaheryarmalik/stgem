@@ -67,13 +67,12 @@ ogan_model_parameters = {
     }
 }
 
-def build_specification(selected_specification, afc_mode, asut=None):
+def build_specification(selected_specification, afc_mode="normal", asut=None):
     """Builds a specification object and a SUT for the selected specification.
     In addition, returns if scaling and strict horizon check should be used for
     the specification. A previously created SUT can be passed as an argument,
     and then it will be reused."""
 
-    afc_mode = "normal" # normal/power
     if afc_mode == "normal":
         throttle_range = [0, 61.2]
     elif afc_mode == "power":

@@ -70,7 +70,7 @@ ogan_model_parameters = {
     }
 }
 
-def build_specification(selected_specification, mode, asut=None):
+def build_specification(selected_specification, mode=None, asut=None):
     """Builds a specification object and a SUT for the selected specification.
     In addition, returns if scaling and strict horizon check should be used for
     the specification. A previously created SUT can be passed as an argument,
