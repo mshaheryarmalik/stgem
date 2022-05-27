@@ -40,18 +40,22 @@ def get_sut_objective_factory(benchmark_module, selected_specification, mode):
 
     return sut_factory, objective_factory
 
-benchmarks = ["AFC", "AT", "CC", "F16"]
+benchmarks = ["AFC", "AT", "CC", "F16", "NN", "SC"]
 descriptions = {
         "AFC": "Fuel Control of an Automotive Powertrain",
         "AT":  "Automatic Transmission",
         "CC":  "Chasing Cars",
-        "F16": "Aircraft Ground Collision Avoidance System"
+        "F16": "Aircraft Ground Collision Avoidance System",
+        "NN":  "Neural-Network Controller",
+        "SC":  "Steam Condenser with Recurrent Neural Network Controller"
 }
 specifications = {
         "AFC": ["AFC27", "AFC29"],
         "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX1", "ATX2"],
         "CC":  ["CC1", "CC2", "CC3", "CC4", "CC5", "CCX"],
-        "F16": ["F16"]
+        "F16": ["F16"],
+        "NN":  ["NN", "NNX"],
+        "SC":  ["SC"]
 }
 
 @click.command()
