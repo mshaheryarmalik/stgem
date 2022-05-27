@@ -40,15 +40,17 @@ def get_sut_objective_factory(benchmark_module, selected_specification, mode):
 
     return sut_factory, objective_factory
 
-benchmarks = ["AFC", "AT", "F16"]
+benchmarks = ["AFC", "AT", "CC", "F16"]
 descriptions = {
         "AFC": "Fuel Control of an Automotive Powertrain",
         "AT":  "Automatic Transmission",
+        "CC":  "Chasing Cars",
         "F16": "Aircraft Ground Collision Avoidance System"
 }
 specifications = {
         "AFC": ["AFC27", "AFC29"],
         "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX1", "ATX2"],
+        "CC":  ["CC1", "CC2", "CC3", "CC4", "CC5", "CCX"],
         "F16": ["F16"]
 }
 
