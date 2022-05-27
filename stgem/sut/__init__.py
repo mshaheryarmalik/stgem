@@ -258,7 +258,7 @@ class SUT:
                     raise Exception("Signal output for vector output SUT.")
             elif self.output_type == "signal":
                 if output.output_timestamps is None or len(output.outputs.shape) == 1:
-                    raise Exception("Vector output for vector output SUT.")
+                    raise Exception("Vector output for signal output SUT.")
         
         return output
 

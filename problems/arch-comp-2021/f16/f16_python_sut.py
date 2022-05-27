@@ -19,10 +19,13 @@ class F16GCAS_PYTHON2(SUT):
         if not "initial_altitude" in self.parameters:
             raise Exception("Initial altitude not defined as a SUT parameter.")
 
-    def _execute_test(self, test):
-        denormalized = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
+        self.input_type = "vector"
+        self.output_type = "vector"
 
-        output = subprocess.run(["problems/arch-comp-2021/f16/AeroBenchVVPython/check_gcas_v1.sh", str(self.initial_altitude), str(denormalized[0]) , str(denormalized[1]), str(denormalized[2]) ], capture_output=True)
+    def _execute_test(self, test):
+        denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
+
+        output = subprocess.run(["f16/AeroBenchVVPython/check_gcas_v1.sh", str(self.initial_altitude), str(denormalized[0]) , str(denormalized[1]), str(denormalized[2]) ], capture_output=True)
 
         # Altitude on the last line.
         # TODO: Better error handling.
@@ -46,7 +49,7 @@ class F16GCAS_PYTHON3(SUT):
             raise Exception("Initial altitude not defined as a SUT parameter.")
 
         try:
-            sys.path.append(os.path.join("problems", "arch-comp-2021", "f16", "AeroBenchVVPython", "v2", "code"))
+            sys.path.append(os.path.join("f16", "AeroBenchVVPython", "v2", "code"))
             self.f16 = importlib.import_module("aerobench.run_f16_sim")
         except ModuleNotFoundError:
             import traceback
@@ -62,8 +65,11 @@ class F16GCAS_PYTHON3(SUT):
             print("Could not load gcas_autopilot module for F16GCAS_PYTHON3 SUT.")
             raise SystemExit
 
+        self.input_type = "vector"
+        self.output_type = "signal"
+
     def _execute_test(self, test):
-        denormalized = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
+        denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
 
         # The code below is adapted from AeroBenchVVPython/v2/code/aerobench/examples/gcas/run_GCAS.py
 
@@ -77,9 +83,9 @@ class F16GCAS_PYTHON3(SUT):
         # Initial Attitude
         alt = self.initial_altitude        # altitude (ft)
         vt = 540          # initial velocity (ft/sec)
-        phi = denormalised[0]           # Roll angle from wings level (rad)
-        theta = denormalised[1]         # Pitch angle from nose level (rad)
-        psi = denormalised[2]   # Yaw angle from North (rad)
+        phi = denormalized[0]           # Roll angle from wings level (rad)
+        theta = denormalized[1]         # Pitch angle from nose level (rad)
+        psi = denormalized[2]   # Yaw angle from North (rad)
 
         # Build Initial Condition Vectors
         # state = [vt, alpha, beta, phi, theta, psi, P, Q, R, pn, pe, h, pow]
