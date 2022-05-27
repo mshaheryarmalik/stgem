@@ -1,15 +1,80 @@
 import tltk_mtl as STL
 
-from stgem.sut.matlab.sut import Matlab_Simulink
+from stgem.algorithm.ogan.algorithm import OGAN
+from stgem.algorithm.ogan.model import OGAN_Model
+from stgem.algorithm.random.algorithm import Random
+from stgem.algorithm.random.model import Uniform, LHS
+from stgem.algorithm.wogan.algorithm import WOGAN
+from stgem.algorithm.wogan.model import WOGAN_Model
+from stgem.generator import Search
+from stgem.objective_selector import ObjectiveSelectorAll, ObjectiveSelectorMAB
 from stgem.objective import FalsifySTL
+from stgem.sut.matlab.sut import Matlab_Simulink
 
-def build_specification(selected_specification, asut=None):
+mode = "stop_at_first_objective"
+
+ogan_parameters = {"fitness_coef": 0.95,
+                   "train_delay": 1,
+                   "N_candidate_tests": 1,
+                   "reset_each_training": True
+                   }
+
+ogan_model_parameters = {
+    "dense": {
+        "optimizer": "Adam",
+        "discriminator_lr": 0.005,
+        "discriminator_betas": [0.9, 0.999],
+        "generator_lr": 0.0010,
+        "generator_betas": [0.9, 0.999],
+        "noise_batch_size": 512,
+        "generator_loss": "MSE",
+        "discriminator_loss": "MSE",
+        "generator_mlm": "GeneratorNetwork",
+        "generator_mlm_parameters": {
+            "noise_dim": 20,
+            "neurons": 64
+        },
+        "discriminator_mlm": "DiscriminatorNetwork",
+        "discriminator_mlm_parameters": {
+            "neurons": 64,
+            "discriminator_output_activation": "sigmoid"
+        },
+        "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
+        "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32}
+    },
+    "convolution": {
+        "optimizer": "Adam",
+        "discriminator_lr": 0.005,
+        "discriminator_betas": [0.9, 0.999],
+        "generator_lr": 0.0005,
+        "generator_betas": [0.9, 0.999],
+        "noise_batch_size": 2048,
+        "generator_loss": "MSE,Logit",
+        "discriminator_loss": "MSE,Logit",
+        "generator_mlm": "GeneratorNetwork",
+        "generator_mlm_parameters": {
+            "noise_dim": 20,
+            "neurons": 64
+        },
+        "discriminator_mlm": "DiscriminatorNetwork1dConv",
+        "discriminator_mlm_parameters": {
+            "feature_maps": [16],
+            "kernel_sizes": [[2,2]],
+            "convolution_activation": "relu",
+            "dense_neurons": 32
+        },
+        "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
+        "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32}
+    }
+}
+
+def build_specification(selected_specification, mode=None, asut=None):
     """Builds a specification object and a SUT for the selected specification.
     In addition, returns if scaling and strict horizon check should be used for
     the specification. A previously created SUT can be passed as an argument,
     and then it will be reused."""
 
-    sut_parameters = {"model_file": "problems/arch-comp-2021/at/Autotrans_shift",
+    sut_parameters = {"model_file": "at/Autotrans_shift",
                       "input_type": "piecewise constant signal",
                       "output_type": "signal",
                       "inputs": ["THROTTLE", "BRAKE"],
@@ -26,7 +91,7 @@ def build_specification(selected_specification, asut=None):
     # memory).
     if asut is None:
         asut = Matlab_Simulink(sut_parameters)
-
+    
     # Some ARCH-COMP specifications have requirements whose horizon is longer than
     # the output signal for some reason. Thus strict horizon check needs to be
     # disabled in some cases.
@@ -41,12 +106,14 @@ def build_specification(selected_specification, asut=None):
 
         specifications = [specification]
         strict_horizon_check = True
+        epsilon = 0.01
     elif selected_specification == "AT2":
         # always[0,10](RPM < 4750)
         specification = STL.Global(0, 10, FalsifySTL.StrictlyLessThan(1, 0, 0, 4750, S("RPM")))
 
         specifications = [specification]
         strict_horizon_check = True
+        epsilon = 0.01
     elif selected_specification.startswith("AT5"):
         # This is modified from ARCH-COMP to include the next operator which is
         # available as we use discrete time STL.
@@ -61,6 +128,7 @@ def build_specification(selected_specification, asut=None):
 
         specifications = [specification]
         strict_horizon_check = False
+        epsilon = 0.01
     elif selected_specification.startswith("AT6"):
         A = selected_specification[-1]
 
@@ -91,6 +159,7 @@ def build_specification(selected_specification, asut=None):
             specifications = [specification]
 
         strict_horizon_check = True
+        epsilon = 0.01
     elif selected_specification.startswith("ATX1"):
         # always[0,30]( GEAR == {} implies SPEED > 10*{} )
         # Only for {} == 3 or {} == 4.
@@ -103,6 +172,7 @@ def build_specification(selected_specification, asut=None):
 
         specifications = [specification]
         strict_horizon_check = True
+        epsilon = 0.01
     elif selected_specification == "ATX2":
         # not(always[0,30]( 50 <= SPEED <= 60 ))
         L = FalsifySTL.GreaterThan(1, 0, 0, 50, S("SPEED"))
@@ -112,8 +182,36 @@ def build_specification(selected_specification, asut=None):
 
         specifications = [specification]
         strict_horizon_check = True
+        epsilon = 0.01
     else:
         raise Exception("Unknown specification '{}'.".format(selected_specification))
 
-    return asut, specifications, scale, strict_horizon_check
+    return asut, specifications, scale, strict_horizon_check, epsilon
+
+def objective_selector_factory():
+    objective_selector = ObjectiveSelectorMAB(warm_up=100)
+
+def get_objective_selector_factory():
+    return objective_selector_factory
+
+def step_factory():
+    mode = "stop_at_first_objective"
+
+    step_1 = Search(mode=mode,
+                    budget_threshold={"executions": 75},
+                    #algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 75})))
+                    algorithm=Random(model_factory=(lambda: Uniform()))
+                   )      
+    step_2 = Search(mode=mode,
+                    budget_threshold={"executions": 300},
+                    algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
+                    #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
+                    #algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
+                   )
+    #steps = [step_1]
+    steps = [step_1, step_2]
+    return steps
+
+def get_step_factory():
+    return step_factory
 

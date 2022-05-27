@@ -1,8 +1,11 @@
+import os
+
 import numpy as np
 
 from stgem.objective import FalsifySTL
+from stgem.sut import SUTInput
 
-from util import build_specification
+from benchmark import build_specification
 
 def get_falsifying_input_robustness(selected_specification):
     # The falsifying inputs are from
@@ -32,18 +35,20 @@ def get_falsifying_input_robustness(selected_specification):
     timestamps = A[:,0]
     signals = A[:,1:].T
 
-    sut, specifications, scale, strict_horizon_check = build_specification(selected_specification)
-    sut.setup(None, None)
+    sut, specifications, scale, strict_horizon_check, _ = build_specification(selected_specification)
+    sut.setup()
     objectives = [FalsifySTL(specification=specification, scale=False, strict_horizon_check=strict_horizon_check) for specification in specifications]
     for objective in objectives:
         objective.setup(sut)
 
     sut_output = sut._execute_test_simulink(timestamps, signals)
-    output = [objective(sut_output) for objective in objectives]
+    output = [objective(SUTInput(None, signals, timestamps), sut_output) for objective in objectives]
     
     return output
 
 if __name__ == "__main__":
+    os.chdir(os.path.join("problems", "arch-comp-2021"))
+
     specifications = ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C"]
     specifications = ["AT6C"]
 

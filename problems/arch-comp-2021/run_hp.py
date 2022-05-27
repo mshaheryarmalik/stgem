@@ -1,32 +1,28 @@
 import importlib, os, sys
 
+import click
 import numpy as np
 
 from stgem.algorithm.random.algorithm import Random
-from stgem.algorithm.ogan.algorithm import OGAN
-from stgem.algorithm.ogan.model import OGAN_Model
-from stgem.algorithm.ogan.model_keras import OGANK_Model
-from stgem.algorithm.wogan.algorithm import WOGAN
-from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.budget import Budget
 from stgem.experiment import Experiment
 from stgem.generator import STGEM, Search
-from stgem.objective import Minimize, FalsifySTL
+from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut.hyper import HyperParameter, Range, Categorical
 
-from util import build_specification, get_sut_objective_factory
+from run import get_generator_factory, get_seed_factory, get_sut_objective_factory, benchmarks, specifications
 
-sys.path.append(os.path.join("problems", "arch-comp-2021"))
-sys.path.append(os.path.join("problems", "arch-comp-2021", "f16"))
-from common import get_generator_factory, get_seed_factory
-from f16 import mode, ogan_parameters, ogan_model_parameters, objective_selector_factory, step_factory
-
-if __name__ == "__main__":
-    selected_specification = sys.argv[1]
-    init_seed_experiments = int(sys.argv[2])
-    seed_hp = int(sys.argv[3])
+@click.command()
+@click.argument("selected_benchmark", type=click.Choice(benchmarks, case_sensitive=False))
+@click.argument("selected_specification", type=str)
+@click.argument("mode", type=str, default="")
+@click.argument("init_seed_experiments", type=int)
+@click.argument("seed_hp", type=int)
+def main(selected_benchmark, selected_specification, mode, init_seed_experiments, seed_hp):
+    if not selected_specification in specifications[selected_benchmark]:
+        raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
 
     # We change the learning rates of the discriminator and the generator.
     def f1(generator, value):
@@ -46,15 +42,15 @@ if __name__ == "__main__":
                          "mode":            "falsification_rate",
                          "N_workers":       2}
 
-    epsilon = 0.0
+    benchmark_module = importlib.import_module("{}.benchmark".format(selected_benchmark.lower()))
 
     def experiment_factory():
         N = 25
-        sut_factory, objective_factory = get_sut_objective_factory(selected_specification, epsilon)
-        return Experiment(N, get_generator_factory("", sut_factory, objective_factory, objective_selector_factory, step_factory), get_seed_factory(init_seed_experiments))
+        sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
+        return Experiment(N, get_generator_factory("", sut_factory, objective_factory, benchmark_module.get_objective_selector_factory(), benchmark_module.get_step_factory()), get_seed_factory(init_seed_experiments))
 
     generator = STGEM(
-                      description="Hyperparameter search for F16",
+                      description="Hyperparameter search for benchmark {} and specification {}".format(selected_benchmark, selected_specification),
                       sut=HyperParameter(experiment_factory, hp_sut_parameters),
                       budget=Budget(),
                       objectives=[Minimize(selected=[0], scale=False)],
@@ -72,4 +68,7 @@ if __name__ == "__main__":
     for n in range(len(X)):
         X2 = [hp_sut_parameters["hyperparameters"][i][1](x) for i, x in enumerate(X[n].inputs)]
         print("{} -> {}".format(X2, 1 - Y[n]))
+
+if __name__ == "__main__":
+    main()
 

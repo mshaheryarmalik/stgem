@@ -10,27 +10,6 @@ sys.path.append(os.path.join("..", ".."))
 from stgem.generator import STGEM, STGEMResult
 from stgem.budget import Budget
 
-def get_generator_factory(description, sut_factory, objective_factory, objective_selector_factory, step_factory):
-    def generator_factory():
-        return STGEM(description=description,
-                     sut=sut_factory(),
-                     budget=Budget(),
-                     objectives=objective_factory(),
-                     objective_selector=objective_selector_factory(),
-                     steps=step_factory())
-
-    return generator_factory
-
-def get_seed_factory(init_seed=0):
-    def seed_generator(init_seed):
-        c = init_seed
-        while True:
-            yield c
-            c += 1
-
-    g = seed_generator(init_seed)
-    return lambda: next(g)
-
 def load_results(files, load_sut_output=True):
     results = []
     for file in files:
