@@ -44,7 +44,7 @@ class TestPython(unittest.TestCase):
             g = f()
             return lambda: next(g)
 
-        def result_callback(r):
+        def result_callback(idx, r, done):
             global c
 
             # Parallel execution may overwrite files here, but we do not care.

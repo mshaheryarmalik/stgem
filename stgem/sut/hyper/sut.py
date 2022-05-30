@@ -45,8 +45,8 @@ class HyperParameter(SUT):
             def reset():
                 self.stored = []
 
-            def callback(result):
-                """Append True if falsified, False otherwise."""
+            def callback(idx, result, done):
+                """Append 1 if falsified, 0 otherwise."""
 
                 self.stored.append(any(step.success for step in result.step_results))
 
