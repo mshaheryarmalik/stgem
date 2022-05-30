@@ -42,7 +42,8 @@ class HyperParameter(SUT):
 
         # Check what type of thing is computed: FR etc.
         if self.mode == "falsification_rate":
-            self.stored = []
+            def reset():
+                self.stored = []
 
             def callback(result):
                 """Append True if falsified, False otherwise."""
@@ -53,6 +54,7 @@ class HyperParameter(SUT):
                 # We return 1 - FR as we do minimization.
                 return 1 - sum(1 if x else 0 for x in self.stored) / len(self.stored)
 
+            self.reset_callback = reset
             self.stgem_result_callback = callback
             self.report = report
 
@@ -69,6 +71,8 @@ class HyperParameter(SUT):
         experiment = self.experiment_factory()
         experiment.generator_callback = lambda g: self.edit_generator(g, denormalized)
         experiment.result_callback = self.stgem_result_callback
+
+        self.reset_callback()
 
         experiment.run(N_workers=self.N_workers, silent=True)
 
