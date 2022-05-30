@@ -24,7 +24,10 @@ class Experiment:
         # garbage collection for some reason.
         self.garbage_collect = True
 
-    def run(self, N_workers=1, silent=False, done: list = []):
+    def run(self, N_workers=1, silent=False, done=None):
+        if done is None:
+            done = []
+
         if N_workers < 1:
             raise SystemExit("The number of workers must be positive.")
         elif N_workers == 1:

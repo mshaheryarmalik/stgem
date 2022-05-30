@@ -50,7 +50,7 @@ class TestPython(unittest.TestCase):
         def step_factory():
             return [Search(budget_threshold={"executions": 20},
                            algorithm=Random(model_factory=(lambda: Uniform()))),
-                    Search(budget_threshold={"executions": 100},
+                    Search(budget_threshold={"executions": 80},
                            algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
                    ]
 
@@ -91,7 +91,6 @@ class TestPython(unittest.TestCase):
                           steps=[
                               Search(budget_threshold={"executions": 2},
                                      algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 5}))))
-                                     #algorithm=Random(model_factory=(lambda: Uniform())))
                           ]
         )
 
