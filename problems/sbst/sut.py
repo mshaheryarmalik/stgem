@@ -451,3 +451,4 @@ class SBSTSUT_validator(SBSTSUT_curvature):
 
         valid = sbst_validate_test(self.test_to_road_points(test), self.map_size)
         return SUTResult(test, valid, None, None, None)
+

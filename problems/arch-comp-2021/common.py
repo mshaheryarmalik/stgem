@@ -7,7 +7,8 @@ from matplotlib import animation
 from IPython.display import HTML
 
 sys.path.append(os.path.join("..", ".."))
-from stgem.generator import STGEMResult
+from stgem.generator import STGEM, STGEMResult
+from stgem.budget import Budget
 
 def load_results(files, load_sut_output=True):
     results = []
@@ -17,7 +18,7 @@ def load_results(files, load_sut_output=True):
     # This reduces memory usage if these values are not needed.
     if not load_sut_output:
         for result in results:
-            result.test_repository._outputs = None
+            result.test_repository._sut_outputs = None
 
     return results
 

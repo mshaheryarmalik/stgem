@@ -2,80 +2,79 @@
 # -*- coding: utf-8 -*-
 
 """
-Here is a base class implementation for systems under test (SUTs). We do not
-strictly enforce the input and output representations for flexibility, but we
-have the following conventions which should be followed if possible.
-
-Inputs:
--------
-We have two input formats: vectors and discrete signals.
-
-Vectors inputs should be numpy arrays of floats. The SUT should allow the
-execution of variable-length input vectors whenever this makes sense (e.g.,
-when the input is interpretable as time series).
-
-Discrete signals.
+See SUT.md for detailed documentation and ideas. Remember to edit this
+documentation if you make changes to SUTs!
 """
 
+"""
+NOTICE: We support different ranges for each output value, but doing so is not
+always a good idea. This is because most algorithms we use directly compare the
+objective function values in [0, 1], so they should in some sense be
+comparable.
+"""
+
+from dataclasses import dataclass
+
 import numpy as np
-from collections import namedtuple
 
 from stgem.performance import PerformanceData
 
-# TODO Document this
-# TODO Consider a dataclass
+@dataclass
+class SUTInput:
+    inputs: ...
+    input_denormalized: ...
+    input_timestamps: ...
 
-SUTResult = namedtuple("SUTResult", "inputs outputs input_timestamps output_timestamps error")
+@dataclass
+class SUTOutput:
+    outputs: ...
+    output_timestamps: ...
+    error: ...
+
+class SearchSpace:
+    def __init__(self):
+        self.sut = None
+        self.rng = None
+
+    def setup(self, sut, objectives, rng):
+        self.sut = sut
+        self.odim = len(objectives)
+        self.rng = rng
+
+    @property
+    def input_dimension(self):
+        return self.sut.idim
+
+    @property
+    def output_dimension(self):
+        return self.odim
+
+    def is_valid(self, test) -> bool:
+        return self.sut.validity(test)
+
+    def sample_input_space(self):
+        return self.rng.uniform(-1, 1, size=self.input_dimension)
 
 class SUT:
     """Base class implementing a system under test. """
 
+    default_parameters = {}
+
     def __init__(self, parameters=None):
         if parameters is None:
-            self.parameters = {}
-        else:
-            self.parameters = parameters
+            parameters = {}
+
+        # merge deafult_parameters and parameters, the later takes priority if a key appears in both dictionaries
+        # the result is a new dictionary
+        self.parameters = self.default_parameters | parameters
+
+        if not "input_type" in self.parameters:
+            self.parameters["input_type"] = None
+        if not "output_type" in self.parameters:
+            self.parameters["output_type"] = None
 
         self.perf = PerformanceData()
-
-        """
-        All SUTs have the below variables which concern inputs and outputs,
-        their ranges etc. We describe them here, but do not set them. They are
-        set by generator.py and setting defaults for them here would complicate
-        that code. They can be set (and in some cases should be) by inheriting
-        classes.
-
-        self.idim
-        The input dimension of the SUT (number of components for vector-valued
-        inputs and number of signals for signal-valued inputs).
-
-        self.odim
-        The output dimension of the SUT (number of components for vector-valued
-        outputs and number of signals for signal-valued outputs).
-
-        Names for inputs and outputs (strings).
-        self.inputs
-        self.outputs
-
-        We always assume that inputs are scaled to [-1, 1], so a range for
-        inputs must be specified (a list of 2-element lists representing
-        intervals). For example, self.input_range = [[0, 2], [-15, 15]] would
-        indicate range [0, 2] for the first component and [-15, 15] for the
-        second.
-        
-        Outputs are not scaled to [-1, 1] by default, but this can be achieved
-        by specifying an output range and by using the self.scale or
-        self.scale_signal methods in _execute_test. If the output range is
-        unknown, the value None can be used to indicate this. For example,
-        self.output_range = [[-300, 100], None] specifies output range [-300,
-        100] for the first component and the range of the second component is
-        unknown.
-        
-        NOTICE: We support different ranges for each output value, but doing so
-        is not always a good idea. This is because most algorithms we use
-        directly compare the objective function values in [0, 1], so they
-        should in some sense be comparable.
-        """
+        self.base_has_been_setup = False
 
     def __getattr__(self, name):
         if "parameters" in self.__dict__:
@@ -84,16 +83,14 @@ class SUT:
 
         raise AttributeError(name)
 
-    def setup(self, budget, rng):
+    def setup(self):
         """Setup the budget and perform steps necessary for two-step
         initialization. Derived classes should always call this super class
         setup method."""
 
-        # Make sure that it is safe to repeatedly call this function with
-        # different budgets and rngs. This ensures SUT reusage.
-
-        self.budget = budget
-        self.rng = rng
+        # We skip setup if it has been done before since inheriting classes
+        # may alter idim, odim, ranges, etc.
+        if self.base_has_been_setup: return
 
         # Infer dimensions and names for inputs and outputs from impartial
         # information.
@@ -155,6 +152,8 @@ class SUT:
             raise Exception("The output attribute of the SUT must be a Python list.")
         self.output_range += [None for _ in range(self.odim - len(self.output_range))]
 
+        self.base_has_been_setup = True
+
     def variable_range(self, var_name):
         """Return the range for the given variable (input or output)."""
 
@@ -200,18 +199,15 @@ class SUT:
         then no scaling is done.
         """
 
-        y = []
-        for v in signal:
-            if interval is not None:
-                A = interval[0]
-                B = interval[1]
-                C = (target_B-target_A)/(B-A)
-                D = target_A - C*A
-                y.append(C*v + D)
-            else:
-                y.append(v)
-
-        return y
+        y = np.asarray(signal)
+        if interval is not None:
+            A = interval[0]
+            B = interval[1]
+            C = (target_B-target_A)/(B-A)
+            D = target_A - C*A
+            return C*y + D
+        else:
+            return y
 
     def descale(self, x, intervals, A=-1, B=1):
         """
@@ -236,44 +232,38 @@ class SUT:
 
         return y
 
-    def execute_test(self, test) -> SUTResult:
-        self.perf.timer_start("execution")
-
-        r = self._execute_test(test)
-
-        self.perf.save_history("execution_time", self.perf.timer_reset("execution"))
-        self.budget.consume("executions")
-        self.budget.consume("execution_time", self.perf.get_history("execution_time")[-1])
-
-        return r
-
-    def _execute_test(self, test) -> SUTResult:
+    def _execute_test(self, test: SUTInput) -> SUTOutput:
         raise NotImplementedError()
 
-    def execute_random_test(self):
-        test = self.sample_input_space()
-        return test, self._execute_test(test)
+    def execute_test(self, test: SUTInput) -> SUTOutput:
+        # Check for correct input type if specified.
+        if self.input_type is not None:
+            if self.input_type == "vector":
+                if test.input_timestamps is not None or len(test.inputs.shape) > 1:
+                    raise Exception("Signal input given for vector input SUT.")
+            elif self.input_type == "signal":
+                if test.input_timestamps is None or len(test.inputs.shape) == 1:
+                    raise Exception("Vector input given for vector input SUT.")
 
-    def sample_input_space(self):
-        return self.rng.uniform(-1, 1, size=(1, self.idim))
+        # TODO: Check for output.error.
+        try:
+            output = self._execute_test(test)
+        except:
+            raise
 
-    def validity(self, test):
-        """
-        Basic validator which deems all tests valid.
-        """
+        # Check for correct output type if specified.
+        if self.output_type is not None:
+            if self.output_type == "vector":
+                if output.output_timestamps is not None or len(output.outputs.shape) > 1:
+                    raise Exception("Signal output for vector output SUT.")
+            elif self.output_type == "signal":
+                if output.output_timestamps is None or len(output.outputs.shape) == 1:
+                    raise Exception("Vector output for signal output SUT.")
+        
+        return output
+
+    def validity(self, test: SUTInput) -> int:
+        """Basic validator which deems all tests valid."""
 
         return 1
-
-    def _min_distance(self, tests, x):
-        # We use the Euclidean distance.
-        tests = np.asarray(tests)
-        d = np.linalg.norm(tests - x, axis=1)
-        return min(d)
-
-    def min_distance(self, tests, x):
-        """
-        Returns the minimum distance of the given tests to the specified test.
-        """
-
-        return self._min_distance(tests, x)
 

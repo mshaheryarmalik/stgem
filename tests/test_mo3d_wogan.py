@@ -1,5 +1,4 @@
-import math
-import unittest
+import math, os, unittest
 
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search
@@ -44,7 +43,9 @@ class TestPython(unittest.TestCase):
         )
 
         r = generator.run()
-        r.dump_to_file("mo3k_python_wogan_results.pickle")
+        file_name = "mo3d_python_wogan_results.pickle"
+        r.dump_to_file(file_name)
+        os.remove(file_name)
 
 if __name__ == "__main__":
     unittest.main()

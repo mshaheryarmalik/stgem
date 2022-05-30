@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import importlib, heapq
+import heapq
 
 import numpy as np
 
@@ -23,26 +23,20 @@ class WOGAN(Algorithm):
         "shift_function_parameters": {"initial": 0, "final": 3},
     }
 
-    def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device=None, logger=None):
-        super().setup(sut, test_repository, budget, objective_funcs, objective_selector, device, logger)
+    def setup(self, search_space, device=None, logger=None):
+        super().setup(search_space, device, logger)
    
         # Setup the shift function for sampling training data.
         # ---------------------------------------------------------------------
         # The initial shift value is determined at the minimum budget left when
-        # this function is called. The final shift value is determined at
-        # budget 0.0.
+        # the function do_train is called for the first time. The final shift
+        # value is determined at budget 0.0.
         if self.shift_function is None:
             raise Exception("No shift function defined.")
         if self.shift_function_parameters is None:
             raise Exception("No shift function parameters defined.")
 
-        if self.shift_function == "linear":
-            # We increase the shift linearly according to the given initial and
-            # given final value.
-            alpha = (self.shift_function_parameters["initial"] - self.shift_function_parameters["final"])/self.budget.remaining()
-            beta = self.shift_function_parameters["final"]
-            self.shift = lambda x: alpha * x + beta
-        else:
+        if not self.shift_function in ["linear"]:
             raise Exception("No shift function type '{}'.".format(self.shift_function))
 
         # Setup the function for computing the bin weights.
@@ -50,6 +44,12 @@ class WOGAN(Algorithm):
         self.bin_weight = lambda x: 1 / (1 + np.exp(-1 * x))
 
         self.get_bin = (lambda x: int(x * self.bins) if x < 1.0 else self.bins - 1)
+
+    def initialize(self):
+        self.test_bins = [{i:[] for i in range(self.bins)} for _ in range(self.N_models)] # a dictionary to tell which test is in which bin for each model
+        self.model_trained = [0 for _ in range(self.N_models)]                            # keeps track how many tests were generated when a model was previously trained
+
+        self.first_training = True
 
     def bin_sample(self, N, shift):
         """
@@ -109,187 +109,137 @@ class WOGAN(Algorithm):
 
         return sample_X
 
-    def generate_test(self):
-        test_bins = [{i:[] for i in range(self.bins)} for _ in range(self.N_models)] # a dictionary to tell which test is in which bin for each model
-        model_trained = [0 for _ in range(self.N_models)]                            # keeps track how many tests were generated when a model was previously trained
-        tests_generated = 0                                                          # how many tests have been generated so far
+    def do_train(self, active_outputs, test_repository, budget_remaining):
+        if self.first_training:
+            if self.shift_function == "linear":
+                # We increase the shift linearly according to the given initial and
+                # given final value.
+                alpha = (self.shift_function_parameters["initial"] - self.shift_function_parameters["final"])/budget_remaining
+                beta = self.shift_function_parameters["final"]
+                self.shift = lambda x: alpha * x + beta
 
         # Take into account how many tests a previous step (usually random
         # search) has generated.
-        tests_generated = self.test_repository.tests
+        tests_generated = test_repository.tests
 
         # TODO: Check that we have previously generated at least a couple of
         #       tests. Otherwise we get a cryptic error.
 
-        # Assign the initial tests to bins.
+        # Put tests into bins.
+        idx = test_repository.indices if self.first_training else [test_repository.tests - 1]
         for i in range(self.N_models):
-            for j in self.test_repository.indices:
-                test_bins[i][self.get_bin(self.test_repository.get(j)[2][i])].append(j)
+            for j in idx:
+                self.test_bins[i][self.get_bin(test_repository.get(j)[-1][i])].append(j)
 
-        # Train the models with the initial tests.
-        # ---------------------------------------------------------------------
-        # Notice that in principle we should train all models here. We however
-        # opt to train only active models for more generality. It is up to the
-        # caller to ensure that all models are trained here if so desired.
-        self.perf.timer_start("training")
-        for i in self.objective_selector.select_all():
-            dataX, _, dataY = self.test_repository.get()
-            dataX = np.array(dataX)
-            dataY = np.array(dataY)[:,i].reshape(-1, 1)
-            for _ in range(self.models[i].train_settings["epochs"]):
-                self.log("Training analyzer {}...".format(i + 1))
-                # Train the analyzer.
-                self.models[i].train_analyzer_with_batch(dataX,
-                                                         dataY,
-                                                         train_settings=self.models[i].train_settings_init,
-                                                        )
-                # Train the WGAN.
-                self.log("Training WGAN model {}...".format(i + 1))
-                for epoch in range(self.models[i].train_settings_init["epochs"]):
-                    train_X = self.training_sample(min(self.wgan_batch_size, self.test_repository.tests),
-                                                   np.asarray(self.test_repository.get()[0]),
-                                                   test_bins[i],
-                                                   self.shift(self.budget.remaining()),
-                                                  )
-                    self.models[i].train_with_batch(train_X,
-                                                    train_settings=self.models[i].train_settings_init,
-                                                   )
-            model_trained[i] = tests_generated
-        self.perf.save_history("training_time", self.perf.timer_reset("training"))
-
-        # Begin the main loop for new test generation and training.
-        # ---------------------------------------------------------------------
-        while True:
-            # We generate a new valid test as follows. For each active model,
-            # we generate new tests using the model, discard invalid tests, and
-            # estimate the corresponding objective function values. The test
-            # closest to target fitness 0 (minimization) is treated as the
-            # candidate, and the candidate is accepted if the estimate exceeds
-            # the current target threshold. The target threshold is changed on
-            # each loop execution in order to make acceptance easier. We use a
-            # priority queue to track the best tests in case that an estimated
-            # good test was generated just before the target threshold was
-            # changed enough for it to be selected.
-            self.perf.timer_start("generation")
-            heap = []
-            target_fitness = 0
-            entry_count = 0 # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
-            rounds = 0
-            invalid = 0
-            active_models = self.objective_selector.select()
-            self.log("Starting to generate test {}.".format(tests_generated + 1))
-
-            while True:
-                # TODO: Avoid selecting similar or same tests.
-                rounds += 1
-                for i in active_models:
-                    while True:
-                        # Generate several tests and pick the one with best
-                        # predicted objective function component. We do this as
-                        # long as we find at least one valid test.
-                        candidate_tests = self.models[i].generate_test(self.N_candidate_tests)
-
-                        # Pick only the valid tests.
-                        valid_idx = [i for i in range(self.N_candidate_tests) if self.sut.validity(candidate_tests[i]) == 1]
-                        candidate_tests = candidate_tests[valid_idx]
-                        invalid += self.N_candidate_tests - len(valid_idx)
-                        if candidate_tests.shape[0] == 0:
-                            continue
-
-                        # Estimate objective function values and add the tests
-                        # to heap.
-                        tests_predicted_objective = self.models[i].predict_objective(candidate_tests)
-                        for j in range(tests_predicted_objective.shape[0]):
-                            heapq.heappush(heap, (tests_predicted_objective[j,0], entry_count, i, candidate_tests[j]))
-                            entry_count += 1
-
-                        break
-
-                # We go up from 0 like we would go down from 1 when multiplied by self.fitness_coef.
-                target_fitness = 1 - self.fitness_coef*(1 - target_fitness)
-
-                # Check if the best predicted test is good enough.
-                # Without eps we could get stuck if prediction is always 1.0.
-                eps = 1e-4
-                if heap[0][0] - eps <= target_fitness: break
-
-            # Save information on how many tests needed to be generated etc.
-            # -----------------------------------------------------------------
-            self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
-            N_generated = rounds*self.N_candidate_tests
-            self.perf.save_history("N_tests_generated", N_generated)
-            self.perf.save_history("N_invalid_tests_generated", invalid)
-
-            # Execute the test on the SUT.
-            # -----------------------------------------------------------------
-            best_test = heap[0][3]
-            best_model = heap[0][2]
-            best_estimated_objective = heap[0][0]
-
-            self.log("Chose test {} with predicted minimum objective {} on WGAN model {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, best_model + 1, rounds, invalid))
-            self.log("Executing the test...")
-
-            # Consume generation budget.
-            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1] + self.perf.get_history("training_time")[-1])
-
-            sut_output = self.sut.execute_test(best_test)
-            self.log("Output from the SUT {}".format(sut_output))
-            output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
-
-            self.log("The actual objective {} for the generated test.".format(output))
-
-            # Add the new test to the test suite.
-            # -----------------------------------------------------------------
-            idx = self.test_repository.record(best_test, sut_output, output)
-            self.objective_selector.update(np.argmin(output))
-            tests_generated += 1
-
-            # Place the test into appropriate bin for each model.
-            for i in range(self.N_models):
-                test_bins[i][self.get_bin(output[i])].append(idx)
-
-            self.perf.timers_hold()
-            yield idx
-            self.perf.timers_resume()
-
-            # Train the models.
-            # -----------------------------------------------------------------
-            # We train the models which were involved in the test generation.
-            # We do not take the updated active model into account. We train
-            # only if enough delay since the last training.
-            self.perf.timer_start("training")
-            for i in active_models:
-                if tests_generated - model_trained[i] >= self.train_delay:
+        # We train only the models corresponding to active outputs and only if
+        # there has been enough delay since the last training. During the first
+        # training, we ignore the delay.
+        for i in active_outputs:
+            if self.first_training or tests_generated - self.model_trained[i] >= self.train_delay:
+                X, _, Y = test_repository.get()
+                dataX = np.asarray([sut_input.inputs for sut_input in X])
+                dataY = np.array(Y)[:,i].reshape(-1, 1)
+                epochs = self.models[i].train_settings_init["epochs"] if self.first_training else self.models[i].train_settings["epochs"]
+                train_settings = self.models[i].train_settings_init if self.first_training else self.models[i].train_settings
+                for _ in range(epochs):
                     self.log("Training analyzer {}...".format(i + 1))
-                    dataX, _, dataY = self.test_repository.get()
-                    dataX = np.array(dataX)
-                    dataY = np.array(dataY)[:,i].reshape(-1, 1)
-                    for _ in range(self.models[i].train_settings_init["epochs"]):
-                        self.models[i].train_analyzer_with_batch(dataX,
-                                                                 dataY,
-                                                                 train_settings=self.models[i].train_settings,
-                                                                )
+                    self.models[i].train_analyzer_with_batch(dataX,
+                                                             dataY,
+                                                             train_settings=train_settings
+                                                            )
 
-                        # Train the WGAN.
-                        self.log("Training the WGAN model {}...".format(i + 1))
-                        for epoch in range(self.models[i].train_settings_init["epochs"]):
-                            # We include the new tests to the batch with high
-                            # probability if and only if they have low objective.
-                            BS = min(self.wgan_batch_size, self.test_repository.tests)
-                            train_X = np.zeros(shape=(BS, self.sut.idim))
-                            c = 0
-                            for j in range(self.train_delay):
-                                test, _, output = self.test_repository.get(self.test_repository.indices[-(j+1)])
-                                if self.get_bin(output[i]) >= self.bin_sample(1, self.shift(self.budget.remaining()))[0]:
-                                    train_X[c] = test
-                                    c += 1
-                            train_X[c:] = self.training_sample(BS - c,
-                                                               np.asarray(self.test_repository.get()[0]),
-                                                               test_bins[i],
-                                                               self.shift(self.budget.remaining()),
-                                                              )
-                            self.models[i].train_with_batch(train_X,
-                                                            train_settings=self.models[i].train_settings,
-                                                           )
-            self.perf.save_history("training_time", self.perf.timer_reset("training"))
+                    # Train the WGAN.
+                    self.log("Training the WGAN model {}...".format(i + 1))
+                    # We include the new tests to the batch with high
+                    # probability if and only if they have low objective.
+                    # Moreover, when we are not doing initial training, we
+                    # always attempt to include the latest tests in order to
+                    # utilize the latest information.
+                    BS = min(self.wgan_batch_size, test_repository.tests)
+                    train_X = np.zeros(shape=(BS, self.search_space.input_dimension))
+                    latest = 0 if self.first_training else self.train_delay
+                    c = 0
+                    for j in range(latest):
+                        test, _, output = test_repository.get(test_repository.indices[-(j+1)])
+                        if self.get_bin(output[i]) >= self.bin_sample(1, self.shift(budget_remaining))[0]:
+                            train_X[c] = test.inputs
+                            c += 1
+                    train_X[c:] = self.training_sample(BS - c,
+                                                       np.asarray([sut_input.inputs for sut_input in test_repository.get()[0]]),
+                                                       self.test_bins[i],
+                                                       self.shift(budget_remaining),
+                                                      )
+                    self.models[i].train_with_batch(train_X,
+                                                    train_settings=train_settings
+                                                   )
+
+                self.model_trained[i] = tests_generated
+
+        self.first_training = False
+
+    def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
+        # We generate a new valid test as follows. For each active model, we
+        # generate new tests using the model, discard invalid tests, and
+        # estimate the corresponding objective function values. The test
+        # closest to target fitness 0 (minimization) is treated as the
+        # candidate, and the candidate is accepted if the estimate exceeds the
+        # current target threshold. The target threshold is changed on each
+        # loop execution in order to make acceptance easier. We use a priority
+        # queue to track the best tests in case that an estimated good test was
+        # generated just before the target threshold was changed enough for it
+        # to be selected.
+        heap = []
+        target_fitness = 0
+        entry_count = 0 # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
+        rounds = 0
+        invalid = 0
+        self.log("Generating using WOGAN models {}.".format(",".join(str(m + 1) for m in active_outputs)))
+
+        while True:
+            # TODO: Avoid selecting similar or same tests.
+            rounds += 1
+            for i in active_outputs:
+                while True:
+                    # Generate several tests and pick the one with best
+                    # predicted objective function component. We do this as
+                    # long as we find at least one valid test.
+                    candidate_tests = self.models[i].generate_test(self.N_candidate_tests)
+
+                    # Pick only the valid tests.
+                    valid_idx = [i for i in range(self.N_candidate_tests) if self.search_space.is_valid(candidate_tests[i]) == 1]
+                    candidate_tests = candidate_tests[valid_idx]
+                    invalid += self.N_candidate_tests - len(valid_idx)
+                    if candidate_tests.shape[0] == 0:
+                        continue
+
+                    # Estimate objective function values and add the tests
+                    # to heap.
+                    tests_predicted_objective = self.models[i].predict_objective(candidate_tests)
+                    for j in range(tests_predicted_objective.shape[0]):
+                        heapq.heappush(heap, (tests_predicted_objective[j,0], entry_count, i, candidate_tests[j]))
+                        entry_count += 1
+
+                    break
+
+            # We go up from 0 like we would go down from 1 when multiplied by self.fitness_coef.
+            target_fitness = 1 - self.fitness_coef*(1 - target_fitness)
+
+            # Check if the best predicted test is good enough.
+            # Without eps we could get stuck if prediction is always 1.0.
+            eps = 1e-4
+            if heap[0][0] - eps <= target_fitness: break
+
+        # Save information on how many tests needed to be generated etc.
+        # -----------------------------------------------------------------
+        N_generated = rounds*self.N_candidate_tests
+        self.perf.save_history("N_tests_generated", N_generated)
+        self.perf.save_history("N_invalid_tests_generated", invalid)
+
+        best_test = heap[0][3]
+        best_model = heap[0][2]
+        best_estimated_objective = heap[0][0]
+
+        self.log("Chose test {} with predicted minimum objective {} on WGAN model {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, best_model + 1, rounds, invalid))
+
+        return best_test
 

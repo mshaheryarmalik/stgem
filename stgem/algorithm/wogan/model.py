@@ -61,21 +61,21 @@ class WOGAN_Model(Model):
         }
     }
 
-    def setup(self, sut, device, logger):
-        super().setup(sut, device, logger)
+    def setup(self, search_space, device, logger):
+        super().setup(search_space, device, logger)
 
         self.noise_dim = self.generator_mlm_parameters["noise_dim"]
 
         # Infer input and output dimensions for ML models.
-        self.parameters["analyzer_parameters"]["analyzer_mlm_parameters"]["input_shape"] = self.sut.idim
-        self.parameters["generator_mlm_parameters"]["output_shape"] = self.sut.idim
-        self.parameters["critic_mlm_parameters"]["input_shape"] = self.sut.idim
+        self.parameters["analyzer_parameters"]["analyzer_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
+        self.parameters["generator_mlm_parameters"]["output_shape"] = self.search_space.input_dimension
+        self.parameters["critic_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
 
         # Load the specified analyzer and initialize it.
         module = importlib.import_module("stgem.algorithm.wogan.analyzer")
         analyzer_class = getattr(module, self.analyzer)
-        self.analyzer = analyzer_class(parameters=self.analyzer_parameters)
-        self.analyzer.setup(device=self.device, logger=self.logger)
+        self.modelA = analyzer_class(parameters=self.analyzer_parameters)
+        self.modelA.setup(device=self.device, logger=self.logger)
 
         # Load the specified generator and critic and initialize them.
         module = importlib.import_module("stgem.algorithm.wogan.mlm")
@@ -126,7 +126,7 @@ class WOGAN_Model(Model):
 
         losses = []
         for _ in range(train_settings["analyzer_epochs"]):
-            loss = self.analyzer.train_with_batch(data_X, data_Y, train_settings)
+            loss = self.modelA.train_with_batch(data_X, data_Y, train_settings)
             losses.append(loss)
 
         m = np.mean(losses)
@@ -304,5 +304,5 @@ class WOGAN_Model(Model):
           output (float)
         """
 
-        return self.analyzer.predict(test)
+        return self.modelA.predict(test)
 

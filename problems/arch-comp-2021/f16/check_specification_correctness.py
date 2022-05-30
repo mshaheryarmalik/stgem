@@ -1,8 +1,11 @@
+import os
+
 import numpy as np
 
 from stgem.objective import FalsifySTL
+from stgem.sut import SUTInput
 
-from util import build_specification
+from benchmark import build_specification
 
 def get_falsifying_input_robustness(selected_specification):
     if selected_specification == "F16":
@@ -10,18 +13,20 @@ def get_falsifying_input_robustness(selected_specification):
     else:
         raise Exception("Unknown specification '{}'.".format(selected_specification))
 
-    sut, specifications, scale, strict_horizon_check = build_specification(selected_specification)
-    sut.setup(None, None)
+    sut, specifications, scale, strict_horizon_check, _ = build_specification(selected_specification)
+    sut.setup()
     objectives = [FalsifySTL(specification=specification, scale=False, strict_horizon_check=strict_horizon_check) for specification in specifications]
     for objective in objectives:
         objective.setup(sut)
 
     sut_output = sut._execute_vector_signal(test)
-    output = [objective(sut_output) for objective in objectives]
+    output = [objective(SUTInput(None, test, None), sut_output) for objective in objectives]
     
     return output
 
 if __name__ == "__main__":
+    os.chdir(os.path.join("problems", "arch-comp-2021"))
+
     specifications = ["F16"]
     correct_robustness = {"F16": (0, -1.6128, 4)}
     for specification in specifications:

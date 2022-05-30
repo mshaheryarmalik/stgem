@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from stgem.sut import SUT
+from stgem.sut import SUT, SUTOutput
 from .util import generate_odroid_data
 
 class OdroidSUT(SUT):
@@ -16,8 +16,8 @@ class OdroidSUT(SUT):
     is a 3-tuple (power, performance, efficiency) scaled to [0, 1].
     """
 
-    def __init__(self,parameters):
-        SUT.__init__(self,parameters)
+    def __init__(self, parameters):
+        super().__init__(parameters)
 
         self.idim = 6
         self.odim = 3
@@ -87,27 +87,3 @@ class OdroidSUT(SUT):
         distances = np.sum((self.dataX - test)**2, axis=1)
         return self.dataY[np.argmin(distances)]
 
-    def execute_random_test(self):
-        """
-        Execute a random test and return its output.
-
-        Returns:
-          test (np.ndarray): Array with shape (1,N) or (N) with
-                             N = self.ndimensions of floats in [-1, 1].
-          output (np.ndarray): Array of shape (3) of floats in [0, 1].
-        """
-
-        idx = np.random.randint(0, self.dataX.shape[0])
-        return self.dataX[idx], self.dataY[idx]
-
-    def sample_input_space(self):
-        """
-        Return a sample (test) from the input space.
-
-        Returns:
-          test (np.ndarray): Array with shape (1,N) or (N) with
-                             N = self.ndimensions of floats in [-1, 1].
-        """
-
-        idx = np.random.randint(0, self.dataX.shape[0])
-        return self.dataX[idx]

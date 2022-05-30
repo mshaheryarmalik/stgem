@@ -1,6 +1,6 @@
 import numpy as np
 
-from stgem.sut import SUT, SUTResult
+from stgem.sut import SUT, SUTOutput
 
 class Range:
     """Continuous range [A, B]."""
@@ -28,19 +28,24 @@ class Categorical:
 
 class HyperParameter(SUT):
 
-    def __init__(self, mode, experiment_factory, parameters=None):
+    default_parameters = {"mode": "falsification_rate",
+                          "N_workers": 1}
+
+    def __init__(self, experiment_factory, parameters=None):
         super().__init__(parameters)
 
-        self.mode = mode
         self.experiment_factory = experiment_factory
 
         self.idim = len(self.hyperparameters)
+        self.input_type = "vector"
+        self.output_type = "vector"
 
-        # Check what type of thing is computed FR etc.
+        # Check what type of thing is computed: FR etc.
         if self.mode == "falsification_rate":
-            self.stored = []
+            def reset():
+                self.stored = []
 
-            def callback(result, done):
+            def callback(idx, result, done):
                 """Append 1 if falsified, 0 otherwise."""
 
                 self.stored.append(any(step.success for step in result.step_results))
@@ -49,22 +54,28 @@ class HyperParameter(SUT):
                 # We return 1 - FR as we do minimization.
                 return 1 - sum(1 if x else 0 for x in self.stored) / len(self.stored)
 
+            self.reset_callback = reset
             self.stgem_result_callback = callback
             self.report = report
 
             self.odim = 1
+        else:
+            raise Exception("Unknown mode '{}'.".format(falsification_rate))
 
     def edit_generator(self, generator, test):
-        test = test.reshape(-1)
-        for n, (hp_func, hp_domain) in enumerate(self.hyperparameters):
-            hp_func(generator, hp_domain(test[n]))
+        for n, (hp_func, _) in enumerate(self.hyperparameters):
+            hp_func(generator, test[n])
 
     def _execute_test(self, test):
+        denormalized = np.array([hp_domain(test.inputs[n]) for n, (_, hp_domain) in enumerate(self.hyperparameters)])
         experiment = self.experiment_factory()
-        experiment.generator_callback = lambda g: self.edit_generator(g, test)
+        experiment.generator_callback = lambda g: self.edit_generator(g, denormalized)
         experiment.result_callback = self.stgem_result_callback
 
-        experiment.run(silent=True)
+        self.reset_callback()
 
-        return SUTResult(test, np.array([self.report()]), None, None, None)
+        experiment.run(N_workers=self.N_workers, silent=True)
+
+        test.input_denormalized = denormalized
+        return SUTOutput(np.array([self.report()]), None, None)
 

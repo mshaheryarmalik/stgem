@@ -1,5 +1,4 @@
-import math
-import unittest
+import math, os, unittest
 
 from stgem.budget import Budget
 from stgem.generator import STGEM, Search
@@ -9,7 +8,7 @@ from stgem.objective_selector import ObjectiveSelectorMAB
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.random.algorithm import Random
-from stgem.algorithm.random.model import Uniform
+from stgem.algorithm.random.model import Uniform, LHS
 
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
@@ -32,19 +31,24 @@ class TestPython(unittest.TestCase):
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
                         ],
-            objective_selector=ObjectiveSelectorMAB(warm_up=5),
+            objective_selector=ObjectiveSelectorMAB(warm_up=41),
             steps=[
                 Search(budget_threshold={"executions": 20},
                        mode=mode,
                        algorithm=Random(model_factory=(lambda: Uniform()))),
-                Search(budget_threshold={"executions": 25},
+                Search(budget_threshold={"executions": 40},
+                       mode=mode,
+                       algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 20})))),
+                Search(budget_threshold={"executions": 45},
                        mode=mode,
                        algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
             ]
         )
 
         r = generator.run()
-        r.dump_to_file("mo3k_python_ogan_results.pickle")
+        file_name = "mo3d_python_ogan_results.pickle"
+        r.dump_to_file(file_name)
+        os.remove(file_name)
 
 if __name__ == "__main__":
     unittest.main()

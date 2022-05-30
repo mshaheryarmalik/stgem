@@ -1,5 +1,4 @@
-import time
-import math
+import math, time
 
 class Budget:
 
@@ -21,7 +20,7 @@ class Budget:
             self.budget_threshold[name] = budget_threshold[name] if name in budget_threshold else math.inf
 
     def remaining(self):
-        return min(self.used().values()) > 0
+        return min(self.used().values())
 
     def used(self):
         result = {name:max(0, 1 - self.budget_values[name]/self.budget_threshold[name]) for name in self.budget_ids}

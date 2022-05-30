@@ -6,61 +6,30 @@ import numpy as np
 from stgem.algorithm import Algorithm
 
 class Random(Algorithm):
-    """
-    Baseline random algorithm for generating a test suite.
-    """
+    """Baseline random algorithm for generating a test suite."""
 
-    def generate_test(self):
-        self.perf.timer_start("total")
+    def do_train(self, active_outputs, test_repository, budget_remaining):
+        pass
 
-        # TODO: Implement the usage of predefined random data.
+    def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
+        rounds = 0
+        invalid = 0
+        # Select a model randomly and generate a random valid test for it.
+        m = np.random.choice(active_outputs)
 
         while True:
-            # Generate a new test.
-            # -----------------------------------------------------------------
-            self.perf.timer_start("generation")
-            self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
-            rounds = 0
-            invalid = 0
-            # Select a model randomly and generate a random valid test for it.
-            m = np.random.choice(self.objective_selector.select())
-            while True:
-                rounds += 1
-                new_test = self.models[m].generate_test()
-                if self.sut.validity(new_test) == 0:
-                    invalid += 1
-                    continue
+            rounds += 1
+            new_test = self.models[m].generate_test()
+            if self.search_space.is_valid(new_test) == 0:
+                invalid += 1
+                continue
 
-                break
+            break
 
-            # Save information on how many tests needed to be generated etc.
-            # -----------------------------------------------------------------
-            self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
-            self.perf.save_history("N_tests_generated", rounds)
-            self.perf.save_history("N_invalid_tests_generated", invalid)
+        # Save information on how many tests needed to be generated etc.
+        # -----------------------------------------------------------------
+        self.perf.save_history("N_tests_generated", rounds)
+        self.perf.save_history("N_invalid_tests_generated", invalid)
 
-            # Execute the test on the SUT.
-            # -----------------------------------------------------------------
-            self.log("Chose test {} with predicted objective 0. Generated total {} tests of which {} were invalid.".format(new_test, rounds, invalid))
-            self.log("Executing the test...")
-
-            # Consume generation budget.
-            self.budget.consume("generation_time", self.perf.get_history("generation_time")[-1])
-
-            sut_output = self.sut.execute_test(new_test)
-            self.log("Output from the SUT {}".format(sut_output))
-            output = [self.objective_funcs[i](sut_output) for i in range(self.N_models)]
-
-            self.log("The actual fitness {} for the generated test.".format(output))
-
-            # Add the new test to the test suite.
-            # -----------------------------------------------------------------
-            idx = self.test_repository.record(new_test.reshape(-1), sut_output, output)
-            self.objective_selector.update(np.argmax(output))
-
-            self.perf.save_history("training_time", 0)
-
-            self.perf.timers_hold()
-            yield idx
-            self.perf.timers_resume()
+        return new_test
 

@@ -5,14 +5,11 @@ import numpy as np
 
 class ObjectiveSelector:
     def __init__(self):
-        self.dim = 0
         self.parameters = {}
+        self.dim = 0
 
     def setup(self, objectives):
-        N_objectives = 0
-        for of in objectives:
-            N_objectives += of.dim
-        self.dim = N_objectives
+        self.dim = len(objectives)
 
     def __getattr__(self, name):
         if "parameters" in self.__dict__:

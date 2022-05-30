@@ -4,5 +4,5 @@ Vtg    = 540;
 %thetag = -(pi/2)*0.8;
 %psig   = -(pi/4);
 
-addpath(genpath('problems/arch-comp-2021/f16/AeroBenchVV-master'));
+addpath(genpath('f16/AeroBenchVV-master'));
 warning('off', 'f16:no_analysis');

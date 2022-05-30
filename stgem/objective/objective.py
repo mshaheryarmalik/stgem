@@ -1,9 +1,12 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import numpy as np
+"""
+All objectives must output a single number. If several outputs are required
+for a single input, multiple objectives must be specified.
+"""
 
-from stgem.sut import SUTResult
+import numpy as np
 
 class Objective:
 
@@ -20,59 +23,47 @@ class Objective:
 
         raise AttributeError(name)
 
-    def __call__(self, r: SUTResult):
-        return r.outputs
+    def __call__(self, t, r):
+        raise NotImplementedError
 
 class Minimize(Objective):
-    """Objective function for a SUT with fixed-length vector outputs which
-    selects the minimum among the specified components."""
+    """Objective function which selects the minimum of the specified components
+    for vector outputs and minimum value of the selected signals for signal
+    outputs."""
 
     def __init__(self, selected=None, scale=False, invert=False, clip=True):
         super().__init__()
         if not (isinstance(selected, list) or isinstance(selected, tuple) or selected is None):
             raise Exception("The parameter 'selected' must be None or a list or a tuple.")
 
-        self.dim = 1
         self.parameters["selected"] = selected
         self.parameters["scale"] = scale
         self.parameters["invert"] = invert
         self.parameters["clip"] = clip
 
-    def __call__(self, r: SUTResult):
-        assert r.output_timestamps is None
-
-        if self.selected is None:
-            idx = list(range(len(r.outputs)))
+    def __call__(self, t, r):
+        idx = self.selected if self.selected is not None else list(range(len(r.outputs)))
+        if r.output_timestamps is not None:
+            # Find the minimum value of the selected signals and form a vector
+            # from them.
+            v = np.array([min(signal) for signal in r.outputs[idx,:]])
         else:
-            idx = self.selected
+            # Just select the desired comporents.
+            v = r.outputs[idx]
 
         if self.invert:
-            outputs = r.outputs*(-1)
+            v = v*(-1)
             ranges = np.asarray([[-self.sut.output_range[i][1], -self.sut.output_range[i][0]] for i in idx])
         else:
             ranges = [self.sut.output_range[i] for i in idx]
 
         if self.scale:
-            output = self.sut.scale(r.outputs[idx].reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
-        else:
-            output = r.outputs[idx]
+            output = self.sut.scale(v.reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
 
         if self.clip:
-            return max(0, min(1, min(output)))
+            return max(0, min(1, min(v)))
         else:
-            return output
-
-class ObjectiveMinComponentwise(Objective):
-    """Objective function for a SUT with signal outputs which outputs the
-    minima of the signals."""
-
-    def __init__(self):
-        super().__init__()
-        self.dim = 1
-
-    def __call__(self, r: SUTResult):
-        assert r.output_timestamps is not None
-        return [min(output) for output in r.outputs]
+            return min(v)
 
 class FalsifySTL(Objective):
     """Objective function to falsify a STL specification. By default the
@@ -183,7 +174,7 @@ class FalsifySTL(Objective):
             x.lower_time_bound = x.old_lower_time_bound
             x.upper_time_bound = x.old_upper_time_bound
 
-    def _evaluate_vector(self, output):
+    def _evaluate_vector(self, test, output):
         # We assume that the output is a single observation of a signal. It
         # follows that not all STL formulas have a clear interpretation (like
         # always[0,30](x1 > 0 and x2 > 0). It is up to the user to ensure a
@@ -192,7 +183,12 @@ class FalsifySTL(Objective):
         self.specification.reset()
 
         timestamps = np.array([0], dtype=np.float32)
-        trajectories = {var:np.array([output[self.M[var][1]]], dtype=np.float32) for var in self.formula_variables}
+        trajectories = {}
+        for var in self.formula_variables:
+            if self.M[var][0] == "output":
+                trajectories[var] = np.array([output[self.M[var][1]]], dtype=np.float32)
+            else:
+                trajectories[var] = np.array([test[self.M[var][1]]], dtype=np.float32)
 
         # Notice that the return value is a Cython MemoryView.
         robustness_signal = self.specification.eval_interval(trajectories, timestamps)
@@ -211,10 +207,10 @@ class FalsifySTL(Objective):
 
         return robustness
 
-    def _evaluate_signal(self, result):
-        input_timestamps = result.input_timestamps
+    def _evaluate_signal(self, test, result):
+        input_timestamps = test.input_timestamps
         output_timestamps = result.output_timestamps
-        input_signals = result.inputs
+        input_signals = test.input_denormalized
         output_signals = result.outputs
 
         """
@@ -318,11 +314,11 @@ class FalsifySTL(Objective):
 
         return robustness
 
-    def __call__(self, r: SUTResult, *args, **kwargs):
+    def __call__(self, t, r):
         if r.output_timestamps is None:
-            return self._evaluate_vector(r.outputs)
+            return self._evaluate_vector(t.inputs, r.outputs)
         else:
-            return self._evaluate_signal(r)
+            return self._evaluate_signal(t, r)
 
     @staticmethod
     def GreaterThan(A, B, C, D, left_signal=None, right_signal=None):

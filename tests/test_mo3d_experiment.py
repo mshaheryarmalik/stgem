@@ -44,7 +44,7 @@ class TestPython(unittest.TestCase):
             g = f()
             return lambda: next(g)
 
-        def result_callback(r, done):
+        def result_callback(idx, r, done):
             global c
 
             # Parallel execution may overwrite files here, but we do not care.
@@ -57,7 +57,7 @@ class TestPython(unittest.TestCase):
         experiment = Experiment(N, stgem_factory, get_seed_factory(), result_callback=result_callback)
         # The following works around a CI pipeline segfault.
         experiment.garbage_collect = False
-        experiment.run(N_workers=4)
+        experiment.run(N_workers=2)
 
         for i in range(N):
             file_name = "mo3d_experiment_{}.pickle".format(i)

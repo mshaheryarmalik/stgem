@@ -3,6 +3,7 @@
 
 import os
 import copy
+
 from stgem.performance import PerformanceData
 
 class Algorithm:
@@ -14,38 +15,34 @@ class Algorithm:
 
     def __init__(self, model_factory=None, parameters=None):
         self.model_factory = model_factory
-        self.N_models = 0
+        self.search_space= None
         self.models = []
+        self.perf=PerformanceData()
 
         if parameters is None:
-            parameters = copy.deepcopy(self.default_parameters)
+            parameters = {}
 
-        self.parameters = parameters
-        self.perf = PerformanceData()
+        # merge deafult_parameters and parameters, the later takes priority if a key appears in both dictionaries
+        # the result is a new dictionary
+        self.parameters = self.default_parameters | parameters
 
-    def setup(self, sut, test_repository, budget, objective_funcs, objective_selector, device=None, logger=None):
-        self.sut = sut
-        self.test_repository = test_repository
-        self.budget = budget
-        self.objective_funcs = objective_funcs
-        self.objective_selector = objective_selector
+    def setup(self, search_space, device=None, logger=None):
+        self.search_space =  search_space
         self.device = device
         self.logger = logger
         self.log = lambda msg: (self.logger("algorithm", msg) if logger is not None else None)
 
-        # Setup the device.
-        self.parameters["device"] = device
         # Set input dimension.
         if not "input_dimension" in self.parameters:
-            self.parameters["input_dimension"] = self.sut.idim
+            self.parameters["input_dimension"] = self.search_space.input_dimension
 
         # Create models.
         if self.model_factory:
-            self.N_models = sum(1 for f in self.objective_funcs)
-            for _ in range(self.N_models):
-                model = self.model_factory()
-                model.setup(self.sut, self.device, self.logger)
-                self.models.append(model)
+            self.models = [self.model_factory() for _ in range(self.search_space.output_dimension)]
+        self.N_models = len(self.models)
+
+        for m in self.models:
+            m.setup(self.search_space, self.device, self.logger)
 
     def __getattr__(self, name):
         if "parameters" in self.__dict__:
@@ -56,11 +53,25 @@ class Algorithm:
 
     def initialize(self):
         """A Step calls this method before the first generate_test call"""
-
         pass
 
-    def generate_test(self):
-        raise NotImplementedError()
+    def train(self, active_outputs, test_repository, budget_remaining):
+        self.perf.timer_start("training")
+        self.do_train(active_outputs, test_repository, budget_remaining)
+        self.perf.save_history("training_time", self.perf.timer_reset("training"))
+
+    def do_train(self, active_outputs, test_repository, budget_remaining):
+        raise NotImplementedError
+
+    def generate_next_test(self, active_outputs, test_repository, budget_remaining):
+        self.perf.timer_start("generation")
+        r = self.do_generate_next_test(active_outputs, test_repository, budget_remaining)
+        self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
+
+        return r
+
+    def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
+       raise NotImplementedError
 
     def finalize(self):
         """A Step calls this method after the budget has been exhausted and the
@@ -68,20 +79,4 @@ class Algorithm:
 
         pass
 
-class LoaderAlgorithm(Algorithm):
-    """
-    Algorithm which simply loads pregenerated data from a file.
-    """
 
-    # TODO: Currently this is a placeholder and does nothing.
-
-    def __init__(self, parameters=None):
-        super().__init__(parameters)
-        return
-        # Check if the data file exists.
-        if not os.path.exists(self.data_file):
-            raise Exception("Pregenerated date file '{}' does not exist.".format(self.data_file))
-
-    def generate_test(self):
-        return
-        yield
