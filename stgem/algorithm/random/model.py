@@ -5,33 +5,45 @@ import numpy as np
 
 from stgem.algorithm import Model
 
-class MinimumDistance(Model):
-
-    def setup(self, sut, device, logger=None, mindist = 0.01):
-        super().setup(sut, device, logger)
-        self.existingPoints = []
-        self.mindist = mindist
-    def testOK(self, candidate):
-        for p in self.existingPoints:
-            if np.linalg.norm(p-candidate) < self.mindist:
-                return False
-        return True
-    def generate_test(self):
-        ret = self.sut.sample_input_space()
-        while not self.testOK(ret):
-            ret = self.sut.sample_input_space()
-        self.existingPoints.append(ret)
-        return ret
-
-
 class Uniform(Model):
     """Implements a random test model which directly uses the sampling provided by
     the SUT."""
 
+    default_parameters = {"min_dist": 0.0}
+
+    def setup(self, search_space, device, logger=None):
+        super().setup(search_space, device, logger)
+
+        if self.min_dist < 0:
+            raise Exception("Random search minimum distance must be nonnegative.")
+
+        if self.min_dist > 0:
+            # If all used points were stored in a Numpy array, we could use
+            # faster Numpy operations on it, but then array growing is an
+            # issue. Since we are not likely to have more than some hundreds
+            # of tests, using Python arrays is reasonably fast.
+            self.used_points = []
+
+    def _satisfies_min_distance(self, test):
+        for p in self.used_points:
+            if np.linalg.norm(p - test) < self.min_dist:
+                return False
+        
+        return True
+
     def generate_test(self):
         """Generates a test for the SUT."""
 
-        return self.search_space.sample_input_space()
+        if self.min_dist == 0:
+            return self.search_space.sample_input_space()
+        else:
+            while True:
+                test = self.searh_space.sample_input_space()
+                if self._satisfies_min_distance(test):
+                    break
+
+            self.used_points.append(test)
+            return test
 
 class LHS(Model):
     """Implements a random test model based on Latin hypercube design."""
