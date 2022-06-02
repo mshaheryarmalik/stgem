@@ -130,7 +130,7 @@ class WOGAN_Model(Model):
             losses.append(loss)
 
         m = np.mean(losses)
-        self.losses_A += losses
+        self.losses_A.append(losses)
         self.log("Analyzer epochs {}, Loss: {} -> {} (mean {})".format(train_settings["analyzer_epochs"], losses[0], losses[-1], m))
 
     def train_with_batch(self, data_X, train_settings):
@@ -215,7 +215,7 @@ class WOGAN_Model(Model):
             C_loss.backward()
             self.optimizerC.step()
 
-        self.losses_C += losses
+        self.losses_C.append(losses)
         self.gradient_penalties += gradient_penalties
         m1 = losses.mean()
         m2 = gradient_penalties.mean()
@@ -242,7 +242,7 @@ class WOGAN_Model(Model):
             self.optimizerG.step()
 
         m = losses.mean()
-        self.losses_G += losses
+        self.losses_G.append(losses)
         self.log("Generator steps {}, Loss: {} -> {} (mean {})".format(generator_steps, losses[0], losses[-1], m))
 
         self.modelG.train(False)
