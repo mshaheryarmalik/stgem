@@ -71,7 +71,7 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
     if not selected_specification in specifications[selected_benchmark]:
         raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
 
-    def callback(result):
+    def callback(idx, result, done):
         path = os.path.join("..", "..", "output", selected_benchmark)
         file_name = "{}{}_{}.pickle".format(selected_specification, "_" + identifier if identifier is not None else "", str(result.timestamp).replace(" ", "_"))
         os.makedirs(path, exist_ok=True)

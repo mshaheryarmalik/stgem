@@ -109,7 +109,8 @@ class Experiment:
             # Wait for results and process them via the callback.
             while len(done) < self.N:
                 idx, r = queue_results.get()
-                self.result_callback(idx, r, done)
+                if not self.result_callback is None:
+                    self.result_callback(idx, r, done)
                 done.append(idx)
 
             for consumer_process in workers:
