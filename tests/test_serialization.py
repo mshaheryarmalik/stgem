@@ -22,7 +22,6 @@ class MyTestCase(unittest.TestCase):
 
         generator = STGEM(
             description="test-dump",
-            budget=Budget(),
             sut=PythonFunction(function=myfunction),
             objectives=[Minimize(selected=[0, 1, 2], scale=True)],
             steps=[
