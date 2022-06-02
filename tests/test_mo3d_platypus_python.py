@@ -32,7 +32,7 @@ class PlatypusTest(unittest.TestCase):
             steps=[
                 Search(budget_threshold={"executions": 2000},
                        mode="stop_at_first_objective",
-                       algorithm=PlatypusOpt(models=[])
+                       algorithm=PlatypusOpt()
                 )
             ]
         )

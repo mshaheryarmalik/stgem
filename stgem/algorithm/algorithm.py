@@ -13,8 +13,10 @@ class Algorithm:
     default_parameters = {}
 
     def __init__(self, model_factory=None, model=None, models=None, parameters=None):
-        if sum([model is not None, models is not None, model_factory is not None])!=1:
-            raise TypeError("You need to provide one and only one of these input parameters:  model_factory, model,  models")
+        if sum([model is not None, models is not None, model_factory is not None])>1:
+            raise TypeError("You can provide only one of these input parameters:  model_factory, model,  models")
+        if not models:
+            models=[]
 
         self.model= model
         self.models= models
