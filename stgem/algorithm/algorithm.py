@@ -22,7 +22,6 @@ class Algorithm:
         self.models= models
         self.model_factory = model_factory
         self.search_space= None
-        self.models = []
         self.perf=PerformanceData()
 
         if parameters is None:

@@ -64,3 +64,11 @@ class Model:
 
         raise NotImplementedError()
 
+    def load_from_file(self,fn):
+        raise NotImplementedError()
+
+    def save_to_file(self,fn):
+        raise NotImplementedError()
+
+    def get_input_dimension(self):
+        raise NotImplementedError()
