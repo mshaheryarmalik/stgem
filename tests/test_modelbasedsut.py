@@ -40,6 +40,7 @@ class TestModelBasedSUT(unittest.TestCase):
         )
 
         r = generator1.run()
+        r.dump_to_file("tmp_mbsut_actual.pickle")
 
         # save models
         for (i, m) in zip(range(len(models)),models):
@@ -66,6 +67,7 @@ class TestModelBasedSUT(unittest.TestCase):
         )
 
         r2 = generator2.run()
+        r2.dump_to_file("tmp_mbsut_model.pickle")
 
 if __name__ == "__main__":
     unittest.main()
