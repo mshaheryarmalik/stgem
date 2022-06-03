@@ -21,7 +21,6 @@ def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350],
 
 class MyTestCase(unittest.TestCase):
     def test_dump(self):
-        mode = "stop_at_first_objective"
 
         generator = STGEM(
             description="test-dump",
@@ -29,14 +28,12 @@ class MyTestCase(unittest.TestCase):
             objectives=[Minimize(selected=[0, 1, 2], scale=True)],
             steps=[
                 Search(budget_threshold={"executions": 2},
-                       mode=mode,
                        algorithm=Random(model_factory=(lambda: Uniform())),
-                       results_include_models=True
                        ),
                 Search(budget_threshold={"executions": 4},
-                       mode=mode,
                        algorithm=OGAN(model_factory=(lambda: OGANK_Model())),
-                       results_checkpoint=1)
+                       results_include_models=True
+                       )
             ]
         )
 
