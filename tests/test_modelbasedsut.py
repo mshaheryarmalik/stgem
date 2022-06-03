@@ -1,6 +1,6 @@
 import math, os, unittest
 
-from stgem.generator import STGEM, Search
+from stgem.generator import STGEM, Search, STGEMResult
 from stgem.sut.python import PythonFunction
 from stgem.objective import Minimize
 from stgem.algorithm.ogan.algorithm import OGAN
@@ -25,7 +25,7 @@ class TestModelBasedSUT(unittest.TestCase):
         models = [OGANK_Model(), OGANK_Model(), OGANK_Model()]
 
         generator1 = STGEM(
-            description="mo3d/mbst-actual",
+            description="mo3d-mbst-actual",
             sut=PythonFunction(function=myfunction),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
@@ -35,27 +35,22 @@ class TestModelBasedSUT(unittest.TestCase):
                 Search(budget_threshold={"executions": 2},
                        algorithm=Random(model=Uniform(parameters={"min_distance": 0.2}))),
                 Search(budget_threshold={"executions": 5},
-                       algorithm=OGAN(models=models))
-            ]
+                       algorithm=OGAN(models=models),
+                       results_include_models=True,
+                       results_checkpoint=1,
+                       )
+            ],
+
         )
 
         r = generator1.run()
         r.dump_to_file("tmp_mbsut_actual.pickle")
 
-        # save models
-        for (i, m) in zip(range(len(models)),models):
-            m.save_to_file("tmp_mbsut_"+str(i))
-
-        # restore models
-        restored_models=[]
-
-        for i in range(len(models)):
-            m= OGANK_Model().load_from_file("tmp_mbsut_" + str(i))
-            restored_models.append(m)
+        r2 = STGEMResult.restore_from_file("tmp_mbsut_actual.pickle")
 
         generator2 = STGEM(
-            description="mo3d/mbst-model",
-            sut=ModelBasedSUT(models=restored_models),
+            description="mo3d-mbst-model",
+            sut=ModelBasedSUT(models=r2.step_results[1].models),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
@@ -66,8 +61,8 @@ class TestModelBasedSUT(unittest.TestCase):
             ]
         )
 
-        r2 = generator2.run()
-        r2.dump_to_file("tmp_mbsut_model.pickle")
+        r3 = generator2.run()
+        r3.dump_to_file("tmp_mbsut_model.pickle")
 
 if __name__ == "__main__":
     unittest.main()

@@ -141,22 +141,5 @@ class OGANK_Model(AlgModel):
         """
         return self.modelD.predict(test)
 
-    def load_from_file(self, fn):
-
-        with open(fn + "-params.pickle", "rb") as fd:
-            self.parameters=pickle.load(fd)
-
-        self.modelD = load_model(fn + "-D.h5")
-        self.modelG = load_model(fn + "-G.h5")
-
-        return self
-
-    def save_to_file(self, fn):
-
-        with open(fn+"-params.pickle","wb") as fd:
-            pickle.dump(self.parameters,fd)
-        self.modelD.save(fn + "-D.h5")
-        self.modelG.save(fn + "-G.h5")
-
     def get_input_dimension(self):
         return self.parameters["input_dimension"]
