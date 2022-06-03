@@ -248,7 +248,6 @@ class STGEM:
 
     def _run(self) -> STGEMResult:
         # Running this assumes that setup has been run.
-        results = []
 
         # Setup and run steps sequentially.
         step_results = []
