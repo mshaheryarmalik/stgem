@@ -36,7 +36,7 @@ class TestPython(unittest.TestCase):
             description="Matlab-AT/OGAN",
             sut=Matlab_Simulink(sut_parameters),
             budget=Budget(),
-            objectives=[FalsifySTL(specification=specification, scale=True)],
+            objectives=[FalsifySTL(specification=specification, scale=True, strict_horizon_check=False)],
             objective_selector=ObjectiveSelectorMAB(warm_up=60),
             steps=[
                 Search(budget_threshold={"executions": 50},
