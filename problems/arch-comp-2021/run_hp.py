@@ -12,7 +12,7 @@ from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut.hyper import HyperParameter, Range, Categorical
 
-from run import get_generator_factory, get_seed_factory, get_sut_objective_factory, benchmarks, specifications
+from run import get_generator_factory, get_seed_factory, get_sut_objective_factory, get_experiment_factory, benchmarks, specifications
 
 @click.command()
 @click.argument("selected_benchmark", type=click.Choice(benchmarks, case_sensitive=False))
@@ -30,12 +30,12 @@ def main(selected_benchmark, selected_specification, mode, init_seed_experiments
         # exist. We edit their parameter dictionaries and resetup them.
         for model in generator.steps[1].algorithm.models:
             model.parameters["discriminator_lr"] = value
-            model.setup(model.search_space, model.device, model.logger)
+            model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
     def f2(generator, value):
         # Similar to above.
         for model in generator.steps[1].algorithm.models:
             model.parameters["generator_lr"] = value
-            model.setup(model.search_space, model.device, model.logger)
+            model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
 
     hp_sut_parameters = {"hyperparameters": [[f1, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])],
                                              [f2, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])]],
@@ -44,10 +44,8 @@ def main(selected_benchmark, selected_specification, mode, init_seed_experiments
 
     benchmark_module = importlib.import_module("{}.benchmark".format(selected_benchmark.lower()))
 
-    def experiment_factory():
-        N = 25
-        sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
-        return Experiment(N, get_generator_factory("", sut_factory, objective_factory, benchmark_module.get_objective_selector_factory(), benchmark_module.get_step_factory()), get_seed_factory(init_seed_experiments))
+    N = 25
+    experiment_factory = get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed_experiments)
 
     generator = STGEM(
                       description="Hyperparameter search for benchmark {} and specification {}".format(selected_benchmark, selected_specification),

@@ -61,10 +61,18 @@ class WOGAN_Model(Model):
         }
     }
 
-    def setup(self, search_space, device, logger):
-        super().setup(search_space, device, logger)
+    def setup(self, search_space, device, logger=None, use_previous_rng=False):
+        super().setup(search_space, device, logger, use_previous_rng)
 
         self.noise_dim = self.generator_mlm_parameters["noise_dim"]
+
+        # Save current RNG state and use previous.
+        if use_previous_rng:
+            current_rng_state = torch.random.get_rng_state()
+            torch.random.set_rng_state(self.previous_rng_state["torch"])
+        else:
+            self.previous_rng_state = {}
+            self.previous_rng_state["torch"] = torch.random.get_rng_state()
 
         # Infer input and output dimensions for ML models.
         self.parameters["analyzer_parameters"]["analyzer_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
@@ -104,6 +112,10 @@ class WOGAN_Model(Model):
         self.perf.save_history("critic_loss", self.losses_C, single=True)
         self.perf.save_history("gradient_penalty", self.gradient_penalties, single=True)
         self.perf.save_history("generator_loss", self.losses_G, single=True)
+
+        # Restore RNG state.
+        if use_previous_rng:
+            torch.random.set_rng_state(current_rng_state)
 
     def train_analyzer_with_batch(self, data_X, data_Y, train_settings):
         """
