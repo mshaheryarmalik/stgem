@@ -5,7 +5,6 @@ import numpy as np
 
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
-from stgem.budget import Budget
 from stgem.experiment import Experiment
 from stgem.generator import STGEM, Search
 from stgem.objective import Minimize
@@ -52,7 +51,6 @@ def main(selected_benchmark, selected_specification, mode, init_seed_experiments
     generator = STGEM(
                       description="Hyperparameter search for benchmark {} and specification {}".format(selected_benchmark, selected_specification),
                       sut=HyperParameter(experiment_factory, hp_sut_parameters),
-                      budget=Budget(),
                       objectives=[Minimize(selected=[0], scale=False)],
                       objective_selector=ObjectiveSelectorAll(),
                       steps=[
