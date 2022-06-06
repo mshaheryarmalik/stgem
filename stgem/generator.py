@@ -124,7 +124,7 @@ class Search(Step):
                 self.objective_selector.update(np.argmin(output))
                 self.test_repository.record(sut_input, sut_result, output)
 
-                if not success and self.test_repository.minimum_objective == 0:
+                if not success and self.test_repository.minimum_objective <= 0:
                     self.log("First success at test {}.".format(i + 1))
                     success = True
 
