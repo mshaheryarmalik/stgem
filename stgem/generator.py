@@ -92,7 +92,7 @@ class Search(Step):
         self.logger = logger
         self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
 
-    def run(self, checkpoint_callback) -> StepResult:
+    def run(self, checkpoint_callback=None ) -> StepResult:
         self.budget.update_threshold(self.budget_threshold)
 
         # Allow the algorithm to initialize itself.
@@ -139,7 +139,7 @@ class Search(Step):
 
                 i += 1
 
-                if self.results_checkpoint!=0 and (self.test_repository.tests % self.results_checkpoint)  ==0:
+                if checkpoint_callback is not None and self.results_checkpoint!=0 and (self.test_repository.tests % self.results_checkpoint)  ==0:
                     checkpoint_callback(self._generate_step_result())
 
                 if self.success and self.mode == "stop_at_first_objective":
