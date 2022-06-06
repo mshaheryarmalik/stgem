@@ -2,7 +2,6 @@ import unittest
 
 import tltk_mtl as STL
 
-from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.sut.matlab import Matlab_Simulink
 from stgem.objective import FalsifySTL
@@ -35,7 +34,6 @@ class TestPython(unittest.TestCase):
         generator = STGEM(
             description="Matlab-AT/OGAN",
             sut=Matlab_Simulink(sut_parameters),
-            budget=Budget(),
             objectives=[FalsifySTL(specification=specification, scale=True)],
             objective_selector=ObjectiveSelectorMAB(warm_up=60),
             steps=[

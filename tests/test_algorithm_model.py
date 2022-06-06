@@ -1,6 +1,5 @@
 import math, os, unittest
 
-from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.sut.python import PythonFunction
 from stgem.objective import Minimize
@@ -26,7 +25,6 @@ class TestPython(unittest.TestCase):
         generator = STGEM(
             description="test_models",
             sut=PythonFunction(function=myfunction),
-            budget=Budget(),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
@@ -44,7 +42,6 @@ class TestPython(unittest.TestCase):
         generator = STGEM(
             description="test_models",
             sut=PythonFunction(function=myfunction),
-            budget=Budget(),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
@@ -61,7 +58,6 @@ class TestPython(unittest.TestCase):
         generator = STGEM(
             description="test_factory",
             sut=PythonFunction(function=myfunction),
-            budget=Budget(),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
