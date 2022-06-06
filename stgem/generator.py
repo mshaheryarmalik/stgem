@@ -152,6 +152,9 @@ class Search(Step):
         # Report results.
         self.log("Step minimum objective component: {}".format(self.test_repository.minimum_objective))
 
+        if checkpoint_callback is not None and self.results_checkpoint != 0:
+            checkpoint_callback(self._generate_step_result())
+
         return self._generate_step_result()
 
     def _generate_step_result(self):
