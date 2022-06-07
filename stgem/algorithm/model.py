@@ -20,7 +20,12 @@ class Model:
         # the result is a new dictionary
         self.parameters = self.default_parameters | parameters
 
-    def setup(self, search_space, device, logger=None):
+        self.previous_rng_state = None
+
+    def setup(self, search_space, device, logger=None, use_previous_rng=False):
+        if use_previous_rng and self.previous_rng_state is None:
+            raise Exception("No previous RNG state to be used.")
+
         self.search_space = search_space
         self.device = device
         self.logger = logger

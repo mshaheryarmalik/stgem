@@ -67,7 +67,7 @@ class Experiment:
                     idx, generator, seed = msg
 
                     generator.setup(seed=seed)
-
+                    
                     if silent:
                         generator.logger.silent = True
 

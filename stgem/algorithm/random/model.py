@@ -11,8 +11,8 @@ class Uniform(Model):
 
     default_parameters = {"min_dist": 0.0}
 
-    def setup(self, search_space, device, logger=None):
-        super().setup(search_space, device, logger)
+    def setup(self, search_space, device, logger=None, use_previous_rng=False):
+        super().setup(search_space, device, logger, use_previous_rng)
 
         if self.min_dist < 0:
             raise Exception("Random search minimum distance must be nonnegative.")

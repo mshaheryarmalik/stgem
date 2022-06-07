@@ -1,6 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+"""
+See Algorithm.md for detailed documentation and ideas. Remember to edit this
+documentation if you make changes to Algorithm!
+"""
+
 import copy
 
 from stgem.performance import PerformanceData

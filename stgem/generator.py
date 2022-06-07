@@ -57,7 +57,7 @@ class STGEMResult:
 
 class Step:
 
-    def run(self,checkpoint_callback) -> StepResult:
+    def run(self,checkpoint_callback=None) -> StepResult:
         raise NotImplementedError
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
@@ -133,7 +133,7 @@ class Search(Step):
                 self.objective_selector.update(np.argmin(output))
                 self.test_repository.record(sut_input, sut_result, output)
 
-                if not self.success and self.test_repository.minimum_objective == 0:
+                if not self.success and self.test_repository.minimum_objective <= 0:
                     self.log("First success at test {}.".format(i + 1))
                     self.success = True
 
@@ -195,7 +195,7 @@ class LoaderStep(Step):
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
         raise NotImplementedError()
 
-    def run(self) -> StepResult:
+    def run(self, checkpoint_callback=None) -> StepResult:
         raise NotImplementedError()
 
 class STGEM:
@@ -216,7 +216,6 @@ class STGEM:
 
         self.steps = steps
         self.device = None
-
 
         self.logger = Logger()
 
