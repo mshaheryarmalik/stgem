@@ -38,6 +38,16 @@ def get_sut_objective_factory(benchmark_module, selected_specification, mode):
 
     return sut_factory, objective_factory
 
+def get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed, callback=None):
+    def experiment_factory():
+        sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
+        return Experiment(N=N,
+                          stgem_factory=get_generator_factory("", sut_factory, objective_factory, benchmark_module.get_objective_selector_factory(), benchmark_module.get_step_factory()),
+                          seed_factory=get_seed_factory(init_seed),
+                          result_callback=callback)
+
+    return experiment_factory
+
 benchmarks = ["AFC", "AT", "CC", "F16", "NN", "SC"]
 descriptions = {
         "AFC": "Fuel Control of an Automotive Powertrain",
@@ -77,8 +87,7 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
 
     benchmark_module = importlib.import_module("{}.benchmark".format(selected_benchmark.lower()))
 
-    sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
-    experiment = Experiment(N, get_generator_factory(descriptions[selected_benchmark], sut_factory, objective_factory, benchmark_module.get_objective_selector_factory(), benchmark_module.get_step_factory()), get_seed_factory(init_seed), result_callback=callback)
+    experiment = get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed, callback=callback)()
 
     N_workers = 2
     experiment.run(N_workers=N_workers, silent=False)
