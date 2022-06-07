@@ -9,7 +9,6 @@ from shapely.geometry import LineString, Polygon
 from code_pipeline.tests_generation import RoadTestFactory
 from code_pipeline.validation import TestValidator
 
-
 def sbst_test_to_image(test, map_size):
     """
     Visualizes the road described as points in the plane in the map of specified
@@ -100,7 +99,6 @@ def sbst_test_to_image(test, map_size):
 
     return plt.gcf()
 
-
 def sbst_validate_test(test, map_size):
     """
     Tests if the road described as points in the plane in the map of specified
@@ -120,7 +118,6 @@ def sbst_validate_test(test, map_size):
 
     # print(msg)
     return 1 if valid else 0
-
 
 def frechet_distance(P, Q):
     """
@@ -161,7 +158,6 @@ def frechet_distance(P, Q):
     ca = -1 * np.ones(shape=(len(P), len(Q)))
     return C(ca, len(P) - 1, len(Q) - 1, np.array(P), np.array(Q))
 
-
 def move_road(P, x0, y0):
     """
     Moves the sequence of points P in such a way that the initial point is
@@ -188,3 +184,4 @@ def move_road(P, x0, y0):
         Q[n][1] = math.sin(angle) * x + math.cos(angle) * y + y0
 
     return Q
+
