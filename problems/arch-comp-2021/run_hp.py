@@ -24,18 +24,37 @@ def main(selected_benchmark, selected_specification, mode, init_seed_experiments
     if not selected_specification in specifications[selected_benchmark]:
         raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
 
-    # We change the learning rates of the discriminator and the generator.
-    def f1(generator, value):
-        # Setup on generator has been called already, so the model objects
-        # exist. We edit their parameter dictionaries and resetup them.
-        for model in generator.steps[1].algorithm.models:
-            model.parameters["discriminator_lr"] = value
-            model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
-    def f2(generator, value):
-        # Similar to above.
-        for model in generator.steps[1].algorithm.models:
-            model.parameters["generator_lr"] = value
-            model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
+    algorithm = "wogan"
+
+    if algorithm == "ogan":
+        # We change the learning rates of the discriminator and the generator.
+        def f1(generator, value):
+            # Setup on generator has been called already, so the model objects
+            # exist. We edit their parameter dictionaries and resetup them.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["discriminator_lr"] = value
+                model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
+        def f2(generator, value):
+            # Similar to above.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["generator_lr"] = value
+                model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
+    elif algorithm == "wogan":
+        # We change the learning rates of the analyzer and the generator.
+        def f1(generator, value):
+            # Setup on generator has been called already, so the model objects
+            # exist. We edit their parameter dictionaries and resetup them.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["analyzer_parameters"]["lr"] = value
+                model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
+        def f2(generator, value):
+            # Similar to above.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["critic_lr"] = value
+                model.parameters["generator_lr"] = value
+                model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
+    else:
+        raise Exception("Unknown algorithm '{}'.".format(algorithm))
 
     hp_sut_parameters = {"hyperparameters": [[f1, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])],
                                              [f2, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])]],
