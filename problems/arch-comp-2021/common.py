@@ -8,7 +8,6 @@ from IPython.display import HTML
 
 sys.path.append(os.path.join("..", ".."))
 from stgem.generator import STGEM, STGEMResult
-from stgem.budget import Budget
 
 def load_results(files, load_sut_output=True):
     results = []

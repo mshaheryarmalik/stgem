@@ -177,12 +177,15 @@ class LoaderStep(Step):
 
 class STGEM:
 
-    def __init__(self, description, sut: SUT, budget: Budget, objectives, objective_selector=None, steps=[]):
+    def __init__(self, description, sut: SUT, objectives, objective_selector=None, budget: Budget = None, steps=[]):
         self.description = description
         self.sut = sut
-        self.budget = budget
-        self.objectives = objectives
 
+        if budget is None:
+            budget = Budget()
+        self.budget = budget
+
+        self.objectives = objectives
         if objective_selector is None:
             objective_selector = ObjectiveSelectorAll()
         self.objective_selector = objective_selector

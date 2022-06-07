@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import os
 import copy
 
 from stgem.performance import PerformanceData
@@ -13,10 +12,16 @@ class Algorithm:
 
     default_parameters = {}
 
-    def __init__(self, model_factory=None, parameters=None):
+    def __init__(self, model_factory=None, model=None, models=None, parameters=None):
+        if sum([model is not None, models is not None, model_factory is not None])>1:
+            raise TypeError("You can provide only one of these input parameters:  model_factory, model,  models")
+        if not models:
+            models=[]
+
+        self.model= model
+        self.models= models
         self.model_factory = model_factory
         self.search_space= None
-        self.models = []
         self.perf=PerformanceData()
 
         if parameters is None:
@@ -36,11 +41,18 @@ class Algorithm:
         if not "input_dimension" in self.parameters:
             self.parameters["input_dimension"] = self.search_space.input_dimension
 
-        # Create models.
+        # Create models by cloning
+        if self.model:
+            self.models=[]
+            for _ in range(self.search_space.output_dimension):
+                self.models.append(copy.deepcopy(self.model))
+
+        # Create models by factory
         if self.model_factory:
             self.models = [self.model_factory() for _ in range(self.search_space.output_dimension)]
-        self.N_models = len(self.models)
 
+        # setup the models
+        self.N_models = len(self.models)
         for m in self.models:
             m.setup(self.search_space, self.device, self.logger)
 

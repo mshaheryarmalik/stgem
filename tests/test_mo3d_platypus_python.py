@@ -1,6 +1,5 @@
 import math, os, unittest
 
-from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.sut.python import PythonFunction
 from stgem.objective import Minimize
@@ -22,7 +21,6 @@ class PlatypusTest(unittest.TestCase):
     def test_plattypus1(self):
         generator = STGEM(
             description="mo3d-playpus",
-            budget=Budget(),
             sut=PythonFunction(function=myfunction),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),

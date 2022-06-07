@@ -51,7 +51,7 @@ class OGAN(Algorithm):
                         train_settings = self.models[i].train_settings
                     self.models[i].train_with_batch(dataX,
                                                     dataY,
-                                                    train_settings=self.models[i].train_settings_init,
+                                                    train_settings=train_settings,
                                                     )
                 model_trained[i] = self.tests_generated
         self.first_training = False

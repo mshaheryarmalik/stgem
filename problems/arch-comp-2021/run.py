@@ -2,7 +2,6 @@ import importlib, os, sys
 
 import click
 
-from stgem.budget import Budget
 from stgem.generator import STGEM
 from stgem.experiment import Experiment
 from stgem.objective import FalsifySTL
@@ -11,7 +10,6 @@ def get_generator_factory(description, sut_factory, objective_factory, objective
     def generator_factory():
         return STGEM(description=description,
                      sut=sut_factory(),
-                     budget=Budget(),
                      objectives=objective_factory(),
                      objective_selector=objective_selector_factory(),
                      steps=step_factory())
