@@ -14,7 +14,7 @@ from self_driving.decal_road import DecalRoad
 SimulationDataRecordProperties = ['timer', 'pos', 'dir', 'vel', 'steering',
                                   'steering_input', 'brake', 'brake_input', 'throttle', 'throttle_input',
                                   'wheelspeed', 'vel_kmh', 'is_oob', 'oob_counter',
-                                  'max_oob_percentage', 'oob_distance', 'oob_percentage']
+                                  'max_oob_percentage', 'oob_distance_left', 'oob_distance_right', 'oob_percentage']
 
 SimulationDataRecord = namedtuple('SimulationDataRecord', SimulationDataRecordProperties)
 SimulationDataRecords = List[SimulationDataRecord]
