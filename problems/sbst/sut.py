@@ -295,35 +295,6 @@ class SBSTSUT(SUT):
 
         return input_signals, SUTOutput(signals, timestamps, None)
 
-    def _sample_input_space(self, curvature_points):
-        """
-        Return a sample (test) from the input space.
-
-        Args:
-          curvature_points (int): Number of curvature points.
-
-        Returns:
-          test (np.ndarray): Array of shape (curvature_points) of floats in
-                             [-1, 1].
-        """
-
-        if curvature_points <= 0:
-            raise ValueError("The number of curvature points must be positive.")
-
-        # The components of the actual test are curvature values in the range
-        # [-0.07, 0.07], but the generator output is expected to be in the interval
-        # [-1, 1].
-        # return np.random.uniform(-1, 1, size=(N, curvature_points))
-        #
-        # We do not choose the components of a test independently in [-1, 1] but
-        # we do as in the case of the Frenetic algorithm where the next component
-        # is in the range of the previous value +- 0.05.
-        test = np.zeros(curvature_points)
-        test[0] = np.random.uniform(-1, 1)
-        for i in range(1, curvature_points):
-            test[i] = test[i - 1] + (1 / 0.07) * np.random.uniform(-0.05, 0.05)
-        return test
-
     def _execute_test(self, test):
         denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
         input_signals, output = self._execute_test_beamng(test_to_road_points(denormalized, self.step_length, self.map_size))

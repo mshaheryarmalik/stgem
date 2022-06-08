@@ -16,7 +16,7 @@ class Model:
         if parameters is None:
             parameters = {}
 
-        # merge default and parameters, the later takes priority if a key appears in both dictionaries
+        # merge default_parameters and parameters, the later takes priority if a key appears in both dictionaries
         # the result is a new dictionary
         self.parameters = self.default_parameters | parameters
 

@@ -1,7 +1,7 @@
-import sys
-sys.path.append("../..")
+import numpy as np
 
 from stgem.generator import STGEM, Search
+from stgem.algorithm import Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.algorithm.wogan.algorithm import WOGAN
@@ -10,6 +10,24 @@ from stgem.objective import Objective
 from stgem.objective_selector import ObjectiveSelectorAll
 
 from sut import SBSTSUT, SBSTSUT_validator
+
+class UniformDependent(Model):
+    """Model for uniformly random search which does not select components
+    independently."""
+
+    def generate_test(self):
+        # The components of the actual test are curvature values in the input
+        # range (default [-0.07, 0.07]). Here we do not choose the components
+        # of a test independently in [-1, 1] but we do as in the Frenetic
+        # algorithm where the next component is in the range of the previous
+        # value +- 0.05 (in the scale [-0.07, 0.07]).
+
+        test = np.zeros(self.search_space.input_dimension)
+        test[0] = np.random.uniform(-1, 1)
+        for i in range(1, len(test)):
+            test[i] = max(-1, min(1, test[i - 1] + (0.05/0.07) * np.random.uniform(-1, 1)))
+
+        return test
 
 class MaxOOB(Objective):
     """Objective which picks the maximum M from the first output signal and
@@ -98,7 +116,7 @@ generator = STGEM(
                   steps=[
                          Search(mode=mode,
                                 budget_threshold={"executions": 50},
-                                algorithm=Random(model_factory=(lambda: Uniform()))),
+                                algorithm=Random(model_factory=(lambda: UniformDependent()))),
                          Search(mode=mode,
                                 budget_threshold={"executions": 200},
                                 algorithm=WOGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)), parameters=wogan_parameters))
