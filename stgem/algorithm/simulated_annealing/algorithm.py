@@ -9,7 +9,6 @@ class simulated_annealing(Algorithm):
     
     prec = 0  #prec value index
 
-
     def do_train(self, active_outputs, test_repository, budget_remaining):
         pass
 
@@ -32,7 +31,7 @@ class simulated_annealing(Algorithm):
         new_test=[] #intitialisation of the result
         rounds = 0 #number of loop
         invalid = 0 #number of invalid test
-        T = 100 * budget_remaining #the temperature which is between 0 and 100
+        T = budget_remaining #the temperature which is between 0 and 100 
 
         while True:
           rounds += 1
@@ -47,7 +46,7 @@ class simulated_annealing(Algorithm):
             #====Calculate the next test from the new solution====
             for i in range(dim):
               bounds=self.search_space.sut.input_range[i]
-              new_test.append(x1.inputs[i] + S * (np.random.uniform(bounds[0], bounds[1])*(bounds[1]- bounds[0]) + bounds[0]))
+              new_test.append(x1.inputs[i] + S * (np.random.uniform(-1,1)*(bounds[1]- bounds[0])))
             #====The previous index is the new solution (so the index is -2)====
             simulated_annealing.prec = 0
           else:
@@ -57,7 +56,7 @@ class simulated_annealing(Algorithm):
               #====Calculate the next test from the less good solution====
               for i in range(dim):
                 bounds=self.search_space.sut.input_range[i]
-                new_test.append(x1.inputs[i] + S * (np.random.uniform(bounds[0], bounds[1])*(bounds[1]- bounds[0]) + bounds[0]))         
+                new_test.append(x1.inputs[i] + S * (np.random.uniform(-1,1)*(bounds[1]- bounds[0])))         
               #====The previous index is the less good solution (so the index is -2)====
               simulated_annealing.prec=0
             #====If we don't accept the solution====
@@ -65,7 +64,7 @@ class simulated_annealing(Algorithm):
               #====Calculate the next test from the previous solution====
               for i in range(dim):
                 bounds=self.search_space.sut.input_range[i]
-                new_test.append(x2.inputs[i] + S * (np.random.uniform(bounds[0], bounds[1])*(bounds[1]- bounds[0]) + bounds[0]))
+                new_test.append(x2.inputs[i] + S * (np.random.uniform(-1,1)*(bounds[1]- bounds[0])))
               #====The previous index remains the same====
               simulated_annealing.prec-=1
           if self.search_space.is_valid(new_test) == 0:
