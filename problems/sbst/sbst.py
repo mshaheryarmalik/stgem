@@ -1,5 +1,7 @@
+import sys
+sys.path.append("../..")
+
 from stgem.generator import STGEM, Search
-from stgem.budget import Budget
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.algorithm.wogan.algorithm import WOGAN
@@ -7,20 +9,14 @@ from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.objective import Objective
 from stgem.objective_selector import ObjectiveSelectorAll
 
-from sut import SBSTSUT
+from sut import SBSTSUT, SBSTSUT_validator
 
 class MaxOOB(Objective):
-    """
-    Objective which picks the maximum M from an output signal and returns 1-M
-    for minimization.
-    """
+    """Objective which picks the maximum M from the first output signal and
+    returns 1-M for minimization."""
 
-    def __init__(self):
-        super().__init__()
-
-        self.dim = 1
-
-    def __call__(self, r):
+    def __call__(self, t, r):
+        #return 1 - max(r.outputs)
         return 1 - max(r.outputs[0])
 
 mode = "stop_at_first_objective"
@@ -28,6 +24,8 @@ mode = "stop_at_first_objective"
 sut_parameters = {
     "beamng_home":  "C:/BeamNG/BeamNG.tech.v0.24.0.1",
     "curvature_points": 5,
+    "curvature_range": 0.07,
+    "step_size": 15,
     "map_size": 200,
     "max_speed": 75.0
 }
@@ -94,12 +92,12 @@ wogan_model_parameters = {
 generator = STGEM(
                   description="SBST 2022 BeamNG.tech simulator",
                   sut=SBSTSUT(sut_parameters),
-                  budget=Budget(),
+                  #sut=SBSTSUT_validator(sut_parameters),
                   objectives=[MaxOOB()],
                   objective_selector=ObjectiveSelectorAll(),
                   steps=[
                          Search(mode=mode,
-                                budget_threshold={"executions": 3},
+                                budget_threshold={"executions": 50},
                                 algorithm=Random(model_factory=(lambda: Uniform()))),
                          Search(mode=mode,
                                 budget_threshold={"executions": 200},
@@ -109,4 +107,3 @@ generator = STGEM(
 
 if __name__ == "__main__":
     r = generator.run()
-
