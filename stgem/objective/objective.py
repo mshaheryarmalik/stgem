@@ -59,11 +59,13 @@ class Minimize(Objective):
 
         if self.scale:
             output = self.sut.scale(v.reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
+        else:
+            output = v
 
         if self.clip:
-            return max(0, min(1, min(v)))
+            return max(0, min(1, min(output)))
         else:
-            return min(v)
+            return min(output)
 
 class FalsifySTL(Objective):
     """Objective function to falsify a STL specification. By default the
