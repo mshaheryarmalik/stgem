@@ -38,7 +38,7 @@ from shapely.affinity import translate, rotate
 from descartes import PolygonPatch
 
 from stgem.sut import SUT, SUTOutput
-from util import frechet_distance, sbst_validate_test
+from util import test_to_road_points, frechet_distance, sbst_validate_test
 
 from self_driving.beamng_brewer import BeamNGBrewer
 from self_driving.beamng_car_cameras import BeamNGCarCameras
@@ -53,14 +53,16 @@ from code_pipeline.tests_generation import RoadTestFactory
 from code_pipeline.validation import TestValidator
 from code_pipeline.visualization import RoadTestVisualizer
 
-class SBSTSUT_base(SUT):
-    """Implements a base class for SBST based systems under test. The purpose
-    of this class is essentially to provide execution on BeamNG.tech with
-    arbitrary road input (given as plane points). The actual input
-    representations are implemented by subclassing this class and by
-    implementing a function transforming the input to a sequence of road
-    points. The execute_test method of this class will raise a
-    NotImplementedError."""
+class SBSTSUT(SUT):
+    """A class for the SBST SUT which uses an input representation based on a
+    fixed number of curvature points. All inputs are transformed to roads
+    which begin at the middle of the bottom part of the map and point initially
+    directly upwards."""
+
+    default_parameters = {"curvature_range": 0.07,
+                          "step_length": 15,
+                          "map_size": 200,
+                          "max_speed": 70}
 
     def __init__(self, parameters=None):
         """"""
@@ -81,6 +83,24 @@ class SBSTSUT_base(SUT):
         """
 
         super().__init__(parameters)
+
+        if not "curvature_points" in self.parameters:
+            raise Exception("Number of curvature points not defined.")
+        if self.curvature_points <= 0:
+            raise ValueError("The number of curvature points must be positive.")
+        if self.curvature_range <= 0:
+            raise ValueError("The curvature range must be positive.")
+
+        self.input_type = "vector"
+        self.idim = self.curvature_points
+        range = [-self.curvature_range, self.curvature_range]
+        self.input_range = [range]*self.idim
+
+        self.output_type = "signal"
+        self.odim = 3
+        self.outputs = ["bolp", "distance_left", "distance_right"]
+        # The road width is fixed to 8 in _interpolate of code_pipeline/tests_generation.py
+        self.output_range = [[0, 1], [-4, 4], [-4, 4]]
 
         if self.map_size <= 0:
             raise ValueError("The map size must be positive.")
@@ -147,9 +167,11 @@ class SBSTSUT_base(SUT):
             traceback.print_exception(type(ex), ex, ex.__traceback__)
 
     def _execute_test_beamng(self, test):
-        """Execute a single test on BeamNG.tech and return its output signal.
-        The output signal is simply the BOLP (body out of lane percentage) at
-        certain time steps. Notice that we expect the input to be a sequence of
+        """Execute a single test on BeamNG.tech and return its input and output
+        signals. The input signals is are the interpolated road points as
+        series of X and Y coordinates. The output signal is the BOLP (body out
+        of lane percentage) and signed distances to the edges of the lane at
+        the given time steps. We expect the input to be a sequence of
         plane points."""
 
         # This code is mainly from https://github.com/se2p/tool-competition-av/code_pipeline/beamng_executor.py
@@ -254,159 +276,70 @@ class SBSTSUT_base(SUT):
 
             self.end_iteration()
 
-        # Build a time series for the OOB percentage based on simulation states.
-        # The time plus OOB percentage is the output signal.
+        # Build a time series for the distances and OOB percentage based on
+        # simulation states.
         states = sim_data_collector.get_simulation_data().states
         timestamps = np.zeros(len(states))
-        oob = np.zeros(shape=(1, len(states)))
+        signals = np.zeros(shape=(3, len(states)))
         for i, state in enumerate(states):
             timestamps[i] = state.timer
-            oob[0, i] = state.oob_percentage
+            signals[0, i] = state.oob_percentage
+            signals[1, i] = state.oob_distance_left
+            signals[2, i] = state.oob_distance_right
 
-        return SUTOutput(oob, timestamps, None)
+        # Prepare the final input form as well.
+        input_signals = np.zeros(shape=(2, len(nodes)))
+        for i, point in enumerate(nodes):
+            input_signals[0, i] = point[0]
+            input_signals[1, i] = point[1]
 
-class SBSTSUT_curvature(SBSTSUT_base):
-    """A class to be inherited by all SBST SUTs which use input representation
-    based on a fixed number of curvature points. All inputs are transformed to
-    roads which begin at the middle of the bottom part of the map and point
-    initially directly upwards."""
+        return input_signals, SUTOutput(signals, timestamps, None)
 
-    default_parameters = {"step_length": 15,
-                          "curvature_range": 0.07}
+    def _execute_test(self, test):
+        denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
+        input_signals, output = self._execute_test_beamng(test_to_road_points(denormalized, self.step_length, self.map_size))
+        test.input_denormalized = input_signals
+        test.input_timestamps = np.arange(input_signals.shape[1])
+
+        return output
+
+    def validity(self, test):
+        denormalized = self.descale(test.reshape(1, -1), self.input_range).reshape(-1)
+        return sbst_validate_test(test_to_road_points(denormalized, self.step_length, self.map_size), self.map_size)
+
+class SBSTSUT_validator(SUT):
+    """Class for the SUT of considering an SBST test valid or not which uses input
+    representation based on a fixed number of curvature points."""
+
+    default_parameters = {"curvature_range": 0.07,
+                          "step_length": 15,
+                          "map_size": 200}
 
     def __init__(self, parameters):
         super().__init__(parameters)
 
         if not "curvature_points" in self.parameters:
             raise Exception("Number of curvature points not defined.")
-
-        self.input_type = "vector"
-        self.idim = self.curvature_points
-
-        if self.step_length <= 0:
-            raise ValueError("The step length must be positive.")
+        if self.curvature_points <= 0:
+            raise ValueError("The number of curvature points must be positive.")
         if self.curvature_range <= 0:
             raise ValueError("The curvature range must be positive.")
 
-    def test_to_road_points(self, test):
-        """
-        Converts a test to road points.
-
-        Args:
-          test (list): List of floats in [-1, 1].
-
-        Returns:
-          output (list): List of length len(test) of coordinate tuples.
-        """
-
-        # This is the same code as in the Frenetic algorithm.
-        # https://github.com/ERATOMMSD/frenetic-sbst21/blob/main/src/generators/base_frenet_generator.py
-        # We integrate curvature (acceleratation) to get an angle (speed) and
-        # then we move one step to this direction to get position. The
-        # integration is done using the trapezoid rule with step given by the
-        # first component of the test. Now we use a fixed step size.
-        step = self.step_length
-        # We undo the normalization of the curvatures from [-1, 1] to [-K, K]
-        # as in the Frenetic algorithm. Here K = self.curvature_range.
-        curvature = self.curvature_range * test
-
-        # The initial point is the bottom center of the map. The initial angle
-        # is 90 degrees.
-        points = [(self.map_size / 2, 10)] # 10 is margin for not being out of bounds
-        angles = [np.math.pi / 2]
-        # Add the second point.
-        points.append( (points[-1][0] + step * np.cos(angles[-1]), points[-1][1] + step * np.sin(angles[-1]) ))
-        # Find the remaining points.
-        for i in range(curvature.shape[0] - 1):
-            angles.append(angles[-1] + step * (curvature[i + 1] + curvature[i]) / 2)
-            x = points[-1][0] + step * np.cos(angles[-1])
-            y = points[-1][1] + step * np.sin(angles[-1])
-            points.append((x, y))
-
-        return points
-
-    def _sample_input_space(self, curvature_points):
-        """
-        Return a sample (test) from the input space.
-
-        Args:
-          curvature_points (int): Number of curvature points.
-
-        Returns:
-          test (np.ndarray): Array of shape (curvature_points) of floats in
-                             [-1, 1].
-        """
-
-        if curvature_points <= 0:
-            raise ValueError("The number of curvature points must be positive.")
-
-        # The components of the actual test are curvature values in the range
-        # [-0.07, 0.07], but the generator output is expected to be in the interval
-        # [-1, 1].
-        # return np.random.uniform(-1, 1, size=(N, curvature_points))
-        #
-        # We do not choose the components of a test independently in [-1, 1] but
-        # we do as in the case of the Frenetic algorithm where the next component
-        # is in the range of the previous value +- 0.05.
-        test = np.zeros(curvature_points)
-        test[0] = np.random.uniform(-1, 1)
-        for i in range(1, curvature_points):
-            test[i] = test[i - 1] + (1 / 0.07) * np.random.uniform(-0.05, 0.05)
-        return test
-
-class SBSTSUT(SBSTSUT_curvature):
-    """Class for the SBST CPS competition SUT accepting tests which are
-    vectors of fixed length."""
-
-    def __init__(self, parameters):
-        super().__init__(parameters)
-
-        self.output_type = "signal"
-        self.odim = 1
-        self.outputs = ["bolp"]
-        self.output_range = [[0, 1]]
-
-    def _execute_test(self, test):
-        return self._execute_test_beamng(self.test_to_road_points(test.reshape(-1)))
-
-    def validity(self, test):
-        return sbst_validate_test(self.test_to_road_points(test), self.map_size)
-
-    def distance_frechet(self, X, Y):
-        """Returns the discrete Fréchet distance between the road points
-        defined by the tests X and Y.
-
-        Args:
-          X (np.ndarray): Test array of shape (1, N) or (N) of floats in [-1, 1].
-          Y (np.ndarray): Test array of shape (1, N) or (N) of floats in [-1, 1].
-
-        Returns:
-          result (float): The Fréchet distance of X and Y.
-        """
-
-        if len(X.shape) > 2 or len(Y.shape) > 2:
-            raise ValueError("The tests must be 1- or 2-dimensional arrays.")
-        X = X.reshape(-1)
-        Y = Y.reshape(-1)
-        if X.shape[0] != Y.shape[0]:
-            raise ValueError("The tests must have the same length.")
-
-        return frechet_distance(self.test_to_road_points(X), self.test_to_road_points(Y))
-
-class SBSTSUT_validator(SBSTSUT_curvature):
-    """
-    Class for the SUT of considering an SBST test valid or not which uses input
-    representation besade on a fixed number of curvature points."""
-
-    def __init__(self, parameters):
-        super().__init__(parameters)
+        self.input_type = "vector"
+        self.idim = self.curvature_points
+        range = [-self.curvature_range, self.curvature_range]
+        self.input_range = [range]*self.idim
 
         self.output_type = "vector"
         self.odim = 1
         self.outputs = ["valid"]
         self.output_range = [[0, 1]]
 
-    def _execute_test(self, test):
-        valid = sbst_validate_test(self.test_to_road_points(test), self.map_size)
-        return SUTOutput(valid, None, None)
+        if self.map_size <= 0:
+            raise ValueError("The map size must be positive.")
 
+    def _execute_test(self, test):
+        denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
+        valid = sbst_validate_test(test_to_road_points(denormalized, self.step_length, self.map_size), self.map_size)
+        test.input_denormalized = denormalized
+        return SUTOutput(np.array([valid]), None, None)
