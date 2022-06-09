@@ -6,4 +6,5 @@ simulations
 output
 problems/odroid/odroid.npy
 slprj
+.idea/
 

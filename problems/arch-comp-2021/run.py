@@ -39,8 +39,9 @@ def get_sut_objective_factory(benchmark_module, selected_specification, mode):
     return sut_factory, objective_factory
 
 def get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed, callback=None):
+    sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
+
     def experiment_factory():
-        sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
         return Experiment(N=N,
                           stgem_factory=get_generator_factory("", sut_factory, objective_factory, benchmark_module.get_objective_selector_factory(), benchmark_module.get_step_factory()),
                           seed_factory=get_seed_factory(init_seed),
