@@ -42,7 +42,7 @@ class TestPython(unittest.TestCase):
                 Search(budget_threshold={"executions": 50},
                        mode=mode,
                        algorithm=Random(model_factory=(lambda: Uniform()))),
-                Search(budget_threshold={"executions": 300},
+                Search(budget_threshold={"executions": 100},
                        mode=mode,
                        algorithm=OGAN(model_factory=(lambda: OGAN_Model()))
                 )
