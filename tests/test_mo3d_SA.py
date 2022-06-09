@@ -32,10 +32,7 @@ class TestPython(unittest.TestCase):
                         ],
             objective_selector=ObjectiveSelectorMAB(warm_up=5),
             steps=[
-                            Search(budget_threshold={"executions": 15},
-                                   mode=mode,
-                                   algorithm=Random(model_factory=(lambda: Uniform()))),
-                            Search(budget_threshold={"executions": 20},
+                            Search(budget_threshold={"executions": 1000},
                                    mode=mode,
                                    algorithm=simulated_annealing()
                             )]
