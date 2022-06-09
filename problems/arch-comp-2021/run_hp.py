@@ -11,7 +11,7 @@ from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut.hyper import HyperParameter, Range, Categorical
 
-from run import get_generator_factory, get_seed_factory, get_sut_objective_factory, get_experiment_factory, benchmarks, specifications
+from run import get_experiment_factory, benchmarks, specifications, N_workers
 
 @click.command()
 @click.argument("selected_benchmark", type=click.Choice(benchmarks, case_sensitive=False))
@@ -57,13 +57,13 @@ def main(selected_benchmark, selected_specification, mode, init_seed_experiments
 
     hp_sut_parameters = {"hyperparameters": [[f1, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])],
                                              [f2, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])]],
-                         "mode":            "falsification_rate",
-                         "N_workers":       2}
+                         "mode":            "falsification_rate"}
 
     benchmark_module = importlib.import_module("{}.benchmark".format(selected_benchmark.lower()))
 
     N = 25
     experiment_factory = get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed_experiments)
+    hp_sut_parameters["N_workers"] = N_workers[selected_benchmark]
 
     generator = STGEM(
                       description="Hyperparameter search for benchmark {} and specification {}".format(selected_benchmark, selected_specification),

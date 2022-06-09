@@ -282,7 +282,7 @@ class FalsifySTL(Objective):
         self.specification.reset()
 
         # Allow slight inaccuracy in horizon check.
-        if self.strict_horizon_check and self.horizon - 1e-4 > timestamps[-1]:
+        if self.strict_horizon_check and self.horizon - 1e-2 > timestamps[-1]:
             raise Exception("The horizon {} of the formula is too long compared to signal length {}. The robustness cannot be computed.".format(self.horizon, timestamps[-1]))
 
         # Adjust time bounds.

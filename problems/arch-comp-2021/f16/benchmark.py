@@ -92,7 +92,6 @@ def build_specification(selected_specification, mode=None, asut=None):
         #asut = F16GCAS_PYTHON3(sut_parameters)
 
     # Notice that here the input is a vector.
-
     scale = True
     S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "F16":
