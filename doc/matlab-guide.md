@@ -5,10 +5,12 @@
     • Click Download for Linux
       
     • Unzip
-      
-    • (sudo) ./install (sudo did not work for me, it is needed if you are to install in certain 
-      folders)
-      
+     
+    • In the unzipped folder, do:
+     
+      xhost +SI:localuser:root
+      sudo ./install 
+            
     • Login to your MathWorks account
       
     • Select the license you want to use
@@ -17,7 +19,7 @@
       
     • Check all Simulink packages
       
-    • ? Create symbolic links to MATLAB scrips in /usr/local/bin ?
+    • Create symbolic links to MATLAB scrips in /usr/local/bin 
       
     • Install with pip:
         ◦ matlab
