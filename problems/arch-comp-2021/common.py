@@ -77,7 +77,7 @@ def plotTest(result, idx):
     output_range = result.sut_parameters["output_range"]
     simulation_time = result.sut_parameters["simulation_time"]
 
-    _, Z, Y = result.test_repository.get()
+    X, Z, Y = result.test_repository.get()
     Y = np.array(Y).reshape(-1)
 
     # Define the signal color based in the test index.
@@ -99,8 +99,8 @@ def plotTest(result, idx):
         ax[0,i].set_title(var)
         ax[0,i].set_xlim((0, simulation_time))
         ax[0,i].set_ylim(input_range[i])
-        x = Z[idx].input_timestamps
-        y = Z[idx].inputs[i]
+        x = X[idx].input_timestamps
+        y = X[idx].input_denormalized[i]
         ax[0,i].plot(x, y)
     for i, var in enumerate(outputs):
         ax[1,i].set_title(var)
@@ -117,7 +117,7 @@ def animateResult(result):
     output_range = result.sut_parameters["output_range"]
     simulation_time = result.sut_parameters["simulation_time"]
 
-    _, Z, Y = result.test_repository.get()
+    X, Z, Y = result.test_repository.get()
     Y = np.array(Y).reshape(-1)
 
     # Define the signal color based in the test index.
@@ -160,8 +160,8 @@ def animateResult(result):
     def animate(i):
         for j in range(len(inputs)):
             k = j
-            x = Z[i].input_timestamps
-            y = Z[i].inputs[j]
+            x = X[i].input_timestamps
+            y = X[i].input_denormalized[j]
             lines[k].set_color(color(i))
             lines[k].set_data(x, y)
         for j in range(len(outputs)):
