@@ -124,7 +124,7 @@ class Search(Step):
                 self.objective_selector.update(np.argmin(output))
                 self.test_repository.record(sut_input, sut_result, output)
 
-                if not success and self.test_repository.minimum_objective == 0:
+                if not success and self.test_repository.minimum_objective <= 0:
                     self.log("First success at test {}.".format(i + 1))
                     success = True
 
@@ -177,12 +177,15 @@ class LoaderStep(Step):
 
 class STGEM:
 
-    def __init__(self, description, sut: SUT, budget: Budget, objectives, objective_selector=None, steps=[]):
+    def __init__(self, description, sut: SUT, objectives, objective_selector=None, budget: Budget = None, steps=[]):
         self.description = description
         self.sut = sut
-        self.budget = budget
-        self.objectives = objectives
 
+        if budget is None:
+            budget = Budget()
+        self.budget = budget
+
+        self.objectives = objectives
         if objective_selector is None:
             objective_selector = ObjectiveSelectorAll()
         self.objective_selector = objective_selector
@@ -248,7 +251,6 @@ class STGEM:
 
     def _run(self) -> STGEMResult:
         # Running this assumes that setup has been run.
-        results = []
 
         # Setup and run steps sequentially.
         step_results = []

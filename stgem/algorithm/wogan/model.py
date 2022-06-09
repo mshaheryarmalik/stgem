@@ -61,10 +61,18 @@ class WOGAN_Model(Model):
         }
     }
 
-    def setup(self, search_space, device, logger):
-        super().setup(search_space, device, logger)
+    def setup(self, search_space, device, logger=None, use_previous_rng=False):
+        super().setup(search_space, device, logger, use_previous_rng)
 
         self.noise_dim = self.generator_mlm_parameters["noise_dim"]
+
+        # Save current RNG state and use previous.
+        if use_previous_rng:
+            current_rng_state = torch.random.get_rng_state()
+            torch.random.set_rng_state(self.previous_rng_state["torch"])
+        else:
+            self.previous_rng_state = {}
+            self.previous_rng_state["torch"] = torch.random.get_rng_state()
 
         # Infer input and output dimensions for ML models.
         self.parameters["analyzer_parameters"]["analyzer_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
@@ -105,6 +113,10 @@ class WOGAN_Model(Model):
         self.perf.save_history("gradient_penalty", self.gradient_penalties, single=True)
         self.perf.save_history("generator_loss", self.losses_G, single=True)
 
+        # Restore RNG state.
+        if use_previous_rng:
+            torch.random.set_rng_state(current_rng_state)
+
     def train_analyzer_with_batch(self, data_X, data_Y, train_settings):
         """
         Train the analyzer part of the model with a batch of training data.
@@ -130,7 +142,7 @@ class WOGAN_Model(Model):
             losses.append(loss)
 
         m = np.mean(losses)
-        self.losses_A += losses
+        self.losses_A.append(losses)
         self.log("Analyzer epochs {}, Loss: {} -> {} (mean {})".format(train_settings["analyzer_epochs"], losses[0], losses[-1], m))
 
     def train_with_batch(self, data_X, train_settings):
@@ -215,7 +227,7 @@ class WOGAN_Model(Model):
             C_loss.backward()
             self.optimizerC.step()
 
-        self.losses_C += losses
+        self.losses_C.append(losses)
         self.gradient_penalties += gradient_penalties
         m1 = losses.mean()
         m2 = gradient_penalties.mean()
@@ -242,7 +254,7 @@ class WOGAN_Model(Model):
             self.optimizerG.step()
 
         m = losses.mean()
-        self.losses_G += losses
+        self.losses_G.append(losses)
         self.log("Generator steps {}, Loss: {} -> {} (mean {})".format(generator_steps, losses[0], losses[-1], m))
 
         self.modelG.train(False)

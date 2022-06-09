@@ -2,7 +2,6 @@ import importlib, os, sys
 
 import click
 
-from stgem.budget import Budget
 from stgem.generator import STGEM
 from stgem.experiment import Experiment
 from stgem.objective import FalsifySTL
@@ -11,7 +10,6 @@ def get_generator_factory(description, sut_factory, objective_factory, objective
     def generator_factory():
         return STGEM(description=description,
                      sut=sut_factory(),
-                     budget=Budget(),
                      objectives=objective_factory(),
                      objective_selector=objective_selector_factory(),
                      steps=step_factory())
@@ -40,6 +38,17 @@ def get_sut_objective_factory(benchmark_module, selected_specification, mode):
 
     return sut_factory, objective_factory
 
+def get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed, callback=None):
+    sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
+
+    def experiment_factory():
+        return Experiment(N=N,
+                          stgem_factory=get_generator_factory("", sut_factory, objective_factory, benchmark_module.get_objective_selector_factory(), benchmark_module.get_step_factory()),
+                          seed_factory=get_seed_factory(init_seed),
+                          result_callback=callback)
+
+    return experiment_factory
+
 benchmarks = ["AFC", "AT", "CC", "F16", "NN", "SC"]
 descriptions = {
         "AFC": "Fuel Control of an Automotive Powertrain",
@@ -51,11 +60,19 @@ descriptions = {
 }
 specifications = {
         "AFC": ["AFC27", "AFC29"],
-        "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX1", "ATX2"],
+        "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX1", "ATX2", "ATX61", "ATX62"],
         "CC":  ["CC1", "CC2", "CC3", "CC4", "CC5", "CCX"],
         "F16": ["F16"],
         "NN":  ["NN", "NNX"],
         "SC":  ["SC"]
+}
+N_workers = {
+        "AFC": 2,
+        "AT": 2,
+        "CC": 2,
+        "F16": 2,
+        "NN": 2,
+        "SC": 2
 }
 
 @click.command()
@@ -71,7 +88,7 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
     if not selected_specification in specifications[selected_benchmark]:
         raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
 
-    def callback(result):
+    def callback(idx, result, done):
         path = os.path.join("..", "..", "output", selected_benchmark)
         file_name = "{}{}_{}.pickle".format(selected_specification, "_" + identifier if identifier is not None else "", str(result.timestamp).replace(" ", "_"))
         os.makedirs(path, exist_ok=True)
@@ -79,11 +96,9 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
 
     benchmark_module = importlib.import_module("{}.benchmark".format(selected_benchmark.lower()))
 
-    sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
-    experiment = Experiment(N, get_generator_factory(descriptions[selected_benchmark], sut_factory, objective_factory, benchmark_module.get_objective_selector_factory(), benchmark_module.get_step_factory()), get_seed_factory(init_seed), result_callback=callback)
+    experiment = get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed, callback=callback)()
 
-    N_workers = 2
-    experiment.run(N_workers=N_workers, silent=False)
+    experiment.run(N_workers=N_workers[selected_benchmark], silent=False)
 
 if __name__ == "__main__":
     main()

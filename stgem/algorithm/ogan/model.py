@@ -45,14 +45,26 @@ class OGAN_Model(Model):
         }
     }
 
-    def setup(self, search_space, device, logger=None):
-        super().setup(search_space, device, logger)
+    def setup(self, search_space, device, logger=None, use_previous_rng=False):
+        super().setup(search_space, device, logger, use_previous_rng)
 
         # Infer input and output dimensions for ML models.
         self.parameters["generator_mlm_parameters"]["output_shape"] = self.search_space.input_dimension
         self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
 
+        # Save current RNG state and use previous.
+        if use_previous_rng:
+            current_rng_state = torch.random.get_rng_state()
+            torch.random.set_rng_state(self.previous_rng_state["torch"])
+        else:
+            self.previous_rng_state = {}
+            self.previous_rng_state["torch"] = torch.random.get_rng_state()
+
         self._initialize()
+
+        # Restore RNG state.
+        if use_previous_rng:
+            torch.random.set_rng_state(current_rng_state)
 
     def _initialize(self):
         # Load the specified generator and discriminator machine learning
@@ -162,7 +174,7 @@ class OGAN_Model(Model):
             D_loss.backward()
             self.optimizerD.step()
 
-        self.losses_D += losses
+        self.losses_D.append(losses)
         m = np.mean(losses)
         self.log("Discriminator epochs {}, Loss: {} -> {} (mean {})".format(discriminator_epochs, losses[0], losses[-1], m))
 
@@ -211,7 +223,7 @@ class OGAN_Model(Model):
             G_loss.backward()
             self.optimizerG.step()
 
-        self.losses_G += losses
+        self.losses_G.append(losses)
         m = np.mean(losses)
         self.log("Generator steps {}, Loss: {} -> {}, mean {}".format(self.noise_batch_size//generator_batch_size + 1, losses[0], losses[-1], m))
 

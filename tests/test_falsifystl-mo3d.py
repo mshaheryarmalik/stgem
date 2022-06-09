@@ -3,7 +3,6 @@ import unittest
 
 import tltk_mtl as STL
 
-from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.sut.python import PythonFunction
 from stgem.objective import FalsifySTL
@@ -32,7 +31,6 @@ class TestFalsifySTL(unittest.TestCase):
         generator = STGEM(
             description="mo3d/OGAN",
             sut=PythonFunction(function=myfunction),
-            budget=Budget(),
             objectives=[FalsifySTL(specification=specification, scale=True) ],
             steps=[
                 Search(budget_threshold={"executions": 20},
@@ -56,7 +54,6 @@ class TestFalsifySTL(unittest.TestCase):
         generator = STGEM(
             description="mo3d/OGAN",
             sut=PythonFunction(function=myfunction),
-            budget=Budget(),
             objectives=[FalsifySTL(specification=F1, scale=True),
                        FalsifySTL(specification=F2, scale=True),
                        FalsifySTL(specification=F3, scale=True)],
@@ -84,7 +81,6 @@ class TestFalsifySTL(unittest.TestCase):
         generator = STGEM(
             description="mo3d/OGAN",
             sut=MO3D(),
-            budget=Budget(),
             objectives=[FalsifySTL(specification=specification, scale=True)],
             steps=[
                 Search(budget_threshold={"executions": 20},
