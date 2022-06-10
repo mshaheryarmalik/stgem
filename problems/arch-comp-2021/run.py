@@ -39,8 +39,9 @@ def get_sut_objective_factory(benchmark_module, selected_specification, mode):
     return sut_factory, objective_factory
 
 def get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed, callback=None):
+    sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
+
     def experiment_factory():
-        sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
         return Experiment(N=N,
                           stgem_factory=get_generator_factory("", sut_factory, objective_factory, benchmark_module.get_objective_selector_factory(), benchmark_module.get_step_factory()),
                           seed_factory=get_seed_factory(init_seed),
@@ -59,11 +60,19 @@ descriptions = {
 }
 specifications = {
         "AFC": ["AFC27", "AFC29"],
-        "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX1", "ATX2"],
+        "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX1", "ATX2", "ATX61", "ATX62"],
         "CC":  ["CC1", "CC2", "CC3", "CC4", "CC5", "CCX"],
         "F16": ["F16"],
         "NN":  ["NN", "NNX"],
         "SC":  ["SC"]
+}
+N_workers = {
+        "AFC": 2,
+        "AT": 2,
+        "CC": 2,
+        "F16": 2,
+        "NN": 2,
+        "SC": 2
 }
 
 @click.command()
@@ -89,8 +98,7 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
 
     experiment = get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed, callback=callback)()
 
-    N_workers = 2
-    experiment.run(N_workers=N_workers, silent=False)
+    experiment.run(N_workers=N_workers[selected_benchmark], silent=False)
 
 if __name__ == "__main__":
     main()
