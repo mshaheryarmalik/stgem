@@ -27,6 +27,7 @@ class Model:
             raise Exception("No previous RNG state to be used.")
 
         self.search_space = search_space
+        self.parameters["input_dimension"] = self.search_space.input_dimension
         self.device = device
         self.logger = logger
         self.log = lambda msg: (self.logger("model", msg) if logger is not None else None)
@@ -69,5 +70,3 @@ class Model:
 
         raise NotImplementedError()
 
-    def get_input_dimension(self):
-        raise NotImplementedError()

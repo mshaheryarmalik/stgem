@@ -38,16 +38,11 @@ class STGEMResult:
 
     @staticmethod
     def restore_from_file(file_name: str):
-
         with open(file_name, "rb") as file:
             obj = pickle.load(file)
         return obj
 
     def dump_to_file(self, file_name: str):
-        """
-        Save self to a file
-        """
-
         # first create a temporary file
         temp_file_name = "{}.tmp".format(file_name)
         with open(temp_file_name, "wb") as file:
@@ -57,7 +52,7 @@ class STGEMResult:
 
 class Step:
 
-    def run(self,checkpoint_callback=None) -> StepResult:
+    def run(self, checkpoint_callback=None) -> StepResult:
         raise NotImplementedError
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
@@ -66,7 +61,7 @@ class Step:
 class Search(Step):
     """A search step."""
 
-    def __init__(self, algorithm: Algorithm, budget_threshold, mode="exhaust_budget",  results_include_models= False, results_checkpoint=0):
+    def __init__(self, algorithm: Algorithm, budget_threshold, mode="exhaust_budget", results_include_models=False, results_checkpoint_period=0):
         self.algorithm = algorithm
         self.budget = None
         self.budget_threshold = budget_threshold
@@ -75,7 +70,7 @@ class Search(Step):
         self.mode = mode
 
         self.results_include_models = results_include_models
-        self.results_checkpoint = results_checkpoint
+        self.results_checkpoint_period = results_checkpoint_period
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
         self.sut = sut
@@ -92,7 +87,7 @@ class Search(Step):
         self.logger = logger
         self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
 
-    def run(self, checkpoint_callback=None ) -> StepResult:
+    def run(self, checkpoint_callback=None) -> StepResult:
         self.budget.update_threshold(self.budget_threshold)
 
         # Allow the algorithm to initialize itself.
@@ -139,12 +134,11 @@ class Search(Step):
 
                 i += 1
 
-                if checkpoint_callback is not None and self.results_checkpoint!=0 and (self.test_repository.tests % self.results_checkpoint)  ==0:
+                if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (self.test_repository.tests % self.results_checkpoint_period) == 0:
                     checkpoint_callback(self._generate_step_result())
 
                 if self.success and self.mode == "stop_at_first_objective":
                     break
-
 
         # Allow the algorithm to store trained models or other generated data.
         self.algorithm.finalize()
@@ -152,10 +146,12 @@ class Search(Step):
         # Report results.
         self.log("Step minimum objective component: {}".format(self.test_repository.minimum_objective))
 
-        if checkpoint_callback is not None and self.results_checkpoint != 0:
-            checkpoint_callback(self._generate_step_result())
+        result = self._generate_step_result()
 
-        return self._generate_step_result()
+        if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (self.test_repository.tests % self.results_checkpoint_period) != 0:
+            checkpoint_callback(result)
+
+        return result
 
     def _generate_step_result(self):
         # Save certain parameters in the StepResult object.
@@ -163,8 +159,7 @@ class Search(Step):
         parameters["algorithm_name"] = self.algorithm.__class__.__name__
         parameters["algorithm"] = copy.deepcopy(self.algorithm.parameters)
         parameters["model_name"] = [self.algorithm.models[i].__class__.__name__ for i in range(self.algorithm.N_models)]
-        parameters["model"] = [copy.deepcopy(self.algorithm.models[i].parameters) for i in
-                               range(self.algorithm.N_models)]
+        parameters["model"] = [copy.deepcopy(self.algorithm.models[i].parameters) for i in range(self.algorithm.N_models)]
         parameters["objective_name"] = [objective.__class__.__name__ for objective in self.objective_funcs]
         parameters["objective"] = [copy.deepcopy(objective.parameters) for objective in self.objective_funcs]
         parameters["objective_selector_name"] = self.objective_selector.__class__.__name__
@@ -176,8 +171,6 @@ class Search(Step):
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
         if self.results_include_models:
             step_result.models = self.algorithm.models
-        else:
-            step_result.models = []
         return step_result
 
 class LoaderStep(Step):
@@ -273,13 +266,12 @@ class STGEM:
 
         self.setup_steps()
 
-    def _generate_result(self,step_results):
-        return STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed,
-                           self.test_repository, step_results, self.sut.perf)
+    def _generate_result(self, step_results):
+        return STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
 
     def _checkpoint(self, sr):
-        r= self._generate_result(self.step_results + [sr])
-        r.dump_to_file(self.description+"_checkpoint_"+str(self.test_repository.tests)+".pickle")
+        r = self._generate_result(self.step_results + [sr])
+        r.dump_to_file("{}_checkpoint_{}.pickle".format(self.description, self.test_repository.tests))
 
     def _run(self) -> STGEMResult:
         # Running this assumes that setup has been run.

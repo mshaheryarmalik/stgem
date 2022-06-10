@@ -37,7 +37,7 @@ class TestModelBasedSUT(unittest.TestCase):
                 Search(budget_threshold={"executions": 5},
                        algorithm=OGAN(models=models),
                        results_include_models=True,
-                       results_checkpoint=1,
+                       results_checkpoint_period=1,
                        )
             ],
 

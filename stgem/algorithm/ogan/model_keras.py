@@ -23,6 +23,7 @@ class OGANK_Model(AlgModel):
         "g_size": 512,
         "d_adam_lr": 0.001,
         "g_adam_lr": 0.0001,
+        "lossfunction": "mean_squared_error",
         "noise_dimensions": 50,
         "noise_batch_size": 10000,
         "train_settings_init": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
@@ -81,9 +82,6 @@ class OGANK_Model(AlgModel):
         if len(dataY) < len(dataX):
             raise ValueError("There should be at least as many training outputs as there are inputs.")
 
-        self.parameters["lossfunction"]= "mean_squared_error"
-        self.parameters["input_dimension"]=self.search_space.input_dimension
-
         self.init_model()
 
         # Unpack values from the train_settings dictionary.
@@ -141,5 +139,3 @@ class OGANK_Model(AlgModel):
         """
         return self.modelD.predict(test)
 
-    def get_input_dimension(self):
-        return self.parameters["input_dimension"]
