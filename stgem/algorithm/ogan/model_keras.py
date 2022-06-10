@@ -1,14 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import importlib
-
+import dill as pickle
 import numpy as np
 
 from stgem.algorithm import Model as AlgModel
 from keras.models import Sequential, Model
 from keras.layers import Dense, LeakyReLU, Input
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import load_model
 
 class OGANK_Model(AlgModel):
     """
@@ -23,11 +23,39 @@ class OGANK_Model(AlgModel):
         "g_size": 512,
         "d_adam_lr": 0.001,
         "g_adam_lr": 0.0001,
+        "lossfunction": "mean_squared_error",
         "noise_dimensions": 50,
         "noise_batch_size": 10000,
         "train_settings_init": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1},
         "train_settings": {"epochs": 1, "discriminator_epochs": 10, "generator_epochs": 1}
     }
+
+    def init_model(self):
+        self.noise_dimensions = self.parameters["noise_dimensions"]
+
+        sizeD = self.parameters["d_size"]
+        sizeG = self.parameters["g_size"]
+        input_shape = (self.parameters["input_dimension"],)
+        a = "relu"
+
+        self.modelG = Sequential()
+        self.modelG.add(Dense(sizeG, input_dim=self.noise_dimensions))
+        self.modelG.add(Dense(sizeG, activation=a))
+        self.modelG.add(Dense(sizeG, activation=a))
+        self.modelG.add(Dense(self.search_space.input_dimension, activation="tanh"))
+
+        self.modelG.compile(
+            loss=self.parameters["lossfunction"],
+            optimizer=Adam(learning_rate=self.parameters["g_adam_lr"]),
+        )
+
+        self.modelD = Sequential()
+        self.modelD.add(Dense(sizeD, input_shape=input_shape, activation=a))
+        self.modelD.add(Dense(sizeD, activation=a))
+        self.modelD.add(Dense(sizeD, activation=a))
+        self.modelD.add(Dense(1, activation="relu"))
+
+        self.modelD.compile(loss=self.parameters["lossfunction"], optimizer=Adam(learning_rate=self.parameters["d_adam_lr"]))
 
     def train_with_batch(self, dataX, dataY, train_settings):
         """
@@ -54,32 +82,7 @@ class OGANK_Model(AlgModel):
         if len(dataY) < len(dataX):
             raise ValueError("There should be at least as many training outputs as there are inputs.")
 
-
-        self.noise_dimensions=self.parameters["noise_dimensions"]
-        lf = "mean_squared_error"
-        sizeD =  self.parameters["d_size"]
-        sizeG =  self.parameters["g_size"]
-        input_shape = (self.search_space.input_dimension,)
-        a = "relu"
-
-        self.modelG = Sequential()
-        self.modelG.add(Dense(sizeG, input_dim=self.noise_dimensions))
-        self.modelG.add(Dense(sizeG, activation=a))
-        self.modelG.add(Dense(sizeG, activation=a))
-        self.modelG.add(Dense(self.search_space.input_dimension, activation="tanh"))
-
-        self.modelG.compile(
-            loss=lf,
-            optimizer=Adam(learning_rate=self.parameters["g_adam_lr"]),
-        )
-
-        self.modelD = Sequential()
-        self.modelD.add(Dense(sizeD, input_shape=input_shape, activation=a))
-        self.modelD.add(Dense(sizeD, activation=a))
-        self.modelD.add(Dense(sizeD, activation=a))
-        self.modelD.add(Dense(1, activation="relu"))
-
-        self.modelD.compile(loss=lf, optimizer=Adam(learning_rate= self.parameters["d_adam_lr"]))
+        self.init_model()
 
         # Unpack values from the train_settings dictionary.
         discriminator_epochs = train_settings["discriminator_epochs"] if "discriminator_epochs" in train_settings else 1
@@ -99,7 +102,7 @@ class OGANK_Model(AlgModel):
             outputs=self.modelD(self.modelG(ganInput)),
         )
         self.gan.compile(
-            loss=lf,
+            loss=self.parameters["lossfunction"],
             optimizer=Adam(learning_rate=self.parameters["g_adam_lr"]),
         )
 
