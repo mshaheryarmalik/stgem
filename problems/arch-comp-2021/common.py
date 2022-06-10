@@ -70,6 +70,38 @@ def first_falsification(result):
 
     return None
 
+def scaleInterval(x, interval_original, interval_target):
+    """
+    Scales the input value x in interval_original to new interval_target
+    """
+    A = interval_original[0]
+    B = interval_original[1]
+    C = interval_target[0]
+    D = interval_target[1]
+    E = (-1 * A + x) / (-1 * A + B) # input percent of original interval
+    return C + E * (-1 * C + D) # input scaled to target interval
+
+def colorIntervals(x, color_map, interval_original, interval_target):
+    """
+    Uses intervals to return input as a readable color from a color map
+    """
+    x = scaleInterval(x, interval_original, interval_target)
+    return color_map(x)
+
+def color(i, Y, color_map, falsify_pct=0.0, falsify_clr="blue"):
+
+    def transform_objective(x):
+        x = max(0, min(0.1, x))
+        return 1 + 5 * -x
+
+    if Y[i] <= falsify_pct:
+        return falsify_clr
+    #elif i < 75:
+    #    return "grey"
+    else:
+        x = Y[i]
+        return color_map(transform_objective(x))
+
 def plotTest(result, idx):
     inputs = result.sut_parameters["inputs"]
     outputs = result.sut_parameters["outputs"]
@@ -81,17 +113,7 @@ def plotTest(result, idx):
     Y = np.array(Y).reshape(-1)
 
     # Define the signal color based in the test index.
-    color_map = cm.get_cmap("Reds", 8)
-    def color(i):
-        if Y[i] <= 0.0:
-            return "blue"
-        elif i < 75:
-            return "grey"
-        else:
-            x = Y[i]
-            x = max(0, min(0.1, x))
-            x = 1 - 5*x
-            return color_map(x)
+    color_map = cm.get_cmap("Reds", 8) # Use color() to add color to lines if desired
 
     fig, ax = plt.subplots(2, max(len(inputs), len(outputs)), figsize=(10*max(len(inputs), len(outputs)), 10))
 
@@ -122,16 +144,6 @@ def animateResult(result):
 
     # Define the signal color based in the test index.
     color_map = cm.get_cmap("Reds", 8)
-    def color(i):
-        if Y[i] <= 0.0:
-            return "blue"
-        elif i < 75:
-            return "grey"
-        else:
-            x = Y[i]
-            x = max(0, min(0.1, x))
-            x = 1 - 5*x
-            return color_map(x)
 
     # Setup the figures.
     fig, ax = plt.subplots(2, max(len(inputs), len(outputs)), figsize=(10*max(len(inputs), len(outputs)), 10))
@@ -162,13 +174,13 @@ def animateResult(result):
             k = j
             x = X[i].input_timestamps
             y = X[i].input_denormalized[j]
-            lines[k].set_color(color(i))
+            lines[k].set_color(color(i, Y, color_map))
             lines[k].set_data(x, y)
         for j in range(len(outputs)):
             k = len(inputs) + j
             x = Z[i].output_timestamps
             y = Z[i].outputs[j]
-            lines[k].set_color(color(i))
+            lines[k].set_color(color(i, Y, color_map))
             lines[k].set_data(x, y)
 
         return lines
