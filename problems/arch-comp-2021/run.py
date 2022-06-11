@@ -67,11 +67,11 @@ specifications = {
         "SC":  ["SC"]
 }
 N_workers = {
-        "AFC": 2,
-        "AT": 2,
-        "CC": 2,
+        "AFC": 3,
+        "AT": 3,
+        "CC": 4,
         "F16": 2,
-        "NN": 2,
+        "NN": 3,
         "SC": 2
 }
 
@@ -90,7 +90,8 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
 
     def callback(idx, result, done):
         path = os.path.join("..", "..", "output", selected_benchmark)
-        file_name = "{}{}_{}.pickle".format(selected_specification, "_" + identifier if identifier is not None else "", str(result.timestamp).replace(" ", "_"))
+        time = str(result.timestamp).replace(" ", "_")
+        file_name = "{}{}_{}.pickle".format(selected_specification, "_" + identifier if identifier is not None else "", time)
         os.makedirs(path, exist_ok=True)
         result.dump_to_file(os.path.join(path, file_name))
 
