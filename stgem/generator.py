@@ -171,11 +171,11 @@ class Search(Step):
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
         if self.results_include_models:
             step_result.models = self.algorithm.models
-            # Delete the search space from models in order to avoid pickling
+            # Delete the SUTs from the models in order to avoid pickling
             # errors. Notice that this results in saved models that need
             # resetup if used again.
             for model in step_result.models:
-                model.search_space = None
+                model.search_space.sut = None
 
         return step_result
 
