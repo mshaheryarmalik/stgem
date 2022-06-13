@@ -225,9 +225,9 @@ def step_factory():
                    )      
     step_2 = Search(mode=mode,
                     budget_threshold={"executions": 300},
-                    algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
+                    #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
                     #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                    #algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
+                    algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                    )
     #steps = [step_1]
     steps = [step_1, step_2]
