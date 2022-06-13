@@ -124,7 +124,8 @@ def step_factory():
                     budget_threshold={"executions": 300},
                     #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
                     #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                    algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["dense"])), parameters=ogan_parameters)
+                    algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["dense"])), parameters=ogan_parameters),
+                    results_include_models=False
                    )
     #steps = [step_1]
     steps = [step_1, step_2]
