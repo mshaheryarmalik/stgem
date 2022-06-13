@@ -10,6 +10,7 @@
     * Deep Learning Toolbox: SC (ARCH-COMP-2021)
 * Make sure to select symbolic link creation in the installer.
 * After the installation has completed, run `python3 setup.py install` in `/usr/local/MATLAB/R2021b/extern/engines/python` (this is the default installation location; note version differences).
+* Make sure the package `libpython3` is installed in Ubuntu.
 * If everything installed correctly, running `import matlab; import matlab.engine` in Python should execute without errors.
 
 [0] <https://mathworks.com/matlabcentral/answers/1464434-why-is-the-linux-matlab-install-script-not-opening-the-installer-window>
