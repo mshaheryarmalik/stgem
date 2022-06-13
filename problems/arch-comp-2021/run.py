@@ -60,7 +60,7 @@ descriptions = {
 }
 specifications = {
         "AFC": ["AFC27", "AFC29"],
-        "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX1", "ATX2", "ATX61", "ATX62"],
+        "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX13", "ATX14", "ATX2", "ATX61", "ATX62"],
         "CC":  ["CC1", "CC2", "CC3", "CC4", "CC5", "CCX"],
         "F16": ["F16"],
         "NN":  ["NN", "NNX"],
