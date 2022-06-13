@@ -1,6 +1,5 @@
-import copy, os, time, datetime, random, logging
+import copy, datetime, gzip, os, random, time
 
-from collections import namedtuple
 import dill as pickle
 
 import numpy as np
@@ -38,14 +37,16 @@ class STGEMResult:
 
     @staticmethod
     def restore_from_file(file_name: str):
-        with open(file_name, "rb") as file:
+        o = gzip.open if file_name.endswith(".gz") else open
+        with o(file_name, "rb") as file:
             obj = pickle.load(file)
         return obj
 
     def dump_to_file(self, file_name: str):
+        o = gzip.open if file_name.endswith(".gz") else open
         # first create a temporary file
         temp_file_name = "{}.tmp".format(file_name)
-        with open(temp_file_name, "wb") as file:
+        with o(temp_file_name, "wb") as file:
             pickle.dump(self, file)
         # then we rename it to its final name
         os.replace(temp_file_name, file_name)

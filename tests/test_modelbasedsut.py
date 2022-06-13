@@ -43,10 +43,13 @@ class TestModelBasedSUT(unittest.TestCase):
 
         )
 
-        r = generator1.run()
-        r.dump_to_file("tmp_mbsut_actual.pickle")
+        file_name_actual = "tmp_mbsut_actual.pickle.gz"
+        file_name_model = "tmp_mbsut_model.pickle.gz"
 
-        r2 = STGEMResult.restore_from_file("tmp_mbsut_actual.pickle")
+        r = generator1.run()
+        r.dump_to_file(file_name_actual)
+
+        r2 = STGEMResult.restore_from_file(file_name_actual)
 
         generator2 = STGEM(
             description="mo3d-mbst-model",
@@ -62,7 +65,10 @@ class TestModelBasedSUT(unittest.TestCase):
         )
 
         r3 = generator2.run()
-        r3.dump_to_file("tmp_mbsut_model.pickle")
+        r3.dump_to_file(file_name_model)
+
+        os.remove(file_name_actual)
+        os.remove(file_name_model)
 
 if __name__ == "__main__":
     unittest.main()

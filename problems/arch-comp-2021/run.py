@@ -91,7 +91,7 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
     def callback(idx, result, done):
         path = os.path.join("..", "..", "output", selected_benchmark)
         time = str(result.timestamp).replace(" ", "_")
-        file_name = "{}{}_{}.pickle".format(selected_specification, "_" + identifier if identifier is not None else "", time)
+        file_name = "{}{}_{}.pickle.gz".format(selected_specification, "_" + identifier if identifier is not None else "", time)
         os.makedirs(path, exist_ok=True)
         result.dump_to_file(os.path.join(path, file_name))
 
