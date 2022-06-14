@@ -160,28 +160,24 @@ class Search(Step):
 class Load(Step):
     """Step which simply loads pregenerated data from a file."""
 
-    # TODO: Currently this is a placeholder and does nothing.
-
-    def __init__(self, file_name: str, load_range: int = None):
-        self.file_name = file_name
+    def __init__(self, path: str,file_name: str, load_range: int = None):
+        self.file = os.path.join(path, file_name)
         self.load_range = load_range
 
         # Check if the data file exists.
-        if not os.path.exists(self.file_name):
-            raise Exception("Pregenerated date file '{}' does not exist.".format(self.file_name))
+        if not os.path.exists(self.file):
+            raise Exception("Pregenerated date file '{}' does not exist.".format(self.file))
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
         self.test_repository = test_repository
 
     def run(self) -> StepResult:
         # Load file
-        raw_data = STGEMResult.restore_from_file(self.file_name)
+        raw_data = STGEMResult.restore_from_file(self.file)
 
         # Extract data
-        if isinstance(raw_data, STGEMResult): # STGMResult
+        if isinstance(raw_data, STGEMResult):
             sut_input, sut_result, output = raw_data.test_repository.get()
-            step_results = raw_data.step_results
-            step_result = step_results[0]
         else:
             raise NotImplementedError("Not implemented data loading for datatype {}".format(type(raw_data)))
 
@@ -189,13 +185,22 @@ class Load(Step):
         if (self.load_range == None):
             self.load_range = len(sut_input)
         elif (self.load_range > len(sut_input)):
-            print("load range out of bounds. Defaulting to file's own range {}".format(len(sut_input)))
-            self.load_range = len(sut_input)
-        for i in range(self.load_range):
-            self.test_repository.record(sut_input[i], sut_result[i], output[i])
+            raise Exception("load range {} is out of bounds. Loaded file's max range is {}.".format(self.load_range, len(sut_input)))
+
+        success = True
+        if not (self.test_repository.minimum_objective <= 0.0): #TODO: Is this "<=" correct? Search has this as "=="
+            success = False
+            for i in range(self.load_range):
+                self.test_repository.record(sut_input[i], sut_result[i], output[i])
+                #if (output[i])
+
+        # Save certain parameters in the StepResult object.
+        parameters = {}
+        parameters["file"] = self.file
+        parameters["load_range"] = self.load_range
 
         # Build StepResult object with test_repository
-        step_result = StepResult(self.test_repository, step_result.success, step_result.parameters)
+        step_result = StepResult(self.test_repository, success, parameters)
 
         return step_result
 

@@ -1,5 +1,6 @@
 import dill as pickle
 import unittest
+import os
 from stgem.generator import STGEM, Search, Load
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform
@@ -11,6 +12,9 @@ class TestLoad(unittest.TestCase):
     def test_load(self):
         mode = "stop_at_first_objective"
 
+        path = os.path.join("..", "output", "F16", )
+        file_name = "F16__2022-06-07_15:56:37.386465.pickle"
+
         generator = STGEM(
             description="mo3d/OGAN",
             sut=MO3D(),
@@ -20,8 +24,8 @@ class TestLoad(unittest.TestCase):
                         ],
             objective_selector=ObjectiveSelectorAll(),
 
-            steps=[Load(file_name = "test.pickle", load_range=15),
-                   Search(budget_threshold={"executions": 20},
+            steps=[Load(path=path, file_name = file_name, load_range=None),
+                   Search(budget_threshold={"executions": 500},
                             mode=mode,
                             algorithm=Random(model_factory=(lambda: Uniform())))
                    ]
