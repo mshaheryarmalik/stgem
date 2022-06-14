@@ -162,18 +162,34 @@ class LoaderStep(Step):
 
     # TODO: Currently this is a placeholder and does nothing.
 
-    def __init__(self, data_file, budget_threshold):
-        self.data_file = data_file
-        return
+    def __init__(self, file_name: str, load_range: int = None):
+        self.file_name = file_name
+        self.load_range = load_range
         # Check if the data file exists.
-        if not os.path.exists(self.data_file):
-            raise Exception("Pregenerated date file '{}' does not exist.".format(self.data_file))
+        if not os.path.exists(self.file_name):
+            raise Exception("Pregenerated date file '{}' does not exist.".format(self.file_name))
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
-        raise NotImplementedError()
+        self.test_repository = test_repository
 
     def run(self) -> StepResult:
-        raise NotImplementedError()
+        # Load file
+        raw_data = STGEMResult.restore_from_file(self.file_name)
+
+        # Extract data
+        sut_input, sut_result, output = raw_data.test_repository.get()
+        step_results = raw_data.step_results
+
+        # Build onto given test_repository
+        if (self.load_range == None):
+            self.load_range = len(sut_input)
+        for i in range(self.load_range):
+            self.test_repository.record(sut_input[i], sut_result[i], output[i])
+
+        # Build StepResult object with test_repository
+        step_result = StepResult(self.test_repository, step_results.sucess, step_results.paramters)
+
+        return step_result
 
 class STGEM:
 
