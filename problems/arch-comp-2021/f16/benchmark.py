@@ -92,7 +92,6 @@ def build_specification(selected_specification, mode=None, asut=None):
         #asut = F16GCAS_PYTHON3(sut_parameters)
 
     # Notice that here the input is a vector.
-
     scale = True
     S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "F16":
@@ -125,7 +124,8 @@ def step_factory():
                     budget_threshold={"executions": 300},
                     #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
                     #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                    algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["dense"])), parameters=ogan_parameters)
+                    algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["dense"])), parameters=ogan_parameters),
+                    results_include_models=False
                    )
 
     #steps = [step_1]

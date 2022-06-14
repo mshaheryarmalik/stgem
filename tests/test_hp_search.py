@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 
-from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.experiment import Experiment
 from stgem.sut.hyper import HyperParameter, Range, Categorical
@@ -58,7 +57,6 @@ class TestPython(unittest.TestCase):
             def generator_factory():
                 return STGEM(description="",
                              sut=sut_factory(),
-                             budget=Budget(),
                              objectives=objective_factory(),
                              objective_selector=objective_selector_factory(),
                              steps=step_factory())
@@ -85,7 +83,6 @@ class TestPython(unittest.TestCase):
         generator = STGEM(
                           description="Hyperparameter search",
                           sut=HyperParameter(experiment_factory, hp_sut_parameters),
-                          budget=Budget(),
                           objectives=[Minimize(selected=[0], scale=False)],
                           objective_selector=ObjectiveSelectorAll(),
                           steps=[

@@ -5,14 +5,13 @@ import numpy as np
 
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
-from stgem.budget import Budget
 from stgem.experiment import Experiment
 from stgem.generator import STGEM, Search
 from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut.hyper import HyperParameter, Range, Categorical
 
-from run import get_generator_factory, get_seed_factory, get_sut_objective_factory, benchmarks, specifications
+from run import get_experiment_factory, benchmarks, specifications, N_workers
 
 @click.command()
 @click.argument("selected_benchmark", type=click.Choice(benchmarks, case_sensitive=False))
@@ -24,35 +23,51 @@ def main(selected_benchmark, selected_specification, mode, init_seed_experiments
     if not selected_specification in specifications[selected_benchmark]:
         raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
 
-    # We change the learning rates of the discriminator and the generator.
-    def f1(generator, value):
-        # Setup on generator has been called already, so the model objects
-        # exist. We edit their parameter dictionaries and resetup them.
-        for model in generator.steps[1].algorithm.models:
-            model.parameters["discriminator_lr"] = value
-            model.setup(model.search_space, model.device, model.logger)
-    def f2(generator, value):
-        # Similar to above.
-        for model in generator.steps[1].algorithm.models:
-            model.parameters["generator_lr"] = value
-            model.setup(model.search_space, model.device, model.logger)
+    algorithm = "wogan"
+
+    if algorithm == "ogan":
+        # We change the learning rates of the discriminator and the generator.
+        def f1(generator, value):
+            # Setup on generator has been called already, so the model objects
+            # exist. We edit their parameter dictionaries and resetup them.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["discriminator_lr"] = value
+                model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
+        def f2(generator, value):
+            # Similar to above.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["generator_lr"] = value
+                model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
+    elif algorithm == "wogan":
+        # We change the learning rates of the analyzer and the generator.
+        def f1(generator, value):
+            # Setup on generator has been called already, so the model objects
+            # exist. We edit their parameter dictionaries and resetup them.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["analyzer_parameters"]["lr"] = value
+                model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
+        def f2(generator, value):
+            # Similar to above.
+            for model in generator.steps[1].algorithm.models:
+                model.parameters["critic_lr"] = value
+                model.parameters["generator_lr"] = value
+                model.setup(model.search_space, model.device, model.logger, use_previous_rng=True)
+    else:
+        raise Exception("Unknown algorithm '{}'.".format(algorithm))
 
     hp_sut_parameters = {"hyperparameters": [[f1, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])],
                                              [f2, Categorical([0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])]],
-                         "mode":            "falsification_rate",
-                         "N_workers":       2}
+                         "mode":            "falsification_rate"}
 
     benchmark_module = importlib.import_module("{}.benchmark".format(selected_benchmark.lower()))
 
-    def experiment_factory():
-        N = 25
-        sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
-        return Experiment(N, get_generator_factory("", sut_factory, objective_factory, benchmark_module.get_objective_selector_factory(), benchmark_module.get_step_factory()), get_seed_factory(init_seed_experiments))
+    N = 25
+    experiment_factory = get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed_experiments)
+    hp_sut_parameters["N_workers"] = N_workers[selected_benchmark]
 
     generator = STGEM(
                       description="Hyperparameter search for benchmark {} and specification {}".format(selected_benchmark, selected_specification),
                       sut=HyperParameter(experiment_factory, hp_sut_parameters),
-                      budget=Budget(),
                       objectives=[Minimize(selected=[0], scale=False)],
                       objective_selector=ObjectiveSelectorAll(),
                       steps=[

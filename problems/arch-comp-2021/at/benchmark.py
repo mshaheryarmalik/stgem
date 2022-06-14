@@ -91,7 +91,7 @@ def build_specification(selected_specification, mode=None, asut=None):
     # memory).
     if asut is None:
         asut = Matlab_Simulink(sut_parameters)
-    
+
     # Some ARCH-COMP specifications have requirements whose horizon is longer than
     # the output signal for some reason. Thus strict horizon check needs to be
     # disabled in some cases.
@@ -183,6 +183,27 @@ def build_specification(selected_specification, mode=None, asut=None):
         specifications = [specification]
         strict_horizon_check = True
         epsilon = 0.01
+    elif selected_specification.startswith("ATX6"):
+        # This is a variant of AT6 from "Falsification of Hybrid Systems Using
+        # Adaptive Probabilistic Search".
+        V = int(selected_specification[-1])
+        if V == 1:
+            V1 = 80
+            V2 = 4500
+            T = 30
+        else:
+            V1 = 50
+            V2 = 2700
+            T = 30
+
+        L = STL.Global(0, 10, FalsifySTL.StrictlyLessThan(1, 0, 0, V1, S("SPEED")))
+        R = STL.Finally(0, T, FalsifySTL.StrictlyGreaterThan(1, 0, 0, V2, S("RPM")))
+
+        specification = STL.Or(L, R)
+
+        specifications = [specification]
+        strict_horizon_check = True
+        epsilon = 0.01
     else:
         raise Exception("Unknown specification '{}'.".format(selected_specification))
 
@@ -204,9 +225,9 @@ def step_factory():
                    )      
     step_2 = Search(mode=mode,
                     budget_threshold={"executions": 300},
-                    algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
+                    #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
                     #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                    #algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
+                    algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                    )
     #steps = [step_1]
     steps = [step_1, step_2]

@@ -11,8 +11,8 @@ class Uniform(Model):
 
     default_parameters = {"min_dist": 0.0}
 
-    def setup(self, search_space, device, logger=None):
-        super().setup(search_space, device, logger)
+    def setup(self, search_space, device, logger=None, use_previous_rng=False):
+        super().setup(search_space, device, logger, use_previous_rng)
 
         if self.min_dist < 0:
             raise Exception("Random search minimum distance must be nonnegative.")
@@ -201,7 +201,7 @@ class LHS(Model):
         cut = np.linspace(0, 1, samples + 1)    
         
         # Fill points uniformly in each interval
-        u = self.sut.rand(samples, n)
+        u = self.search_space.rand(samples, n)
         a = cut[:samples]
         b = cut[1:samples + 1]
         _center = (a + b)/2

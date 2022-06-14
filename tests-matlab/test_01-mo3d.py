@@ -1,6 +1,5 @@
 import unittest
 
-from stgem.budget import Budget
 from stgem.generator import STGEM, Search
 from stgem.sut.matlab import Matlab
 from stgem.objective import Minimize
@@ -25,7 +24,6 @@ class TestPython(unittest.TestCase):
         generator = STGEM(
             description="Matlab-MO3D/OGAN",
             sut=Matlab(sut_parameters),
-            budget=Budget(),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)

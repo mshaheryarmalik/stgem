@@ -59,11 +59,13 @@ class Minimize(Objective):
 
         if self.scale:
             output = self.sut.scale(v.reshape(1, -1), ranges, target_A=0, target_B=1).reshape(-1)
+        else:
+            output = v
 
         if self.clip:
-            return max(0, min(1, min(v)))
+            return max(0, min(1, min(output)))
         else:
-            return min(v)
+            return min(output)
 
 class FalsifySTL(Objective):
     """Objective function to falsify a STL specification. By default the
@@ -280,7 +282,7 @@ class FalsifySTL(Objective):
         self.specification.reset()
 
         # Allow slight inaccuracy in horizon check.
-        if self.strict_horizon_check and self.horizon - 1e-4 > timestamps[-1]:
+        if self.strict_horizon_check and self.horizon - 1e-2 > timestamps[-1]:
             raise Exception("The horizon {} of the formula is too long compared to signal length {}. The robustness cannot be computed.".format(self.horizon, timestamps[-1]))
 
         # Adjust time bounds.

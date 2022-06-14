@@ -2,6 +2,13 @@ import numpy as np
 
 from stgem.sut import SUT, SUTOutput
 
+"""
+Notice: it is extremely important that no global or hidden state is modified
+when the functions described in the 'hyperparameters' parameter are executed.
+Extra care needs to be taken when machine learning models are initialized as
+this often advances a random number generator.
+"""
+
 class Range:
     """Continuous range [A, B]."""
 
@@ -33,6 +40,9 @@ class HyperParameter(SUT):
 
     def __init__(self, experiment_factory, parameters=None):
         super().__init__(parameters)
+
+        if not "hyperparameters" in self.parameters:
+            raise Exception("No hyperparameters selected for optimization.")
 
         self.experiment_factory = experiment_factory
 

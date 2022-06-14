@@ -34,22 +34,21 @@ class SUTOutput:
 class SearchSpace:
     def __init__(self):
         self.sut = None
+        self.input_dimension = 0
+        self.output_dimension = 0
         self.rng = None
 
     def setup(self, sut, objectives, rng):
         self.sut = sut
+        self.input_dimension = self.sut.idim
+        self.output_dimension = self.sut.odim
         self.odim = len(objectives)
         self.rng = rng
 
-    @property
-    def input_dimension(self):
-        return self.sut.idim
-
-    @property
-    def output_dimension(self):
-        return self.odim
-
     def is_valid(self, test) -> bool:
+        # This is here until valid tests are changed to preconditions. This
+        # line ensures that model-based SUTs work and can be pickled.
+        if self.sut is None: return True
         return self.sut.validity(test)
 
     def sample_input_space(self):

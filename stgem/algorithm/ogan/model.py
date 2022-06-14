@@ -45,14 +45,26 @@ class OGAN_Model(Model):
         }
     }
 
-    def setup(self, search_space, device, logger=None):
-        super().setup(search_space, device, logger)
+    def setup(self, search_space, device, logger=None, use_previous_rng=False):
+        super().setup(search_space, device, logger, use_previous_rng)
 
         # Infer input and output dimensions for ML models.
         self.parameters["generator_mlm_parameters"]["output_shape"] = self.search_space.input_dimension
         self.parameters["discriminator_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
 
+        # Save current RNG state and use previous.
+        if use_previous_rng:
+            current_rng_state = torch.random.get_rng_state()
+            torch.random.set_rng_state(self.previous_rng_state["torch"])
+        else:
+            self.previous_rng_state = {}
+            self.previous_rng_state["torch"] = torch.random.get_rng_state()
+
         self._initialize()
+
+        # Restore RNG state.
+        if use_previous_rng:
+            torch.random.set_rng_state(current_rng_state)
 
     def _initialize(self):
         # Load the specified generator and discriminator machine learning
@@ -232,7 +244,7 @@ class OGAN_Model(Model):
           N (int): Number of tests to be generated.
 
         Returns:
-          output (np.ndarray): Array of shape (N, self.sut.ndimension).
+          output (np.ndarray): Array of shape (N, self.input_ndimension).
         """
 
         if N <= 0:
@@ -251,7 +263,7 @@ class OGAN_Model(Model):
         Predicts the objective function value of the given tests.
 
         Args:
-          test (np.ndarray): Array of shape (N, self.sut.ndimension).
+          test (np.ndarray): Array of shape (N, self.input_ndimension).
 
         Returns:
           output (np.ndarray): Array of shape (N, 1).

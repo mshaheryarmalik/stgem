@@ -61,10 +61,18 @@ class WOGAN_Model(Model):
         }
     }
 
-    def setup(self, search_space, device, logger):
-        super().setup(search_space, device, logger)
+    def setup(self, search_space, device, logger=None, use_previous_rng=False):
+        super().setup(search_space, device, logger, use_previous_rng)
 
         self.noise_dim = self.generator_mlm_parameters["noise_dim"]
+
+        # Save current RNG state and use previous.
+        if use_previous_rng:
+            current_rng_state = torch.random.get_rng_state()
+            torch.random.set_rng_state(self.previous_rng_state["torch"])
+        else:
+            self.previous_rng_state = {}
+            self.previous_rng_state["torch"] = torch.random.get_rng_state()
 
         # Infer input and output dimensions for ML models.
         self.parameters["analyzer_parameters"]["analyzer_mlm_parameters"]["input_shape"] = self.search_space.input_dimension
@@ -105,13 +113,17 @@ class WOGAN_Model(Model):
         self.perf.save_history("gradient_penalty", self.gradient_penalties, single=True)
         self.perf.save_history("generator_loss", self.losses_G, single=True)
 
+        # Restore RNG state.
+        if use_previous_rng:
+            torch.random.set_rng_state(current_rng_state)
+
     def train_analyzer_with_batch(self, data_X, data_Y, train_settings):
         """
         Train the analyzer part of the model with a batch of training data.
 
         Args:
           data_X (np.ndarray):   Array of tests of shape
-                                 (N, self.sut.ndimensions).
+                                 (N, self.input_dimensions).
           data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
           train_settings (dict): A dictionary setting up the number of training
                                  epochs for various parts of the model. The
@@ -139,7 +151,7 @@ class WOGAN_Model(Model):
 
         Args:
           data_X (np.ndarray):   Array of tests of shape
-                                 (M, self.sut.ndimensions).
+                                 (M, self.input_dimensions).
           train_settings (dict): A dictionary setting up the number of training
                                  epochs for various parts of the model. The
                                  keys are as follows:
@@ -279,7 +291,7 @@ class WOGAN_Model(Model):
           N (int): Number of tests to be generated.
 
         Returns:
-          output (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          output (np.ndarray): Array of shape (N, self.input_dimensions).
         """
 
         if N <= 0:
