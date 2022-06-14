@@ -231,6 +231,7 @@ class Load(Step):
         # Save certain parameters in the StepResult object.
         parameters = {}
         parameters["file"] = self.file
+        parameters["mode"] = self.mode
         parameters["load_range"] = self.load_range
 
         # Build StepResult object with test_repository
