@@ -157,7 +157,7 @@ class Search(Step):
 
         return step_result
 
-class LoaderStep(Step):
+class Load(Step):
     """Step which simply loads pregenerated data from a file."""
 
     # TODO: Currently this is a placeholder and does nothing.
@@ -177,11 +177,17 @@ class LoaderStep(Step):
         raw_data = STGEMResult.restore_from_file(self.file_name)
 
         # Extract data
-        sut_input, sut_result, output = raw_data.test_repository.get()
-        step_results = raw_data.step_results
+        if raw_data is isinstance(STGEMResult): # STGMResult
+            sut_input, sut_result, output = raw_data.test_repository.get()
+            step_results = raw_data.step_results
+        else:
+            raise NotImplementedError("Not implemented data loading for datatype {}".format(type(raw_data)))
 
         # Build onto given test_repository
         if (self.load_range == None):
+            self.load_range = len(sut_input)
+        elif (self.load_range > len(sut_input)):
+            print("load range out of bounds. Defaulting to file's own range {}".format(len(sut_input)))
             self.load_range = len(sut_input)
         for i in range(self.load_range):
             self.test_repository.record(sut_input[i], sut_result[i], output[i])
