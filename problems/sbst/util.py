@@ -9,6 +9,41 @@ from shapely.geometry import LineString, Polygon
 from code_pipeline.tests_generation import RoadTestFactory
 from code_pipeline.validation import TestValidator
 
+def test_to_road_points(test, step_length, map_size):
+    """Converts a test to road points.
+
+    Args:
+      test (list): List of floats in [-1, 1].
+
+    Returns:
+      output (list): List of length len(test) of coordinate tuples.
+    """
+
+    # This is the same code as in the Frenetic algorithm.
+    # https://github.com/ERATOMMSD/frenetic-sbst21/blob/main/src/generators/base_frenet_generator.py
+    # We integrate curvature (acceleratation) to get an angle (speed) and
+    # then we move one step to this direction to get position. The
+    # integration is done using the trapezoid rule with step given by the
+    # first component of the test. Now we use a fixed step size.
+    step = step_length
+    # We assume that denormalization from [-1, 1] to the actual curvature
+    # range has already been done.
+    curvature = test
+
+    # The initial point is the bottom center of the map. The initial angle
+    # is 90 degrees.
+    points = [(map_size / 2, 10)]  # 10 is margin for not being out of bounds
+    angles = [np.math.pi / 2]
+    # Add the second point.
+    points.append((points[-1][0] + step * np.cos(angles[-1]), points[-1][1] + step * np.sin(angles[-1])))
+    # Find the remaining points.
+    for i in range(curvature.shape[0] - 1):
+        angles.append(angles[-1] + step * (curvature[i + 1] + curvature[i]) / 2)
+        x = points[-1][0] + step * np.cos(angles[-1])
+        y = points[-1][1] + step * np.sin(angles[-1])
+        points.append((x, y))
+
+    return points
 
 def sbst_test_to_image(test, map_size):
     """
@@ -100,7 +135,6 @@ def sbst_test_to_image(test, map_size):
 
     return plt.gcf()
 
-
 def sbst_validate_test(test, map_size):
     """
     Tests if the road described as points in the plane in the map of specified
@@ -120,7 +154,6 @@ def sbst_validate_test(test, map_size):
 
     # print(msg)
     return 1 if valid else 0
-
 
 def frechet_distance(P, Q):
     """
@@ -161,7 +194,6 @@ def frechet_distance(P, Q):
     ca = -1 * np.ones(shape=(len(P), len(Q)))
     return C(ca, len(P) - 1, len(Q) - 1, np.array(P), np.array(Q))
 
-
 def move_road(P, x0, y0):
     """
     Moves the sequence of points P in such a way that the initial point is
@@ -188,3 +220,4 @@ def move_road(P, x0, y0):
         Q[n][1] = math.sin(angle) * x + math.cos(angle) * y + y0
 
     return Q
+

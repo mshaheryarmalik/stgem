@@ -244,7 +244,7 @@ class OGAN_Model(Model):
           N (int): Number of tests to be generated.
 
         Returns:
-          output (np.ndarray): Array of shape (N, self.sut.ndimension).
+          output (np.ndarray): Array of shape (N, self.input_ndimension).
         """
 
         if N <= 0:
@@ -263,7 +263,7 @@ class OGAN_Model(Model):
         Predicts the objective function value of the given tests.
 
         Args:
-          test (np.ndarray): Array of shape (N, self.sut.ndimension).
+          test (np.ndarray): Array of shape (N, self.input_ndimension).
 
         Returns:
           output (np.ndarray): Array of shape (N, 1).

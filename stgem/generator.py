@@ -1,6 +1,5 @@
-import copy, os, time, datetime, random, logging
+import copy, datetime, gzip, os, random, time
 
-from collections import namedtuple
 import dill as pickle
 
 import numpy as np
@@ -22,6 +21,7 @@ class StepResult:
         self.parameters = parameters
         self.algorithm_performance = None
         self.model_performance = None
+        self.models  = []
 
 class STGEMResult:
 
@@ -36,22 +36,24 @@ class STGEMResult:
         self.sut_performance = sut_performance
 
     @staticmethod
-    def restore_from_file(file_name):
-        with open(file_name, "rb") as file:
+    def restore_from_file(file_name: str):
+        o = gzip.open if file_name.endswith(".gz") else open
+        with o(file_name, "rb") as file:
             obj = pickle.load(file)
         return obj
 
-    def dump_to_file(self, file_name):
+    def dump_to_file(self, file_name: str):
+        o = gzip.open if file_name.endswith(".gz") else open
         # first create a temporary file
         temp_file_name = "{}.tmp".format(file_name)
-        with open(temp_file_name, "wb") as file:
+        with o(temp_file_name, "wb") as file:
             pickle.dump(self, file)
         # then we rename it to its final name
         os.replace(temp_file_name, file_name)
 
 class Step:
 
-    def run(self) -> StepResult:
+    def run(self, checkpoint_callback=None) -> StepResult:
         raise NotImplementedError
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
@@ -60,13 +62,16 @@ class Step:
 class Search(Step):
     """A search step."""
 
-    def __init__(self, algorithm: Algorithm, budget_threshold, mode="exhaust_budget"):
+    def __init__(self, algorithm: Algorithm, budget_threshold, mode="exhaust_budget", results_include_models=False, results_checkpoint_period=0):
         self.algorithm = algorithm
         self.budget = None
         self.budget_threshold = budget_threshold
         if mode not in ["exhaust_budget", "stop_at_first_objective"]:
             raise Exception("Unknown test generation mode '{}'.".format(mode))
         self.mode = mode
+
+        self.results_include_models = results_include_models
+        self.results_checkpoint_period = results_checkpoint_period
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
         self.sut = sut
@@ -83,15 +88,15 @@ class Search(Step):
         self.logger = logger
         self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
 
-    def run(self) -> StepResult:
+    def run(self, checkpoint_callback=None) -> StepResult:
         self.budget.update_threshold(self.budget_threshold)
 
         # Allow the algorithm to initialize itself.
         self.algorithm.initialize()
 
-        success = True
+        self.success = True
         if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_objective == 0.0):
-            success = False
+            self.success = False
 
             # TODO: We should check if the budget was exhausted during the test
             # generation and discard the final test if this is so.
@@ -124,14 +129,17 @@ class Search(Step):
                 self.objective_selector.update(np.argmin(output))
                 self.test_repository.record(sut_input, sut_result, output)
 
-                if not success and self.test_repository.minimum_objective <= 0:
+                if not self.success and self.test_repository.minimum_objective <= 0:
                     self.log("First success at test {}.".format(i + 1))
-                    success = True
-
-                if success and self.mode == "stop_at_first_objective":
-                    break
+                    self.success = True
 
                 i += 1
+
+                if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (self.test_repository.tests % self.results_checkpoint_period) == 0:
+                    checkpoint_callback(self._generate_step_result())
+
+                if self.success and self.mode == "stop_at_first_objective":
+                    break
 
         # Allow the algorithm to store trained models or other generated data.
         self.algorithm.finalize()
@@ -139,6 +147,14 @@ class Search(Step):
         # Report results.
         self.log("Step minimum objective component: {}".format(self.test_repository.minimum_objective))
 
+        result = self._generate_step_result()
+
+        if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (self.test_repository.tests % self.results_checkpoint_period) != 0:
+            checkpoint_callback(result)
+
+        return result
+
+    def _generate_step_result(self):
         # Save certain parameters in the StepResult object.
         parameters = {}
         parameters["algorithm_name"] = self.algorithm.__class__.__name__
@@ -151,9 +167,16 @@ class Search(Step):
         parameters["objective_selector"] = copy.deepcopy(self.objective_selector.parameters)
 
         # Build the StepResult object.
-        step_result = StepResult(self.test_repository, success, parameters)
+        step_result = StepResult(self.test_repository, self.success, parameters)
         step_result.algorithm_performance = self.algorithm.perf
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
+        if self.results_include_models:
+            step_result.models = self.algorithm.models
+            # Delete the SUTs from the models in order to avoid pickling
+            # errors. Notice that this results in saved models that need
+            # resetup if used again.
+            for model in step_result.models:
+                model.search_space.sut = None
 
         return step_result
 
@@ -209,6 +232,7 @@ class STGEM:
     def __init__(self, description, sut: SUT, objectives, objective_selector=None, budget: Budget = None, steps=[]):
         self.description = description
         self.sut = sut
+        self.step_results = []
 
         if budget is None:
             budget = Budget()
@@ -278,17 +302,22 @@ class STGEM:
 
         self.setup_steps()
 
+    def _generate_result(self, step_results):
+        return STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
+
+    def _checkpoint(self, sr):
+        r = self._generate_result(self.step_results + [sr])
+        r.dump_to_file("{}_checkpoint_{}.pickle".format(self.description, self.test_repository.tests))
+
     def _run(self) -> STGEMResult:
         # Running this assumes that setup has been run.
 
         # Setup and run steps sequentially.
-        step_results = []
+        self.step_results = []
         for step in self.steps:
-            step_results.append(step.run())
+            self.step_results.append(step.run(checkpoint_callback=self._checkpoint))
 
-        sr = STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
-
-        return sr
+        return self._generate_result(self.step_results)
 
     def run(self, seed=None) -> STGEMResult:
         self.setup(seed)

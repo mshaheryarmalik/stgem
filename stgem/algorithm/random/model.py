@@ -201,7 +201,7 @@ class LHS(Model):
         cut = np.linspace(0, 1, samples + 1)    
         
         # Fill points uniformly in each interval
-        u = self.sut.rand(samples, n)
+        u = self.search_space.rand(samples, n)
         a = cut[:samples]
         b = cut[1:samples + 1]
         _center = (a + b)/2

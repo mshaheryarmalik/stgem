@@ -16,7 +16,7 @@ class Model:
         if parameters is None:
             parameters = {}
 
-        # merge deafult_parameters and parameters, the later takes priority if a key appears in both dictionaries
+        # merge default_parameters and parameters, the later takes priority if a key appears in both dictionaries
         # the result is a new dictionary
         self.parameters = self.default_parameters | parameters
 
@@ -27,6 +27,7 @@ class Model:
             raise Exception("No previous RNG state to be used.")
 
         self.search_space = search_space
+        self.parameters["input_dimension"] = self.search_space.input_dimension
         self.device = device
         self.logger = logger
         self.log = lambda msg: (self.logger("model", msg) if logger is not None else None)

@@ -123,7 +123,7 @@ class WOGAN_Model(Model):
 
         Args:
           data_X (np.ndarray):   Array of tests of shape
-                                 (N, self.sut.ndimensions).
+                                 (N, self.input_dimensions).
           data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
           train_settings (dict): A dictionary setting up the number of training
                                  epochs for various parts of the model. The
@@ -151,7 +151,7 @@ class WOGAN_Model(Model):
 
         Args:
           data_X (np.ndarray):   Array of tests of shape
-                                 (M, self.sut.ndimensions).
+                                 (M, self.input_dimensions).
           train_settings (dict): A dictionary setting up the number of training
                                  epochs for various parts of the model. The
                                  keys are as follows:
@@ -291,7 +291,7 @@ class WOGAN_Model(Model):
           N (int): Number of tests to be generated.
 
         Returns:
-          output (np.ndarray): Array of shape (N, self.sut.ndimensions).
+          output (np.ndarray): Array of shape (N, self.input_dimensions).
         """
 
         if N <= 0:
