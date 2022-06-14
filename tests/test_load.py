@@ -11,10 +11,6 @@ class TestLoad(unittest.TestCase):
     def test_load(self):
         mode = "stop_at_first_objective"
 
-        searchstep = Search(budget_threshold={"executions": 20},
-                            mode=mode,
-                            algorithm=Random(model_factory=(lambda: Uniform())))
-        loadstep = Load(file_name = "test.pickle", load_range=15)
         generator = STGEM(
             description="mo3d/OGAN",
             sut=MO3D(),
@@ -24,7 +20,11 @@ class TestLoad(unittest.TestCase):
                         ],
             objective_selector=ObjectiveSelectorAll(),
 
-            steps=[loadstep, searchstep]
+            steps=[Load(file_name = "test.pickle", load_range=15),
+                   Search(budget_threshold={"executions": 20},
+                            mode=mode,
+                            algorithm=Random(model_factory=(lambda: Uniform())))
+                   ]
         )
         sr = generator.run()
         with open("test.pickle", "wb") as f:

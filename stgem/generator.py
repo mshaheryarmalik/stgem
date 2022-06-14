@@ -165,6 +165,7 @@ class Load(Step):
     def __init__(self, file_name: str, load_range: int = None):
         self.file_name = file_name
         self.load_range = load_range
+
         # Check if the data file exists.
         if not os.path.exists(self.file_name):
             raise Exception("Pregenerated date file '{}' does not exist.".format(self.file_name))
@@ -180,6 +181,7 @@ class Load(Step):
         if isinstance(raw_data, STGEMResult): # STGMResult
             sut_input, sut_result, output = raw_data.test_repository.get()
             step_results = raw_data.step_results
+            step_result = step_results[0]
         else:
             raise NotImplementedError("Not implemented data loading for datatype {}".format(type(raw_data)))
 
@@ -193,7 +195,7 @@ class Load(Step):
             self.test_repository.record(sut_input[i], sut_result[i], output[i])
 
         # Build StepResult object with test_repository
-        step_result = StepResult(self.test_repository, step_results[0].success, step_results[0].parameters)
+        step_result = StepResult(self.test_repository, step_result.success, step_result.parameters)
 
         return step_result
 
