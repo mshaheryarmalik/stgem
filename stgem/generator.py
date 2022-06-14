@@ -177,7 +177,7 @@ class Load(Step):
         raw_data = STGEMResult.restore_from_file(self.file_name)
 
         # Extract data
-        if raw_data is isinstance(STGEMResult): # STGMResult
+        if isinstance(raw_data, STGEMResult): # STGMResult
             sut_input, sut_result, output = raw_data.test_repository.get()
             step_results = raw_data.step_results
         else:
@@ -193,7 +193,7 @@ class Load(Step):
             self.test_repository.record(sut_input[i], sut_result[i], output[i])
 
         # Build StepResult object with test_repository
-        step_result = StepResult(self.test_repository, step_results.sucess, step_results.paramters)
+        step_result = StepResult(self.test_repository, step_results[0].success, step_results[0].parameters)
 
         return step_result
 
