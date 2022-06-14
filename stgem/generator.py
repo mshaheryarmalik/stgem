@@ -95,7 +95,7 @@ class Search(Step):
         self.algorithm.initialize()
 
         self.success = True
-        if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_objective == 0.0):
+        if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_objective <= 0.0):
             self.success = False
 
             # TODO: We should check if the budget was exhausted during the test
@@ -129,7 +129,7 @@ class Search(Step):
                 self.objective_selector.update(np.argmin(output))
                 self.test_repository.record(sut_input, sut_result, output)
 
-                if not self.success and self.test_repository.minimum_objective <= 0:
+                if not self.success and self.test_repository.minimum_objective <= 0.0:
                     self.log("First success at test {}.".format(i + 1))
                     self.success = True
 
@@ -183,18 +183,23 @@ class Search(Step):
 class Load(Step):
     """Step which simply loads pregenerated data from a file."""
 
-    def __init__(self, path: str,file_name: str, load_range: int = None):
-        self.file = os.path.join(path, file_name)
-        self.load_range = load_range
+    # TODO: Implement checkpoint functionality like in Search?
 
-        # Check if the data file exists.
+    def __init__(self, path, file_name, mode="initial", load_range=None):
+        self.file = os.path.join(path, file_name)
         if not os.path.exists(self.file):
             raise Exception("Pregenerated date file '{}' does not exist.".format(self.file))
+        if mode not in ["initial", "random"]:
+            raise Exception("Unknown load mode '{}'.".format(mode))
+        if load_range < 0:
+            raise Exception("load range {} can not be negative.".format(load_range))
+        self.mode = mode
+        self.load_range = load_range
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
         self.test_repository = test_repository
 
-    def run(self) -> StepResult:
+    def run(self, checkpoint_callback=None) -> StepResult:
         # Load file
         raw_data = STGEMResult.restore_from_file(self.file)
 
@@ -202,20 +207,26 @@ class Load(Step):
         if isinstance(raw_data, STGEMResult):
             sut_input, sut_result, output = raw_data.test_repository.get()
         else:
-            raise NotImplementedError("Not implemented data loading for datatype {}".format(type(raw_data)))
+            raise NotImplementedError("Not implemented data loading for datatype '{}'".format(type(raw_data)))
 
         # Build onto given test_repository
-        if (self.load_range == None):
+        if self.load_range == None:
             self.load_range = len(sut_input)
-        elif (self.load_range > len(sut_input)):
+        elif self.load_range > len(sut_input):
             raise Exception("load range {} is out of bounds. Loaded file's max range is {}.".format(self.load_range, len(sut_input)))
 
         success = True
-        if not (self.test_repository.minimum_objective <= 0.0): #TODO: Is this "<=" correct? Search has this as "=="
+        if not self.test_repository.minimum_objective <= 0.0:
             success = False
-            for i in range(self.load_range):
-                self.test_repository.record(sut_input[i], sut_result[i], output[i])
-                #if (output[i])
+            if self.mode == "initial": # First values
+                for i in range(self.load_range):
+                    self.test_repository.record(sut_input[i], sut_result[i], output[i])
+            elif self.mode == "random": # Random values
+                rnd_indexes = random.sample(range(len(sut_input)) ,self.load_range)
+                for i in rnd_indexes:
+                    self.test_repository.record(sut_input[i], sut_result[i], output[i])
+            if self.test_repository.minimum_objective <= 0.0:
+                success = True
 
         # Save certain parameters in the StepResult object.
         parameters = {}

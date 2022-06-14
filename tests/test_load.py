@@ -10,7 +10,9 @@ from stgem.objective_selector import ObjectiveSelectorAll
 
 class TestLoad(unittest.TestCase):
     def test_load(self):
-        mode = "stop_at_first_objective"
+        mode_search = "stop_at_first_objective"
+        mode_load = "random"
+        #mode_load = "initial"
 
         path = os.path.join("..", "output", "F16", )
         file_name = "F16__2022-06-07_15:56:37.386465.pickle"
@@ -24,9 +26,9 @@ class TestLoad(unittest.TestCase):
                         ],
             objective_selector=ObjectiveSelectorAll(),
 
-            steps=[Load(path=path, file_name = file_name, load_range=None),
+            steps=[Load(path=path, file_name=file_name, mode=mode_load, load_range=100),
                    Search(budget_threshold={"executions": 500},
-                            mode=mode,
+                            mode=mode_search,
                             algorithm=Random(model_factory=(lambda: Uniform())))
                    ]
         )
