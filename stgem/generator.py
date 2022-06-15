@@ -133,10 +133,10 @@ class Search(Step):
                     self.log("First success at test {}.".format(i + 1))
                     self.success = True
 
-                i += 1
-
-                if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (self.test_repository.tests % self.results_checkpoint_period) == 0:
+                if checkpoint_callback is not None and self.results_checkpoint_period != 0 and i % self.results_checkpoint_period == 0:
                     checkpoint_callback(self._generate_step_result())
+
+                i += 1
 
                 if self.success and self.mode == "stop_at_first_objective":
                     break
@@ -149,7 +149,7 @@ class Search(Step):
 
         result = self._generate_step_result()
 
-        if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (self.test_repository.tests % self.results_checkpoint_period) != 0:
+        if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (i-1) % self.results_checkpoint_period != 0:
             checkpoint_callback(result)
 
         return result
