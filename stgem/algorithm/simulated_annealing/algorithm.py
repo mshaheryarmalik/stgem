@@ -32,9 +32,8 @@ class simulated_annealing(Algorithm):
         def find_proba(delta,T):
             return np.exp(delta/ T)
 
+        #====Finds a random neighbor of the point x====    
         def neighbor(x):
-            """Finds a random neighbor of the point x. Currently this is just a
-            random displacement of x."""
             neighbor = x + self.radius * np.random.uniform(-1, 1, size=self.search_space.input_dimension)
             np.clip(neighbor, -1, 1, out=neighbor)
             return neighbor
@@ -49,7 +48,7 @@ class simulated_annealing(Algorithm):
             x2,z2,y2 =test_repository.get(-2 + self.prec) #values of the test that we get before the previous one (wich is called the "prev")
 
             f_Next = find_min_vect(active_outputs, y1) #the minimum objective of the previous test
-            f_Prev = find_min_vect(active_outputs, y2) #the minimum objective that is keep (before the previous one)
+            f_Prev = find_min_vect(active_outputs, y2) #the minimum objective that is kept (before the previous one)
 
             #====If the solution is better we accept and if it is not we accept with a certain probability====
             if (f_Prev > f_Next):
@@ -69,7 +68,7 @@ class simulated_annealing(Algorithm):
                 else :
                     #====Calculate the next test from the previous solution====
                     new_test = neighbor(x2.inputs)
-                    #====The previous index remains the same====
+                    #====The previous value remains the same====
                     self.prec-=1
             if self.search_space.is_valid(new_test) == 0:
                 invalid += 1
