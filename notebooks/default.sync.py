@@ -33,10 +33,11 @@ are collected into one experiment.
 output_path_base = os.path.join("..", "output")
 
 # Which benchmarks are to be included.
-benchmarks = ["F16"]
+benchmarks = ["AFC", "F16"]
 
 # Replica prefixes for collecting the experiments.
-replica_prefixes = {"F16": ["F16"]}
+replica_prefixes = {"AFC": ["AFC29"],
+                    "F16": ["F16"]}
 
 experiments = loadExperiments(output_path_base, benchmarks, replica_prefixes)
 
@@ -54,8 +55,8 @@ for benchmark in benchmarks:
 # # Visualize Test Inputs and Outputs
 
 # %% [markdown]
-Visualize tests (indices given in `idx`) from an experiment. For signal inputs
-or outputs, we draw the plots representing the signals. For vector inputs or
+Visualize tests (indices given in `idx`) from a replica. For signal inputs or
+outputs, we draw the plots representing the signals. For vector inputs or
 outputs, we simply print the vector components. The inputs are always
 denormalized, that is, they are given in the format actually given to the SUT.
 Outputs are always the outputs of the SUT unmodified.
@@ -68,10 +69,12 @@ Outputs are always the outputs of the SUT unmodified.
 # %%
 benchmark = "F16"
 experiment = "F16"
-idx = [0]
+replica_idx = [0]
+test_idx = [0]
 
-for i in idx:
-    plotTest(experiments[benchmark][experiment], i)
+for i in replica_idx:
+    for j in test_idx:
+        plotTest(experiments[benchmark][experiment][i], j)
 
 # %% [markdown]
 # # Visualization of 1-3D Vector Input Test Suites.
@@ -88,4 +91,15 @@ idx = [0]
 
 for i in idx:
     visualize3DTestSuite(experiments[benchmark][experiment], i)
+
+# %% [markdown]
+# # Animate Signal Input/Output Test Suite
+
+# %%
+benchmark = "AFC"
+experiment = "AFC29"
+replica_idx = 0
+
+anim = animateResult(experiments[benchmark][experiment][replica_idx])
+HTML(anim.to_jshtml())
 

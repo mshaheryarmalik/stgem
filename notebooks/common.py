@@ -10,6 +10,10 @@ sys.path.append(os.path.join(".."))
 from stgem.generator import STGEM, STGEMResult
 from stgem.budget import Budget
 
+# Color maps
+color_map_falsified = cm.get_cmap("Reds", 8)
+color_map_other = cm.get_cmap("Blues_r", 8)
+
 def collect_replica_files(path, prefix):
     """Collects all files under the given path (including subdirectories) that
     begin with the given prefix."""
@@ -91,43 +95,44 @@ def first_falsification(result):
 
     return None
 
-def scaleInterval(x, interval_original, interval_target):
-    """Scales the input value x in interval_original to new interval_target."""
+def color(x, color_map, robustness_interval=None):
+    """Color for robustness value x (clipped to [0, 1]). A range for robustness
+    values can be specified to display a better range of colors if the possible
+    robustness range is narrow. By default this is
+    """
 
-    A = interval_original[0]
-    B = interval_original[1]
-    C = interval_target[0]
-    D = interval_target[1]
-    E = (-1 * A + x) / (-1 * A + B) # input percent of original interval
-    return C + E * (-1 * C + D) # input scaled to target interval
+    if robustness_interval is None:
+        robustness_interval = [-1, 1]
 
-def colorIntervals(x, color_map, interval_original, interval_target):
-    """Uses intervals to return input as a readable color from a color map."""
+    def scale(x, interval_original, interval_target):
+        A = interval_original[0]
+        B = interval_original[1]
+        C = interval_target[0]
+        D = interval_target[1]
+        E = (-1 * A + x) / (-1 * A + B) # input percent of original interval
+        return C + E * (-1 * C + D) # input scaled to target interval
 
-    x = scaleInterval(x, interval_original, interval_target)
+    x = scale(x, robustness_interval, (-1, 1))
     return color_map(x)
 
-def plotTest(experiment, idx):
-    """Plots a single test from an experiment."""
+def plotTest(replica, idx):
+    """Plots a single test from a replica."""
 
-    result = experiment[idx]
-
-    if result.sut_parameters["input_type"] == "vector":
+    if replica.sut_parameters["input_type"] == "vector":
         input_type = "vector"
-    elif result.sut_parameters["input_type"] == "signal":
+    elif replica.sut_parameters["input_type"] == "signal" or replica.sut_parameters["input_type"] == "piecewise constant signal":
         input_type = "signal"
     else:
-        raise Exception("Unknown input type '{}'.".format(result.sut_parameters["input_type"]))
+        raise Exception("Unknown input type '{}'.".format(replica.sut_parameters["input_type"]))
+    output_type = replica.sut_parameters["output_type"]
 
-    inputs = result.sut_parameters["inputs"]
-    outputs = result.sut_parameters["outputs"]
-    input_range = result.sut_parameters["input_range"]
-    output_range = result.sut_parameters["output_range"]
-    simulation_time = result.sut_parameters["simulation_time"]
-    input_type = result.sut_parameters["input_type"]
-    output_type = result.sut_parameters["output_type"]
+    inputs = replica.sut_parameters["inputs"]
+    outputs = replica.sut_parameters["outputs"]
+    input_range = replica.sut_parameters["input_range"]
+    output_range = replica.sut_parameters["output_range"]
+    simulation_time = replica.sut_parameters["simulation_time"]
 
-    X, Z, Y = result.test_repository.get()
+    X, Z, Y = replica.test_repository.get()
     Y = np.array(Y).reshape(-1)
 
     # Define the signal color based in the test index.
@@ -197,18 +202,17 @@ def plotTest(experiment, idx):
             print(", ".join(outputs))
             print(Y[idx].outputs)
 
-def animateResult(result):
-    inputs = result.sut_parameters["inputs"]
-    outputs = result.sut_parameters["outputs"]
-    input_range = result.sut_parameters["input_range"]
-    output_range = result.sut_parameters["output_range"]
-    simulation_time = result.sut_parameters["simulation_time"]
+def animateResult(replica):
+    inputs = replica.sut_parameters["inputs"]
+    outputs = replica.sut_parameters["outputs"]
+    input_range = replica.sut_parameters["input_range"]
+    output_range = replica.sut_parameters["output_range"]
+    simulation_time = replica.sut_parameters["simulation_time"]
 
-    X, Z, Y = result.test_repository.get()
+    robustness_threshold = 0.05
+
+    X, Z, Y = replica.test_repository.get()
     Y = np.array(Y).reshape(-1)
-
-    # Define the signal color based in the test index.
-    color_map = cm.get_cmap("Reds", 8)
 
     # Setup the figures.
     fig, ax = plt.subplots(2, max(len(inputs), len(outputs)), figsize=(10*max(len(inputs), len(outputs)), 10))
@@ -235,17 +239,19 @@ def animateResult(result):
         return lines
 
     def animate(i):
+        cm = color_map_falsified if Y[i] <= robustness_threshold else color_map_other
+        c = color(Y[i], cm)
         for j in range(len(inputs)):
             k = j
             x = X[i].input_timestamps
             y = X[i].input_denormalized[j]
-            lines[k].set_color(color(i, Y, color_map))
+            lines[k].set_color(c)
             lines[k].set_data(x, y)
         for j in range(len(outputs)):
             k = len(inputs) + j
             x = Z[i].output_timestamps
             y = Z[i].outputs[j]
-            lines[k].set_color(color(i, Y, color_map))
+            lines[k].set_color(c)
             lines[k].set_data(x, y)
 
         return lines
@@ -255,6 +261,7 @@ def animateResult(result):
     return anim
 
 def condensed_boxplot(data, x_labels, pb_labels, colors):
+    # TODO: Does this even work with the current code?
     def set_color(bp, color):
         plt.setp(bp["boxes"], color=color)
         plt.setp(bp["whiskers"], color=color)
@@ -321,9 +328,6 @@ def visualize3DTestSuite(experiment, idx):
 
     ax.azim = angle # rotate around the z axis
 
-    # Color maps
-    color_map_false = cm.get_cmap("Reds", 8)
-    color_map_persist = cm.get_cmap("Blues_r", 8) # Inverted map
     falsify_pct = 0.05 # Robustness percent needed for classifying as a falsified test
 
     # Divide the tests indices into two classes: those that correspond to tests
@@ -357,11 +361,11 @@ def visualize3DTestSuite(experiment, idx):
     for i in range(len(X)):
         if i in c:
             points_false[f] = X[i]
-            colors_false[f] = colorIntervals(Y[i], color_map_false, interval_false, (-1, 1)) # (-1, 0) = left side of colormap
+            colors_false[f] = color(Y[i], color_map_falsified, interval_false) # (-1, 0) = left side of colormap
             f += 1
         else:
             points_persist[p] = X[i]
-            colors_persist[p] = colorIntervals(Y[i], color_map_persist, interval_persist, (-1, 1)) # (0, 1) = right side of colormap
+            colors_persist[p] = color(Y[i], color_map_other, interval_persist) # (0, 1) = right side of colormap
             p += 1
 
     def label(interval, invert_lightness=False):
