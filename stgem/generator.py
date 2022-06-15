@@ -199,49 +199,35 @@ class Load(Step):
         self.range_load = range_load
 
     def run(self, checkpoint_callback=None) -> StepResult:
-        # TODO
-        # * exit early if budget exhausted (we do not execute on the SUT, but a time budget could run out)
-        # * loading the complete test repository could be wasteful if it's big, load only the necessary tests
-        # * make sure no test is recorded twice when random mode is used
-        # * use the search_space to check correct input and output dimensions, the test repository is not guaranteed to correct source for this
+        try:
+            raw_data = STGEMResult.restore_from_file(self.file)
+        except:
+            raise Exception("Error loading STGEMResult object from file '{}'.".format(self.file))
 
-        # Load file
-        self.log("starting")
-        raw_data = STGEMResult.restore_from_file(self.file) # this fails if the file does not contain STGEMResult, check for exceptions
-        self.log("stopping")
+        range_max = raw_data.test_repository.tests
+        if self.range_load is None:
+            self.range_load = range_max
+        elif self.range_load > range_max:
+            raise ValueError("The load range {} is out of bounds. Loaded maximum range for loaded data is {}.".format(self.range_load, range_max))
 
-        # Extract data
-        if isinstance(raw_data, STGEMResult):
-            range_max = len(raw_data.test_repository._tests)
-            if self.range_load is None:
-                self.range_load = range_max
-            elif self.range_load > range_max:
-                raise Exception(
-                    "The load range {} is out of bounds. Loaded file's max range is {}.".format(self.range_load, range_max))
-            if self.mode == "random":
-                idx = random.sample(range(range_max), self.range_load)
-            elif self.mode == "initial":
-                idx = range(range_max)
-            sut_input, sut_result, output = raw_data.test_repository.get(idx)
-        else:
-            raise NotImplementedError("Not implemented data loading for datatype '{}'".format(type(raw_data)))
+        if self.mode == "random":
+            idx = random.sample(range(range_max), self.range_load)
+        elif self.mode == "initial":
+            idx = range(range_max)
 
-        # Check for dimension compatibility
-        if not(self.test_repository._tests == None or len(self.test_repository._tests) == 0): # If test repository empty slate - no check needed
-            dimensions_load = len(sut_input[0].inputs)
-            dimensions_exist = self.search_space.input_dimension
-            if dimensions_load != dimensions_exist:
-                raise Exception("Loaded input dimension {} does not match existing input dimension {}".format(dimensions_load, dimensions_exist))
-            dimensions_load = len(sut_result[0].outputs)
-            dimensions_exist = self.search_space.output_dimension
-            if dimensions_load != dimensions_exist:
-                raise Exception("Loaded output dimension {} does not match existing output dimension {}".format(dimensions_load, dimensions_exist))
-
-        # Build onto given test_repository
         already_successful = self.test_repository.minimum_objective <= 0
 
-        for i in range(len(sut_input)):
-            self.test_repository.record(sut_input[i], sut_result[i], output[i])
+        for i in idx:
+            if self.budget.remaining() == 0: break
+            x, y, z = raw_data.test_repository.get(i)
+
+            # TODO: signals.
+            if len(x.inputs) != self.search_space.input_dimension:
+                raise ValueError("Loaded sample input dimension {} does not match SUT input dimension {}".format(len(x.inputs), self.search_space.input_dimension))
+            if len(y.outputs) != self.search_space.output_dimension:
+                raise ValueError("Loaded sample output dimension {} does not match SUT output dimension {}".format(len(x.inputs), self.search_space.input_dimension))
+
+            self.test_repository.record(x, y, z)
 
         success = not already_successful and self.test_repository.minimum_objective <= 0
 
