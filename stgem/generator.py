@@ -61,8 +61,8 @@ class Step:
         self.search_space = search_space
         self.test_repository = test_repository
         self.budget = budget
-        self.objective_funcs = self.objective_funcs
-        self.objective_selector = self.objective_selector
+        self.objective_funcs = objective_funcs
+        self.objective_selector = objective_selector
         self.device = device
         self.logger = logger
         self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
