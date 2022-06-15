@@ -209,12 +209,23 @@ class Load(Step):
         else:
             raise NotImplementedError("Not implemented data loading for datatype '{}'".format(type(raw_data)))
 
-        # Build onto given test_repository
         if self.load_range == None:
             self.load_range = len(sut_input)
         elif self.load_range > len(sut_input):
             raise Exception("load range {} is out of bounds. Loaded file's max range is {}.".format(self.load_range, len(sut_input)))
 
+        # Check for dimension compatibility
+        if not(self.test_repository._tests == None or len(self.test_repository._tests) == 0): # If test repository empty - no check needed
+            dimensions_load = len(sut_input[0].inputs)
+            dimensions_exist = len(self.test_repository._tests[0].inputs)
+            if dimensions_load != dimensions_exist:
+                raise Exception("Loaded input dimension {} does not match existing input dimension {}".format(dimensions_load, dimensions_exist))
+            dimensions_load = len(sut_result[0].outputs)
+            dimensions_exist = len(self.test_repository._outputs[0].outputs)
+            if dimensions_load != dimensions_exist:
+                raise Exception("Loaded output dimension {} does not match existing output dimension {}".format(dimensions_load, dimensions_exist))
+
+        # Build onto given test_repository
         success = True
         if not self.test_repository.minimum_objective <= 0.0:
             success = False
