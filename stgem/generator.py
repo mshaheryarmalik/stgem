@@ -203,6 +203,7 @@ class Load(Step):
         # * exit early if budget exhausted (we do not execute on the SUT, but a time budget could run out)
         # * loading the complete test repository could be wasteful if it's big, load only the necessary tests
         # * make sure no test is recorded twice when random mode is used
+        # * use the search_space to check correct input and output dimensions, the test repository is not guaranteed to correct source for this
 
         # Load file
         raw_data = STGEMResult.restore_from_file(self.file) # this fails if the file does not contain STGEMResult, check for exceptions
@@ -218,6 +219,17 @@ class Load(Step):
             self.load_range = len(sut_input)
         elif self.load_range > len(sut_input):
             raise Exception("The load range {} is out of bounds. Loaded file's max range is {}.".format(self.load_range, len(sut_input)))
+
+        # Check for dimension compatibility
+        if not(self.test_repository._tests == None or len(self.test_repository._tests) == 0): # If test repository empty - no check needed
+            dimensions_load = len(sut_input[0].inputs)
+            dimensions_exist = len(self.test_repository._tests[0].inputs)
+            if dimensions_load != dimensions_exist:
+                raise Exception("Loaded input dimension {} does not match existing input dimension {}".format(dimensions_load, dimensions_exist))
+            dimensions_load = len(sut_result[0].outputs)
+            dimensions_exist = len(self.test_repository._outputs[0].outputs)
+            if dimensions_load != dimensions_exist:
+                raise Exception("Loaded output dimension {} does not match existing output dimension {}".format(dimensions_load, dimensions_exist))
 
         already_successful = test_repository.minimum_objective <= 0
 
