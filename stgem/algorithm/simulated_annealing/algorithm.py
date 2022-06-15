@@ -5,7 +5,6 @@ import numpy as np
 
 from stgem.algorithm import Algorithm
 import time
-import math
 
 class simulated_annealing(Algorithm):
 
@@ -21,7 +20,6 @@ class simulated_annealing(Algorithm):
 
     def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
 
-        
         #====Find the minimum between the variables of a vector (the objectives) that are in the active outputs====
         def find_min_vect(active_outputs,v):
             temp=[]
