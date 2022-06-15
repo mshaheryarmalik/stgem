@@ -187,16 +187,16 @@ class Load(Step):
 
     # TODO: Implement checkpoint functionality like in Search?
 
-    def __init__(self, path, file_name, mode="initial", load_range=None):
+    def __init__(self, path, file_name, mode="initial", range_load=None):
         self.file = os.path.join(path, file_name)
         if not os.path.exists(self.file):
             raise Exception("Pregenerated date file '{}' does not exist.".format(self.file))
         if mode not in ["initial", "random"]:
             raise ValueError("Unknown load mode '{}'.".format(mode))
-        if load_range < 0:
-            raise ValueError("The load range {} cannot be negative.".format(load_range))
+        if range_load < 0:
+            raise ValueError("The load range {} cannot be negative.".format(range_load))
         self.mode = mode
-        self.load_range = load_range
+        self.range_load = range_load
 
     def run(self, checkpoint_callback=None) -> StepResult:
         # TODO
@@ -206,19 +206,25 @@ class Load(Step):
         # * use the search_space to check correct input and output dimensions, the test repository is not guaranteed to correct source for this
 
         # Load file
+        self.log("starting")
         raw_data = STGEMResult.restore_from_file(self.file) # this fails if the file does not contain STGEMResult, check for exceptions
+        self.log("stopping")
 
         # Extract data
         if isinstance(raw_data, STGEMResult):
-            sut_input, sut_result, output = raw_data.test_repository.get()
+            range_max = len(raw_data.test_repository._tests)
+            if self.range_load is None:
+                self.range_load = range_max
+            elif self.range_load > range_max:
+                raise Exception(
+                    "The load range {} is out of bounds. Loaded file's max range is {}.".format(self.range_load, range_max))
+            if self.mode == "random":
+                idx = random.sample(range(range_max), self.range_load)
+            elif self.mode == "initial":
+                idx = range(range_max)
+            sut_input, sut_result, output = raw_data.test_repository.get(idx)
         else:
             raise NotImplementedError("Not implemented data loading for datatype '{}'".format(type(raw_data)))
-
-        # Build onto given test_repository
-        if self.load_range is None:
-            self.load_range = len(sut_input)
-        elif self.load_range > len(sut_input):
-            raise Exception("The load range {} is out of bounds. Loaded file's max range is {}.".format(self.load_range, len(sut_input)))
 
         # Check for dimension compatibility
         if not(self.test_repository._tests == None or len(self.test_repository._tests) == 0): # If test repository empty slate - no check needed
@@ -231,14 +237,10 @@ class Load(Step):
             if dimensions_load != dimensions_exist:
                 raise Exception("Loaded output dimension {} does not match existing output dimension {}".format(dimensions_load, dimensions_exist))
 
+        # Build onto given test_repository
         already_successful = self.test_repository.minimum_objective <= 0
 
-        if self.mode == "initial": # First values
-            idx = range(self.load_range)
-        elif self.mode == "random": # Random values
-            idx = random.sample(range(len(sut_input)), self.load_range)
-
-        for i in idx:
+        for i in range(len(sut_input)):
             self.test_repository.record(sut_input[i], sut_result[i], output[i])
 
         success = not already_successful and self.test_repository.minimum_objective <= 0
@@ -247,7 +249,7 @@ class Load(Step):
         parameters = {}
         parameters["file"] = self.file
         parameters["mode"] = self.mode
-        parameters["load_range"] = self.load_range
+        parameters["load_range"] = self.range_load
 
         # Build StepResult object with test_repository
         step_result = StepResult(self.test_repository, success, parameters)

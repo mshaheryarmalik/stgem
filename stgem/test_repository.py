@@ -33,17 +33,17 @@ class TestRepository:
             # Return all tests.
             return self._tests, self._outputs, self._objectives
 
-        elif len(args) == 1:
-            if not isinstance(args[0], int):
-                raise Exception("Argument not integer")
-            args = args[0]
+        if len(args) == 1:
+            if isinstance(args[0], int):
+                # Return a single test.
+                return self._tests[args[0]], self._outputs[args[0]], self._objectives[args[0]]
+            else:
+                args = args[0]
 
-            # Return 1 or more tests
-            X = [self._tests[i] for i in args]
-            Z = [self._outputs[i] for i in args]
-            Y = [self._objectives[i] for i in args]
+        # Return multiple tests.
+        X = [self._tests[i] for i in args]
+        Z = [self._outputs[i] for i in args]
+        Y = [self._objectives[i] for i in args]
 
-            return X, Z, Y
+        return X, Z, Y
 
-        else:
-            raise Exception("Invalid amount of args")

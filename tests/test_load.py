@@ -11,11 +11,13 @@ from stgem.objective_selector import ObjectiveSelectorAll
 class TestLoad(unittest.TestCase):
     def test_load(self):
         mode_search = "stop_at_first_objective"
-        mode_load = "random"
-        #mode_load = "initial"
+        #mode_load = "random"
+        mode_load = "initial"
 
-        path = os.path.join("..", "output", "F16", )
-        file_name = "F16__2022-06-07_15:56:37.386465.pickle"
+        #path = os.path.join("..", "output", "F16")
+        path = ""
+        #file_name = "F16__2022-06-07_15:56:37.386465.pickle"
+        file_name = "test.pickle"
 
         generator = STGEM(
             description="mo3d/OGAN",
@@ -26,10 +28,10 @@ class TestLoad(unittest.TestCase):
                         ],
             objective_selector=ObjectiveSelectorAll(),
 
-            steps=[Search(budget_threshold={"executions": 500},
+            steps=[Load(path=path, file_name=file_name, mode=mode_load, range_load=900),
+                   Search(budget_threshold={"executions": 500},
                             mode=mode_search,
-                            algorithm=Random(model_factory=(lambda: Uniform()))),
-                   Load(path=path, file_name=file_name, mode=mode_load, load_range=100)
+                            algorithm=Random(model_factory=(lambda: Uniform())))
                    ]
         )
         sr = generator.run()
