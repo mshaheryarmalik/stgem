@@ -57,7 +57,15 @@ class Step:
         raise NotImplementedError
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
-        pass
+        self.sut = sut
+        self.search_space = search_space
+        self.test_repository = test_repository
+        self.budget = budget
+        self.objective_funcs = self.objective_funcs
+        self.objective_selector = self.objective_selector
+        self.device = device
+        self.logger = logger
+        self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
 
 class Search(Step):
     """A search step."""
@@ -74,19 +82,13 @@ class Search(Step):
         self.results_checkpoint_period = results_checkpoint_period
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
-        self.sut = sut
-        self.search_space = search_space
-        self.test_repository = test_repository
-        self.budget = budget
+        super().setup(sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger)
+
         self.budget.update_threshold(self.budget_threshold)
-        self.objective_funcs = objective_funcs
-        self.objective_selector = objective_selector
         self.algorithm.setup(
             search_space=self.search_space,
-            device=device,
-            logger=logger)
-        self.logger = logger
-        self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
+            device=self.device,
+            logger=self.logger)
 
     def run(self, checkpoint_callback=None) -> StepResult:
         self.budget.update_threshold(self.budget_threshold)
@@ -190,18 +192,20 @@ class Load(Step):
         if not os.path.exists(self.file):
             raise Exception("Pregenerated date file '{}' does not exist.".format(self.file))
         if mode not in ["initial", "random"]:
-            raise Exception("Unknown load mode '{}'.".format(mode))
+            raise ValueError("Unknown load mode '{}'.".format(mode))
         if load_range < 0:
-            raise Exception("load range {} can not be negative.".format(load_range))
+            raise ValueError("The load range {} cannot be negative.".format(load_range))
         self.mode = mode
         self.load_range = load_range
 
-    def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
-        self.test_repository = test_repository
-
     def run(self, checkpoint_callback=None) -> StepResult:
+        # TODO
+        # * exit early if budget exhausted (we do not execute on the SUT, but a time budget could run out)
+        # * loading the complete test repository could be wasteful if it's big, load only the necessary tests
+        # * make sure no test is recorded twice when random mode is used
+
         # Load file
-        raw_data = STGEMResult.restore_from_file(self.file)
+        raw_data = STGEMResult.restore_from_file(self.file) # this fails if the file does not contain STGEMResult, check for exceptions
 
         # Extract data
         if isinstance(raw_data, STGEMResult):
@@ -210,23 +214,22 @@ class Load(Step):
             raise NotImplementedError("Not implemented data loading for datatype '{}'".format(type(raw_data)))
 
         # Build onto given test_repository
-        if self.load_range == None:
+        if self.load_range is None:
             self.load_range = len(sut_input)
         elif self.load_range > len(sut_input):
-            raise Exception("load range {} is out of bounds. Loaded file's max range is {}.".format(self.load_range, len(sut_input)))
+            raise Exception("The load range {} is out of bounds. Loaded file's max range is {}.".format(self.load_range, len(sut_input)))
 
-        success = True
-        if not self.test_repository.minimum_objective <= 0.0:
-            success = False
-            if self.mode == "initial": # First values
-                for i in range(self.load_range):
-                    self.test_repository.record(sut_input[i], sut_result[i], output[i])
-            elif self.mode == "random": # Random values
-                rnd_indexes = random.sample(range(len(sut_input)) ,self.load_range)
-                for i in rnd_indexes:
-                    self.test_repository.record(sut_input[i], sut_result[i], output[i])
-            if self.test_repository.minimum_objective <= 0.0:
-                success = True
+        already_successful = test_repository.minimum_objective <= 0
+
+        if self.mode == "initial": # First values
+            idx = range(self.load_range)
+        elif self.mode == "random": # Random values
+            idx = random.sample(range(len(sut_input)), self.load_range)
+
+        for i in idx:
+            self.test_repository.record(sut_input[i], sut_result[i], output[i])
+
+        success = not already_successful and test.repository.minimum_objective <= 0
 
         # Save certain parameters in the StepResult object.
         parameters = {}
