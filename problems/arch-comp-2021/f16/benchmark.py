@@ -127,6 +127,7 @@ def step_factory():
                     algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["dense"])), parameters=ogan_parameters),
                     results_include_models=False
                    )
+
     #steps = [step_1]
     steps = [step_1, step_2]
     return steps
