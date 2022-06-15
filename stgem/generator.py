@@ -223,7 +223,7 @@ class Load(Step):
                 raise ValueError("Loaded sample input dimension {} does not match SUT input dimension {}".format(len(x.inputs), self.search_space.input_dimension))
             if y.output_timestamps is None:
                 if len(y.outputs) != self.search_space.output_dimension:
-                    raise ValueError("Loaded sample vector output dimension {} does not match SUT vector output dimension {}.".format(len(x.inputs), self.search_space.input_dimension))
+                    raise ValueError("Loaded sample vector output dimension {} does not match SUT vector output dimension {}.".format(len(y.outputs), self.search_space.output_dimension))
             else:
                 if y.outputs.shape[0] != self.search_space.output_dimension:
                     raise ValueError("Loaded sample signal number {} does not match SUT signal number {}.".format(y.outputs.shape[0], self.search_space.output_dimension))
