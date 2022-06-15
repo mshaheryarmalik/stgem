@@ -219,7 +219,6 @@ class Load(Step):
             if self.budget.remaining() == 0: break
             x, y, z = raw_data.test_repository.get(i)
 
-            # TODO: signals.
             if len(x.inputs) != self.search_space.input_dimension:
                 raise ValueError("Loaded sample input dimension {} does not match SUT input dimension {}".format(len(x.inputs), self.search_space.input_dimension))
             if y.output_timestamps is None:
