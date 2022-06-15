@@ -35,4 +35,3 @@ class TestLoad(unittest.TestCase):
         sr = generator.run()
         with open("test.pickle", "wb") as f:
             pickle.dump(sr, f)
-        print("Hej")

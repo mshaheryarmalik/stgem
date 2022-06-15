@@ -221,17 +221,17 @@ class Load(Step):
             raise Exception("The load range {} is out of bounds. Loaded file's max range is {}.".format(self.load_range, len(sut_input)))
 
         # Check for dimension compatibility
-        if not(self.test_repository._tests == None or len(self.test_repository._tests) == 0): # If test repository empty - no check needed
+        if not(self.test_repository._tests == None or len(self.test_repository._tests) == 0): # If test repository empty slate - no check needed
             dimensions_load = len(sut_input[0].inputs)
-            dimensions_exist = len(self.test_repository._tests[0].inputs)
+            dimensions_exist = self.search_space.input_dimension
             if dimensions_load != dimensions_exist:
                 raise Exception("Loaded input dimension {} does not match existing input dimension {}".format(dimensions_load, dimensions_exist))
             dimensions_load = len(sut_result[0].outputs)
-            dimensions_exist = len(self.test_repository._outputs[0].outputs)
+            dimensions_exist = self.search_space.output_dimension
             if dimensions_load != dimensions_exist:
                 raise Exception("Loaded output dimension {} does not match existing output dimension {}".format(dimensions_load, dimensions_exist))
 
-        already_successful = test_repository.minimum_objective <= 0
+        already_successful = self.test_repository.minimum_objective <= 0
 
         if self.mode == "initial": # First values
             idx = range(self.load_range)
@@ -241,7 +241,7 @@ class Load(Step):
         for i in idx:
             self.test_repository.record(sut_input[i], sut_result[i], output[i])
 
-        success = not already_successful and test.repository.minimum_objective <= 0
+        success = not already_successful and self.test_repository.minimum_objective <= 0
 
         # Save certain parameters in the StepResult object.
         parameters = {}
