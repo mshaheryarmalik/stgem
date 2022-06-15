@@ -185,8 +185,6 @@ class Search(Step):
 class Load(Step):
     """Step which simply loads pregenerated data from a file."""
 
-    # TODO: Implement checkpoint functionality like in Search?
-
     def __init__(self, path, file_name, mode="initial", range_load=None):
         self.file = os.path.join(path, file_name)
         if not os.path.exists(self.file):
@@ -221,11 +219,14 @@ class Load(Step):
             if self.budget.remaining() == 0: break
             x, y, z = raw_data.test_repository.get(i)
 
-            # TODO: signals.
             if len(x.inputs) != self.search_space.input_dimension:
                 raise ValueError("Loaded sample input dimension {} does not match SUT input dimension {}".format(len(x.inputs), self.search_space.input_dimension))
-            if len(y.outputs) != self.search_space.output_dimension:
-                raise ValueError("Loaded sample output dimension {} does not match SUT output dimension {}".format(len(x.inputs), self.search_space.input_dimension))
+            if y.output_timestamps is None:
+                if len(y.outputs) != self.search_space.output_dimension:
+                    raise ValueError("Loaded sample vector output dimension {} does not match SUT vector output dimension {}.".format(len(x.inputs), self.search_space.input_dimension))
+            else:
+                if y.outputs.shape[0] != self.search_space.output_dimension:
+                    raise ValueError("Loaded sample signal number {} does not match SUT signal number {}.".format(y.outputs.shape[0], self.search_space.output_dimension))
 
             self.test_repository.record(x, y, z)
 
