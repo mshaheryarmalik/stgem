@@ -19,8 +19,6 @@ class Matlab_Simulink_Signal(SUT):
     def __init__(self, parameters):
         super().__init__(parameters)
 
-        self.input_type = "signal"
-
         mandatory_parameters = ["simulation_time", "sampling_step", "model_file"]
         for p in mandatory_parameters:
             if not p in self.parameters:
