@@ -17,8 +17,6 @@ class OGANK_Model(AlgModel):
 
     default_parameters = {
         "optimizer": "Adam",
-        "d_epochs": 10,
-        "g_epochs": 1,
         "d_size": 512,
         "g_size": 512,
         "d_adam_lr": 0.001,
@@ -31,11 +29,9 @@ class OGANK_Model(AlgModel):
     }
 
     def init_model(self):
-        self.noise_dimensions = self.parameters["noise_dimensions"]
-
-        sizeD = self.parameters["d_size"]
-        sizeG = self.parameters["g_size"]
-        input_shape = (self.parameters["input_dimension"],)
+        sizeD = self.d_size
+        sizeG = self.g_size
+        input_shape = (self.input_dimension, )
         a = "relu"
 
         self.modelG = Sequential()
@@ -45,8 +41,8 @@ class OGANK_Model(AlgModel):
         self.modelG.add(Dense(self.search_space.input_dimension, activation="tanh"))
 
         self.modelG.compile(
-            loss=self.parameters["lossfunction"],
-            optimizer=Adam(learning_rate=self.parameters["g_adam_lr"]),
+            loss=self.lossfunction,
+            optimizer=Adam(learning_rate=self.g_adam_lr),
         )
 
         self.modelD = Sequential()
@@ -55,7 +51,7 @@ class OGANK_Model(AlgModel):
         self.modelD.add(Dense(sizeD, activation=a))
         self.modelD.add(Dense(1, activation="relu"))
 
-        self.modelD.compile(loss=self.parameters["lossfunction"], optimizer=Adam(learning_rate=self.parameters["d_adam_lr"]))
+        self.modelD.compile(loss=self.lossfunction, optimizer=Adam(learning_rate=self.d_adam_lr))
 
     def train_with_batch(self, dataX, dataY, train_settings):
         """
@@ -102,11 +98,11 @@ class OGANK_Model(AlgModel):
             outputs=self.modelD(self.modelG(ganInput)),
         )
         self.gan.compile(
-            loss=self.parameters["lossfunction"],
-            optimizer=Adam(learning_rate=self.parameters["g_adam_lr"]),
+            loss=self.lossfunction,
+            optimizer=Adam(learning_rate=self.g_adam_lr),
         )
 
-        batchSize =self.parameters["noise_batch_size"]
+        batchSize =self.noise_batch_size
         noise = np.random.normal(0, 1, size=[batchSize, self.noise_dimensions])
         yGen = np.zeros(batchSize)
 
