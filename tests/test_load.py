@@ -1,6 +1,5 @@
-import dill as pickle
-import unittest
-import os
+import os, unittest
+
 from stgem.generator import STGEM, Search, Load
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform
@@ -23,21 +22,17 @@ class TestLoad(unittest.TestCase):
             objective_selector=ObjectiveSelectorAll(),
 
             steps=[Search(budget_threshold={"executions": 20},
-                            mode=mode_search,
-                            algorithm=Random(model_factory=(lambda: Uniform())))
+                          mode=mode_search,
+                          algorithm=Random(model_factory=(lambda: Uniform())))
                    ]
         )
-        sr = generator.run()
-        with open("test.pickle", "wb") as f:
-            pickle.dump(sr, f)
+
+        file_name = "test-load.pickle"
+        r = generator.run()
+        r.dump_to_file(file_name)
 
         #mode_load = "random"
         mode_load = "initial"
-
-        #path = os.path.join("..", "output", "F16")
-        path = ""
-        #file_name = "F16__2022-06-07_15:56:37.386465.pickle"
-        file_name = "test.pickle"
 
         generator = STGEM(
             description="mo3d/OGAN",
@@ -47,13 +42,16 @@ class TestLoad(unittest.TestCase):
                         Minimize(selected=[2], scale=True)
                         ],
             objective_selector=ObjectiveSelectorAll(),
-
-            steps=[Load(path=path, file_name=file_name, mode=mode_load, range_load=20),
-                   Search(budget_threshold={"executions": 10},
-                            mode=mode_search,
-                            algorithm=Random(model_factory=(lambda: Uniform())))
-                   ]
+            steps=[Load(file_name=file_name,
+                        mode=mode_load,
+                        range_load=20)
+                  ]
         )
-        sr = generator.run()
-        with open("test.pickle", "wb") as f:
-            pickle.dump(sr, f)
+
+        r = generator.run()
+
+        os.remove(file_name)
+
+if __name__ == "__main__":
+    unittest.main()
+

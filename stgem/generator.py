@@ -185,10 +185,10 @@ class Search(Step):
 class Load(Step):
     """Step which simply loads pregenerated data from a file."""
 
-    def __init__(self, path, file_name, mode="initial", range_load=None):
-        self.file = os.path.join(path, file_name)
-        if not os.path.exists(self.file):
-            raise Exception("Pregenerated date file '{}' does not exist.".format(self.file))
+    def __init__(self, file_name, mode="initial", range_load=None):
+        self.file_name = file_name
+        if not os.path.exists(self.file_name):
+            raise Exception("Pregenerated date file '{}' does not exist.".format(self.file_name))
         if mode not in ["initial", "random"]:
             raise ValueError("Unknown load mode '{}'.".format(mode))
         if range_load < 0:
@@ -198,9 +198,9 @@ class Load(Step):
 
     def run(self, checkpoint_callback=None) -> StepResult:
         try:
-            raw_data = STGEMResult.restore_from_file(self.file)
+            raw_data = STGEMResult.restore_from_file(self.file_name)
         except:
-            raise Exception("Error loading STGEMResult object from file '{}'.".format(self.file))
+            raise Exception("Error loading STGEMResult object from file '{}'.".format(self.file_name))
 
         range_max = raw_data.test_repository.tests
         if self.range_load is None:
@@ -235,7 +235,7 @@ class Load(Step):
 
         # Save certain parameters in the StepResult object.
         parameters = {}
-        parameters["file"] = self.file
+        parameters["file_name"] = self.file_name
         parameters["mode"] = self.mode
         parameters["load_range"] = self.range_load
 
