@@ -209,7 +209,8 @@ class Load(Step):
             raise ValueError("The load range {} is out of bounds. Loaded maximum range for loaded data is {}.".format(self.range_load, range_max))
 
         if self.mode == "random":
-            idx = random.sample(range(range_max), self.range_load)
+            # Use the search space RNG to ensure consistent selection.
+            idx = self.search_space.rng.choice(np.arange(range_max), size=self.range_load, replace=False)
         elif self.mode == "initial":
             idx = range(range_max)
 
