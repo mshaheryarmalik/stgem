@@ -37,10 +37,14 @@ class simulated_annealing(Algorithm):
             neighbor = x + self.radius * np.random.uniform(-1, 1, size=self.search_space.input_dimension)
             np.clip(neighbor, -1, 1, out=neighbor)
             return neighbor
- 
+        
+        #====Calculation of the temperature====
+        def init_T():
+            return 0.5*budget_remaining**4
+
         dim = self.search_space.input_dimension #input dimension
         invalid = 0 #number of invalid test
-        T = 0.5*budget_remaining**4 #the temperature which is between 0 and 100 
+        T = init_T() #the temperature which is between 0 and 100 
 
         while True and (self.rounds >= 2):
             self.rounds += 1
@@ -75,16 +79,18 @@ class simulated_annealing(Algorithm):
                 continue
             break
 
-        #====Random for the 2 first iterations====
-        if (self.rounds<2):
+        #====Neighbor for the second iteration====    
+        if (self.rounds==1):
+            x,z,y =test_repository.get(-1)
+            new_test = neighbor(x.inputs)
+            self.rounds += 1
+        
+        #====Random for the first iteration====
+        if (self.rounds==0):
             new_test = np.random.uniform(-1, 1, size=self.search_space.input_dimension)
             self.prec = 0
             self.rounds += 1
-            
-        # Save information on how many tests needed to be generated etc.
-        # -----------------------------------------------------------------
-        self.perf.save_history("N_tests_generated", self.rounds)
-        self.perf.save_history("N_invalid_tests_generated", invalid)
+        
 
         return np.array(new_test)
 
