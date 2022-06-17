@@ -62,7 +62,8 @@ if __name__ == "__main__":
                           "AT54": (0, -1, 4),
                           "AT6A": (0, -1.2328, 4),
                           "AT6B": (0, -0.16795, 5),
-                          "AT6C": (0, -1.1008, 4)
+                          "AT6C": (0, -1.1008, 4),
+                          "ATX2": (0, -1, 4)
                          }
     for specification in specifications:
         output = get_falsifying_input_robustness(specification)
