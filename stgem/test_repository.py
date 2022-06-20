@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+import numpy as np
 
 class TestRepository:
     def __init__(self):
@@ -34,7 +35,7 @@ class TestRepository:
             return self._tests, self._outputs, self._objectives
 
         if len(args) == 1:
-            if isinstance(args[0], int):
+            if isinstance(args[0], (int, np.integer)):
                 # Return a single test.
                 return self._tests[args[0]], self._outputs[args[0]], self._objectives[args[0]]
             else:
