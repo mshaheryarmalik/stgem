@@ -1,9 +1,7 @@
-import copy, datetime, gzip, os, random, time
+import copy, datetime, gzip, os, random, time, string, torch
 
 import dill as pickle
-
 import numpy as np
-import torch
 
 from stgem.algorithm.algorithm import Algorithm
 from stgem.budget import Budget
@@ -247,7 +245,12 @@ class Load(Step):
 class STGEM:
 
     def __init__(self, description, sut: SUT, objectives, objective_selector=None, budget: Budget = None, steps=[]):
-        self.description = description
+        self.description = ""
+        safe_chars = string.ascii_letters + string.digits + "~ -_."  # Chars allowed in desc due to desc being used as .tmp file name
+        for c in description:
+            if c not in safe_chars:
+                raise NameError("Character '{}' not allowed in a filename and by extension in description".format(c))
+            self.description += c
         self.sut = sut
         self.step_results = []
 
