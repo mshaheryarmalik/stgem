@@ -1,0 +1,4 @@
+descartes
+beamngpy~=1.23
+opencv-python
+Shapely
