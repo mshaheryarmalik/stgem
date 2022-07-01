@@ -1,4 +1,6 @@
-import copy, datetime, gzip, os, random, time, string, torch
+import copy, datetime, gzip, os, random, time, string
+
+import torch
 
 import dill as pickle
 import numpy as np
@@ -245,12 +247,14 @@ class Load(Step):
 class STGEM:
 
     def __init__(self, description, sut: SUT, objectives, objective_selector=None, budget: Budget = None, steps=[]):
-        self.description = ""
-        safe_chars = string.ascii_letters + string.digits + "~ -_."  # Chars allowed in desc due to desc being used as .tmp file name
-        for c in description:
-            if c not in safe_chars:
-                raise NameError("Character '{}' not allowed in a filename and by extension in description".format(c))
-            self.description += c
+        self.description = description
+        # The description might be used as a file name, so we check for some
+        # nongood characters.
+        # TODO: Is this complete enough?
+        nonsafe_chars = "/\<>:\"|?*"
+        for c in self.description:
+            if c in nonsafe_chars:
+                raise ValueError("Character '{}' not allowed in a description (could be used as a file name).".format(c))
         self.sut = sut
         self.step_results = []
 
