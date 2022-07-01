@@ -1,4 +1,4 @@
 descartes
-beamngpy~=1.23
+beamngpy~=1.21
 opencv-python
 Shapely
