@@ -22,7 +22,7 @@ mode = "stop_at_first_objective"
 class TestPython(unittest.TestCase):
     def test_python(self):
         generator = STGEM(
-            description="Matlab-MO3D/OGAN",
+            description="Matlab-MO3D-OGAN",
             sut=Matlab(sut_parameters),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),

@@ -13,7 +13,7 @@ class TestLoad(unittest.TestCase):
 
         # Create a pickle file to load from
         generator = STGEM(
-            description="mo3d/OGAN",
+            description="mo3d-OGAN",
             sut=MO3D(),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
@@ -35,7 +35,7 @@ class TestLoad(unittest.TestCase):
         mode_load = "initial"
 
         generator = STGEM(
-            description="mo3d/OGAN",
+            description="mo3d-OGAN",
             sut=MO3D(),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
