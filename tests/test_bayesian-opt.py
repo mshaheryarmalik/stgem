@@ -4,7 +4,7 @@ from stgem.algorithm.random.model import BayesOptSampler
 from stgem.generator import STGEM, Search
 from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorAll
-from problems.odroid.sut import OdroidSUT
+from stgem.sut.mo3d.sut import SUT
 os.chdir("../problems/odroid")
 
 class TestPython(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestPython(unittest.TestCase):
 
         generator = STGEM(
             description="mo3d-SA",
-            sut=OdroidSUT(parameters = {"data_file": "odroid.npy"}),
+            sut=SUT(parameters = {"data_file": "odroid.npy"}),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)

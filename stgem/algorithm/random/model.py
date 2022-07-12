@@ -9,8 +9,10 @@ from stgem.algorithm import Model
 """Bayesian Optimization sampler : Defined only for continuous domains.
 For discrete inputs define another sampler"""
 
-from verifai.samplers.domain_sampler import BoxSampler
+from stgem.algorithm.random.domain_sampler import BoxSampler
+
 import numpy as np
+
 
 class BayesOptSampler(BoxSampler):
     def setup(self, search_space, device, logger=None, use_previous_rng=False):
