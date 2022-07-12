@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from stgem.sut import SUT, SUTOutput
+from stgem.sut import SUT, SUTOutput, SUTInput
 from .util import generate_odroid_data
 
 class OdroidSUT(SUT):
@@ -67,7 +67,7 @@ class OdroidSUT(SUT):
         self.scaleY3 = self.dataY[:, 2].max(axis=0)
         self.dataY[:, 2] = self.dataY[:, 2] / self.scaleY3
 
-    def _execute_test(self, test):
+    def _execute_test(self, sut_input):
         """
         Execute the given tests on the SUT. As not all possible parameters have a
         test value in the data, we find the closest test from the test data
@@ -81,9 +81,12 @@ class OdroidSUT(SUT):
           result (np.ndarray): Array of shape (3) of floats in [0, 1].
         """
 
+        test = sut_input.inputs
         if not (test.shape == (1, self.ndimensions) or test.shape == (self.ndimensions,)):
             raise ValueError("Input array expected to have shape (1, {0}) or ({0}).".format(self.ndimensions))
 
         distances = np.sum((self.dataX - test)**2, axis=1)
-        return self.dataY[np.argmin(distances)]
+        retdata = self.dataY[np.argmin(distances)]
+        output = SUTOutput(retdata, None, None)
+        return output
 
