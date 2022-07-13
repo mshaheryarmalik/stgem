@@ -16,7 +16,7 @@ class TestPython(unittest.TestCase):
 
         def stgem_factory():
             generator = STGEM(
-                description="mo3d/OGAN",
+                description="mo3d-OGAN",
                 sut=MO3D(),
                 objectives=[Minimize(selected=[0], scale=True),
                             Minimize(selected=[1], scale=True),

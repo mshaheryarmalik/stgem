@@ -23,7 +23,7 @@ class TestPython(unittest.TestCase):
         mode = "stop_at_first_objective"
 
         generator = STGEM(
-            description="mo3d/WOGAN",
+            description="mo3d-WOGAN",
             sut=PythonFunction(function=myfunction),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),

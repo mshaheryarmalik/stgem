@@ -11,7 +11,7 @@ class TestPython(unittest.TestCase):
         mode = "stop_at_first_objective"
 
         generator = STGEM(
-            description="mo3d/SA",
+            description="mo3d-SA",
             sut=MO3D(),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
