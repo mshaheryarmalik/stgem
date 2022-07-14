@@ -7,6 +7,7 @@ Platypus-Opt~=1.0.4
 pandas
 click
 multiprocess
+setuptools>=60.2.0
 Cython
 scipy
 scikit-learn
