@@ -15,6 +15,8 @@ def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350],
     h3 = (x1 - 7) ** 2 + (x2 - 7) ** 2 + (x3 - 7) ** 2 - (
             math.cos((x1 - 7) / 2.75) + math.cos((x2 - 7) / 2.75) + math.cos((x3 - 7) / 2.75))
 
+    return [h1, h2, h3]
+
 # NOTE!: requires verifai and GPyOpt package to run
 # Valid Domains from Verifai package are Box(), Array(), Struct()
 
@@ -23,20 +25,20 @@ class TestPython(unittest.TestCase):
         mode = "stop_at_first_objective"
 
         generator = STGEM(
-            description="mo3d-SA",
+            description="bayesianOpt",
             sut=PythonFunction(function=myfunction),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
                         ],
             objective_selector=ObjectiveSelectorAll(),
-            steps=[Search(budget_threshold={"executions": 10},
+            steps=[Search(budget_threshold={"executions": 20},
                           mode=mode,
                           algorithm=BayesOptSampler(domain=Box((0,1),(0,1),(0,1)), init_num=3))
                   ]
             )
         r = generator.run()
-        file_name = "mo3d_python_SA_results.pickle"
+        file_name = "bayesianOpt_results.pickle"
         r.dump_to_file(file_name)
         os.remove(file_name)
 

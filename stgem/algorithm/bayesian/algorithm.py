@@ -41,8 +41,7 @@ class BayesOptSampler(Algorithm):
     # DomainSample
     def getSample(self):
         sample, info = self.getVector()
-        #return self.domain.unstandardize(sample), info
-        return sample, info
+        return np.array(self.domain.unstandardize(sample)), info # Np array to make sample reshape-able
 
     # BoxSample
     def getVector(self, feedback=None):
@@ -56,7 +55,7 @@ class BayesOptSampler(Algorithm):
                 f=None, batch_size=1,
                 domain=self.bounds, X=self.X, Y=self.Y, normalize_Y=False)
             sample = BO.suggest_next_locations()[0]
-        return sample, None # tuple(sample)
+        return tuple(sample), None
 
     # DomainSample
     def update(self, sample, info, rho):
@@ -75,9 +74,9 @@ class BayesOptSampler(Algorithm):
         pass
 
     def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
-        if self.rounds > 0: # Update algorithm with system results (rho)
+        if self.rounds > 0: # Update algorithm with system results after first round
             _, _, y = test_repository.get(-1)
-            rho = y
+            rho = y[-1] # Only update with robustness
             self.update(self.test, self.info, rho)
         self.test, self.info = self.getSample()
         self.rounds += 1
