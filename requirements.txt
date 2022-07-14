@@ -7,3 +7,8 @@ Platypus-Opt~=1.0.4
 pandas
 click
 multiprocess
+Cython
+scipy
+scikit-learn
+verifai
+GPyOpt

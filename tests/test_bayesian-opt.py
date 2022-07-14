@@ -6,7 +6,6 @@ from verifai.features.features import Box
 from stgem.generator import STGEM, Search
 from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorAll
-os.chdir("../problems/odroid")
 
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
@@ -34,7 +33,7 @@ class TestPython(unittest.TestCase):
             objective_selector=ObjectiveSelectorAll(),
             steps=[Search(budget_threshold={"executions": 20},
                           mode=mode,
-                          algorithm=BayesOptSampler(domain=Box((0,1),(0,1),(0,1)), init_num=3))
+                          algorithm=BayesOptSampler(domain=Box((-1,1),(-1,1),(-1,1)), init_num=3))
                   ]
             )
         r = generator.run()
