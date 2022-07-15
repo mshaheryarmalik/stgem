@@ -53,7 +53,7 @@ class BayesOptSampler(Algorithm):
         else:
             BO = GPyOpt.methods.BayesianOptimization(
                 f=None, batch_size=1,
-                domain=self.bounds, X=self.X, Y=self.Y, normalize_Y=False)
+                domain=self.bounds, X=self.X, Y=self.Y, normalize_Y=True) # normalize_Y=False
             sample = BO.suggest_next_locations()[0]
         return tuple(sample), None
 
@@ -76,7 +76,8 @@ class BayesOptSampler(Algorithm):
     def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
         if self.rounds > 0: # Update algorithm with system results after first round
             _, _, y = test_repository.get(-1)
-            rho = y[-1] # Only update with robustness
+            rho = min([y[i] for i in active_outputs])
+            #rho = y[-1] # Only update with robustness
             self.update(self.test, self.info, rho)
         self.test, self.info = self.getSample()
         self.rounds += 1
