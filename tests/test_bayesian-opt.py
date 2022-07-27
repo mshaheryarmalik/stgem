@@ -19,8 +19,8 @@ def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350],
 # NOTE!: requires verifai and GPyOpt package to run
 # Valid Domains from Verifai package are Box(), Array(), Struct()
 
-class TestPython(unittest.TestCase):
-    def test_BayesOptSampler(self):
+class TestBayesOptSampler(unittest.TestCase):
+    def test_python(self):
         mode = "stop_at_first_objective"
 
         generator = STGEM(
