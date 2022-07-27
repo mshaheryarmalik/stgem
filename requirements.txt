@@ -14,5 +14,4 @@ scikit-learn
 verifai
 GPyOpt
 pygame
-python3-opencv
-ffmpeg
+opencv-python-headless
