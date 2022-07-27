@@ -7,10 +7,9 @@ Platypus-Opt~=1.0.4
 pandas
 click
 multiprocess
-setuptools>=60.2.0
+setuptools
 Cython
 scipy
 scikit-learn
 verifai
 GPyOpt
-ez_setup
