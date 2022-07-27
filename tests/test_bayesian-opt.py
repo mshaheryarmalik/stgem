@@ -31,7 +31,7 @@ class TestPython(unittest.TestCase):
                         Minimize(selected=[2], scale=True)
                         ],
             objective_selector=ObjectiveSelectorAll(),
-            steps=[Search(budget_threshold={"executions": 20},
+            steps=[Search(budget_threshold={"executions": 5},
                           mode=mode,
                           algorithm=BayesOptSampler(domain=Box((-1,1),(-1,1),(-1,1)), init_num=3))
                   ]
