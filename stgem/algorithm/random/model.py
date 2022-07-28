@@ -4,6 +4,27 @@
 import numpy as np
 
 from stgem.algorithm import Model
+from scipy.stats import qmc
+
+class Halton(Model):
+    def __init__(self, search_space, parameters = None, device = None, logger = None):
+        self.parameters = parameters
+        self.setup(search_space, device, logger)
+        super()
+    def setup(self, search_space, device, logger):
+        super().setup(search_space, device, logger)
+        self.hal = qmc.Halton(d = search_space.input_dimension, scramble=False)
+        if not "size" in self.parameters:
+            self.parameters["size"] = 100
+        self.ranlist = self.hal.random(self.parameters["size"])
+
+    def generate_test(self):
+        if len(self.ranlist) == 0:
+            raise Exception("Test generator ran out of tests, increase parameter 'size' in Halton() (default = 100)")
+        ret = self.ranlist[0]
+        self.ranlist = self.ranlist[1:]
+        return ret
+
 
 class Uniform(Model):
     """Implements a random test model which directly uses the sampling provided by
