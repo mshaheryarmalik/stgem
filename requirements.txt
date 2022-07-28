@@ -16,3 +16,6 @@ GPyOpt
 pygame==2.1.3.dev4
 opencv-python-headless
 psutil==5.9.1
+python-apt==2.3.0+ubuntu2
+python-dateutil==2.8.2
+python-debian==0.1.43ubuntu1
