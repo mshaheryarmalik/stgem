@@ -18,7 +18,6 @@ def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350],
     return [h1, h2, h3]
 
 # NOTE!: requires verifai and GPyOpt package to run
-# Valid Domains from Verifai package are Box(), Array(), Struct()
 
 class TestBayesOptSampler(unittest.TestCase):
     def test_python(self):

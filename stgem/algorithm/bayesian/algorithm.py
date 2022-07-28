@@ -25,7 +25,7 @@ class BayesOptSampler(Algorithm):
         minRHO = np.vstack([min([y[i] for i in active_outputs]) for y in Y])
         BO = GPyOpt.methods.BayesianOptimization(
                 f=None, batch_size=1,
-                domain=self.bounds, X=X, Y=minRHO, normalize_Y=True) # normalize_Y=False
+                domain=self.bounds, X=X, Y=minRHO, normalize_Y=False)
         sample = BO.suggest_next_locations()[0]
         return np.asarray(tuple(sample))
 
