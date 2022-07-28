@@ -14,5 +14,5 @@ scikit-learn
 verifai
 GPyOpt
 pygame==2.1.3.dev4
-opencv-python-headless
+opencv-python
 psutil==5.9.1
