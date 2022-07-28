@@ -16,7 +16,7 @@ class Halton(Model):
         self.hal = qmc.Halton(d = search_space.input_dimension, scramble=False)
         if not "size" in self.parameters:
             self.parameters["size"] = 100
-        self.ranlist = self.hal.random(self.parameters["size"])
+        self.ranlist = qmc.scale(self.hal.random(self.parameters["size"]), -1, 1)
 
     def generate_test(self):
         if len(self.ranlist) == 0:
