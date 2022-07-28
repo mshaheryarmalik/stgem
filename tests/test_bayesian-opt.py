@@ -2,10 +2,11 @@ import os, unittest, math
 
 from stgem.sut.python import PythonFunction
 from stgem.algorithm.bayesian.algorithm import BayesOptSampler
-from verifai.features.features import Box
 from stgem.generator import STGEM, Search
 from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorAll
+from stgem.algorithm.random.model import Uniform
+from stgem.algorithm.random.algorithm import Random
 
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
@@ -31,9 +32,13 @@ class TestBayesOptSampler(unittest.TestCase):
                         Minimize(selected=[2], scale=True)
                         ],
             objective_selector=ObjectiveSelectorAll(),
-            steps=[Search(budget_threshold={"executions": 5},
-                          mode=mode,
-                          algorithm=BayesOptSampler(domain=Box((-1,1),(-1,1),(-1,1)), init_num=3))
+            steps=[
+                Search(budget_threshold={"executions": 2},
+                       mode=mode,
+                       algorithm=Random(model_factory=(lambda: Uniform()))),
+                Search(budget_threshold={"executions": 5},
+                        mode=mode,
+                        algorithm=BayesOptSampler())
                   ]
             )
         r = generator.run()
