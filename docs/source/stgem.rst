@@ -1,9 +1,7 @@
-------------
-stgem
-------------
+stgem module
+============
 
-.. toctree::
-    :maxdepth: 2
-    :caption: stgem:
-
-    generator
+.. automodule:: stgem
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -7,11 +7,12 @@ Welcome to stgem's documentation!
 =================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    stgem
-
+Hello world!
+Foo bar!
 
 
 

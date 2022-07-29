@@ -1,1 +1,0 @@
-Directiory for stgem tests
