@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>AeroBenchVV Overview &#8212; stgem  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <p align="center"> <img src="gcas.gif"/> </p>
+<section id="aerobenchvv-overview">
+<h1>AeroBenchVV Overview<a class="headerlink" href="#aerobenchvv-overview" title="Permalink to this heading">¶</a></h1>
+<p>This project contains a set of benchmark models and controllers that test automated aircraft maneuvers by performing simulations. The hope is to provide a benchmark to motivate better verification and analysis methods, working beyond models based on Dubin’s car dynamics, towards the sorts of models used in aerospace engineering. Compared to actual aerospace models used in practice, however, these models are still very simple. Roughly speaking, the dynamics are nonlinear, have about 10-20 dimensions (continuous state variables), and hybrid in the sense of discontinuous ODEs, but not with jumps in the state. The dynamics are given entirely in human-readable matlab .m code, without the need for additional Matlab toolboxes. Ode45 is used to simulate the system, pass/fail specifications are checked against the simulated maneuver, and a plot (or animation) of the resultant flight path can be generated.</p>
+<p>To run the ground collision avoidance system (GCAS) benchmark and create the output_pic.png image, output_animation.gif animation and SimResults.mat data file (in the F16_Sim folder), use Matlab to set the F16_Sim folder as your working directory and run the Main.m script. Note creating the .gif animation takes the longest time, so you might want to eventually disable that by commenting out “MakeAnimation;” at the bottom of the script.</p>
+<p>You can modify the initial states or model to see how it affects the aircraft maneuver. There are two aircraft dynamics models available based on the well-studied F-16 aircraft, a lookup-table version (from Stevens &amp; Lewis [1]), and a polynomial version (from Morelli [2]). You can choose the model to simulate in Main.m. There is also a partial linear version of the plant model, which is likely less accurate. See the code starting at line 116 on controlledF16.m for how this gets selected.</p>
+<p>The low-level controller is a decoupled LQR controller, with the gains given around line 181 of RunF16Sim.m. The controller was designed by linearizing the plant around a single setpoint. More complicated, gain-scheduled versions could fairly easily be added with this setup, but that is not currently done.</p>
+<p>You can modify the models or controllers, and see how the maneuver is affected. For example, if you change the center of gravity x position, xcg, from 0.35 to 0.2 (line 37 on subf16_morelli.m), the GCAS system will fail to recover the system. Reachability questions can then be considered about sets of initial states, and sets of model parameters, such as “What range of xcg is guaranteed recoverable?” We plan to release more specific cases with the publication which is currently being prepared.</p>
+<p>If you run the script without calls to MakePicture or MakeAnimation (and if analysisOn and printOn are true), there will be output printed in matlab:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Pass</span> <span class="n">Fail</span> <span class="n">Conditions</span><span class="p">:</span>  
+           <span class="n">stable</span><span class="p">:</span> <span class="mi">1</span>  
+         <span class="n">airspeed</span><span class="p">:</span> <span class="mi">1</span>  
+            <span class="n">alpha</span><span class="p">:</span> <span class="mi">1</span>  
+             <span class="n">beta</span><span class="p">:</span> <span class="mi">1</span>  
+               <span class="n">Nz</span><span class="p">:</span> <span class="mi">1</span>  
+    <span class="n">psMaxAccelDeg</span><span class="p">:</span> <span class="mi">1</span>  
+         <span class="n">altitude</span><span class="p">:</span> <span class="mi">1</span>  
+     <span class="n">maneuverTime</span><span class="p">:</span> <span class="mi">1</span>  
+</pre></div>
+</div>
+<p>This indicates a series of specifications for the system, and if the maneuver met them. All 1’s means every specification was met. A failing specification means there was problem. For example, if your altitude goes below 0, the altitude spec will fail. The specific conditions are given starting on line 360 in RunF16Sim.m.</p>
+<p>The autopilot and model can be used for more than just GCAS testing. See the autopilot structure in getDefaultSettings.m around line 58. In Main.m on line 52, ‘autopilot.simpleGCAS = true’ is assigned, indicating the high-level GCAS logic should be active. The actual high-level controller logic is performed in getAutoPilotCommands.m. This logic can also be modified for verification analysis as well. For example, line 114 sets the desired acceleration of the maneuver to 5 g’s, which could be adjusted to make the setup more or less aggressive.</p>
+<p>Additional documentation will be added as it is created.</p>
+<section id="file-structure">
+<h2>File Structure<a class="headerlink" href="#file-structure" title="Permalink to this heading">¶</a></h2>
+<section id="f16-model">
+<h3>F16_Model<a class="headerlink" href="#f16-model" title="Permalink to this heading">¶</a></h3>
+<p>This directory contains a nonlinear mathematical model of the F-16 aircraft published in <em>Aircraft Control and Simulation: Dynamics, Controls Design, and Autonomous Systems</em>. This model uses lookup tables to access the aero data for the model. As well, a polynomial model fit to the lookup table data (developed by Eugene Morelli) is included.</p>
+</section>
+<section id="f16-sim">
+<h3>F16_Sim<a class="headerlink" href="#f16-sim" title="Permalink to this heading">¶</a></h3>
+<p>This directory contains all of the Matlab scripts and functions used to simulate and analyze autonomous maneuvers of the aforementioned F-16 models.</p>
+</section>
+<section id="flypath3d">
+<h3>flypath3d<a class="headerlink" href="#flypath3d" title="Permalink to this heading">¶</a></h3>
+<p>Flypath3d is an aircraft visualization library for Matlab [3].</p>
+<p>“The flypath3d package a free Matlab software for 3D visualizations of missile and air target trajectories that provide a visual reference for the computer simulation. Because of its versatility and ease of use, the software can help to produce attractive presentations for various scientific or public outreach purposes.”</p>
+<p>This package was modified and tailored for this project to generate visualizations of F-16 autonomous maneuvers with a text overlay of state data and pass/fail conditions.</p>
+</section>
+</section>
+<section id="real-automated-ground-collision-avoidance-system">
+<h2>Real Automated Ground Collision Avoidance System<a class="headerlink" href="#real-automated-ground-collision-avoidance-system" title="Permalink to this heading">¶</a></h2>
+<p>This benchmark was inspired by a real F-16 GCAS system that was recently developed by Lockheed Martin, NASA, and the Air Force Research Lab. As of the start of 2018, the system has been confirmed as saving six aircraft (~$25 million each) and seven lives. However, this academic benchmark code and recovery logic are in no way connected to the code or methodology used in the real thing. For more information on the real system, including a video of one of the ‘confirmed saves’, see <a class="reference external" href="http://aviationweek.com/air-combat-safety/auto-gcas-saves-unconscious-f-16-pilot-declassified-usaf-footage">this article in Aviation Week</a>.</p>
+</section>
+<section id="feature-requests-issues">
+<h2>Feature Requests &amp; Issues<a class="headerlink" href="#feature-requests-issues" title="Permalink to this heading">¶</a></h2>
+<p>If you discover errors or incompatibilities within the code library, please let me know by submitting a New Issue on GitHub. Also, if you require the library to be reorganized (architecture, inputs &amp; outputs for different functions, etc.) for better integration with  your analysis tools and you believe that the changes would benefit most people, submit a feature request using the “Issues” tool. I may be able to integrate a fix in the master branch or help advise you on how to modify the library in a fork.</p>
+<p>You are also more than welcome to contribute to this benchmark project. The ‘’’getAutopilotCommands’’’ function, for instance, could be improved by the addition of different autonomous maneuvers or architectures. Pull requests will allow me to integrate any contributions.</p>
+</section>
+<section id="related-work">
+<h2>Related Work<a class="headerlink" href="#related-work" title="Permalink to this heading">¶</a></h2>
+<p>A python implementation of the same code library is currently being developed. It is available at https://github.com/stanleybak/AeroBenchVVPython.</p>
+</section>
+<section id="citations">
+<h2>Citations<a class="headerlink" href="#citations" title="Permalink to this heading">¶</a></h2>
+<p>If you plan on presenting or publishing work done on this benchmark, please contact us at peter.heidlauf.1&#64;us.af.mil for the upcoming citation information. We are currently working on a paper detailing this benchmark.</p>
+<p>[1] Stevens, Brian L., Frank L. Lewis, and Eric N. Johnson. Aircraft control and simulation: dynamics, controls design, and autonomous systems. John Wiley &amp; Sons, 2015.</p>
+<p>[2] Morelli, Eugene A. “Global nonlinear parametric modelling with application to F-16 aerodynamics.” American Control Conference, 1998. Proceedings of the 1998. Vol. 2. IEEE, 1998.</p>
+<p>[3] Bużantowicz W. “Matlab Script for 3D Visualization of Missile and Air Target Trajectories”.International Journal of Computer and Information Technology 5 (2016)5, pp. 419-422.</p>
+<section id="release-documentation">
+<h3>Release Documentation<a class="headerlink" href="#release-documentation" title="Permalink to this heading">¶</a></h3>
+<p>Distribution A: Approved for Public Release (88ABW-2017-6379)</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../docs/source/index.html">stgem</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/source/stgem.html">your_package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../docs/source/index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, ÅAU.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.1.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../../../_sources/problems/arch-comp-2021/f16/AeroBenchVV-master/README.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Algorithm &#8212; stgem  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="algorithm">
+<h1>Algorithm<a class="headerlink" href="#algorithm" title="Permalink to this heading">¶</a></h1>
+<p>The purpose of an instance of the <code class="docutils literal notranslate"><span class="pre">Algorithm</span></code> class is to generate tests to be executed on the SUT. These tests together with the corresponding outputs form the test suite for the SUT.</p>
+<section id="algorithm-initialization">
+<h2>Algorithm Initialization<a class="headerlink" href="#algorithm-initialization" title="Permalink to this heading">¶</a></h2>
+<p>An algorithm, especially an algorithm utilizing machine learning algorithms, can make use of so-called models. Models correspond to instances of the <code class="docutils literal notranslate"><span class="pre">Model</span></code> class, and their usage is internal to the <code class="docutils literal notranslate"><span class="pre">Algorithm</span></code> class. Models are described in more details in the respective documentation. If models are used, there should be one model corresponding to each SUT output component.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method of an algorithm takes four arguments <code class="docutils literal notranslate"><span class="pre">model_factory</span></code>, <code class="docutils literal notranslate"><span class="pre">model</span></code>, <code class="docutils literal notranslate"><span class="pre">models</span></code>, and <code class="docutils literal notranslate"><span class="pre">parameters</span></code> which all default to <code class="docutils literal notranslate"><span class="pre">None</span></code>. The dictionary <code class="docutils literal notranslate"><span class="pre">parameters</span></code> is supposed to contain all static parameters the algorithm needs. If <code class="docutils literal notranslate"><span class="pre">parameters</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>, then the class variable <code class="docutils literal notranslate"><span class="pre">default_parameters</span></code> is used. Any dictionary values required by the algorithm but not provided by <code class="docutils literal notranslate"><span class="pre">parameters</span></code> are filled in from <code class="docutils literal notranslate"><span class="pre">default_parameters</span></code>. A value <code class="docutils literal notranslate"><span class="pre">self.parameters[&quot;x&quot;]</span></code> can be directly accessed as <code class="docutils literal notranslate"><span class="pre">self.x</span></code>.</p>
+<p>The other arguments relate to model creation. If the algorithm does not utilize models, these arguments can be left unspecified. At most one of <code class="docutils literal notranslate"><span class="pre">model_factory</span></code>, <code class="docutils literal notranslate"><span class="pre">model</span></code>, and <code class="docutils literal notranslate"><span class="pre">models</span></code> can equal not <code class="docutils literal notranslate"><span class="pre">None</span></code>. The value which is not <code class="docutils literal notranslate"><span class="pre">None</span></code> determines the model initialization. If <code class="docutils literal notranslate"><span class="pre">model_factory</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>, it should be a function that returns instances of the <code class="docutils literal notranslate"><span class="pre">Model</span></code> class when called without arguments. If <code class="docutils literal notranslate"><span class="pre">model</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>, then it should be an instance of the <code class="docutils literal notranslate"><span class="pre">Model</span></code> class, and all the required <code class="docutils literal notranslate"><span class="pre">Model</span></code> classes will be clones of this instance. If <code class="docutils literal notranslate"><span class="pre">models</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>, then it should be a list of instances of the <code class="docutils literal notranslate"><span class="pre">Model</span></code> class to be used as models.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Algorithm</span></code> class has a <code class="docutils literal notranslate"><span class="pre">setup</span></code> method taking arguments <code class="docutils literal notranslate"><span class="pre">search_space</span></code>, <code class="docutils literal notranslate"><span class="pre">device</span></code>, and <code class="docutils literal notranslate"><span class="pre">logger</span></code>. This method is called when the corresponding STGEM step is being setup, right before the corresponding STGEM generator is being run. The <code class="docutils literal notranslate"><span class="pre">setup</span></code> method needs to be idempotent meaning that calling it several times results in the same outcome. It is mandatory to call the parent class <code class="docutils literal notranslate"><span class="pre">setup</span></code> method.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">search_space</span></code>: Instance of <code class="docutils literal notranslate"><span class="pre">SearchSpace</span></code>. Provides access to the search space of the SUT.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">device</span></code>: Pytorch device object providing access to a device where the machine learning models (if any) reside.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">logger</span></code>: An instance of <code class="docutils literal notranslate"><span class="pre">Logger</span></code>. Provides logging capabilities via the method <code class="docutils literal notranslate"><span class="pre">self.log</span></code>.</p></li>
+</ul>
+<p>Additionally a method <code class="docutils literal notranslate"><span class="pre">initialize</span></code> (without arguments) is provided which is called just before the <code class="docutils literal notranslate"><span class="pre">train</span></code> method (see below) is called for the first time. Any initialization that does not naturally go into the <code class="docutils literal notranslate"><span class="pre">setup</span></code> method should go here. This is a good place to put resource-heavy initialization tasks. In this way several <code class="docutils literal notranslate"><span class="pre">Algorithm</span></code> objects can be initialized and set up in advance without significant resource penalties.</p>
+</section>
+<section id="algorithm-finalization">
+<h2>Algorithm Finalization<a class="headerlink" href="#algorithm-finalization" title="Permalink to this heading">¶</a></h2>
+<p>Right after the final call to the <code class="docutils literal notranslate"><span class="pre">generate_next_test</span></code> method (see below), the method <code class="docutils literal notranslate"><span class="pre">finalize</span></code> (without arguments) is called. This can be used for cleanup tasks as after this the <code class="docutils literal notranslate"><span class="pre">Algorithm</span></code> object is no longer used.</p>
+</section>
+<section id="common-algorithm-attributes">
+<h2>Common Algorithm Attributes<a class="headerlink" href="#common-algorithm-attributes" title="Permalink to this heading">¶</a></h2>
+<p>Here are attributes common to all instances of <code class="docutils literal notranslate"><span class="pre">Algorithm</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">device</span></code>: Pytorch device object.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">logger</span></code>: Logger object.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">models</span></code>: A list of <code class="docutils literal notranslate"><span class="pre">Model</span></code> objects used by the algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">N_models</span></code>: Number of model objects used by the algorithm. This equals the number of output components of the SUT.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">perf</span></code>: An instance of <code class="docutils literal notranslate"><span class="pre">PerformanceData</span></code> tracking the algorithm performance.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">search_space</span></code>: Search space of the SUT.</p></li>
+</ul>
+</section>
+<section id="common-algorithm-methods">
+<h2>Common Algorithm Methods<a class="headerlink" href="#common-algorithm-methods" title="Permalink to this heading">¶</a></h2>
+<p>Here are methods common to all instances of <code class="docutils literal notranslate"><span class="pre">Algorithm</span></code>.</p>
+<section id="initialization">
+<h3>Initialization<a class="headerlink" href="#initialization" title="Permalink to this heading">¶</a></h3>
+<p>The method <code class="docutils literal notranslate"><span class="pre">initialize</span></code> is called right before the method <code class="docutils literal notranslate"><span class="pre">train</span></code> is called for the first time.</p>
+</section>
+<section id="finalization">
+<h3>Finalization<a class="headerlink" href="#finalization" title="Permalink to this heading">¶</a></h3>
+<p>The method <code class="docutils literal notranslate"><span class="pre">finalize</span></code> is called right after the method <code class="docutils literal notranslate"><span class="pre">generate_next_test</span></code> is called for the last time. After this, the methods <code class="docutils literal notranslate"><span class="pre">train</span></code> or <code class="docutils literal notranslate"><span class="pre">generate_next_test</span></code> are no longer called.</p>
+</section>
+<section id="training">
+<h3>Training<a class="headerlink" href="#training" title="Permalink to this heading">¶</a></h3>
+<p>The main loop of the STGEM <code class="docutils literal notranslate"><span class="pre">Step</span></code> object corresponding to the algorithm calls first the method <code class="docutils literal notranslate"><span class="pre">train</span></code> of the <code class="docutils literal notranslate"><span class="pre">Algorithm</span></code> object. The purpose of this method is to do any test generation tasks that broadly belong to the theme of training. This could be training of machine learning models or something similar. The actual implementation is in the method <code class="docutils literal notranslate"><span class="pre">do_train</span></code> which each inheriting class should implement; the method <code class="docutils literal notranslate"><span class="pre">train</span></code> is only a wrapper which tracks the execution time and saves in into <code class="docutils literal notranslate"><span class="pre">self.perf</span></code>. The method takes the arguments <code class="docutils literal notranslate"><span class="pre">active_outputs</span></code>, <code class="docutils literal notranslate"><span class="pre">test_repository</span></code>, and `budget_remaining.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">active_outputs</span></code>: A list of indices indicating which outputs are active (this is determined by objective selectors). This information is typically used to train only the models corresponding to the active outputs in order to save resources, but this information can be safely ignored.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_repository</span></code>: An instance of <code class="docutils literal notranslate"><span class="pre">TestRepository</span></code> which can be used to access all previously executed tests and their results.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">budget_remaining</span></code>: A float in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> indicating how many percentage of the budget remain when the method is called.</p></li>
+</ul>
+</section>
+<section id="test-generation">
+<h3>Test Generation<a class="headerlink" href="#test-generation" title="Permalink to this heading">¶</a></h3>
+<p>After calling the <code class="docutils literal notranslate"><span class="pre">train</span></code> method, the main STGEM <code class="docutils literal notranslate"><span class="pre">Step</span></code> loop calls the method <code class="docutils literal notranslate"><span class="pre">generate_next_test</span></code> of the <code class="docutils literal notranslate"><span class="pre">Algorithm</span></code> object. The aim of this method is to return a new test to be executed on the SUT (the actual execution is done externally). The outcome of the returned test is available during the next call via the <code class="docutils literal notranslate"><span class="pre">TestRepository</span></code> object. This method is only a wrapper to <code class="docutils literal notranslate"><span class="pre">do_generate_next_test</span></code> tracking generation time in <code class="docutils literal notranslate"><span class="pre">self.perf</span></code>. All inhereting classes should put the actual implementation in <code class="docutils literal notranslate"><span class="pre">do_generate_next_test</span></code>. This method has the same arguments as <code class="docutils literal notranslate"><span class="pre">train</span></code> above.</p>
+</section>
+</section>
+<section id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this heading">¶</a></h2>
+<p>TODO</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../docs/source/index.html">stgem</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../docs/source/stgem.html">your_package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../docs/source/index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, ÅAU.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.1.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/doc/Algorithm.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

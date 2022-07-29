@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Neural-Network based controller (narmamaglev_v1) &#8212; stgem  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="neural-network-based-controller-narmamaglev-v1">
+<h1>Neural-Network based controller (narmamaglev_v1)<a class="headerlink" href="#neural-network-based-controller-narmamaglev-v1" title="Permalink to this heading">¶</a></h1>
+<p>Source:
+- <a class="reference external" href="https://www.mathworks.com/help/deeplearning/ug/design-narma-l2-neural-controller-in-simulink.html">https://www.mathworks.com/help/deeplearning/ug/design-narma-l2-neural-controller-in-simulink.html</a>
+- Neural Network Toolbox User’s Guide. Demuth et al.
+- <a class="reference external" href="https://github.com/decyphir/breach/blob/master/Examples/Simulink/simple_ML_controller/narmamaglev_v1.slx">https://github.com/decyphir/breach/blob/master/Examples/Simulink/simple_ML_controller/narmamaglev_v1.slx</a> (commit 1248eb9 on Apr 20, 2017)</p>
+<p>Initialization</p>
+<blockquote>
+<div><p>u_ts = 0.001;</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Inputs: always 1 &lt;= Ref and Ref &lt;= 3 and</dt><dd><ol class="arabic simple">
+<li><p>Piecewise continuous with consecutive discontinuities (steps) at least 3 seconds apart</p></li>
+<li><p>Piecewise constant input signal with 3 segments</p></li>
+</ol>
+</dd>
+</dl>
+<p>Simulation time 40s.</p>
+<dl>
+<dt>Requirement:</dt><dd><p>There are two parameters alpha=0.005 beta=0.03</p>
+<p>NN: □_[1.0, 37.0] ( (abs((Pos - Ref)) &gt; (alpha + (beta * abs(Ref)))) ==&gt; ◇_[0.0, 2.0] □_[0.0, 1.0] !((alpha + (beta * abs(Ref))) &lt;= abs((Pos - Ref))))</p>
+</dd>
+<dt>Alternative definition</dt><dd><p># Output is close to the reference signal
+param alpha=0.005
+param beta=0.04
+# param beta=0.03 # More difficult
+close_ref := abs(Pos[t] - Ref[t]) &lt; alpha+ beta*abs(Ref[t])
+reach_ref_in_2s := ev_[0, 2] (alw_[0, 1] (close_ref))</p>
+<p># At all times, Output will be close to the reference signal within 2 seconds
+NNreq: alw_[1., 37] ((not close_ref) =&gt; reach_ref_in_2s)</p>
+</dd>
+<dt>Potentially more difficult values (open to debate)</dt><dd><p>beta in {0.03,0.04} or alpha in {0.005, 0.006, 0.007} (the higher the more difficult)</p>
+<ol class="arabic simple" start="3">
+<li><p>Conjunctive requirement:</p></li>
+</ol>
+</dd>
+</dl>
+<p>Simulation time: 3s
+3 input segments i.e. discontinuities at 0,1,2 seconds
+initial magnet pos = 0.5
+input range [1.95, 2.05]</p>
+<blockquote>
+<div><p>NN’: &lt;&gt;_[0,1](pos &gt; 3.2) /&lt;&gt;_[1,1.5]([]_[0,0.5](1.75 &lt; pos &lt; 2.25)) /[]_[2,3](1.825 &lt; pos &lt; 2.175)</p>
+</div></blockquote>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../docs/source/index.html">stgem</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/source/stgem.html">your_package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../docs/source/index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, ÅAU.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.1.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../../_sources/problems/arch-comp-2021/nn/requirements.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

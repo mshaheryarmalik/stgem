@@ -1,0 +1,219 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Setup environment &#8212; stgem  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="setup-environment">
+<h1>Setup environment<a class="headerlink" href="#setup-environment" title="Permalink to this heading">¶</a></h1>
+<p>To setup your local dev environment, you will need the following tools.</p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://github.com/">git</a> for code repository management.</p></li>
+<li><p><a class="reference external" href="https://www.python.org/">python</a> to build and code in Keras.</p></li>
+</ol>
+<p>The following commands checks the tools above are successfully installed. Note
+that stgem requires at least Python 3.7 to run.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git --version
+python --version
+</pre></div>
+</div>
+<p>A <a class="reference external" href="https://docs.python.org/3/tutorial/venv.html">Python virtual environment</a>
+(venv) is a powerful tool to create a self-contained environment that isolates
+any change from the system level config. It is highly recommended to avoid any
+unexpected dependency or version issue.</p>
+<p>With the following commands, you create a new venv, named <code class="docutils literal notranslate"><span class="pre">venv_dir</span></code>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir venv_dir
+python3 -m venv venv_dir
+</pre></div>
+</div>
+<p>You can activate the venv with the following command. You should always run the
+tests with the venv activated. You need to activate the venv every time you open
+a new shell.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> venv_dir/bin/activate  <span class="c1"># for linux or MacOS</span>
+venv_dir<span class="se">\S</span>cripts<span class="se">\a</span>ctivate.bat  <span class="c1"># for Windows</span>
+</pre></div>
+</div>
+<p>Clone your forked repo to your local machine. Go to the cloned directory to
+install the dependencies into the venv.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone https://gitlab.abo.fi/aidoart/stgem.git
+<span class="nb">cd</span> stgem
+pip install -r requirements.txt
+</pre></div>
+</div>
+<p>It seems that there is a version issue with a antlr, a dependency of rtamt. Until it is fixed upstream, we need to run this after installing the requirements:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">antlr4</span><span class="o">-</span><span class="n">python3</span><span class="o">-</span><span class="n">runtime</span><span class="o">==</span><span class="mf">4.9</span>
+</pre></div>
+</div>
+<p>The environment setup is completed.</p>
+<section id="install-matlab">
+<h2>Install MATLAB<a class="headerlink" href="#install-matlab" title="Permalink to this heading">¶</a></h2>
+<p>Installing MATLAB is only necessary if you want to use a SUT that uses MATLAB. If this is the case, you should install MATLAB in your computer and obtain a license for it. Then you should install MATLAB support for your Python interpreter following the instructions from:</p>
+<p>https://se.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html</p>
+<p>After that, you can check your setup with these Python commands:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matlab.engine</span>
+<span class="n">eng</span> <span class="o">=</span> <span class="n">matlab</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">start_matlab</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="run-tests">
+<h2>Run tests<a class="headerlink" href="#run-tests" title="Permalink to this heading">¶</a></h2>
+<p>You can use pytest to run all the tests automatically:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip install pytest
+<span class="nb">cd</span> <span class="nb">test</span>
+pytest
+</pre></div>
+</div>
+</section>
+</section>
+<section id="how-to-contribute-code">
+<h1>How to contribute code<a class="headerlink" href="#how-to-contribute-code" title="Permalink to this heading">¶</a></h1>
+<p>Follow these steps to submit your code contribution.</p>
+<section id="step-0-sign-the-contributor-agreement">
+<h2>Step 0. Sign the Contributor Agreement<a class="headerlink" href="#step-0-sign-the-contributor-agreement" title="Permalink to this heading">¶</a></h2>
+<p>TBA</p>
+</section>
+<section id="step-1-open-an-issue-create-a-merge-request">
+<h2>Step 1. Open an issue, Create a merge request<a class="headerlink" href="#step-1-open-an-issue-create-a-merge-request" title="Permalink to this heading">¶</a></h2>
+<p>Before making any changes, we recommend opening an issue (if one doesn’t already
+exist) and discussing your proposed changes. This way, we can give you feedback
+and validate the proposed changes.</p>
+<p>If the changes are minor (simple bug fix or documentation fix), then feel free
+to open a PR without discussion.</p>
+<ol class="arabic simple">
+<li><p>Select the gitlab issue that you plan to work on. If there is no issue, create one.</p></li>
+<li><p>At the gitlab issue page, <code class="docutils literal notranslate"><span class="pre">assign</span> <span class="pre">yourself</span></code> the issue, if this is not yet the case.</p></li>
+<li><p>At the gitlab issue page, <code class="docutils literal notranslate"><span class="pre">Create</span> <span class="pre">merge</span> <span class="pre">request</span></code>. You can do that even before you starting coding. This will create a git branch to work with the issue.</p></li>
+</ol>
+</section>
+<section id="step-2-make-code-changes">
+<h2>Step 2. Make code changes<a class="headerlink" href="#step-2-make-code-changes" title="Permalink to this heading">¶</a></h2>
+<p>To make code changes, you need to fork the repository. You will need to setup a
+development environment and run the unit tests. This is covered in section
+“Setup environment”.</p>
+<ol class="arabic simple" start="4">
+<li><p>Work on your issue. Commit often and write describe commit messages You should commit at least at the end of each working day, even if the code is not complete. This way you will get constant feedback on your task.</p></li>
+<li><p>If you have questions or comments it is better to write them in the gitlab issue page. This way you will get a detailed answer in written.</p></li>
+<li><p>Always document your code and write automatic tests. Tests in the top-level <code class="docutils literal notranslate"><span class="pre">tests</span></code> folders are executed automatically by the continuous integration system. You can see the reports in gitlab, CI/CD, Pipelines page.</p></li>
+<li><p>You should watch for changes in the main branch, specially if you work in the same branch for many days. Merge updates from main to your branch often. This way you simplify the  integration work in the future.</p></li>
+</ol>
+</section>
+<section id="step-3-mark-the-merge-request-as-ready">
+<h2>Step 3. Mark the merge request as ready<a class="headerlink" href="#step-3-mark-the-merge-request-as-ready" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple" start="8">
+<li><p>Once your task is ready, <code class="docutils literal notranslate"><span class="pre">Mark</span> <span class="pre">as</span> <span class="pre">ready</span></code> the merge request.</p></li>
+</ol>
+<p>A reviewer will review the pull request and provide comments.  There may be several rounds of comments and code changes before merge pull request gets
+approved by the reviewer.</p>
+</section>
+<section id="step-4-merge-into-main">
+<h2>Step 4. Merge into Main<a class="headerlink" href="#step-4-merge-into-main" title="Permalink to this heading">¶</a></h2>
+<p>Once the merge request is approved, the reviewer will take care of the merging.</p>
+</section>
+</section>
+<section id="how-to-report-errors">
+<h1>How to report errors<a class="headerlink" href="#how-to-report-errors" title="Permalink to this heading">¶</a></h1>
+<p>If you want to report an error please make sure that your report contains the following information:</p>
+<ol class="arabic simple">
+<li><p>Where to find your code for example a link to a gitlab commit description page.</p></li>
+<li><p>The command that you are running from your shell. If the error seems to be related to missing files or modules or module import errors, report the directory from where you are running that command and your <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code> environment variable.</p></li>
+<li><p>The error stack trace and / or relevant program output. Use a format that is easy to read. In Markdown you can use triple quotes.</p></li>
+</ol>
+<p>This information is really useful for us to reproduce the errors and try to solve it.</p>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="docs/source/index.html">stgem</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docs/source/stgem.html">your_package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="docs/source/index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, ÅAU.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.1.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/CONTRIBUTING.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
