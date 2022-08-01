@@ -9,8 +9,10 @@ Welcome to stgem's documentation!
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
+   :name: stgem
+   :glob:
 
-   stgem
+   *
 Hello world!
 Foo bar!
 
