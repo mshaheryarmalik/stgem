@@ -29,7 +29,7 @@ source_suffix = {
 root_doc = "docs/source/index"
 
 templates_path = ['_templates']
-exclude_patterns = ['venv', 'output', 'problems']
+exclude_patterns = ['venv', 'output', 'problems', 'tests']
 
 import commonmark
 

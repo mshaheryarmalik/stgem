@@ -2,8 +2,8 @@
 
 export PYTHONPATH=`pwd`
 
-# Create .rst files for all py. files in project
-sphinx-apidoc -o docs/source . []
+# Create .rst files for whole project
+sphinx-apidoc -o docs/source -T . []
 
 # Build html files using the rst. files
 sphinx-build -a -b html -c docs/source . docs/build/html
