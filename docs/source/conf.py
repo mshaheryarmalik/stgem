@@ -31,7 +31,17 @@ root_doc = "docs/source/index"
 templates_path = ['_templates']
 exclude_patterns = ['venv', 'output', 'problems']
 
+import commonmark
 
+def docstring(app, what, name, obj, options, lines):
+    md  = '\n'.join(lines)
+    ast = commonmark.Parser().parse(md)
+    rst = commonmark.ReStructuredTextRenderer().render(ast)
+    lines.clear()
+    lines += rst.splitlines()
+
+def setup(app):
+    app.connect('autodoc-process-docstring', docstring)
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
