@@ -26,7 +26,7 @@ benchmarks = ["AFC27", "AFC29", "AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "A
 #benchmarks = ["CC1", "CC2", "CC3", "CC4", "CC5", "CCX"]
 
 raw_data = {}
-# Settings this to false reduces memory usage.
+# Setting this to false reduces memory usage.
 load_sut_output = False
 for experiment in experiments:
     raw_data[experiment] = {}
