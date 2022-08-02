@@ -1,9 +1,9 @@
-import copy, datetime, gzip, os, random, time
+import copy, datetime, gzip, os, random, time, string
+
+import torch
 
 import dill as pickle
-
 import numpy as np
-import torch
 
 from stgem.algorithm.algorithm import Algorithm
 from stgem.budget import Budget
@@ -248,6 +248,13 @@ class STGEM:
 
     def __init__(self, description, sut: SUT, objectives, objective_selector=None, budget: Budget = None, steps=[]):
         self.description = description
+        # The description might be used as a file name, so we check for some
+        # nongood characters.
+        # TODO: Is this complete enough?
+        nonsafe_chars = "/\<>:\"|?*"
+        for c in self.description:
+            if c in nonsafe_chars:
+                raise ValueError("Character '{}' not allowed in a description (could be used as a file name).".format(c))
         self.sut = sut
         self.step_results = []
 
