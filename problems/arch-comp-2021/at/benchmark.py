@@ -174,7 +174,7 @@ def build_specification(selected_specification, mode=None, asut=None):
         strict_horizon_check = True
         epsilon = 0.01
     elif selected_specification == "ATX2":
-        # not(always[0,30]( 50 <= SPEED <= 60 ))
+        # not(always[10,30]( 50 <= SPEED <= 60 ))
         L = FalsifySTL.GreaterThan(1, 0, 0, 50, S("SPEED"))
         R = STL.LessThan(1, 0, 0, 60, S("SPEED"))
 

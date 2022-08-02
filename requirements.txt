@@ -7,3 +7,4 @@ Platypus-Opt~=1.0.4
 pandas
 click
 multiprocess
+scipy

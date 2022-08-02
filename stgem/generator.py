@@ -1,9 +1,9 @@
-import copy, datetime, gzip, os, random, time
+import copy, datetime, gzip, os, random, time, string
+
+import torch
 
 import dill as pickle
-
 import numpy as np
-import torch
 
 from stgem.algorithm.algorithm import Algorithm
 from stgem.budget import Budget
@@ -57,7 +57,15 @@ class Step:
         raise NotImplementedError
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
-        pass
+        self.sut = sut
+        self.search_space = search_space
+        self.test_repository = test_repository
+        self.budget = budget
+        self.objective_funcs = objective_funcs
+        self.objective_selector = objective_selector
+        self.device = device
+        self.logger = logger
+        self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
 
 class Search(Step):
     """A search step."""
@@ -74,19 +82,13 @@ class Search(Step):
         self.results_checkpoint_period = results_checkpoint_period
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
-        self.sut = sut
-        self.search_space = search_space
-        self.test_repository = test_repository
-        self.budget = budget
+        super().setup(sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger)
+
         self.budget.update_threshold(self.budget_threshold)
-        self.objective_funcs = objective_funcs
-        self.objective_selector = objective_selector
         self.algorithm.setup(
             search_space=self.search_space,
-            device=device,
-            logger=logger)
-        self.logger = logger
-        self.log = lambda msg: (self.logger("step", msg) if logger is not None else None)
+            device=self.device,
+            logger=self.logger)
 
     def run(self, checkpoint_callback=None) -> StepResult:
         self.budget.update_threshold(self.budget_threshold)
@@ -95,7 +97,7 @@ class Search(Step):
         self.algorithm.initialize()
 
         self.success = True
-        if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_objective == 0.0):
+        if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_objective <= 0.0):
             self.success = False
 
             # TODO: We should check if the budget was exhausted during the test
@@ -129,14 +131,14 @@ class Search(Step):
                 self.objective_selector.update(np.argmin(output))
                 self.test_repository.record(sut_input, sut_result, output)
 
-                if not self.success and self.test_repository.minimum_objective <= 0:
+                if not self.success and self.test_repository.minimum_objective <= 0.0:
                     self.log("First success at test {}.".format(i + 1))
                     self.success = True
 
-                i += 1
-
-                if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (self.test_repository.tests % self.results_checkpoint_period) == 0:
+                if checkpoint_callback is not None and self.results_checkpoint_period != 0 and i % self.results_checkpoint_period == 0:
                     checkpoint_callback(self._generate_step_result())
+
+                i += 1
 
                 if self.success and self.mode == "stop_at_first_objective":
                     break
@@ -149,7 +151,7 @@ class Search(Step):
 
         result = self._generate_step_result()
 
-        if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (self.test_repository.tests % self.results_checkpoint_period) != 0:
+        if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (i-1) % self.results_checkpoint_period != 0:
             checkpoint_callback(result)
 
         return result
@@ -180,28 +182,79 @@ class Search(Step):
 
         return step_result
 
-class LoaderStep(Step):
+class Load(Step):
     """Step which simply loads pregenerated data from a file."""
 
-    # TODO: Currently this is a placeholder and does nothing.
-
-    def __init__(self, data_file, budget_threshold):
-        self.data_file = data_file
-        return
-        # Check if the data file exists.
-        if not os.path.exists(self.data_file):
-            raise Exception("Pregenerated date file '{}' does not exist.".format(self.data_file))
-
-    def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
-        raise NotImplementedError()
+    def __init__(self, file_name, mode="initial", range_load=None):
+        self.file_name = file_name
+        if not os.path.exists(self.file_name):
+            raise Exception("Pregenerated date file '{}' does not exist.".format(self.file_name))
+        if mode not in ["initial", "random"]:
+            raise ValueError("Unknown load mode '{}'.".format(mode))
+        if range_load < 0:
+            raise ValueError("The load range {} cannot be negative.".format(range_load))
+        self.mode = mode
+        self.range_load = range_load
 
     def run(self, checkpoint_callback=None) -> StepResult:
-        raise NotImplementedError()
+        try:
+            raw_data = STGEMResult.restore_from_file(self.file_name)
+        except:
+            raise Exception("Error loading STGEMResult object from file '{}'.".format(self.file_name))
+
+        range_max = raw_data.test_repository.tests
+        if self.range_load is None:
+            self.range_load = range_max
+        elif self.range_load > range_max:
+            raise ValueError("The load range {} is out of bounds. Loaded maximum range for loaded data is {}.".format(self.range_load, range_max))
+
+        if self.mode == "random":
+            # Use the search space RNG to ensure consistent selection.
+            idx = self.search_space.rng.choice(np.arange(range_max), size=self.range_load, replace=False)
+        elif self.mode == "initial":
+            idx = range(range_max)
+
+        already_successful = self.test_repository.minimum_objective <= 0
+
+        for i in idx:
+            if self.budget.remaining() == 0: break
+            x, y, z = raw_data.test_repository.get(i)
+
+            if len(x.inputs) != self.search_space.input_dimension:
+                raise ValueError("Loaded sample input dimension {} does not match SUT input dimension {}".format(len(x.inputs), self.search_space.input_dimension))
+            if y.output_timestamps is None:
+                if len(y.outputs) != self.search_space.output_dimension:
+                    raise ValueError("Loaded sample vector output dimension {} does not match SUT vector output dimension {}.".format(len(y.outputs), self.search_space.output_dimension))
+            else:
+                if y.outputs.shape[0] != self.search_space.output_dimension:
+                    raise ValueError("Loaded sample signal number {} does not match SUT signal number {}.".format(y.outputs.shape[0], self.search_space.output_dimension))
+
+            self.test_repository.record(x, y, z)
+
+        success = not already_successful and self.test_repository.minimum_objective <= 0
+
+        # Save certain parameters in the StepResult object.
+        parameters = {}
+        parameters["file_name"] = self.file_name
+        parameters["mode"] = self.mode
+        parameters["load_range"] = self.range_load
+
+        # Build StepResult object with test_repository
+        step_result = StepResult(self.test_repository, success, parameters)
+
+        return step_result
 
 class STGEM:
 
     def __init__(self, description, sut: SUT, objectives, objective_selector=None, budget: Budget = None, steps=[]):
         self.description = description
+        # The description might be used as a file name, so we check for some
+        # nongood characters.
+        # TODO: Is this complete enough?
+        nonsafe_chars = "/\<>:\"|?*"
+        for c in self.description:
+            if c in nonsafe_chars:
+                raise ValueError("Character '{}' not allowed in a description (could be used as a file name).".format(c))
         self.sut = sut
         self.step_results = []
 
