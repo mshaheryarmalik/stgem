@@ -14,6 +14,7 @@ Welcome to stgem's documentation!
    :caption: Notes:
    :maxdepth: 1
 
+   documentation_template
    ../../README
    ../../INSTALLATION
    ../../CONTRIBUTING
