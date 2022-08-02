@@ -18,10 +18,9 @@ class OGAN(Algorithm):
     def setup(self, search_space, device=None, logger=None):
         super().setup(search_space, device, logger)
         self.first_training = True
+        self.model_trained = [0 for m in range(self.search_space.output_dimension)] # keeps track how many tests were generated when a model was previously trained
 
     def do_train(self, active_outputs, test_repository, budget_remaining):
-        model_trained = [0 for m in range(self.search_space.output_dimension)] # keeps track how many tests were generated when a model was previously trained
-
         # Take into account how many tests a previous step (usually random
         # search) has generated.
         self.tests_generated = test_repository.tests
@@ -36,7 +35,7 @@ class OGAN(Algorithm):
         # caller to ensure that all models are trained here if so desired.
 
         for i in active_outputs:
-            if self.first_training or self.tests_generated - model_trained[i] >= self.train_delay:
+            if self.first_training or self.tests_generated - self.model_trained[i] >= self.train_delay:
                 self.log("Training the OGAN model {}...".format(i + 1))
                 if not self.first_training and self.reset_each_training:
                     # Reset the model.
@@ -53,7 +52,7 @@ class OGAN(Algorithm):
                                                     dataY,
                                                     train_settings=train_settings,
                                                     )
-                model_trained[i] = self.tests_generated
+                self.model_trained[i] = self.tests_generated
         self.first_training = False
 
     def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
