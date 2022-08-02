@@ -101,35 +101,67 @@ class FalsifySTL(Objective):
         super().setup(sut)
 
         try:
-            import tltk_mtl as STL
+            import stgem.objective.Robustness as STL
         except:
             raise
 
-        if not isinstance(self.specification, STL.TLTK_MTL):
-            raise Exception("Expected specification to be TLTK class not '{}'".format(type(self.specification)))
+        #if not isinstance(self.specification, STL.TLTK_MTL):
+         #   raise Exception("Expected specification to be TLTK class not '{}'".format(type(self.specification)))
 
         self.horizon = self.specification.horizon
         self.formula_variables = self.specification.variables
 
         # Find the objects with time bounds in the formula.
         # TODO: An iterator would be nice in TLTk for this.
-        def bounded(formula):
-            if isinstance(formula, (STL.Predicate, STL.Signal)) or formula is None:
+        def bounded(stl_formula):
+            if isinstance(stl_formula, (STL.Signal,STL.Const)) or stl_formula is None:
                 return []
-            elif isinstance(formula, (STL.Global, STL.Finally)):
-                return [formula] + bounded(formula.subformula)
-            elif isinstance(formula, STL.Until):
-                return [formula] + bounded(formula.left_subformula) + bounded(formula.right_subformula)
-            elif not isinstance(formula, STL.TLTK_MTL):
-                raise Exception("Expected TLTK class not '{}' in time bounded object lookup.".format(type(formula)))
-            elif formula.arity == 1:
-                return bounded(formula.subformula)
-            else: #formula.arity == 2:
-                return bounded(formula.left_subformula) + bounded(formula.right_subformula)
+            elif isinstance(stl_formula, (STL.Global, STL.Finally)):
+                return [stl_formula] + bounded(stl_formula.formula)
+            elif isinstance(stl_formula, (STL.Until, STL.Release)):
+                return [stl_formula] + bounded(stl_formula.left_formula) + bounded(stl_formula.right_formula)
+            elif isinstance(stl_formula, (STL.Or, STL.And)):
+                temp = []
+                for i in stl_formula.formulas:
+                    temp += bounded(i)
+                return temp
+            #elif not isinstance(formula, STL.TLTK_MTL):
+                #raise Exception("Expected TLTK class not '{}' in time bounded object lookup.".format(type(formula)))
+            elif stl_formula.arity == 1:
+                return bounded(stl_formula.formula)
+            else: #stl_formula.arity == 2:
+                return bounded(stl_formula.left_formula) + bounded(stl_formula.right_formula)
+
+        def ranges(stl_formula):
+            if isinstance(stl_formula, (STL.Signal,STL.Const)) or stl_formula is None:
+                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
+            elif isinstance(stl_formula, (STL.Global, STL.Finally)):
+                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
+                ranges(stl_formula.formula)
+            elif isinstance(stl_formula, (STL.Until, STL.Release)):
+                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
+                ranges(stl_formula.left_formula)
+                ranges(stl_formula.right_formula)
+            elif isinstance(stl_formula, (STL.Or, STL.And)):
+                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
+                for i in stl_formula.formulas:
+                    ranges(i)
+            #elif not isinstance(formula, STL.TLTK_MTL):
+                #raise Exception("Expected TLTK class not '{}' in time bounded object lookup.".format(type(formula)))
+            elif stl_formula.arity == 1:
+                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
+                ranges(stl_formula.formula)
+            else: #stl_formula.arity == 2:
+                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
+                ranges(stl_formula.left_formula)
+                ranges(stl_formula.right_formula)
 
         # Sampling period equals the minimum of the smallest positive time
         # bound referred to in the formula divided by K and the sampling step
         # of the SUT (if it exists). Compute the first number.
+        print("RANGEEEEEEEE")
+        ranges(self.specification)
+        print("RANGEEEEEEEE")
         K = 10
         self.time_bounded = bounded(self.specification)
         first = 1
@@ -182,7 +214,12 @@ class FalsifySTL(Objective):
         # always[0,30](x1 > 0 and x2 > 0). It is up to the user to ensure a
         # reasonable interpretation.
 
-        self.specification.reset()
+        #self.specification.reset()
+
+        try:
+            import stgem.objective.Robustness as STL
+        except:
+            raise
 
         timestamps = np.array([0], dtype=np.float32)
         trajectories = {}
@@ -192,10 +229,14 @@ class FalsifySTL(Objective):
             else:
                 trajectories[var] = np.array([test[self.M[var][1]]], dtype=np.float32)
 
-        # Notice that the return value is a Cython MemoryView.
-        robustness_signal = self.specification.eval_interval(trajectories, timestamps)
 
-        robustness = robustness_signal[0]
+        # Notice that the return value is a Cython MemoryView.
+        #robustness_signal = self.specification.eval_interval(trajectories, timestamps)
+
+        #robustness = robustness_signal[0]
+
+        temp = STL.Traces(timestamps,trajectories)
+        robustness = self.specification.eval(temp, 0)
 
         # Scale the robustness to [0, 1] if required.
         if self.scale:
@@ -214,6 +255,11 @@ class FalsifySTL(Objective):
         output_timestamps = result.output_timestamps
         input_signals = test.input_denormalized
         output_signals = result.outputs
+
+        try:
+            import stgem.objective.Robustness as STL
+        except:
+            raise
 
         """
         Here we find the robustness at time 0.
@@ -279,7 +325,7 @@ class FalsifySTL(Objective):
                     if pos > len(signal_timestamps):
                         break
 
-        self.specification.reset()
+        #self.specification.reset()
 
         # Allow slight inaccuracy in horizon check.
         if self.strict_horizon_check and self.horizon - 1e-2 > timestamps[-1]:
@@ -297,9 +343,15 @@ class FalsifySTL(Objective):
         # Use integer timestamps.
         timestamps = np.array(list(range(len(timestamps))), dtype=np.float32)
         # Notice that the return value is a Cython MemoryView.
-        robustness_signal = self.specification.eval_interval(trajectories, timestamps)
+        #robustness_signal = self.specification.eval_interval(trajectories, timestamps)
 
-        robustness = robustness_signal[0]
+        #robustness = robustness_signal[0]
+
+        temp = STL.Traces(timestamps,trajectories)
+        robustness = self.specification.eval(temp, 0)
+        print("OBJECTIF")
+        print(robustness)
+        print("OBJECTIF")
 
         # Reset time bounds. This allows reusing the specifications.
         self.reset_time_bounds()
