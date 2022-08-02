@@ -31,10 +31,16 @@ class TestPython(unittest.TestCase):
                         ],
             objective_selector=ObjectiveSelectorMAB(warm_up=41),
             steps=[
+                Search(budget_threshold={"executions": 10},
+                       mode=mode,
+                       algorithm=Random(model_factory=(lambda: Uniform(parameters={"min_distance": 0.2})))),
+                Search(budget_threshold={"executions": 20},
+                       mode=mode,
+                       algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 20})))),
                 Search(budget_threshold={"executions": 40},
                        mode=mode,
                        algorithm=Random(model_factory=(lambda: Halton()))),
-                Search(budget_threshold={"executions": 40},
+                Search(budget_threshold={"executions": 45},
                        mode=mode,
                        algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
             ]
