@@ -164,6 +164,8 @@ def build_specification(selected_specification, mode=None, asut=None):
         # always[0,30]( GEAR == {} implies SPEED > 10*{} )
         # Only for {} == 3 or {} == 4.
         G = int(selected_specification[-1])
+        if not G in [3, 4]:
+            raise Exception("Wrong gear '{}'. Should be 3 or 4.".format(G))
 
         L = STL.Equals(1, 0, 0, G, S("GEAR"))
         R = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 10*G, S("SPEED"))
@@ -230,8 +232,8 @@ def step_factory():
                     #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
                     algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                    )
-    #steps = [step_1]
-    steps = [step_1, step_2]
+    steps = [step_1]
+    #steps = [step_1, step_2]
     return steps
 
 def get_step_factory():
