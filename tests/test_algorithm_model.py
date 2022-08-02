@@ -9,7 +9,7 @@ from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.ogan.model_keras import OGANK_Model
 
 from stgem.algorithm.random.algorithm import Random
-from stgem.algorithm.random.model import Uniform, LHS
+from stgem.algorithm.random.model import Uniform
 
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
