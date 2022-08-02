@@ -178,7 +178,7 @@ def build_specification(selected_specification, mode=None, asut=None):
         L = FalsifySTL.GreaterThan(1, 0, 0, 50, S("SPEED"))
         R = STL.LessThan(1, 0, 0, 60, S("SPEED"))
 
-        specification = STL.Not(STL.Global(0, 30, STL.And(L, R)))
+        specification = STL.Not(STL.Global(10, 30, STL.And(L, R)))
 
         specifications = [specification]
         strict_horizon_check = True
