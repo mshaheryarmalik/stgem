@@ -24,7 +24,7 @@ class Experiment:
         # garbage collection for some reason.
         self.garbage_collect = True
 
-    def run(self, N_workers=1, silent=False, done=None):
+    def run(self, N_workers=1, silent=False, use_gpu=True, done=None):
         if done is None:
             done = []
 
@@ -36,7 +36,7 @@ class Experiment:
                 generator = self.stgem_factory()
                 seed = self.seed_factory()
                 if not idx in done:
-                    generator.setup(seed=seed)
+                    generator.setup(seed=seed, use_gpu=use_gpu)
 
                     if silent:
                         generator.logger.silent = True
@@ -66,7 +66,7 @@ class Experiment:
 
                     idx, generator, seed = msg
 
-                    generator.setup(seed=seed)
+                    generator.setup(seed=seed, use_gpu=use_gpu)
                     
                     if silent:
                         generator.logger.silent = True

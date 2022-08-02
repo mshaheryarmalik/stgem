@@ -141,16 +141,14 @@ def get_objective_selector_factory():
 
 def step_factory():
     mode = "stop_at_first_objective"
+    #mode = "exhaust_budget"
 
     step_1 = Search(mode=mode,
                     budget_threshold={"executions": 75},
-                    #algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 50})))
                     algorithm=Random(model_factory=(lambda: Uniform()))
                    )      
     step_2 = Search(mode=mode,
                     budget_threshold={"executions": 300},
-                    #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
-                    #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
                     algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                    )
     #steps = [step_1]

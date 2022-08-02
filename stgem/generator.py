@@ -308,12 +308,17 @@ class STGEM:
                 device=self.device,
                 logger=self.logger)
 
-    def setup(self, seed=None):
+    def setup(self, seed=None, use_gpu=True):
         self.setup_seed(seed=seed)
 
         self.setup_sut()
         self.setup_search_space()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if use_gpu:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            if self.device.type != "cuda":
+                self.log("Warning: requested torch device 'cuda' but got '{}'.".format(self.device.type))
+        else:
+            self.device = torch.device("cpu")
         self.test_repository = TestRepository()
         self.setup_objectives()
 
