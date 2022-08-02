@@ -22,7 +22,6 @@ extensions = [
 # Define file suffixes to include
 source_suffix = {
     '.rst': 'restructuredtext',
-    '.txt': 'restructuredtext',
     '.md': 'markdown',
 }
 

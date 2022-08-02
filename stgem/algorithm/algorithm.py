@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """
-...
 # Algorithm
 The purpose of an instance of the `Algorithm` class is to generate tests to be executed on the SUT. These tests together with the corresponding outputs form the test suite for the SUT.
 
@@ -44,7 +43,7 @@ The method `initialize` is called right before the method `train` is called for 
 The method `finalize` is called right after the method `generate_next_test` is called for the last time. After this, the methods `train` or `generate_next_test` are no longer called.
 
 ### Training
-The main loop of the STGEM `Step` object corresponding to the algorithm calls first the method `train` of the `Algorithm` object. The purpose of this method is to do any test generation tasks that broadly belong to the theme of training. This could be training of machine learning models or something similar. The actual implementation is in the method `do_train` which each inheriting class should implement; the method `train` is only a wrapper which tracks the execution time and saves in into `self.perf`. The method takes the arguments `active_outputs`, `test_repository`, and `budget_remaining.
+The main loop of the STGEM `Step` object corresponding to the algorithm calls first the method `train` of the `Algorithm` object. The purpose of this method is to do any test generation tasks that broadly belong to the theme of training. This could be training of machine learning models or something similar. The actual implementation is in the method `do_train` which each inheriting class should implement; the method `train` is only a wrapper which tracks the execution time and saves in into `self.perf`. The method takes the arguments `active_outputs`, `test_repository`, and `budget_remaining`.
 
 * `active_outputs`: A list of indices indicating which outputs are active (this is determined by objective selectors). This information is typically used to train only the models corresponding to the active outputs in order to save resources, but this information can be safely ignored.
 * `test_repository`: An instance of `TestRepository` which can be used to access all previously executed tests and their results.
@@ -55,8 +54,6 @@ After calling the `train` method, the main STGEM `Step` loop calls the method `g
 
 ## Exceptions
 TODO
-...
-
 """
 
 import copy

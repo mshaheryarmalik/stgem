@@ -18,10 +18,6 @@ Welcome to stgem's documentation!
    ../../INSTALLATION
    ../../CONTRIBUTING
 
-   ../../doc/Algorithm
-   ../../doc/SearchSpace
-   ../../doc/SUT
-
 Indices and tables
 ==================
 
