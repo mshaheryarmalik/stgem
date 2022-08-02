@@ -1,5 +1,3 @@
-import tltk_mtl as STL
-
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.random.algorithm import Random
@@ -8,7 +6,7 @@ from stgem.algorithm.wogan.algorithm import WOGAN
 from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.generator import Search
 from stgem.objective_selector import ObjectiveSelectorAll, ObjectiveSelectorMAB
-from stgem.objective import FalsifySTL
+import stgem.objective.Robustness as STL
 from stgem.sut.matlab.sut import Matlab_Simulink
 
 mode = "stop_at_first_objective"
@@ -102,14 +100,16 @@ def build_specification(selected_specification, mode=None, asut=None):
     S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "AT1":
         # always[0,20](SPEED < 120)
-        specification = STL.Global(0, 20, FalsifySTL.StrictlyLessThan(1, 0, 0, 120, S("SPEED")))
+        #specification = STL.Global(0, 20, FalsifySTL.StrictlyLessThan(1, 0, 0, 120, S("SPEED")))
+        specification = STL.Global(0, 20,STL.LessThan(S("SPEED"),STL.Const(120)))
 
         specifications = [specification]
         strict_horizon_check = True
         epsilon = 0.01
     elif selected_specification == "AT2":
         # always[0,10](RPM < 4750)
-        specification = STL.Global(0, 10, FalsifySTL.StrictlyLessThan(1, 0, 0, 4750, S("RPM")))
+        #specification = STL.Global(0, 10, FalsifySTL.StrictlyLessThan(1, 0, 0, 4750, S("RPM")))
+        specification = STL.Global(0, 10,STL.LessThan(S("RPM"),STL.Const(4750)))
 
         specifications = [specification]
         strict_horizon_check = True
@@ -120,9 +120,9 @@ def build_specification(selected_specification, mode=None, asut=None):
         # always[0,30]( ( not(GEAR == {0}) and (eventually[0.001,0.1](GEAR == {0})) ) implies ( eventually[0.001,0.1]( always[0,2.5](GEAR == {0}) ) ) )"
         G = int(selected_specification[-1])
         # not(GEAR == {0}) and (eventually[0.001,0.1](GEAR == {0}))
-        L = STL.And(STL.Not(STL.Equals(1, 0, 0, G, S("GEAR"))), STL.Next(STL.Equals(1, 0, 0, G, S("GEAR"))))
+        L = STL.And(STL.Not(STL.Equals(S("GEAR"), STL.Const(G))), STL.Next(STL.Equals(S("SPEED"), STL.Const(G))))
         # eventually[0.001,0.1]( always[0,2.5](GEAR == {0}) )
-        R = STL.Next(STL.Global(0, 2.5, STL.Equals(1, 0, 0, G, S("GEAR"))))
+        R = STL.Next(STL.Global(0, 2.5, STL.Equals(S("SPEED"), STL.Const(G))))
 
         specification = STL.Global(0, 30, STL.Implication(L, R))
 
@@ -144,8 +144,8 @@ def build_specification(selected_specification, mode=None, asut=None):
                 SL = 65
               
             # (always[0,30](RPM < 3000)) implies (always[0,{0}](SPEED < {1}))
-            L = STL.Global(0, 30, FalsifySTL.StrictlyLessThan(1, 0, 0, 3000, S("RPM")))
-            R = STL.Global(0, UB, FalsifySTL.StrictlyLessThan(1, 0, 0, SL, S("SPEED")))
+            L = STL.Global(0, 30, STL.LessThan(S("RPM"),STL.Const(3000)))
+            R = STL.Global(0, UB, STL.LessThan(S("SPEED"),STL.Const(SL)))
             return STL.Implication(L, R)
 
         if selected_specification.endswith("ABC"):
@@ -165,8 +165,8 @@ def build_specification(selected_specification, mode=None, asut=None):
         # Only for {} == 3 or {} == 4.
         G = int(selected_specification[-1])
 
-        L = STL.Equals(1, 0, 0, G, S("GEAR"))
-        R = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 10*G, S("SPEED"))
+        L = STL.Equals(S("SPEED"), STL.Const(G))
+        R = STL.GreaterThan(S("SPEED"), STL.Const(10*G))
 
         specification = STL.Global(0, 30, STL.Implication(L, R))
 
@@ -175,8 +175,8 @@ def build_specification(selected_specification, mode=None, asut=None):
         epsilon = 0.01
     elif selected_specification == "ATX2":
         # not(always[10,30]( 50 <= SPEED <= 60 ))
-        L = FalsifySTL.GreaterThan(1, 0, 0, 50, S("SPEED"))
-        R = STL.LessThan(1, 0, 0, 60, S("SPEED"))
+        L = STL.GreaterThan(S("SPEED"), STL.Const(50))
+        R = STL.LessThan(S("SPEED"), STL.Const(60))
 
         specification = STL.Not(STL.Global(10, 30, STL.And(L, R)))
 
@@ -196,8 +196,8 @@ def build_specification(selected_specification, mode=None, asut=None):
             V2 = 2700
             T = 30
 
-        L = STL.Global(0, 10, FalsifySTL.StrictlyLessThan(1, 0, 0, V1, S("SPEED")))
-        R = STL.Finally(0, T, FalsifySTL.StrictlyGreaterThan(1, 0, 0, V2, S("RPM")))
+        L = STL.Global(0, 10, STL.LessThan(S("SPEED"), STL.Const(V1)))
+        R = STL.Finally(0, T, STL.GreaterThan(S("RPM"), STL.Const(V2)))
 
         specification = STL.Or(L, R)
 
