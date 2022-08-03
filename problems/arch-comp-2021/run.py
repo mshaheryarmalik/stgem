@@ -2,11 +2,13 @@ import importlib, os, sys
 
 import click
 
-from stgem.generator import STGEM
-from stgem.experiment import Experiment
+# Some imports need to be done inside functions for the environment variable
+# setup to take effect.
 from stgem.objective import FalsifySTL
 
 def get_generator_factory(description, sut_factory, objective_factory, objective_selector_factory, step_factory):
+    from stgem.generator import STGEM
+
     def generator_factory():
         return STGEM(description=description,
                      sut=sut_factory(),
@@ -40,6 +42,8 @@ def get_sut_objective_factory(benchmark_module, selected_specification, mode):
 
 def get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed, callback=None):
     sut_factory, objective_factory = get_sut_objective_factory(benchmark_module, selected_specification, mode)
+
+    from stgem.experiment import Experiment
 
     def experiment_factory():
         return Experiment(N=N,
@@ -85,6 +89,10 @@ N_workers = {
 def main(selected_benchmark, selected_specification, mode, n, init_seed, identifier):
     N = n
 
+    # Disable CUDA if multiprocessing is used.
+    if N > 1 and  N_workers[selected_benchmark] > 1:
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
     if not selected_specification in specifications[selected_benchmark]:
         raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
 
@@ -99,7 +107,8 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
 
     experiment = get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed, callback=callback)()
 
-    experiment.run(N_workers=N_workers[selected_benchmark], silent=False)
+    use_gpu = N == 1 or N_workers[selected_benchmark] == 1
+    experiment.run(N_workers=min(N, N_workers[selected_benchmark]), silent=False, use_gpu=use_gpu)
 
 if __name__ == "__main__":
     main()

@@ -3,10 +3,11 @@ import importlib, os, sys
 import click
 import numpy as np
 
+# Some imports need to be done inside functions for the environment variable
+# setup to take effect.
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.experiment import Experiment
-from stgem.generator import STGEM, Search
 from stgem.objective import Minimize
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut.hyper import HyperParameter, Range, Categorical
@@ -22,6 +23,13 @@ from run import get_experiment_factory, benchmarks, specifications, N_workers
 def main(selected_benchmark, selected_specification, mode, init_seed_experiments, seed_hp):
     if not selected_specification in specifications[selected_benchmark]:
         raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
+
+    # Disable CUDA if multiprocessing is used.
+    if N_workers[selected_benchmark] > 1:
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+    # This needs to be here for the environment variable to take effect.
+    from stgem.generator import STGEM, Search
 
     algorithm = "ogan"
 

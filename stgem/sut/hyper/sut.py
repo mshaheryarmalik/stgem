@@ -85,7 +85,8 @@ class HyperParameter(SUT):
         self.reset_callback()
 
         # We disable GPU as it often does not work well with multiprocessing.
-        experiment.run(N_workers=self.N_workers, silent=True, use_gpu=False)
+        use_gpu = self.N_workers == 1
+        experiment.run(N_workers=self.N_workers, silent=True, use_gpu=use_gpu)
 
         test.input_denormalized = denormalized
         return SUTOutput(np.array([self.report()]), None, None)
