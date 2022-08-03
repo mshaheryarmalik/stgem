@@ -23,7 +23,7 @@ def main(selected_benchmark, selected_specification, mode, init_seed_experiments
     if not selected_specification in specifications[selected_benchmark]:
         raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
 
-    algorithm = "wogan"
+    algorithm = "ogan"
 
     if algorithm == "ogan":
         # We change the learning rates of the discriminator and the generator.

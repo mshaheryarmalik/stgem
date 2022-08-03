@@ -48,7 +48,7 @@ ogan_model_parameters = {
         "discriminator_betas": [0.9, 0.999],
         "generator_lr": 0.0005,
         "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 2048,
+        "noise_batch_size": 8192,
         "generator_loss": "MSE,Logit",
         "discriminator_loss": "MSE,Logit",
         "generator_mlm": "GeneratorNetwork",
@@ -164,6 +164,8 @@ def build_specification(selected_specification, mode=None, asut=None):
         # always[0,30]( GEAR == {} implies SPEED > 10*{} )
         # Only for {} == 3 or {} == 4.
         G = int(selected_specification[-1])
+        if not G in [3, 4]:
+            raise Exception("Wrong gear '{}'. Should be 3 or 4.".format(G))
 
         L = STL.Equals(1, 0, 0, G, S("GEAR"))
         R = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 10*G, S("SPEED"))
@@ -217,6 +219,7 @@ def get_objective_selector_factory():
 
 def step_factory():
     mode = "stop_at_first_objective"
+    #mode = "exhaust_budget"
 
     step_1 = Search(mode=mode,
                     budget_threshold={"executions": 75},
@@ -229,8 +232,8 @@ def step_factory():
                     #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
                     algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                    )
-    #steps = [step_1]
-    steps = [step_1, step_2]
+    steps = [step_1]
+    #steps = [step_1, step_2]
     return steps
 
 def get_step_factory():

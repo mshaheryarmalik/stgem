@@ -1,5 +1,8 @@
 import math, os, unittest
 
+# Avoid a CUDA-related crash in the case that a CUDA device is available.
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 from stgem.experiment import Experiment
 from stgem.generator import STGEM, Search
 from stgem.objective import Minimize
