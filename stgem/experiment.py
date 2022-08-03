@@ -59,6 +59,22 @@ class Experiment:
                     gc.collect()
         else:
             # Use multiprocessing.
+            import torch
+
+            # Currently if CUDA is available and even if all code is run on the
+            # CPU, the program will crash with a CUDA error which is due to
+            # pickling and multiple initialization. This needs to be looked at,
+            # but currently we just exit and instruct the user.
+            if torch.cuda.is_available():
+                raise SystemExit("Subprocesses are being used and these do " \
+                                 "not work with any CUDA device being " \
+                                 "available due to a pickling error (even in " \
+                                 "the case that only CPU is requested as the " \
+                                 "Pytorch device). Please disable " \
+                                 "multiprocessing or set 'export " \
+                                 "CUDA_VISIBLE_DEVICES=\"\"' to use CPU and " \
+                                 "multiprocessing.")
+
             def consumer(queue_generators, queue_results, silent, generator_callback):
                 while True:
                     msg = queue_generators.get()
