@@ -1,20 +1,21 @@
 import math, os, unittest
 
-# Avoid a CUDA-related crash in the case that a CUDA device is available.
+# Avoid a CUDA-related crash in the case that a CUDA device is
+# available. The imports need to be done below.
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
-
-from stgem.experiment import Experiment
-from stgem.generator import STGEM, Search
-from stgem.objective import Minimize
-from stgem.objective_selector import ObjectiveSelectorAll
-from stgem.sut.mo3d import MO3D
-from stgem.algorithm.random.algorithm import Random
-from stgem.algorithm.random.model import Uniform
 
 c = 0
 
 class TestPython(unittest.TestCase):
     def test_ogan(self):
+        from stgem.experiment import Experiment
+        from stgem.generator import STGEM, Search
+        from stgem.objective import Minimize
+        from stgem.objective_selector import ObjectiveSelectorAll
+        from stgem.sut.mo3d import MO3D
+        from stgem.algorithm.random.algorithm import Random
+        from stgem.algorithm.random.model import Uniform
+
         mode = "stop_at_first_objective"
 
         def stgem_factory():
