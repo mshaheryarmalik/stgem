@@ -12,7 +12,7 @@ Welcome to stgem's documentation!
    :maxdepth: 1
 
    installation
-   tutorial
+   tutorials
    classes
 
 Indices and tables
