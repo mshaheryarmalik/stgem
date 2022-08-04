@@ -38,19 +38,12 @@ class Algorithm:
         self.parameters = self.default_parameters | parameters
 
     def setup(self, search_space, device=None, logger=None):
-        """
+        """Setup algorithm (this documentation is preliminary)
 
         Parameters:
-            name (str): Description of the first parameter
-            Can also span multiple lines if indented properly
-            foo: Second parameter but no type given
-
-        Returns:
-            BufferedFileStorage: A buffered writable file descriptor
-
-
-
-
+            search_space (SearchSpace): The search space for the algorithm
+            device (pytorch, optional): Allows deterministic randomness
+            logger (Logger, optional): The logger
         """
         self.search_space =  search_space
         self.device = device
