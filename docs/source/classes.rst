@@ -8,5 +8,7 @@ These are the classes of stgem
    :caption: Contents:
    :maxdepth: 1
 
-   algorithm.rst
-   sut.rst
+   algorithm
+   objective
+   objective_selector
+   sut

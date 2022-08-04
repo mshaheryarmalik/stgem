@@ -8,7 +8,7 @@ make clean
 cd ..
 
 # Create .rst files for whole project
-SPHINX_APIDOC_OPTIONS=noindex,members,undoc-members,show-inheritance # Automodule options
+SPHINX_APIDOC_OPTIONS=noindex,members,show-inheritance # Automodule options
 export SPHINX_APIDOC_OPTIONS
 sphinx-apidoc -f -o docs/source -T . 'stgem.py' # exclude stgem.py to stop generation of duplicate stgem.rst files
 
