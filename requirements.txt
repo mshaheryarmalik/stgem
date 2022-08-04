@@ -8,5 +8,6 @@ pandas
 click
 multiprocess
 sphinx
+sphinx-rtd-theme
 myst-parser
 commonmark

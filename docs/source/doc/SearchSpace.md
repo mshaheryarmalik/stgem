@@ -1,0 +1,2 @@
+# SearchSpace
+Each SUT has a natural input space defined by its number of inputs, input types, and input ranges. The purpose of the SearchSpace object is to describe this input space and provide methods for it (random sampling etc.). However, random sampling, for example, modifies an internal state, so not all functionalities can be provided by the SUT itself as we want SUT objects to be reusable. The point of a SearchSpace object is thus separate certain functionalities from SUTs in order to preserve reusability.

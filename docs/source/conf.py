@@ -15,9 +15,13 @@ author = 'ÅAU'
 
 extensions = [
     'myst_parser',
+    'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
 ]
+
+# Napoleon settings
+napoleon_numpy_docstring = False
 
 # Define file suffixes to include
 source_suffix = {

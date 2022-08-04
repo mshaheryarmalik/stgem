@@ -4,6 +4,16 @@
 Welcome to stgem's documentation!
 =================================
 
+Introduction text
+
+.. toctree::
+   :caption: Contents:
+   :maxdepth: 1
+
+   installation
+   tutorial
+   classes
+
 .. toctree::
    :caption: Package:
    :maxdepth: 3
