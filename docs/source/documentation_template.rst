@@ -1,5 +1,5 @@
 ======================
-documentation template
+Documentation template
 ======================
 
 .. automodule:: docs.source.documentation_template

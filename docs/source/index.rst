@@ -9,10 +9,11 @@ Welcome to stgem's documentation!
 
 .. toctree::
    :caption: Contents:
-   :maxdepth: 1
+   :maxdepth: 2
 
    installation
    tutorials
+   implemented_algorithms
    classes
 
 Indices and tables

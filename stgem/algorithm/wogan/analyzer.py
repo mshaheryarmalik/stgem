@@ -135,11 +135,11 @@ class Analyzer_NN(Analyzer):
         Train the analyzer part of the model with a batch of training data.
 
         Args:
-          data_X (np.ndarray):   Array of tests of shape
-                                 (N, self.modelA.input_shape).
-          data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
-          train_settings (dict): A dictionary for setting up the training.
-                                 Currently all keys are ignored.
+            data_X (np.ndarray): Array of tests of shape
+                (N, self.modelA.input_shape).
+            data_Y (np.ndarray): Array of test outputs of shape (N, 1).
+                train_settings (dict): A dictionary for setting up the training.
+                Currently all keys are ignored.
         """
 
         data_X = torch.from_numpy(data_X).float().to(self.device)
@@ -151,11 +151,11 @@ class Analyzer_NN(Analyzer):
         Predicts the objective function value of the given test.
 
         Args:
-          test (np.ndarray): Array with shape (1, N) or (N) where N is
-                             self.modelA.input_shape.
+            test (np.ndarray): Array with shape (1, N) or (N)
+                where N is self.modelA.input_shape.
 
         Returns:
-          output (np.ndarray): Array with shape (1).
+            output (np.ndarray): Array with shape (1).
         """
 
         test_tensor = torch.from_numpy(test).float().to(self.device)
@@ -182,11 +182,11 @@ class Analyzer_NN_classifier(Analyzer_NN):
         Train the analyzer part of the model with a batch of training data.
 
         Args:
-          data_X (np.ndarray):   Array of tests of shape
-                                 (N, self.modelA.input_shape).
-          data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
-          train_settings (dict): A dictionary for setting up the training.
-                                 Currently all keys are ignored.
+            data_X (np.ndarray):   Array of tests of shape
+                (N, self.modelA.input_shape).
+            data_Y (np.ndarray):   Array of test outputs of shape (N, 1).
+            train_settings (dict): A dictionary for setting up the training.
+                Currently all keys are ignored.
         """
 
         data_X = torch.from_numpy(data_X).float().to(self.device)
@@ -198,10 +198,10 @@ class Analyzer_NN_classifier(Analyzer_NN):
         Predicts the objective function value of the given test.
 
         Args:
-          test (np.ndarray): Array of shape (N, self.modelA.input_shape).
+            test (np.ndarray): Array of shape (N, self.modelA.input_shape).
 
         Returns:
-          output (np.ndarray): Array of shape (N, 1).
+            output (np.ndarray): Array of shape (N, 1).
         """
 
         training_A = self.modelA.training
