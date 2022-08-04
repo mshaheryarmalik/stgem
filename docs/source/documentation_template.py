@@ -5,36 +5,45 @@ Source code is in docs/source/documentation_template.py
 class ExampleClass(object):
     """
 
-    :Use rst syntax in class and method docstrings:
+    Use rst syntax in class and method docstrings
 
     This is *italic* and **bold**
 
-    :Sections need blank lines before and after to function:
+    Sections need blank lines before and after to function
 
-    .. note:: Something important
-    .. warning:: Example
-    .. seealso:: awdawd
+    Note:
+        Something important
+    Warning:
+        Example
+    See Also:
+        Make sure you check this out for more section options: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
     """
     def templateMethod(self, x, y, z):
-        """[Summary]
+        """
+        Args:
+            path (str): The path of the file to wrap
+            field_storage (FileStorage): The `FileStorage` instance to wrap
+            temporary (bool): Whether or not to delete the file when the `File` instance is destructed
 
-        :param [ParamName]: [ParamDescription], defaults to [DefaultParamVal]
-        :type [ParamName]: [ParamType](, optional)
-        :raises [ErrorType]: [ErrorDescription]
-        :return: [ReturnDescription]
-        :rtype: [ReturnType]
+        Returns:
+            BufferedFileStorage: A buffered writable file descriptor
+
+        Raises:
+            [ErrorType]: [ErrorDescription]
         """
 
     def Sum(self, x, y, optional):
         """Add x and y values.
 
-        :param x: x value
-        :type x: int
-        :param y: y value
-        :type y: int
-        :param optional: Optional value, defaults to 0
-        :type optional: int, optional
-        :raises IntegerOverflowException: Sum of x and y is too big
-        :return: Sum of x and y
-        :rtype: int
+
+        Args:
+            x (int): x value
+            y (int): y value
+
+            optional (int, optional): Optional value, defaults to 0
+        Raises:
+            IntegerOverflowException: Sum of x and y is too big
+        Returns:
+            int: Sum of x and y
+
         """
