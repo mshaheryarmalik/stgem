@@ -3,23 +3,20 @@
 Source code is in docs/source/documentation_template.py
 """
 class ExampleClass(object):
-    """
-
-    Use rst syntax in class and method docstrings
+    """Use Google style in class and method docstrings
 
     This is *italic* and **bold**
-
-    Sections need blank lines before and after to function
 
     Note:
         Something important
     Warning:
         Example
     See Also:
-        Make sure you check this out for more section options: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
+        Check out following for more section options: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
     """
-    def templateMethod(self, x, y, z):
-        """
+    def exampleMethod1(self, path, field_storage, temporary):
+        """Method summary
+
         Args:
             path (str): The path of the file to wrap
             field_storage (FileStorage): The `FileStorage` instance to wrap
@@ -29,12 +26,11 @@ class ExampleClass(object):
             BufferedFileStorage: A buffered writable file descriptor
 
         Raises:
-            [ErrorType]: [ErrorDescription]
+            OutOFBoundsException: Out of bounds
         """
 
-    def Sum(self, x, y, optional):
+    def exampleSum(self, x, y, optional):
         """Add x and y values.
-
 
         Args:
             x (int): x value
@@ -45,5 +41,4 @@ class ExampleClass(object):
             IntegerOverflowException: Sum of x and y is too big
         Returns:
             int: Sum of x and y
-
         """

@@ -1,7 +1,8 @@
+============
 Installation
 ============
 
-Installation text
+Follow these steps to install stgem
 
 .. toctree::
    :caption: Steps:

@@ -1,5 +1,6 @@
-This is a documentation template
-=================================
+======================
+documentation template
+======================
 
 .. automodule:: docs.source.documentation_template
    :members:

@@ -1,7 +1,6 @@
+=========
 Algorithm
 =========
-
-Algorithm text
 
 .. include:: doc/Algorithm.md
    :parser: myst_parser.sphinx_

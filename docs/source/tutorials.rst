@@ -1,7 +1,8 @@
-Tutorial
+========
+Tutorials
 ========
 
-TODO
+stgem tutorials
 
 .. toctree::
    :caption: Introduction:
@@ -14,3 +15,9 @@ TODO
    :maxdepth: 1
 
    ../../CONTRIBUTING
+
+.. toctree::
+   :caption: Document:
+   :maxdepth: 1
+
+   documentation_template

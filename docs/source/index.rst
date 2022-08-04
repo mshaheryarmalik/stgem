@@ -1,10 +1,11 @@
 .. stgem documentation master file, created by
    sphinx-quickstart on Fri Jul 29 10:42:55 2022.
 
-Welcome to stgem's documentation!
-=================================
+===================
+stgem documentation
+===================
 
-Introduction text
+Welcome to stgem's documentation!
 
 .. toctree::
    :caption: Contents:
@@ -13,21 +14,6 @@ Introduction text
    installation
    tutorial
    classes
-
-.. toctree::
-   :caption: Package:
-   :maxdepth: 3
-
-   stgem
-
-.. toctree::
-   :caption: Notes:
-   :maxdepth: 1
-
-   documentation_template
-   ../../README
-   ../../INSTALLATION
-   ../../CONTRIBUTING
 
 Indices and tables
 ==================

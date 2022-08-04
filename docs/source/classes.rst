@@ -1,11 +1,12 @@
+=======
 Classes
 =======
 
-Classes text
+These are the classes of stgem
 
 .. toctree::
    :caption: Contents:
    :maxdepth: 1
-   :titlesonly:
 
    algorithm.rst
+   sut.rst
