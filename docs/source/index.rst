@@ -16,13 +16,10 @@ Welcome to stgem's documentation!
    implemented_algorithms
 
 .. toctree::
-   :caption: Classes:
-   :maxdepth: 1
+   :caption: Structure:
+   :maxdepth: 2
 
-   algorithm
-   objective
-   objective_selector
-   sut
+   classes
 
 Indices and tables
 ==================

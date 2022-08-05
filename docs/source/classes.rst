@@ -5,7 +5,7 @@ Classes
 These are the classes of stgem
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    algorithm
    objective

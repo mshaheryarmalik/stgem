@@ -100,14 +100,12 @@ class LHS(Model):
                 given, the design is simply randomized.
             iterations (int, optional): The number of iterations in the maximin
                 and correlations algorithms. Defaults to 5.
-        
+
         Returns:
-            H : 2d-array
-                An n-by-samples design matrix that has been normalized so factor values
-                are uniformly spaced between zero and one.
+            2d-array: An n-by-samples design matrix that has been normalized
+                so factor values are uniformly spaced between zero and one.
         
-        Example
-        =======
+        Examples:
 
         A 3-factor design (defaults to 3 samples)::
         
