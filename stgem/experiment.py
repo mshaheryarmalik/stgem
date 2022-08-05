@@ -24,7 +24,7 @@ class Experiment:
         # garbage collection for some reason.
         self.garbage_collect = True
 
-    def run(self, N_workers=1, silent=False, done=None):
+    def run(self, N_workers=1, silent=False, use_gpu=True, done=None):
         if done is None:
             done = []
 
@@ -36,7 +36,7 @@ class Experiment:
                 generator = self.stgem_factory()
                 seed = self.seed_factory()
                 if not idx in done:
-                    generator.setup(seed=seed)
+                    generator.setup(seed=seed, use_gpu=use_gpu)
 
                     if silent:
                         generator.logger.silent = True
@@ -59,6 +59,22 @@ class Experiment:
                     gc.collect()
         else:
             # Use multiprocessing.
+            import torch
+
+            # Currently if CUDA is available and even if all code is run on the
+            # CPU, the program will crash with a CUDA error which is due to
+            # pickling and multiple initialization. This needs to be looked at,
+            # but currently we just exit and instruct the user.
+            if torch.cuda.is_available():
+                raise SystemExit("Subprocesses are being used and these do " \
+                                 "not work with any CUDA device being " \
+                                 "available due to a pickling error (even in " \
+                                 "the case that only CPU is requested as the " \
+                                 "Pytorch device). Please disable " \
+                                 "multiprocessing or set 'export " \
+                                 "CUDA_VISIBLE_DEVICES=\"\"' to use CPU and " \
+                                 "multiprocessing.")
+
             def consumer(queue_generators, queue_results, silent, generator_callback):
                 while True:
                     msg = queue_generators.get()
@@ -66,7 +82,7 @@ class Experiment:
 
                     idx, generator, seed = msg
 
-                    generator.setup(seed=seed)
+                    generator.setup(seed=seed, use_gpu=use_gpu)
                     
                     if silent:
                         generator.logger.silent = True

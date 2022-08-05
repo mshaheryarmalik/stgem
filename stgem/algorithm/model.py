@@ -5,6 +5,17 @@ import copy
 
 from stgem.performance import PerformanceData
 
+"""
+Currently the use_previous_rng parameter is used so that the setup method can
+be called several times without the RNG being advanced. This is especially
+important with hyperparameter tuning as then setup is called when
+hyperparameters are changed and if the setup involves setting up machine
+learning models, the initial weights or other parameters can be completely
+different.
+
+It is up to the child class to implement RNG saving and restoration.
+"""
+
 class Model:
     """
     Base class for all models.

@@ -32,7 +32,7 @@ specification = STL.Implication(L, R)
 class TestPython(unittest.TestCase):
     def test_python(self):
         generator = STGEM(
-            description="Matlab-AT/OGAN",
+            description="Matlab-AT-OGAN",
             sut=Matlab_Simulink(sut_parameters),
             objectives=[FalsifySTL(specification=specification, scale=True, strict_horizon_check=False)],
             objective_selector=ObjectiveSelectorMAB(warm_up=60),

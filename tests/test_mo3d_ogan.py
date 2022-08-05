@@ -7,7 +7,7 @@ from stgem.objective_selector import ObjectiveSelectorMAB
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.random.algorithm import Random
-from stgem.algorithm.random.model import Uniform, LHS
+from stgem.algorithm.random.model import Uniform, LHS, Halton
 
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
@@ -23,7 +23,7 @@ class TestPython(unittest.TestCase):
         mode = "stop_at_first_objective"
 
         generator = STGEM(
-            description="mo3d/OGAN",
+            description="mo3d-OGAN",
             sut=PythonFunction(function=myfunction),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
@@ -31,12 +31,15 @@ class TestPython(unittest.TestCase):
                         ],
             objective_selector=ObjectiveSelectorMAB(warm_up=41),
             steps=[
-                Search(budget_threshold={"executions": 20},
+                Search(budget_threshold={"executions": 10},
                        mode=mode,
                        algorithm=Random(model_factory=(lambda: Uniform(parameters={"min_distance": 0.2})))),
-                Search(budget_threshold={"executions": 40},
+                Search(budget_threshold={"executions": 20},
                        mode=mode,
                        algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 20})))),
+                Search(budget_threshold={"executions": 40},
+                       mode=mode,
+                       algorithm=Random(model_factory=(lambda: Halton()))),
                 Search(budget_threshold={"executions": 45},
                        mode=mode,
                        algorithm=OGAN(model_factory=(lambda: OGAN_Model())))

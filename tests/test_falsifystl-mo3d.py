@@ -29,7 +29,7 @@ class TestFalsifySTL(unittest.TestCase):
         specification = STL.And(F1, STL.And(F2, F3))
 
         generator = STGEM(
-            description="mo3d/OGAN",
+            description="mo3d-OGAN",
             sut=PythonFunction(function=myfunction),
             objectives=[FalsifySTL(specification=specification, scale=True) ],
             steps=[
@@ -52,7 +52,7 @@ class TestFalsifySTL(unittest.TestCase):
         F3 = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, STL.Signal("o2", var_range=[0, 350]))
 
         generator = STGEM(
-            description="mo3d/OGAN",
+            description="mo3d-OGAN",
             sut=PythonFunction(function=myfunction),
             objectives=[FalsifySTL(specification=F1, scale=True),
                        FalsifySTL(specification=F2, scale=True),
@@ -79,7 +79,7 @@ class TestFalsifySTL(unittest.TestCase):
         specification = STL.And(F1, STL.And(F2, F3))
 
         generator = STGEM(
-            description="mo3d/OGAN",
+            description="mo3d-OGAN",
             sut=MO3D(),
             objectives=[FalsifySTL(specification=specification, scale=True)],
             steps=[

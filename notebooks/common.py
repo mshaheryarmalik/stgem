@@ -63,6 +63,25 @@ def falsification_rate(experiment):
 
     return c/len(experiment)
 
+def times(replica):
+    t = 0
+    for step in replica.step_results:
+        perf = step.algorithm_performance
+        try:
+            t += sum(perf.get_history("execution_time"))
+        except:
+            pass
+        try:
+            t += sum(perf.get_history("generation_time"))
+        except:
+            pass
+        try:
+            t += sum(perf.get_history("training_time"))
+        except:
+            pass
+
+    return t
+
 def min_along(X, length=None):
     # Return the minimum so far along X.
     m = 1.0
@@ -87,13 +106,19 @@ def mean_min_along(results, length=None):
 
     return C
 
-def first_falsification(result):
-    _, _, Y = result.test_repository.get()
+def first_falsification(replica):
+    _, _, Y = replica.test_repository.get()
     for i in range(len(Y)):
         if min(Y[i]) <= 0.0:
             return i
 
     return None
+
+def set_boxplot_color(bp, color):
+    plt.setp(bp["boxes"], color=color)
+    plt.setp(bp["whiskers"], color=color)
+    plt.setp(bp["caps"], color=color)
+    plt.setp(bp["medians"], color=color)
 
 def color(x, color_map, robustness_interval=None):
     """Color for robustness value x (clipped to [0, 1]). A range for robustness
@@ -114,6 +139,19 @@ def color(x, color_map, robustness_interval=None):
 
     x = scale(x, robustness_interval, (-1, 1))
     return color_map(x)
+
+def own_boxplot(data, x_labels, title="", ylabel="", line=None):
+    fig = plt.figure(figsize=(2*len(data), 5))
+    plt.title(title)
+    plt.ylabel(ylabel)
+    bp = bp = plt.boxplot(data, labels=x_labels)
+    set_boxplot_color(bp, "black")
+
+    if line is not None:
+        plt.axhline(line, c="r")
+
+    plt.tight_layout()
+    return plt
 
 def plotTest(replica, idx):
     """Plots a single test from a replica."""
@@ -215,7 +253,7 @@ def animateResult(replica):
     Y = np.array(Y).reshape(-1)
 
     # Setup the figures.
-    fig, ax = plt.subplots(2, max(len(inputs), len(outputs)), figsize=(10*max(len(inputs), len(outputs)), 10))
+    fig, ax = plt.subplots(2, max(len(inputs), len(outputs)), figsize=(5*max(len(inputs), len(outputs)), 5))
 
     for i, var in enumerate(inputs):
         ax[0,i].set_title(var)
@@ -231,6 +269,8 @@ def animateResult(replica):
         lines.append(ax[0,i].plot([], [], lw=2)[0])
     for i in range(len(outputs)):
         lines.append(ax[1,i].plot([], [], lw=2)[0])
+    text = ax[0,0].text(0.02, 0.95, "")
+    #text = ax[0,0].text(0.02, 0.95, "", transform=ax.transAxes)
 
     def init():
         for line in lines:
@@ -241,6 +281,8 @@ def animateResult(replica):
     def animate(i):
         cm = color_map_falsified if Y[i] <= robustness_threshold else color_map_other
         c = color(Y[i], cm)
+        c = "black"
+        text.set_text("test {}, robustness {}".format(i+1, Y[i]))
         for j in range(len(inputs)):
             k = j
             x = X[i].input_timestamps
@@ -262,19 +304,13 @@ def animateResult(replica):
 
 def condensed_boxplot(data, x_labels, pb_labels, colors):
     # TODO: Does this even work with the current code?
-    def set_color(bp, color):
-        plt.setp(bp["boxes"], color=color)
-        plt.setp(bp["whiskers"], color=color)
-        plt.setp(bp["caps"], color=color)
-        plt.setp(bp["medians"], color=color)
-    
     fig = plt.figure(figsize =(7, 5))
     
     # Create boxplots and set colors.
     for i in range(len(data)):
         #bp = plt.boxplot(data[i])
         bp = plt.boxplot(data[i], positions=i+np.array(range(len(data[i])))*4-0.4, sym="", widths=0.6)
-        set_color(bp, colors[i])
+        set_boxplot_color(bp, colors[i])
     
     # Draw temporary lines and use them to create a legend.
     for i in range(len(pb_labels)):
