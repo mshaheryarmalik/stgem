@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import os
 
 import numpy as np
@@ -75,14 +72,14 @@ class OdroidSUT(SUT):
 
         Args:
           test (np.ndarray): Array with shape (1,N) or (N) with
-                             N = self.ndimensions of floats in [-1, 1].
+                             N = self.idim of floats in [-1, 1].
 
         Returns:
           result (np.ndarray): Array of shape (3) of floats in [0, 1].
         """
 
         test = sut_input.inputs
-        if not (test.shape == (1, self.ndimensions) or test.shape == (self.ndimensions,)):
+        if not (test.shape == (1, self.idim) or test.shape == (self.idim,)):
             raise ValueError("Input array expected to have shape (1, {0}) or ({0}).".format(self.ndimensions))
 
         distances = np.sum((self.dataX - test)**2, axis=1)
