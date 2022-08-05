@@ -9,12 +9,20 @@ Welcome to stgem's documentation!
 
 .. toctree::
    :caption: Contents:
-   :maxdepth: 2
+   :maxdepth: 1
 
    installation
    tutorials
    implemented_algorithms
-   classes
+
+.. toctree::
+   :caption: Classes:
+   :maxdepth: 1
+
+   algorithm
+   objective
+   objective_selector
+   sut
 
 Indices and tables
 ==================
