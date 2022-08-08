@@ -118,8 +118,8 @@ class FalsifySTL(Objective):
                 return []
             elif isinstance(stl_formula, (STL.Global, STL.Finally)):
                 return [stl_formula] + bounded(stl_formula.formula)
-            elif isinstance(stl_formula, (STL.Until, STL.Release)):
-                return [stl_formula] + bounded(stl_formula.left_formula) + bounded(stl_formula.right_formula)
+                #elif isinstance(stl_formula, (STL.Until, STL.Release)):
+                #return [stl_formula] + bounded(stl_formula.left_formula) + bounded(stl_formula.right_formula)
             elif isinstance(stl_formula, (STL.Or, STL.And)):
                 temp = []
                 for i in stl_formula.formulas:
@@ -138,10 +138,10 @@ class FalsifySTL(Objective):
             elif isinstance(stl_formula, (STL.Global, STL.Finally)):
                 print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
                 ranges(stl_formula.formula)
-            elif isinstance(stl_formula, (STL.Until, STL.Release)):
+                """elif isinstance(stl_formula, (STL.Until, STL.Release)):
                 print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
                 ranges(stl_formula.left_formula)
-                ranges(stl_formula.right_formula)
+                ranges(stl_formula.right_formula)"""
             elif isinstance(stl_formula, (STL.Or, STL.And)):
                 print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
                 for i in stl_formula.formulas:
@@ -236,7 +236,8 @@ class FalsifySTL(Objective):
         #robustness = robustness_signal[0]
 
         temp = STL.Traces(timestamps,trajectories)
-        robustness = self.specification.eval(temp, 0)
+        robustness_signal = self.specification.eval(temp)
+        robustness = robustness_signal[0]
 
         # Scale the robustness to [0, 1] if required.
         if self.scale:
@@ -345,10 +346,10 @@ class FalsifySTL(Objective):
         # Notice that the return value is a Cython MemoryView.
         #robustness_signal = self.specification.eval_interval(trajectories, timestamps)
 
-        #robustness = robustness_signal[0]
 
         temp = STL.Traces(timestamps,trajectories)
-        robustness = self.specification.eval(temp, 0)
+        robustness_signal = self.specification.eval(temp)
+        robustness = robustness_signal[0]
         print("OBJECTIF")
         print(robustness)
         print("OBJECTIF")
