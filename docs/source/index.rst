@@ -8,7 +8,7 @@ stgem documentation
 Welcome to stgem's documentation!
 
 .. toctree::
-   :caption: Contents:
+   :caption: Contents
    :maxdepth: 1
 
    installation
@@ -16,7 +16,7 @@ Welcome to stgem's documentation!
    implemented_algorithms
 
 .. toctree::
-   :caption: Structure:
+   :caption: Structure
    :maxdepth: 2
 
    classes
@@ -26,4 +26,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

@@ -60,6 +60,7 @@ class WOGAN_NN(nn.Module):
         self.bottom = nn.Linear(self.hidden_neurons[-1], self.output_shape)
 
     def forward(self, x):
+        """:meta private:"""
         x = self.hidden_activation(self.top(x))
         for i, L in enumerate(self.hidden):
             L = L.to(x.device)

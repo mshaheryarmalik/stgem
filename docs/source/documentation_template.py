@@ -5,28 +5,26 @@ Source code is in docs/source/documentation_template.py
 class ExampleClass(object):
     """Use Google style in class and method docstrings
 
-    This is *italic* and **bold**
-
     Note:
-        Something important
+        Use \:meta private: and \:meta public: in class and method docstrings to hide/unhide them.
     Warning:
-        Example
+        This is *italic* and **bold**.
     See Also:
-        Check out following for more section options: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
+        Check out following for more section options: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html.
     """
-    def exampleMethod1(self, path, field_storage, temporary):
+    def exampleMethod(self, path, field_storage, temporary):
         """Method summary
 
         Args:
             path (str): The path of the file to wrap
             field_storage (FileStorage): The `FileStorage` instance to wrap
-            temporary (bool): Whether or not to delete the file when the `File` instance is destructed
+            temporary (bool): Whether to delete the file when the `File` instance is destructed
 
         Returns:
             BufferedFileStorage: A buffered writable file descriptor
 
         Raises:
-            OutOFBoundsException: Out of bounds
+            OutOfBoundsException: Out of bounds
         """
 
     def exampleSum(self, x, y, optional):
