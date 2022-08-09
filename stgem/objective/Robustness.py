@@ -14,7 +14,7 @@ class Traces:
 		self.signals.update(temp)
 
 	def Get(self,name):
-		return self.signals[name]
+		return np.array(self.signals[name])
 
 class Signal:
 	def __init__(self,name,var_range):
@@ -23,7 +23,7 @@ class Signal:
 		self.var_range = var_range
 		self.variables = [self.name]
 		self.horizon = 0
-
+	"""
 	def find_id(self,traces): 
 	# from a timestamps time, return the correspondant index of the table 
 		indice = -1
@@ -34,9 +34,9 @@ class Signal:
 			raise Exception("time error") 
 		else:
 			return indice
-
+	"""
 	def eval(self, traces):
-		return traces.signals[self.name]
+		return np.array(traces.signals[self.name])
 		
 
 class Const:
@@ -49,7 +49,7 @@ class Const:
 		self.horizon = 0
 
 	def eval(self, traces):
-		return [self.val] * len(traces.timestamps)
+		return np.full(len(traces.timestamps), self.val)
 
 
 #for the following classes there are several parameters in the initilisation :
@@ -80,9 +80,7 @@ class Subtract:
 		res = []
 		left_formula_robustness = self.left_formula.eval(traces)
 		right_formula_robustness = self.right_formula.eval(traces)
-		for i in range(len(left_formula_robustness)):
-			res.append(left_formula_robustness[i] - right_formula_robustness[i])
-		return res
+		return np.subtract(left_formula_robustness,right_formula_robustness)
 
 class GreaterThan:
 # left_formula > right_formula ?
@@ -145,13 +143,7 @@ class Abs:
 
 	def eval(self, traces):
 		formula_robustness = self.formula.eval(traces)
-		res = []
-		for i in range(len(formula_robustness)):
-			if formula_robustness[i] < 0 :
-				res.append(-1*formula_robustness[i])
-			else :
-				res.append(formula_robustness[i])
-		return res
+		return np.absolute(formula_robustness)
 
 class Sum:
 # left_formula + right_formula at a given time
@@ -169,9 +161,7 @@ class Sum:
 		res = []
 		left_formula_robustness = self.left_formula.eval(traces)
 		right_formula_robustness = self.right_formula.eval(traces)
-		for i in range(len(left_formula_robustness)):
-			res.append(left_formula_robustness[i] + right_formula_robustness[i])
-		return res
+		return np.add(left_formula_robustness,right_formula_robustness)
 
 class Implication:
 	def __init__(self, left_formula, right_formula):
@@ -208,13 +198,7 @@ class Equals:
 	# Compute -|left_formula - right_formula|for each time. If this is nonzero, return as is.
 	# Otherwise return 1.
 		formula_robustness = Not(Abs(Subtract(self.left_formula,self.right_formula))).eval(traces)
-		res = []
-		for i in range(len(formula_robustness)):
-			if formula_robustness[i]==0:
-				res.append(1)
-			else:
-				res.append(formula_robustness[i])
-		return res
+		return np.where(formula_robustness == 0, 1, formula_robustness)	
 
 class Not:
 	def __init__(self, formula):
@@ -234,10 +218,7 @@ class Not:
 
 	def eval(self, traces):
 		formula_robustness = self.formula.eval(traces)
-		res = []
-		for i in range(len(formula_robustness)):
-			res.append(-1*formula_robustness[i])
-		return res
+		return formula_robustness*-1
 
 
 class Next:
@@ -267,11 +248,8 @@ class Next:
 
 	def eval(self, traces):
 		formula_robustness = self.formula.eval(traces)
-		res = []
-		for i in range(len(formula_robustness)-1):
-			res.append(formula_robustness[i+1])
-		res.append(formula_robustness[len(formula_robustness)-1])
-		
+		res = np.roll(formula_robustness, -1)
+		res[len(res) - 1] = res[len(res) - 2]
 		return res
 
 
@@ -300,13 +278,11 @@ class Global:
 
 		#if the time bound isn't exceed
 		while  i < len(traces.timestamps) and traces.timestamps[i] <= self.upper_time_bound :
-			
 			#finding the minimum
-			
 			if min_temp > formula_robustness[i]:
 				min_temp = formula_robustness[i]
 			i += 1
-		return [min_temp] * len(formula_robustness)
+		return np.full(len(formula_robustness),min_temp)
 
 
 #formula eventually has to be True (somewhere on the subsequent path)
@@ -408,12 +384,6 @@ class And:
 
 	def eval(self, traces):
 
-		def P_Prime(p,p_min):
-			tab = []
-			for i in range(len(p)):
-				temp = (p[i]-p_min)/p_min
-				tab.append(temp)
-			return tab
 		#mu can be change
 		mu = 1
 		p = []
@@ -421,36 +391,32 @@ class And:
 		for i in self.formulas:
 			p.append(i.eval(traces))
 		#finding the min
-		p_min = []
-		for i in range(len(p[0])):
-			temp_min = self.var_range[1]
-			for j in range(len(p)):
-				if p[j][i] < temp_min:
-					temp_min = p[j][i]
-			p_min.append(temp_min)
+		p_min = np.array(p).min(axis = 0)
+
+		temp_min = np.tile(p_min, (len(self.formulas), 1))
+		p_prime = np.array(p)- temp_min
+		p_prime = np.divide(p_prime,temp_min)
+
 		res = []
-		columns = list(zip(*p))
 		for i in range(len(p[0])):
 			numerator = 0
 			if p_min[i] < 0:
 				denominator = 0
-				p_prime = P_Prime(columns[i],p_min[i])
 				for j in range(len(p)):
-					numerator += p_min[i]*(np.e**p_prime[j])*(np.e**(mu*p_prime[j]))
-					denominator += np.e**(mu*p_prime[j])
+					numerator += p_min[i]*(np.e**p_prime[j][i])*(np.e**(mu*p_prime[j][i]))
+					denominator += np.e**(mu*p_prime[j][i])
 				res.append(numerator/denominator)
 			else:
 				if p_min[i] > 0:
 					denominator = 0
-					p_prime = P_Prime(columns[i],p_min[i])
 					for j in range(len(p)):
-						numerator += p[j][i]*np.e**(-mu*p_prime[j])
-						denominator += np.e**(-mu*p_prime[j])
+						numerator += p[j][i]*np.e**(-mu*p_prime[j][i])
+						denominator += np.e**(-mu*p_prime[j][i])
 					res.append(numerator/denominator)
 				else:
 					# if p_min == 0:
 					res.append(numerator) # equal to 0
-		return res
+		return np.array(res)
 
 
 # left_formula has to hold at least until right_formula; if right_formula never becomes true, left_formula must remain true forever. 
@@ -487,7 +453,10 @@ class Weak_Until:
 				min_left_formula = left_formula_robustness[i]
 			i += 1
 		#return the minimum of the left formula
-		return [min_left_formula]
+		return np.full(len(left_formula_robustness),min_left_formula)
+
+
+
 """
 #left_formula has to hold at least until right_formula becomes true, which must hold at the current or a future position. 
 class Until:
