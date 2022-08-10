@@ -2,6 +2,7 @@ from unittest import skipIf
 _can_parse = True
 from parser.parser import parse
 from _parser import ParserTestCase
+from stgem.objective import Robustness as rbst
 
 
 @skipIf(
@@ -10,11 +11,10 @@ from _parser import ParserTestCase
 )
 class PredicateTestCase(ParserTestCase):
     def _do_test(self, phi: str, expected) -> None:
-        import tltk_mtl as mtl
 
         predicate = parse(phi, self._vars)
 
-        assert isinstance(predicate, mtl.Predicate)
+        assert isinstance(predicate, rbst.Predicate)
 
         self.assertEqual(predicate.variable_name, expected.variable_name)
         self.assertEqual(predicate.A_Matrix, expected.A_Matrix)

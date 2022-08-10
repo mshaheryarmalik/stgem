@@ -22,6 +22,9 @@ RBRACK
 COMMA
     : ',' ;
 
+PLUS
+    : '+' ;
+
 MINUS
     : '-' ;
 

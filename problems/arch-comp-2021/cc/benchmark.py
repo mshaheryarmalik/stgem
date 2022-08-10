@@ -97,6 +97,7 @@ def build_specification(selected_specification, mode=None, asut=None):
     S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "CC1":
         # always[0,100]( y5 - y4 <= 40 )
+        #specification = parse("always[0,100]( y5 - y4 <= 40 )")
         specification = STL.Global(0, 100, STL.LessThan(1, 0, 1, 40, S("Y5"), S("Y4")))
         
         specifications = [specification]

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Dict, Optional, Sequence, Union
 from stgem.objective import Robustness as rbst
-import tltk_mtl as mtl
 from antlr4.CommonTokenStream import CommonTokenStream
 from antlr4.InputStream import InputStream
 
@@ -11,7 +10,7 @@ from .stlParser import stlParser as Parser
 from .stlParserVisitor import stlParserVisitor as Visitor
 
 PredicateNameSeq = Sequence[str]
-PredicateDict = Dict[str, mtl.Predicate]
+PredicateDict = Dict[str, rbst.Predicate]
 Predicates = Union[PredicateNameSeq, PredicateDict]
 TltkObject = Union[
     rbst.And,

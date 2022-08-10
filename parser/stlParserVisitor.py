@@ -6,7 +6,7 @@ if __name__ is not None and "." in __name__:
 else:
     from stlParser import stlParser
 
-import tltk_mtl as mtl
+from stgem.objective import Robustness as rbst
 import numpy as np
 
 # This class defines a complete generic visitor for a parse tree produced by stlParser.
@@ -16,7 +16,7 @@ class stlParserVisitor(ParseTreeVisitor):
             raise ValueError("predicates must be list, dict or tuple")
 
         if isinstance(predicates, dict):
-            if not all(isinstance(pred, mtl.Predicate) for pred in predicates.values()):
+            if not all(isinstance(pred, rbst.Predicate) for pred in predicates.values()):
                 raise ValueError("all dictionary values must be TLTK Predicate objects")
 
         self._lexer = lexer
@@ -36,7 +36,7 @@ class stlParserVisitor(ParseTreeVisitor):
         pred = self.visit(ctx.getRuleContext().getChild(2))
         bounds = self.visit(ctx.getRuleContext().getChild(1))
 
-        return mtl.Finally(bounds[0], bounds[1], pred, self._mode)
+        return rbst.Finally(bounds[0], bounds[1], pred, self._mode)
 
     # Visit a parse tree produced by stlParser#parenPhiExpr.
     def visitParenPhiExpr(self, ctx: stlParser.ParenPhiExprContext):
@@ -49,14 +49,14 @@ class stlParserVisitor(ParseTreeVisitor):
 
         bounds = self.visit(ctx.getRuleContext().getChild(2))
 
-        return mtl.Until(bounds[0], bounds[1], pred1, pred2, self._mode)
+        return rbst.Until(bounds[0], bounds[1], pred1, pred2, self._mode)
 
     # Visit a parse tree produced by stlParser#opGloballyExpr.
     def visitOpGloballyExpr(self, ctx: stlParser.OpGloballyExprContext):
         pred = self.visit(ctx.getRuleContext().getChild(2))
         bounds = self.visit(ctx.getRuleContext().getChild(1))
 
-        return mtl.Global(bounds[0], bounds[1], pred, self._mode)
+        return rbst.Global(bounds[0], bounds[1], pred, self._mode)
 
     # Visit a parse tree produced by stlParser#opLogicalExpr.
     def visitOpLogicalExpr(self, ctx: stlParser.OpLogicalExprContext):
@@ -66,9 +66,9 @@ class stlParserVisitor(ParseTreeVisitor):
         type = ctx.getRuleContext().getChild(1).getSymbol().type
 
         if type == self._lexer.ANDOP:
-            return mtl.And(pred1, pred2, self._mode)
+            return rbst.And(pred1, pred2, self._mode)
         elif type == self._lexer.OROP:
-            return mtl.Or(pred1, pred2, self._mode)
+            return rbst.Or(pred1, pred2, self._mode)
 
     # Visit a parse tree produced by stlParser#opReleaseExpr.
     def visitOpReleaseExpr(self, ctx: stlParser.OpReleaseExprContext):
@@ -77,26 +77,26 @@ class stlParserVisitor(ParseTreeVisitor):
 
         bounds = self.visit(ctx.getRuleContext().getChild(2))
 
-        return mtl.Not(mtl.Until(bounds[0], bounds[1], mtl.Not(pred1), mtl.Not(pred2)))
+        return rbst.Not(rbst.Until(bounds[0], bounds[1], rbst.Not(pred1), rbst.Not(pred2)))
 
     # Visit a parse tree produced by stlParser#opNextExpr.
     def visitOpNextExpr(self, ctx: stlParser.OpNextExprContext):
         pred = self.visit(ctx.getRuleContext().getChild(1))
 
-        return mtl.Next(pred)
+        return rbst.Next(pred)
 
     # Visit a parse tree produced by stlParser#opPropExpr.
     def visitOpPropExpr(self, ctx: stlParser.OpPropExprContext):
         pred1 = self.visit(ctx.getRuleContext().getChild(0))
         pred2 = self.visit(ctx.getRuleContext().getChild(2))
 
-        return mtl.Or(mtl.Not(pred1), pred2, self._mode)
+        return rbst.Or(rbst.Not(pred1), pred2, self._mode)
 
     # Visit a parse tree produced by stlParser#opNegExpr.
     def visitOpNegExpr(self, ctx: stlParser.OpNegExprContext):
         pred = self.visit(ctx.getRuleContext().getChild(1))
 
-        return mtl.Not(pred, self._mode)
+        return rbst.Not(pred, self._mode)
 
     # Visit a parse tree produced by stlParser#predicate.
     def visitPredicate(self, ctx: stlParser.PredicateContext):
@@ -104,13 +104,37 @@ class stlParserVisitor(ParseTreeVisitor):
             child_name = ctx.getRuleContext().getChild(0).getText()
 
             # the predicate name only exists, so return the relevant
-            # mtl.Predicate data structure
+            # rbst.Predicate data structure
             if not isinstance(self._predicates, dict):
                 raise ValueError(
                     "singular variable names require predicates be provided as dictionary"
                 )
 
             return self._predicates[child_name]
+        elif True: # TODO:REQUIRES CONDITION
+            var1: str = ctx.getRuleContext().getChild(0).getText()
+            operator: str = ctx.getRuleContext().getChild(1).getText()
+            var2: str = ctx.getRuleContext().getChild(2).getText()
+            relop: str = ctx.getRuleContext().getChild(3).getText()
+            value: str = ctx.getRuleContext().getChild(4).getText()
+
+            if operator == "+":
+                difference = rbst.Sum(var1, var2)
+            else:
+                difference = rbst.Subtract(var1, var2)
+
+            #TODO:SORT OUT RETURN
+            if operator == "<":
+                rbst.LessThan(difference, value)
+
+            elif operator == ">":
+                raise Exception(
+                    "Warning: strict relational operator used. Please use non-strict (<= or >=)"
+                )
+            elif operator == "<=":
+                return rbst.Predicate(var, 1, float(value))
+            elif operator == ">=":
+                return rbst.Predicate(var, -1, -float(value))
         else:
             minus: str = ctx.getRuleContext().getChild(0).getText()
 
@@ -135,14 +159,14 @@ class stlParserVisitor(ParseTreeVisitor):
                 )
             elif operator == "<=":
                 if minus == "-":
-                    return mtl.Predicate(var, -1, float(value))
+                    return rbst.Predicate(var, -1, float(value))
                 else:
-                    return mtl.Predicate(var, 1, float(value))
+                    return rbst.Predicate(var, 1, float(value))
             elif operator == ">=":
                 if minus == "-":
-                    return mtl.Predicate(var, 1, -float(value))
+                    return rbst.Predicate(var, 1, -float(value))
                 else:
-                    return mtl.Predicate(var, -1, -float(value))
+                    return rbst.Predicate(var, -1, -float(value))
 
     # Visit a parse tree produced by stlParser#interval.
     def visitInterval(self, ctx: stlParser.IntervalContext):
