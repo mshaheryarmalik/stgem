@@ -21,8 +21,8 @@ TltkObject = Union[
     rbst.Next,
     rbst.Not,
     rbst.Or,
-    rbst.Predicate, #not implemented
-    rbst.Until,     #not implemented
+    mtl.Predicate,
+    mtl.Until,
 ]
 
 

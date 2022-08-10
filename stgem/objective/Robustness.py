@@ -455,27 +455,7 @@ class Weak_Until:
 		#return the minimum of the left formula
 		return np.full(len(left_formula_robustness),min_left_formula)
 
-class Predicate(object):
-    # no doc
-    def eval_interval(self, *args, **kwargs): # real signature unknown
-        pass
 
-    def reset(self, *args, **kwargs): # real signature unknown
-        pass
-
-    def __init__(self, *args, **kwargs): # real signature unknown
-        pass
-
-class Until(object):
-    # no doc
-    def eval_interval(self, *args, **kwargs): # real signature unknown
-        pass
-
-    def reset(self, *args, **kwargs): # real signature unknown
-        pass
-
-    def __init__(self, *args, **kwargs): # real signature unknown
-        pass
 
 """
 #left_formula has to hold at least until right_formula becomes true, which must hold at the current or a future position. 

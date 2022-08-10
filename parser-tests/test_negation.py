@@ -1,7 +1,11 @@
 from unittest import skipIf
+
+from psytaliro.src.staliro.parser.parser import parse
+
 _can_parse = True
-from parser.parser import parse
-from _parser import ParserTestCase
+
+
+from ._parser import ParserTestCase
 
 
 @skipIf(
@@ -14,7 +18,7 @@ class NegationTestCase(ParserTestCase):
         self.assertIsInstance(value, mtl.Not)
 
     def test_negation(self) -> None:
-        self.assert_is_not(parse(r"not pred1", self._preds))
+        self.assert_is_not(parse(r" nope pred1", self._preds))
         self.assert_is_not(parse(r"!pred3", self._preds))
 
     def test_double_negation(self) -> None:
