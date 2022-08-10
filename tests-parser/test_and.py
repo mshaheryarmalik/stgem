@@ -1,7 +1,5 @@
 from unittest import skipIf
 _can_parse = True
-import sys
-print(sys.path)
 from parser.parser import parse
 from _parser import ParserTestCase
 

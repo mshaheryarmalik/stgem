@@ -1,9 +1,7 @@
 from unittest import skipIf
-
-from psytaliro.src.staliro.parser.parser import parse
 _can_parse = True
-
-from ._parser import ParserTestCase
+from parser.parser import parse
+from _parser import ParserTestCase
 
 
 @skipIf(

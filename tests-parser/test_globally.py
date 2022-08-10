@@ -1,13 +1,7 @@
 from unittest import skipIf
-
-try:
-    from staliro.parser import parse
-except:
-    _can_parse = False
-else:
-    _can_parse = True
-
-from ._parser import ParserTestCase
+_can_parse = True
+from parser.parser import parse
+from _parser import ParserTestCase
 
 
 @skipIf(
