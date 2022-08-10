@@ -456,111 +456,15 @@ class Weak_Until:
 		return np.full(len(left_formula_robustness),min_left_formula)
 
 class Predicate(object):
-	def __init__(self, variable_name, A_Matrix, bound, robustness=None, param_name=None, process_type='cpu',
-				 thread_pool=False):
-		self.variable_name = variable_name
-		self.arity = len(self.variable_name)
-		self.value = None
-		self.robustness_array = None
-		self.param_name = param_name
-		self.predicate_robustness = None
-		if robustness != None:
-			self.predicate_robustness = np.array(robustness, dtype=np.float32)
-		if type(bound) == list:
-			self.bound = np.array(bound, dtype=np.float64)
-		else:
-			self.bound = bound
-		self.robustness = 0
-		if type(A_Matrix) == list:
-			self.A_Matrix = np.array(A_Matrix, dtype=np.float64)
-		else:
-			self.A_Matrix = A_Matrix
-		self.horizon = 0
-		if type(self.variable_name) != list:
-			self.variables = [self.variable_name]
-		else:
-			self.variables = self.variable_name
-		self.thread_pool = thread_pool
-		self.process_type = process_type
+    # no doc
+    def eval_interval(self, *args, **kwargs): # real signature unknown
+        pass
 
-		self.var_range = None
-		self.evaluated_range = None
+    def reset(self, *args, **kwargs): # real signature unknown
+        pass
 
-	def eval_interval(self, traces, time_stamps, param_names=None):
-		if type(self.predicate_robustness) != type(None):
-			self.robustness = self.predicate_robustness[0]
-			return self.predicate_robustness
-
-		# If we have one variable, then trace is just the trace correspoding to
-		# this variable. If there are multiple traces, we zip them to create a
-		# single vector-valued trace.
-		if type(self.variable_name) != list:
-			trace = traces[self.variable_name]
-		else:
-			iterts = [traces[name] for name in self.variable_name]
-			trace = np.array(list(zip(*iterts)), dtype=np.float64)
-
-		predicate_robustness = []
-		np_A_Matrix = np.array(self.A_Matrix)
-
-		if type(self.robustness_array) != type(None):
-			return self.robustness_array
-
-		if type(trace) == list:
-			trace = np.array(trace, dtype=np.float64)
-
-		if self.thread_pool == False:
-			if ((len(trace.shape) == 1) and (type(self.A_Matrix) == int or type(self.A_Matrix) == float)):
-				trace = np.array(trace, dtype=np.float32)
-				#                if self.process_type == 'cpu':
-				predicate_robustness = py_one_dim_pred_numpy(trace, self.A_Matrix, self.bound)
-			# predicate_robustness = py_one_dim_pred(list(trace), self.A_Matrix, self.bound)
-			#                elif self.process_type == 'cpu_threaded':
-			#                    predicate_robustness = py_one_dim_pred_threaded_numpy(trace, self.A_Matrix, self.bound)
-			#                else:
-			#                    predicate_robustness = gpubackend.py_one_dim_pred_numpy_gpu(list(trace), self.A_Matrix, self.bound)
-			else:
-
-				# traces = np.transpose(np.array(traces)).tolist()
-				# predicate_robustness = py_higher_dim(trace_size, n, m, q, l, u, init_A, init_P, traces, length, results)
-				# if self.process_type == 'cpu':
-				predicate_robustness = solve_polyhedron_test(self.A_Matrix, self.bound, trace)
-		# else:
-		# predicate_robustness = quadprog_polyhedron.solve_polyhedron_threaded(self.A_Matrix,self.bound,trace)
-
-		# for value in trace:
-		# np_value = np.array(value)
-		# # if np_value.size == 1 and np_A_Matrix.size == 1:
-		# # predicate_robustness.append(value * self.A_Matrix - self.bound)
-		# if (self.A_Matrix*np_value <= self.bound).all():            #calculate depth if np_value is in A*x <= b
-		# x = cp.Variable(np_value.size)
-		# objective = cp.Minimize(cp.norm(x - np_value))
-		# constraints = [self.A_Matrix*x >= self.bound]
-		# prob = cp.Problem(objective, constraints)
-		# predicate_robustness.append(-prob.solve(solver=cp.ECOS)) #ECOS has fastest time of ones tested. Going to add this as an argument eventually
-		# else:                                               #calculate distance if np_value is not in A*x <= b
-		# x = cp.Variable(np_value.size)
-		# objective = cp.Minimize(cp.norm(x - np_value))
-		# constraints = [self.A_Matrix*x <= self.bound]
-		# prob = cp.Problem(objective, constraints)
-		# predicate_robustness.append(prob.solve(solver=cp.ECOS))
-		# else:
-		# #I wanted to pass the Pool() as an argument but that weirdly causes an error. I then tryied making the thread pool in the object init but the same error happens. Not sure how to make the thread pool creation only happen once if the object is used more than once
-		# with Pool(cpu_count()) as p:
-		# t0 = time()
-		# predicate_robustness = p.map(self.optimize_polyhedron, trace)
-		# t1 = time()
-		# print('Predicate time: ', t1 - t0)
-		# p.close()
-		# p.join()
-		self.robustness = predicate_robustness[0]
-		self.robustness_array = predicate_robustness
-		return predicate_robustness
-
-	def reset(self):
-		self.robustness_array = None
-
-	pass
+    def __init__(self, *args, **kwargs): # real signature unknown
+        pass
 
 class Until(object):
     # no doc

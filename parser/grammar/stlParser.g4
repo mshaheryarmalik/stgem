@@ -28,8 +28,7 @@ phi
 ;
 
 predicate
-    : NAME (PLUS | MINUS) NAME RELOP NUMBER
-    | (MINUS)? NAME RELOP NUMBER
+    : (MINUS)? NAME RELOP NUMBER
     | NAME
 ;
 

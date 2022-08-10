@@ -9,9 +9,9 @@ from _parser import ParserTestCase
 )
 class NextTestCase(ParserTestCase):
     def assert_is_next(self, value):
-        from stgem.objective import Robustness as rbst
+        import tltk_mtl as mtl
 
-        self.assertIsInstance(value, rbst.Next)
+        self.assertIsInstance(value, mtl.Next)
 
     def test_next(self) -> None:
         self.assert_is_next(parse(r"next pred1", self._preds))
