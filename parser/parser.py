@@ -7,8 +7,7 @@ from antlr4.InputStream import InputStream
 
 from .stlLexer import stlLexer as Lexer
 from .stlParser import stlParser as Parser
-from .stlParserVisitor import stlParserVisitor as Visitor
-
+from .visitor import Visitor
 PredicateNameSeq = Sequence[str]
 PredicateDict = Dict[str, rbst.Predicate]
 Predicates = Union[PredicateNameSeq, PredicateDict]
