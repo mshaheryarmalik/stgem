@@ -36,7 +36,7 @@ class stlParserVisitor(ParseTreeVisitor):
         pred = self.visit(ctx.getRuleContext().getChild(2))
         bounds = self.visit(ctx.getRuleContext().getChild(1))
 
-        return rbst.Finally(bounds[0], bounds[1], pred, self._mode)
+        return rbst.Finally(bounds[0], bounds[1], pred)
 
     # Visit a parse tree produced by stlParser#parenPhiExpr.
     def visitParenPhiExpr(self, ctx: stlParser.ParenPhiExprContext):
@@ -49,14 +49,14 @@ class stlParserVisitor(ParseTreeVisitor):
 
         bounds = self.visit(ctx.getRuleContext().getChild(2))
 
-        return rbst.Until(bounds[0], bounds[1], pred1, pred2, self._mode)
+        return rbst.Until(bounds[0], bounds[1], pred1, pred2)
 
     # Visit a parse tree produced by stlParser#opGloballyExpr.
     def visitOpGloballyExpr(self, ctx: stlParser.OpGloballyExprContext):
         pred = self.visit(ctx.getRuleContext().getChild(2))
         bounds = self.visit(ctx.getRuleContext().getChild(1))
 
-        return rbst.Global(bounds[0], bounds[1], pred, self._mode)
+        return rbst.Global(bounds[0], bounds[1], pred)
 
     # Visit a parse tree produced by stlParser#opLogicalExpr.
     def visitOpLogicalExpr(self, ctx: stlParser.OpLogicalExprContext):
@@ -66,9 +66,9 @@ class stlParserVisitor(ParseTreeVisitor):
         type = ctx.getRuleContext().getChild(1).getSymbol().type
 
         if type == self._lexer.ANDOP:
-            return rbst.And(pred1, pred2, self._mode)
+            return rbst.And(pred1, pred2)
         elif type == self._lexer.OROP:
-            return rbst.Or(pred1, pred2, self._mode)
+            return rbst.Or(pred1, pred2)
 
     # Visit a parse tree produced by stlParser#opReleaseExpr.
     def visitOpReleaseExpr(self, ctx: stlParser.OpReleaseExprContext):
@@ -90,13 +90,13 @@ class stlParserVisitor(ParseTreeVisitor):
         pred1 = self.visit(ctx.getRuleContext().getChild(0))
         pred2 = self.visit(ctx.getRuleContext().getChild(2))
 
-        return rbst.Or(rbst.Not(pred1), pred2, self._mode)
+        return rbst.Or(rbst.Not(pred1), pred2)
 
     # Visit a parse tree produced by stlParser#opNegExpr.
     def visitOpNegExpr(self, ctx: stlParser.OpNegExprContext):
         pred = self.visit(ctx.getRuleContext().getChild(1))
 
-        return rbst.Not(pred, self._mode)
+        return rbst.Not(pred)
 
     # Visit a parse tree produced by stlParser#predicate.
     def visitPredicate(self, ctx: stlParser.PredicateContext):
@@ -111,7 +111,7 @@ class stlParserVisitor(ParseTreeVisitor):
                 )
 
             return self._predicates[child_name]
-        elif True: # TODO:REQUIRES CONDITION
+            """elif True: # TODO:REQUIRES CONDITION
             var1: str = ctx.getRuleContext().getChild(0).getText()
             operator: str = ctx.getRuleContext().getChild(1).getText()
             var2: str = ctx.getRuleContext().getChild(2).getText()
@@ -134,7 +134,7 @@ class stlParserVisitor(ParseTreeVisitor):
             elif operator == "<=":
                 return rbst.Predicate(var, 1, float(value))
             elif operator == ">=":
-                return rbst.Predicate(var, -1, -float(value))
+                return rbst.Predicate(var, -1, -float(value))"""
         else:
             minus: str = ctx.getRuleContext().getChild(0).getText()
 
@@ -159,14 +159,14 @@ class stlParserVisitor(ParseTreeVisitor):
                 )
             elif operator == "<=":
                 if minus == "-":
-                    return rbst.Predicate(var, -1, float(value))
+                    return rbst.Signal(var, (-1, float(value)))
                 else:
-                    return rbst.Predicate(var, 1, float(value))
+                    return rbst.Signal(var, (1, float(value)))
             elif operator == ">=":
                 if minus == "-":
-                    return rbst.Predicate(var, 1, -float(value))
+                    return rbst.Signal(var, (1, -float(value)))
                 else:
-                    return rbst.Predicate(var, -1, -float(value))
+                    return rbst.Signal(var, (-1, -float(value)))
 
     # Visit a parse tree produced by stlParser#interval.
     def visitInterval(self, ctx: stlParser.IntervalContext):

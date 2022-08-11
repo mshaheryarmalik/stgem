@@ -1,16 +1,8 @@
-from unittest import skipIf
-_can_parse = True
 from parser.parser import parse
 from _parser import ParserTestCase
-
-
-@skipIf(
-    _can_parse is False, "Next parsing test case is not available without parsing functionality"
-)
+import stgem.objective.Robustness as rbst
 class NextTestCase(ParserTestCase):
     def assert_is_next(self, value):
-        from stgem.objective import Robustness as rbst
-
         self.assertIsInstance(value, rbst.Next)
 
     def test_next(self) -> None:

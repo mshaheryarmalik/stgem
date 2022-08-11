@@ -1,17 +1,9 @@
-from unittest import skipIf
-_can_parse = True
 from parser.parser import parse
 from _parser import ParserTestCase
-
-
-@skipIf(
-    _can_parse is False, "Global parsing test case is not available without parsing functionality"
-)
+import stgem.objective.Robustness as rbst
 class GloballyTestCase(ParserTestCase):
     def assert_is_global(self, value):
-        import tltk_mtl as mtl
-
-        self.assertIsInstance(value, mtl.Global)
+        self.assertIsInstance(value, rbst.Global)
 
     def test_globally_infinite(self) -> None:
         self.assert_is_global(parse(r"[](1, inf) pred1", self._preds))

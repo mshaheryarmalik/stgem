@@ -1,17 +1,10 @@
-from unittest import skipIf
-_can_parse = True
 from parser.parser import parse
 from _parser import ParserTestCase
+import stgem.objective.Robustness as rbst
 
-
-@skipIf(
-    _can_parse is False, "Finally parsing test case is not available without parsing functionality"
-)
 class FinallyTestCase(ParserTestCase):
     def assert_is_finally(self, value):
-        import tltk_mtl as mtl
-
-        self.assertIsInstance(value, mtl.Finally)
+        self.assertIsInstance(value, rbst.Finally)
 
     def test_finally_infinite(self) -> None:
         self.assert_is_finally(parse(r"<>(1, inf) pred1", self._preds))

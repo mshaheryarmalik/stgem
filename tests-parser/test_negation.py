@@ -1,17 +1,10 @@
-from unittest import skipIf
-_can_parse = True
 from parser.parser import parse
 from _parser import ParserTestCase
+import stgem.objective.Robustness as rbst
 
-
-@skipIf(
-    _can_parse is False, "Negation parsing test case is not available without parsing functionality"
-)
 class NegationTestCase(ParserTestCase):
     def assert_is_not(self, value):
-        import tltk_mtl as mtl
-
-        self.assertIsInstance(value, mtl.Not)
+        self.assertIsInstance(value, rbst.Not)
 
     def test_negation(self) -> None:
         self.assert_is_not(parse(r"not pred1", self._preds))

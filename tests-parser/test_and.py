@@ -1,15 +1,10 @@
-from unittest import skipIf
-_can_parse = True
 from parser.parser import parse
 from _parser import ParserTestCase
+import stgem.objective.Robustness as rbst
 
-
-@skipIf(_can_parse is False, "And parsing test case is not available without parsing functionality")
 class AndTestCase(ParserTestCase):
     def assert_is_and(self, value):
-        import tltk_mtl as mtl
-
-        self.assertIsInstance(value, mtl.And)
+        self.assertIsInstance(value, rbst.And)
     def test_logical_and(self) -> None:
         self.assert_is_and(parse(r"pred1 && pred2", self._preds))
 
