@@ -41,3 +41,8 @@ class SignalTestCase(ParserTestCase):
 
     def test_signal_pos_ns_less_than_pos_scientific_neg(self) -> None:
         self._do_test(r"pred9 <= 1.12e-5", self._preds["pred9"])
+
+    def test_signal_difference_less_than_value(self) -> None:
+        self._do_test(r"pred8 - pred9 <= 1.12e-5", self._preds["pred9"])
+
+

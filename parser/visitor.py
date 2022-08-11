@@ -103,7 +103,7 @@ class Visitor(stlParserVisitor):
                 )
 
             return self._predicates[child_name]
-            """elif True: # TODO:REQUIRES CONDITION
+        elif ctx.getRuleContext().getChildCount() == 5:
             var1: str = ctx.getRuleContext().getChild(0).getText()
             operator: str = ctx.getRuleContext().getChild(1).getText()
             var2: str = ctx.getRuleContext().getChild(2).getText()
@@ -115,18 +115,14 @@ class Visitor(stlParserVisitor):
             else:
                 difference = rbst.Subtract(var1, var2)
 
-            #TODO:SORT OUT RETURN
-            if operator == "<":
-                rbst.LessThan(difference, value)
-
-            elif operator == ">":
+            if operator == "<" or operator == ">":
                 raise Exception(
                     "Warning: strict relational operator used. Please use non-strict (<= or >=)"
                 )
             elif operator == "<=":
-                return rbst.Predicate(var, 1, float(value))
+                return rbst.Signal(difference, 1, float(value))
             elif operator == ">=":
-                return rbst.Predicate(var, -1, -float(value))"""
+                return rbst.Signal(difference, -1, -float(value))
         else:
             minus: str = ctx.getRuleContext().getChild(0).getText()
 

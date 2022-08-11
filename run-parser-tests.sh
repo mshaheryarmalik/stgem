@@ -10,4 +10,4 @@ cd ..
 cd ..
 
 cd tests-parser
-pytest
+pytest -s
