@@ -1,5 +1,6 @@
 import numpy as np
 
+# TODO: Save computed robustness values for efficiency and implement reset for reuse.
 
 class Traces:
 	timestamps = []
@@ -15,6 +16,9 @@ class Traces:
 
 	def Get(self,name):
 		return np.array(self.signals[name])
+
+class STL:
+    """Base class for all logical operations and atoms."""
 
 class Signal:
 	def __init__(self,name,var_range):
@@ -300,47 +304,13 @@ class Finally:
 		formula_robustness = Not(Global(self.lower_time_bound,self.upper_time_bound,Not(self.formula)))
 		return formula_robustness.eval(traces)
 
-class Or:
-	formulas = []
-	def __init__(self, *args):
+class Or(STL):
 
-		self.nom = "Or"
-		# Calculate the horizon
-		def Maxhorizon(formulas):
-			#Max of all the horizon
-			temp = formulas[0].horizon
-			for i in range(len(formulas)):
-				if formulas[i].horizon > temp:
-					temp = formulas[i].horizon
-			return temp
+	def __init__(self, *args, nu=0):
+        self.formula = Not(And(*[Not(f) for f in args], nu=nu))
 
-		# Calculate the Range
-		def MaxRange(formulas,bound):
-			#Min of all the horizon
-			temp = formulas[0].var_range[bound]
-			for i in range(len(formulas)):
-				if formulas[i].var_range[bound] > temp:
-					temp = formulas[i].var_range[bound]
-			return temp
-
-		#saving all the NOT(formulas)
-		self.formulas = []
-		for parameter in args:
-			self.formulas.append(Not(parameter))
-
-		A = MaxRange(self.formulas,0)
-		B = MaxRange(self.formulas,1)
-		self.var_range = [A, B]
-		self.horizon = Maxhorizon(self.formulas)
-
-		temp = []
-		for i in range(len(self.formulas)):
-			temp += self.formulas[i].variables
-		self.variables = list(set(temp))
-
-	def eval(self, traces):
-		formula_robustness = Not(And(formula = self.formulas))
-		return formula_robustness.eval(traces)
+    def eval(self, traces):
+        return self.formula.eval(traces)
 
 class And:
 	formulas = []
