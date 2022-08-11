@@ -1,6 +1,7 @@
 import numpy as np
 
 # TODO: Save computed robustness values for efficiency and implement reset for reuse.
+# TODO: We need to check and enforce that signals have common timestamps and lengths.
 
 class Traces:
 	timestamps = []
@@ -306,88 +307,63 @@ class Finally:
 
 class Or(STL):
 
-	def __init__(self, *args, nu=0):
+	def __init__(self, *args, nu=1):
         self.formula = Not(And(*[Not(f) for f in args], nu=nu))
 
     def eval(self, traces):
         return self.formula.eval(traces)
 
 class And:
-	formulas = []
-	def __init__(self, *args, formula = None):
-		self.nom = "And"
-		# Calculate the horizon
-		def Maxhorizon(formulas):
-			#Max of all the horizon
-			temp = formulas[0].horizon
-			for i in range(len(formulas)):
-				if formulas[i].horizon > temp:
-					temp = formulas[i].horizon
-			return temp
 
-		# Calculate the Range
-		def MinRange(formulas,bound):
-			#Min of all the horizon
-			temp = formulas[0].var_range[bound]
-			for i in range(len(formulas)):
-				if formulas[i].var_range[bound] < temp:
-					temp = formulas[i].var_range[bound]
-			return temp
+	def __init__(self, *args, nu=1):
+        self.formulas = list(args)
+        self.nu = nu
+        
+        if self.nu <= 0:
+            raise ValueError("The nu parameter must be positive.")
 
-		#saving all the formulas
-		self.formulas = []
-		if formula is not None:
-			self.formulas = formula
-		else:
-			for parameter in args:
-				self.formulas.append(parameter)
+        self.variables = sum(f.variables for f in self.formulas)
+        self.time_bounded_variables = sum(f.time_bounded_variables for f in self.formulas)
 
-		A = MinRange(self.formulas,0)
-		B = MinRange(self.formulas,1)
-		self.var_range = [A, B]
-		self.horizon = Maxhorizon(self.formulas)
+        self.horizon = max(f.horizon for f in self.formulas)
 
-		temp_ = []
-		for i in range(len(self.formulas)):
-			temp_ += self.formulas[i].variables
-		self.variables = list(set(temp_))
+        A = min(f.range[0] for f in self.formulas)
+        B = min(f.range[1] for f in self.formulas)
+        self.range = [A, B]
+        self.effective_range = None
 
 	def eval(self, traces):
+        # Evaluate the robustness of all subformulas and save the robustness
+        # signals into one 2D array.
+        M = len(self.formulas)
+        for i in range(M):
+            r = self.formulas[i].eval(traces)
+            if i == 0:
+                rho = np.empty(shape=(M, len(r)))
+            rho[i,:] = r
 
-		#mu can be change
-		mu = 1
-		p = []
-		#evaluate all the formulas
-		for i in self.formulas:
-			p.append(i.eval(traces))
-		#finding the min
-		p_min = np.array(p).min(axis = 0)
+        rho_min = np.min(rho, axis=0)
 
-		temp_min = np.tile(p_min, (len(self.formulas), 1))
-		p_prime = np.array(p)- temp_min
-		p_prime = np.divide(p_prime,temp_min)
+        robustness = np.empty(shape=(len(rho_min)))
+        for i in range(len(rho_min)):
+            # TODO: Would it make sense to compute rho_tilde for the complete
+            # x-axis in advance? Does it use potentially much memory for no
+            # speedup?
+            rho_tilde = rho[:,i]/rho_min[i] - 1
 
-		res = []
-		for i in range(len(p[0])):
-			numerator = 0
-			if p_min[i] < 0:
-				denominator = 0
-				for j in range(len(p)):
-					numerator += p_min[i]*(np.e**p_prime[j][i])*(np.e**(mu*p_prime[j][i]))
-					denominator += np.e**(mu*p_prime[j][i])
-				res.append(numerator/denominator)
-			else:
-				if p_min[i] > 0:
-					denominator = 0
-					for j in range(len(p)):
-						numerator += p[j][i]*np.e**(-mu*p_prime[j][i])
-						denominator += np.e**(-mu*p_prime[j][i])
-					res.append(numerator/denominator)
-				else:
-					# if p_min == 0:
-					res.append(numerator) # equal to 0
-		return np.array(res)
+            if rho_min[i] < 0:
+                numerator = rho_min[i] * np.sum(np.exp((1+self.nu) * rho_tilde))
+                denominator = np.sum(np.exp(self.nu * rho_tilde))
+            elif rho_min[i] > 0:
+                numerator = np.sum(np.multiply(rho[:,i], np.exp(-self.nu * rho_tilde)))
+                denominator = np.sum(np.exp(-1 * self.nu * rho_tilde))
+            else:
+                numerator = 0
+                denominator = 1
 
+            robustness[i] = numerator/denominator
+        
+        return robustness
 
 # left_formula has to hold at least until right_formula; if right_formula never becomes true, left_formula must remain true forever. 
 class Weak_Until:
