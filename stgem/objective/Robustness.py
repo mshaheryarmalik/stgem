@@ -104,7 +104,7 @@ class Const:
     def __init__(self,val):
         self.nom = "Const"
         self.val = val
-        self.var_range = [val,val]
+        self.range = [val, val]
         self.variables = []
         self.horizon = 0
 
@@ -173,16 +173,23 @@ class GreaterThan:
 class LessThan:
 # left_formula < right_formula ?
     def __init__(self, left_formula, right_formula):
-        self.nom = "LessThan"
+        if isinstance(left_formula, (int, float)):
+            left_formula = Const(left_formula)
+        if isinstance(right_formula, (int, float)):
+            right_formula = Const(right_formula)
         self.left_formula = left_formula
         self.right_formula = right_formula
-        A = right_formula.var_range[0] - left_formula.var_range[0]
-        B = right_formula.var_range[1] - left_formula.var_range[1]
-        if (A > B):
-            temp = A
-            A = B
-            B = temp
-        self.var_range = [A, B]
+
+        if left_formula.range is None or right_formula.range is None:
+            self.range = None
+        else:
+            A = right_formula.range[0] - left_formula.range[0]
+            B = right_formula.range[1] - left_formula.range[1]
+            if (A > B):
+                temp = A
+                A = B
+                B = temp
+            self.range = [A, B]
         self.horizon = 0
         self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
         self.arity = 2
@@ -235,9 +242,12 @@ class Implication:
         self.nom = "Implication"
         self.left_formula = left_formula
         self.right_formula = right_formula
-        A = max(-1*self.left_formula.var_range[1], self.right_formula.var_range[0])
-        B = max(-1*self.left_formula.var_range[0], self.right_formula.var_range[1])
-        self.var_range = [A, B]
+        if self.left_formula.range is None or self.right_formula.range is None:
+            self.range = None
+        else:
+            A = max(-1*self.left_formula.range[1], self.right_formula.range[0])
+            B = max(-1*self.left_formula.range[0], self.right_formula.range[1])
+            self.range = [A, B]
         self.horizon = max(self.left_formula.horizon, self.right_formula.horizon)
         self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
         self.arity = 2
@@ -271,13 +281,10 @@ class Not:
     def __init__(self, formula):
         self.nom = "Not"
         self.formula = formula
-        A = -1*formula.var_range[0] 
-        B = -1*formula.var_range[1] 
-        if A > B :
-            temp = A
-            A = B
-            B = temp
-        self.var_range = [A, B]
+        if self.formula.range is None:
+            self.range = None
+        else:
+            self.range = [-1*self.formula.range[1], -1*self.formula.range[0]]
         self.horizon = self.formula.horizon
         self.variables = self.formula.variables
         self.arity = 1
@@ -362,7 +369,10 @@ class Finally:
         self.upper_time_bound = upper_time_bound
         self.lower_time_bound = lower_time_bound
         self.formula = formula
-        self.var_range = formula.var_range
+        if self.formula.range is None:
+            self.range = None
+        else:
+            self.range = self.formula.range.copy()
         self.horizon = self.upper_time_bound + self.formula.horizon
         self.variables = self.formula.variables
 
@@ -399,7 +409,7 @@ class And:
             self.range(min(A), min(B))
         self.effective_range = None
 
-    def eval2(self, traces):
+    def eval(self, traces):
         """This is the usual and."""
 
         # Evaluate the robustness of all subformulas and save the robustness
@@ -413,7 +423,7 @@ class And:
 
         return np.min(rho, axis=0)
 
-    def eval(self, traces):
+    def eval2(self, traces):
         """This is the alternative one."""
 
         # Evaluate the robustness of all subformulas and save the robustness
@@ -572,3 +582,8 @@ class Release:
 		#return the minimum of the left formula
 		return min_left_formula
 		"""
+
+# TODO: Implement these.
+StrictlyLessThan = LessThan
+StrictlyGreaterThan = GreaterThan
+
