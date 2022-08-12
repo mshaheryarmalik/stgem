@@ -28,9 +28,11 @@ phi
 ;
 
 predicate
-    : NAME (PLUS | MINUS) NAME RELOP NUMBER
-    | (MINUS)? NAME RELOP NUMBER
-    | NAME
+    : predicate RELOP predicate      #predRelExpr
+    | predicate ARITHOP NUMBER       #predArithRightExpr
+    | NUMBER ARITHOP predicate       #predArithLeftExpr
+    | NUMBER                         #predNumber
+    | NAME                           #predName
 ;
 
 interval

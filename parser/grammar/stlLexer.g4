@@ -28,6 +28,9 @@ PLUS
 MINUS
     : '-' ;
 
+ARITHOP
+    : ('+' | '-' | '*' | '/') ;
+
 NEGATION
     : ('~' | '!' | 'not') ;
 

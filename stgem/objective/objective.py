@@ -159,9 +159,6 @@ class FalsifySTL(Objective):
         # Sampling period equals the minimum of the smallest positive time
         # bound referred to in the formula divided by K and the sampling step
         # of the SUT (if it exists). Compute the first number.
-        print("RANGEEEEEEEE")
-        ranges(self.specification)
-        print("RANGEEEEEEEE")
         K = 10
         self.time_bounded = bounded(self.specification)
         first = 1
@@ -345,7 +342,6 @@ class FalsifySTL(Objective):
         timestamps = np.array(list(range(len(timestamps))), dtype=np.float32)
         # Notice that the return value is a Cython MemoryView.
         #robustness_signal = self.specification.eval_interval(trajectories, timestamps)
-
 
         temp = STL.Traces(timestamps,trajectories)
         robustness_signal = self.specification.eval(temp)
