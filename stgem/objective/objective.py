@@ -109,61 +109,21 @@ class FalsifySTL(Objective):
          #   raise Exception("Expected specification to be TLTK class not '{}'".format(type(self.specification)))
 
         self.horizon = self.specification.horizon
-        self.formula_variables = self.specification.variables
 
-        # Find the objects with time bounds in the formula.
-        # TODO: An iterator would be nice in TLTk for this.
-        def bounded(stl_formula):
-            if isinstance(stl_formula, (STL.Signal,STL.Const)) or stl_formula is None:
-                return []
-            elif isinstance(stl_formula, (STL.Global, STL.Finally)):
-                return [stl_formula] + bounded(stl_formula.formula)
-                #elif isinstance(stl_formula, (STL.Until, STL.Release)):
-                #return [stl_formula] + bounded(stl_formula.left_formula) + bounded(stl_formula.right_formula)
-            elif isinstance(stl_formula, (STL.Or, STL.And)):
-                temp = []
-                for i in stl_formula.formulas:
-                    temp += bounded(i)
-                return temp
-            #elif not isinstance(formula, STL.TLTK_MTL):
-                #raise Exception("Expected TLTK class not '{}' in time bounded object lookup.".format(type(formula)))
-            elif stl_formula.arity == 1:
-                return bounded(stl_formula.formula)
-            else: #stl_formula.arity == 2:
-                return bounded(stl_formula.left_formula) + bounded(stl_formula.right_formula)
+        # Find out variables of the formula and time bounded formulas.
+        self.formula_variables = []
+        self.time_bounded = []
+        for node in self.specification:
+            if isinstance(node, STL.Signal) and node.name not in self.formula_variables:
+                self.formula_variables.append(node.name)
 
-        def ranges(stl_formula):
-            if isinstance(stl_formula, (STL.Signal,STL.Const)) or stl_formula is None:
-                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
-            elif isinstance(stl_formula, (STL.Global, STL.Finally)):
-                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
-                ranges(stl_formula.formula)
-                """elif isinstance(stl_formula, (STL.Until, STL.Release)):
-                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
-                ranges(stl_formula.left_formula)
-                ranges(stl_formula.right_formula)"""
-            elif isinstance(stl_formula, (STL.Or, STL.And)):
-                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
-                for i in stl_formula.formulas:
-                    ranges(i)
-            #elif not isinstance(formula, STL.TLTK_MTL):
-                #raise Exception("Expected TLTK class not '{}' in time bounded object lookup.".format(type(formula)))
-            elif stl_formula.arity == 1:
-                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
-                ranges(stl_formula.formula)
-            else: #stl_formula.arity == 2:
-                print(stl_formula.nom + " : " + str(stl_formula.var_range[0])+";"+ str(stl_formula.var_range[1]))
-                ranges(stl_formula.left_formula)
-                ranges(stl_formula.right_formula)
+            if isinstance(node, (STL.Global, STL.Finally)):
+                self.time_bounded.append(node)
 
         # Sampling period equals the minimum of the smallest positive time
         # bound referred to in the formula divided by K and the sampling step
         # of the SUT (if it exists). Compute the first number.
-        print("RANGEEEEEEEE")
-        ranges(self.specification)
-        print("RANGEEEEEEEE")
         K = 10
-        self.time_bounded = bounded(self.specification)
         first = 1
         for x in self.time_bounded:
             if x.lower_time_bound > 0 and x.lower_time_bound < first:

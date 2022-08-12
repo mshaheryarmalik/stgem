@@ -1,7 +1,6 @@
 import numpy as np
 
 # TODO: Save computed robustness values for efficiency and implement reset for reuse.
-# TODO: We need to check and enforce that signals have common timestamps and lengths.
 
 class Traces:
 
@@ -64,282 +63,226 @@ class Traces:
 
         return -1
 
-    def Add(self,name,signal):
-        temp = {name: signal}
-        self.signals.update(temp)
+class TreeIterator:
 
-    def Get(self,name):
-        return np.array(self.signals[name])
+    def __init__(self, node):
+        self.nodes = [node]
+
+    def __next__(self):
+        try:
+            node = self.nodes.pop(0)
+            self.nodes += node.formulas
+
+            return node
+        except IndexError:
+            raise StopIteration
 
 class STL:
     """Base class for all logical operations and atoms."""
 
-class Signal:
+    def __iter__(self):
+        return TreeIterator(self)
+
+class Signal(STL):
 
     def __init__(self, name, range=None):
+        self.formulas = []
         self.name = name
+        self.range = range.copy() if range is not None else None
         self.horizon = 0
-        if range is not None:
-            self.range = range.copy()
-        else:
-            self.range = None
-        self.variables = [self.name]
-    """
-    def find_id(self,traces): 
-    # from a timestamps time, return the correspondant index of the table 
-        indice = -1
-        for i in range(len(traces.timestamps)):
-            if (traces.timestamps[i] == time):
-                indice = i
-        if indice == -1:
-            raise Exception("time error") 
-        else:
-            return indice
-    """
-    def eval(self, traces):
-        return np.array(traces.signals[self.name])
 
-class Const:
-# for a constant signal
-    def __init__(self,val):
-        self.nom = "Const"
+    def eval(self, traces):
+        return traces.signals[self.name]
+
+class Constant(STL):
+
+    def __init__(self, val):
+        self.formulas = []
         self.val = val
         self.range = [val, val]
-        self.variables = []
         self.horizon = 0
 
     def eval(self, traces):
         return np.full(len(traces.timestamps), self.val)
 
+class Sum(STL):
 
-#for the following classes there are several parameters in the initilisation :
-#nom = name of the function 
-#formula, right_formula, left_formula = the formulas that we use in the function
-#var_range = the range of the return value
-#variables = the names of the signals used in the function
-#horizon = ?
-#arity = number of formula that are used in the function
-
-class Subtract:
-#left_formula - right_formula
     def __init__(self, left_formula, right_formula):
-        self.nom = "Subtract"
-        self.left_formula = left_formula
-        self.right_formula = right_formula
+        self.formulas = [left_formula, right_formula]
 
-        if self.left_formula.range is None or self.right_formula.range is None:
+        if self.formulas[0].range is None or self.formulas[1].range is None:
             self.range = None
         else:
-            A = left_formula.range[0] - right_formula.range[1]
-            B = left_formula.range[1] - right_formula.range[0]
+            A = self.formulas[0].range[0] + self.formulas[1].range[0]
+            B = self.formulas[0].range[1] + self.formulas[1].range[1]
             self.range = [A, B]
-        self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
-        self.arity = 2
+
+        self.horizon = 0
 
     def eval(self, traces):
         res = []
-        left_formula_robustness = self.left_formula.eval(traces)
-        right_formula_robustness = self.right_formula.eval(traces)
-        return np.subtract(left_formula_robustness,right_formula_robustness)
+        left_formula_robustness = self.formulas[0].eval(traces)
+        right_formula_robustness = self.formulas[1].eval(traces)
+        return np.add(left_formula_robustness, right_formula_robustness)
 
-class GreaterThan:
-# left_formula > right_formula ?
+class Subtract(STL):
+
     def __init__(self, left_formula, right_formula):
-        if isinstance(left_formula, (int, float)):
-            left_formula = Const(left_formula)
-        if isinstance(right_formula, (int, float)):
-            right_formula = Const(right_formula)
-        self.left_formula = left_formula
-        self.right_formula = right_formula
+        self.formulas = [left_formula, right_formula]
 
-        if left_formula.range is None or right_formula.range is None:
+        if self.formulas[0].range is None or self.formulas[1].range is None:
             self.range = None
         else:
-            A = left_formula.range[0] - right_formula.range[0]
-            B = left_formula.range[1] - right_formula.range[1]
-            if (A > B):
-                temp = A
-                A = B
-                B = temp
+            A = self.formulas[0].range[0] - self.formulas[1].range[1]
+            B = self.formulas[0].range[1] - self.formulas[1].range[0]
             self.range = [A, B]
+
         self.horizon = 0
-        self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
-        self.arity = 2
 
     def eval(self, traces):
-    #return the difference between the left and the right formula : if it is positive the lessThan is true, otherwise it is false
-        return Subtract(self.left_formula,self.right_formula).eval(traces)
+        return np.subtract(self.formulas[0].eval(traces), self.formulas[1].eval(traces))
 
-class LessThan:
-# left_formula < right_formula ?
+class GreaterThan(STL):
+
     def __init__(self, left_formula, right_formula):
         if isinstance(left_formula, (int, float)):
-            left_formula = Const(left_formula)
+            left_formula = Constant(left_formula)
         if isinstance(right_formula, (int, float)):
-            right_formula = Const(right_formula)
-        self.left_formula = left_formula
-        self.right_formula = right_formula
+            right_formula = Constant(right_formula)
+        self.formulas = [left_formula, right_formula]
 
-        if left_formula.range is None or right_formula.range is None:
+        if self.formulas[0].range is None or self.formulas[1].range is None:
             self.range = None
         else:
-            A = right_formula.range[0] - left_formula.range[0]
-            B = right_formula.range[1] - left_formula.range[1]
-            if (A > B):
-                temp = A
-                A = B
-                B = temp
+            A = self.formulas[0].range[0] - self.formulas[1].range[1]
+            B = self.formulas[0].range[1] - self.formulas[1].range[0]
             self.range = [A, B]
+
         self.horizon = 0
-        self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
-        self.arity = 2
 
     def eval(self, traces):
-    #return the difference between the right and the left formula : if it is positive the lessThan is true, otherwise it is false
-        return Subtract(self.right_formula,self.left_formula).eval(traces)
+        return Subtract(self.formulas[0], self.formulas[1]).eval(traces)
 
+class LessThan(STL):
 
-class Abs:
-# absolute value of the formula at a given time
+    def __init__(self, left_formula, right_formula):
+        if isinstance(left_formula, (int, float)):
+            left_formula = Constant(left_formula)
+        if isinstance(right_formula, (int, float)):
+            right_formula = Constant(right_formula)
+        self.formulas = [left_formula, right_formula]
+
+        if self.formulas[0].range is None or self.formulas[1].range is None:
+            self.range = None
+        else:
+            A = self.formulas[0].range[0] - self.formulas[1].range[1]
+            B = self.formulas[0].range[1] - self.formulas[1].range[0]
+            self.range = [A, B]
+
+        self.horizon = 0
+
+    def eval(self, traces):
+        return Subtract(self.formulas[1], self.formulas[0]).eval(traces)
+
+class Abs(STL):
+
     def __init__(self, formula):
-        self.nom = "Abs"
-        self.formula = formula
-        A = np.abs(formula.var_range[0])
-        B = np.abs(formula.var_range[1])
-        if (A > B):
-            temp = A
-            A = B
-            B = temp
-        self.var_range = [A, B]
-        self.variables = self.formula.variables
-        self.horizon = 0
-        self.arity = 1
-
-    def eval(self, traces):
-        formula_robustness = self.formula.eval(traces)
-        return np.absolute(formula_robustness)
-
-class Sum:
-# left_formula + right_formula at a given time
-    def __init__(self, left_formula, right_formula):
-        self.nom = "Sum"
-        self.left_formula = left_formula
-        self.right_formula = right_formula
-        A = left_formula.var_range[0] + right_formula.var_range[0]
-        B = left_formula.var_range[1] + right_formula.var_range[1]
-        self.var_range = [A, B]
-        self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
-        self.arity = 2
-
-    def eval(self, traces):
-        res = []
-        left_formula_robustness = self.left_formula.eval(traces)
-        right_formula_robustness = self.right_formula.eval(traces)
-        return np.add(left_formula_robustness,right_formula_robustness)
-
-class Implication:
-    def __init__(self, left_formula, right_formula):
-        self.nom = "Implication"
-        self.left_formula = left_formula
-        self.right_formula = right_formula
-        if self.left_formula.range is None or self.right_formula.range is None:
+        self.formulas = [formula]
+        if self.formulas[0].range is None:
             self.range = None
         else:
-            A = max(-1*self.left_formula.range[1], self.right_formula.range[0])
-            B = max(-1*self.left_formula.range[0], self.right_formula.range[1])
-            self.range = [A, B]
-        self.horizon = max(self.left_formula.horizon, self.right_formula.horizon)
-        self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
-        self.arity = 2
+            A = self.formulas[0].range[0]
+            B = self.formulas[0].range[1]
+            if A <= 0:
+              if B > 0:
+                self.range = [0, B]
+              else:
+                self.range = [-B, -A]
+            else:
+              self.var_range = [A, B]
 
-    def eval(self, traces):
-        return Or(Not(self.left_formula),self.right_formula).eval(traces)
-
-class Equals:
-    def __init__(self, left_formula, right_formula):
-        self.nom = "Equals"
-        self.left_formula = left_formula
-        self.right_formula = right_formula
-        A = -1*np.abs(right_formula.var_range[0] - left_formula.var_range[0])
-        B = -1*np.abs(right_formula.var_range[1] - left_formula.var_range[1])
-        if A > B :
-            temp = A
-            A = B
-            B = temp 
-        self.var_range = [A, B]
         self.horizon = 0
-        self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
-        self.arity = 2
 
     def eval(self, traces):
-    # Compute -|left_formula - right_formula|for each time. If this is nonzero, return as is.
-    # Otherwise return 1.
-        formula_robustness = Not(Abs(Subtract(self.left_formula,self.right_formula))).eval(traces)
+        return np.abs(self.formulas[0].eval(traces))
+
+class Implication(STL):
+
+    def __init__(self, left_formula, right_formula):
+        self.formulas = [left_formula, right_formula]
+
+        if self.formulas[0].range is None or self.formulas[1].range is None:
+            self.range = None
+        else:
+            A = max(-self.formulas[0].range[1], self.formulas[1].range[0])
+            B = max(-self.formulas[0].range[0], self.formulas[1].range[1])
+            self.range = [A, B]
+
+        self.horizon = max(self.formulas[0].horizon, self.formulas[1].horizon)
+
+    def eval(self, traces):
+        return Or(Not(self.formulas[0]), self.formulas[1]).eval(traces)
+
+class Equals(STL):
+
+    def __init__(self, left_formula, right_formula):
+        self.formulas = [left_formula, right_formula]
+
+        if self.formulas[0].range is None or self.formulas[1].range is None:
+            self.range = None
+        else:
+            A = self.formulas[0].range[0] - self.formulas[1].range[1]
+            B = self.formulas[0].range[1] - self.formulas[1].range[0]
+            if A >= 0:
+                self.range = [-B, -A]
+            elif A < 0 and B >= 0:
+                self.range = [-max(-A, B), 0]
+            else:
+                self.range = [A, B]
+
+        self.horizon = 0
+
+    def eval(self, traces):
+        formula_robustness = Not(Abs(Subtract(self.formulas[0], self.formulas[1]))).eval(traces)
         return np.where(formula_robustness == 0, 1, formula_robustness)	
 
-class Not:
+class Not(STL):
+
     def __init__(self, formula):
-        self.nom = "Not"
-        self.formula = formula
-        if self.formula.range is None:
+        self.formulas = [formula]
+        if self.formulas[0].range is None:
             self.range = None
         else:
-            self.range = [-1*self.formula.range[1], -1*self.formula.range[0]]
-        self.horizon = self.formula.horizon
-        self.variables = self.formula.variables
-        self.arity = 1
+            self.range = [-1*self.formulas[0].range[1], -1*self.formulas[0].range[0]]
 
+        self.horizon = self.formulas[0].horizon
 
     def eval(self, traces):
-        formula_robustness = self.formula.eval(traces)
-        return formula_robustness*-1
+        return -1 * self.formulas[0].eval(traces)
 
+class Next(STL):
 
-class Next:
-#Return the value at the next state
     def __init__(self, formula):
-        self.nom = "Next"
-        self.formula = formula
-        self.var_range = formula.var_range
-        self.horizon = 1 + self.formula.horizon
-        self.variables = self.formula.variables
-        self.arity = 1
-
-    def find_next(self,traces):
-        indice = -1
-        for i in range(len(traces.timestamps)):
-            if (traces.timestamps[i] == time):
-                indice = i
-        if indice == -1:
-            raise Exception("time error") 
-        else:
-            if len(traces.timestamps) == indice+1:
-                return traces.timestamps[indice]
-            else:
-                #Add +1 to return the index of the next state
-                return traces.timestamps[indice+1]
-        
+        self.formulas = [formula]
+        self.range = self.formulas[0].range.copy() if self.formulas[0].range is not None else None
+        self.horizon = 1 + self.formulas[0].horizon
 
     def eval(self, traces):
-        formula_robustness = self.formula.eval(traces)
+        formula_robustness = self.formulas[0].eval(traces)
         res = np.roll(formula_robustness, -1)
-        res[len(res) - 1] = res[len(res) - 2]
-        return res
+        return res[:-1]
 
+class Global(STL):
 
-class Global:
-#formula has to be True on the entire subsequent path
     def __init__(self, lower_time_bound, upper_time_bound, formula):
-        self.nom = "Global"
         self.upper_time_bound = upper_time_bound
         self.lower_time_bound = lower_time_bound
-        self.formula = formula
-        self.range = None if formula.range is None else formula.range.copy()
-        self.horizon = self.upper_time_bound + self.formula.horizon
-        self.variables = self.formula.variables
+        self.formulas = [formula]
+        self.range = None if self.formulas[0].range is None else self.formula[0].range.copy()
+        self.horizon = self.upper_time_bound + self.formulas[0].horizon
 
     def eval(self, traces):
-        robustness = self.formula.eval(traces)
+        robustness = self.formulas[0].eval(traces)
         result = np.empty(shape=(len(robustness)))
         for current_time_pos in range(len(traces.timestamps) - 1, -1, -1):
             # Lower and upper times for the current time.
@@ -362,42 +305,37 @@ class Global:
 
         return result
 
-#formula eventually has to be True (somewhere on the subsequent path)
-class Finally:
+class Finally(STL):
+
     def __init__(self, lower_time_bound, upper_time_bound, formula):
-        self.nom = "Finally"
         self.upper_time_bound = upper_time_bound
         self.lower_time_bound = lower_time_bound
-        self.formula = formula
-        if self.formula.range is None:
-            self.range = None
-        else:
-            self.range = self.formula.range.copy()
-        self.horizon = self.upper_time_bound + self.formula.horizon
-        self.variables = self.formula.variables
+        self.formulas = [formula]
+        self.range = None if self.formulas[0].range is None else self.formulas[0].range.copy()
+        self.horizon = self.upper_time_bound + self.formulas[0].horizon
 
     def eval(self, traces):
-        formula_robustness = Not(Global(self.lower_time_bound,self.upper_time_bound,Not(self.formula)))
+        formula_robustness = Not(Global(self.lower_time_bound, self.upper_time_bound, Not(self.formulas[0])))
         return formula_robustness.eval(traces)
 
 class Or(STL):
 
-    def __init__(self, *args, nu=1):
-        self.formula = Not(And(*[Not(f) for f in args], nu=nu))
+    def __init__(self, *args, nu=None):
+        self.formulas = [Not(And(*[Not(f) for f in args], nu=nu))]
+        self.range = self.formulas[0].range.copy() if self.formulas[0].range is not None else None
+        self.horizon = self.formulas[0].horizon
 
     def eval(self, traces):
-        return self.formula.eval(traces)
+        return self.formulas[0].eval(traces)
 
-class And:
+class And(STL):
 
-    def __init__(self, *args, nu=1):
+    def __init__(self, *args, nu=None):
         self.formulas = list(args)
         self.nu = nu
         
-        if self.nu <= 0:
+        if self.nu is not None and self.nu <= 0:
             raise ValueError("The nu parameter must be positive.")
-
-        self.variables = sum([f.variables for f in self.formulas], start=[])
 
         self.horizon = max(f.horizon for f in self.formulas)
 
@@ -407,9 +345,14 @@ class And:
             self.range = None
         else:
             self.range(min(A), min(B))
-        self.effective_range = None
 
     def eval(self, traces):
+        if self.nu is None:
+            return self._eval_traditional(traces)
+        else:
+            return self._eval_alternative(traces, self.nu)
+
+    def _eval_traditional(self, traces):
         """This is the usual and."""
 
         # Evaluate the robustness of all subformulas and save the robustness
@@ -423,8 +366,8 @@ class And:
 
         return np.min(rho, axis=0)
 
-    def eval2(self, traces):
-        """This is the alternative one."""
+    def _eval_alternative(self, traces, nu):
+        """This is the alternative and."""
 
         # Evaluate the robustness of all subformulas and save the robustness
         # signals into one 2D array.
@@ -445,11 +388,11 @@ class And:
             rho_tilde = rho[:,i]/rho_min[i] - 1
 
             if rho_min[i] < 0:
-                numerator = rho_min[i] * np.sum(np.exp((1+self.nu) * rho_tilde))
-                denominator = np.sum(np.exp(self.nu * rho_tilde))
+                numerator = rho_min[i] * np.sum(np.exp((1+nu) * rho_tilde))
+                denominator = np.sum(np.exp(nu * rho_tilde))
             elif rho_min[i] > 0:
-                numerator = np.sum(np.multiply(rho[:,i], np.exp(-self.nu * rho_tilde)))
-                denominator = np.sum(np.exp(-1 * self.nu * rho_tilde))
+                numerator = np.sum(np.multiply(rho[:,i], np.exp(-nu * rho_tilde)))
+                denominator = np.sum(np.exp(-1 * nu * rho_tilde))
             else:
                 numerator = 0
                 denominator = 1
@@ -457,131 +400,6 @@ class And:
             robustness[i] = numerator/denominator
         
         return robustness
-
-# left_formula has to hold at least until right_formula; if right_formula never becomes true, left_formula must remain true forever. 
-class Weak_Until:
-    def __init__(self,lower_time_bound,upper_time_bound,left_formula,right_formula):
-        self.nom = "Until"
-        self.left_formula = left_formula
-        self.right_formula = right_formula
-        self.upper_time_bound = upper_time_bound
-        self.lower_time_bound = lower_time_bound
-        self.var_range = left_formula.var_range
-        self.horizon = self.upper_time_bound +  max(self.left_formula.horizon, self.right_formula.horizon)
-        self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
-
-    def eval(self, traces,time):
-        i = 0
-        #finding the first index
-        while  traces.timestamps[i] < self.lower_time_bound:  
-            i += 1
-
-        #initialistion with the higest value
-        min_left_formula = self.var_range[1]
-
-        #evaluate the left formulas
-        left_formula_robustness = self.left_formula.eval(traces)
-        right_formula_robustness = self.right_formula.eval(traces)
-        
-        #if the time bound is exceed or if the right_formula is True
-        while  i < len(traces.timestamps) and traces.timestamps[i] <= self.upper_time_bound and right_formula_robustness[i] < 0:
-            
-
-            #finding the minimum of the left formula
-            if min_left_formula > left_formula_robustness[i]:
-                min_left_formula = left_formula_robustness[i]
-            i += 1
-        #return the minimum of the left formula
-        return np.full(len(left_formula_robustness),min_left_formula)
-
-
-
-"""
-#left_formula has to hold at least until right_formula becomes true, which must hold at the current or a future position. 
-class Until:
-
-	def __init__(self,lower_time_bound,upper_time_bound,left_formula,right_formula):
-		self.nom = "Until"
-		self.left_formula = left_formula
-		self.right_formula = right_formula
-		self.upper_time_bound = upper_time_bound
-		self.lower_time_bound = lower_time_bound
-		A = min(self.left_formula.var_range[0], self.right_formula.var_range[0])
-		B = max(self.left_formula.var_range[1], self.right_formula.var_range[1])
-		self.var_range = [A, B]
-		self.horizon = self.upper_time_bound +  max(self.left_formula.horizon, self.right_formula.horizon)
-		self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
-
-	
-	def eval(self, traces,time):
-		i = 0
-		#finding the first index
-		while  traces.timestamps[i] < self.lower_time_bound:
-			i += 1
-
-		min_left_formula = self.var_range[1]
-		min_right_formula = self.var_range[1]
-		max_right_formula = self.var_range[0]
-		#if the time bound is exceed or if the right_formula is True when left_formula is need to be True
-		while  i < len(traces.timestamps) and traces.timestamps[i] <= self.upper_time_bound & self.right_formula.eval(traces, traces.timestamps[i]) < 0:
-			left_formula_evaluation = self.left_formula.eval(traces, traces.timestamps[i])
-			right_formula_evaluation = self.right_formula.eval(traces, traces.timestamps[i])
-			#Finding the min of the left_formula
-			if min_left_formula > left_formula_evaluation:
-				min_left_formula = left_formula_evaluation
-			#Finding the max of the right_formula
-			if max_right_formula < right_formula_evaluation:
-				max_right_formula = right_formula_evaluation
-			i += 1
-
-		#if the time bound is exceed
-		if traces.timestamps[i] > self.upper_time_bound:
-			#return Negative Value
-			return max_right_formula
-		elif self.right_formula.eval(traces, traces.timestamps[i]) > 0:
-			# right_formula need to stay True
-			while  traces.timestamps[i] <= self.upper_time_bound:
-				#Finding the min of the right_formula
-				right_formula_evaluation = self.right_formula.eval(traces, traces.timestamps[i])
-				if min_right_formula > right_formula_evaluation:
-					min_right_formula = right_formula_evaluation
-				i += 1
-				return min_right_formula
-
-		return min_left_formula
-
-# left_formula has to be true until and including the point where right_formula first becomes true; if right_formula never becomes true, left_formula must remain true forever.
-class Release:
-	def __init__(self,lower_time_bound,upper_time_bound,left_formula,right_formula):
-		self.nom = "Release"
-		self.left_formula = left_formula
-		self.right_formula = right_formula
-		self.upper_time_bound = upper_time_bound
-		self.lower_time_bound = lower_time_bound
-		self.var_range = left_formula.var_range
-		self.horizon = self.upper_time_bound +  max(self.left_formula.horizon, self.right_formula.horizon)
-		self.variables = list(set(self.left_formula.variables + self.right_formula.variables))
-	
-	def eval(self, traces,time):
-		i = 0
-		#finding the first index
-		while  traces.timestamps[i] < self.lower_time_bound:  
-			i += 1
-
-		#initialistion with the higest value
-		min_left_formula = self.var_range[1]
-
-		#if the time bound is exceed or if the right_formula is True when left_formula is need to be True
-		while  i < len(traces.timestamps) and traces.timestamps[i] <= self.upper_time_bound & self.right_formula.eval(traces, traces.timestamps[i-1]) < 0:
-			#evaluate the left formula
-			left_formula_evaluation = self.left_formula.eval(traces, traces.timestamps[i])
-			#finding the minimum of the left formula
-			if min_left_formula > left_formula_evaluation:
-				min_left_formula = left_formula_evaluation
-			i += 1
-		#return the minimum of the left formula
-		return min_left_formula
-		"""
 
 # TODO: Implement these.
 StrictlyLessThan = LessThan
