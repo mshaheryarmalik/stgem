@@ -156,8 +156,8 @@ class TestSTL(unittest.TestCase):
         variables = ["s1", "s2"]
         signals = [s1, s2]
         # 3*s1 <= s2
-        L = STL.Signal("s1", var_range=[0, 200])
-        R = STL.Signal("s2", var_range=[-200, 4500])
+        L = STL.Signal("s1", range=[0, 200])
+        R = STL.Signal("s2", range=[-200, 4500])
         specification = STL.LessThan(3, 0, 1, 0, L, R)
 
         robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)

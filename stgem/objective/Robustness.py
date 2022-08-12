@@ -55,13 +55,26 @@ class Traces:
         return C(timestamps, signals)
 
     def search_time_index(self, t, start=0):
-        """Finds the index of the time t in the timestamps."""
+        """Finds the index of the time t in the timestamps using binary
+        search."""
 
-        for i in range(start, len(self.timestamps)):
-            if self.timestamps[i] == t:
-                return i
+        lower_idx = start
+        upper_idx = len(self.timestamps) - 1
+        middle = (lower_idx + upper_idx)//2
+        while lower_idx <= upper_idx:
+            if self.timestamps[middle] < t:
+                lower_idx = middle + 1
+            elif self.timestamps[middle] > t:
+                upper_idx = middle - 1
+            else:
+                break
 
-        return -1
+            middle = (lower_idx + upper_idx)//2
+
+        if self.timestamps[middle] == t:
+            return middle
+        else:
+            return -1
 
 class TreeIterator:
 
