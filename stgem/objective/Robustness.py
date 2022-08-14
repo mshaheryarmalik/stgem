@@ -291,7 +291,7 @@ class Global(STL):
         self.upper_time_bound = upper_time_bound
         self.lower_time_bound = lower_time_bound
         self.formulas = [formula]
-        self.range = None if self.formulas[0].range is None else self.formula[0].range.copy()
+        self.range = None if self.formulas[0].range is None else self.formulas[0].range
         self.horizon = self.upper_time_bound + self.formulas[0].horizon
 
     def eval(self, traces):
@@ -357,7 +357,7 @@ class And(STL):
         if None in A or None in B:
             self.range = None
         else:
-            self.range(min(A), min(B))
+            self.range = (min(A), min(B))
 
     def eval(self, traces):
         if self.nu is None:
