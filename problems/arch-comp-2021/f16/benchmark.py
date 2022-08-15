@@ -1,6 +1,7 @@
 import os, sys
 
-import tltk_mtl as STL
+import stgem.objective.Robustness as STL
+
 
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
