@@ -104,17 +104,19 @@ class stlParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by stlParser#signalUnaryExpr.
     def visitSignalUnaryExpr(self, ctx:stlParser.SignalUnaryExprContext):
+        print("-----------------------------------{}------------------------------------------".format("SignalUnaryExpr"))
         operator = ctx.getRuleContext().getChild(0).getText()
-        signal = ctx.getRuleContext().getChild(0).getText()
+        signal = ctx.getRuleContext().getChild(1).getText()
         if operator == "+":
-            result = Mult(signal, constant).eval(self.traces)
+            result = signal
         elif operator == "-":
-            result = Subtract(signal, constant).eval(self.traces)
-
+            result = Mult(signal, Constant(-1)).eval(self.traces)
+        return result
 
     # Visit a parse tree produced by stlParser#signalSumExpr.
     def visitSignalSumExpr(self, ctx:stlParser.SignalSumExprContext):
         print("-----------------------------------{}------------------------------------------".format("SignalSumExpr"))
+        # TODO: Two signals
         constant = ctx.getRuleContext().getChild(0).getText()
         operator = ctx.getRuleContext().getChild(1).getText()
         signal = ctx.getRuleContext().getChild(2).getText()
@@ -135,6 +137,7 @@ class stlParserVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by stlParser#signalMultExpr.
     def visitSignalMultExpr(self, ctx:stlParser.SignalMultExprContext):
         print("-----------------------------------{}------------------------------------------".format("SignalMultExpr"))
+        # TODO: Two signals
         constant = ctx.getRuleContext().getChild(0).getText()
         operator = ctx.getRuleContext().getChild(1).getText()
         predicate = ctx.getRuleContext().getChild(2).getText()
