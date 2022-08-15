@@ -8,6 +8,8 @@ for a single input, multiple objectives must be specified.
 
 import numpy as np
 
+import stgem.objective.Robustness as STL
+
 class Objective:
 
     def __init__(self):
@@ -100,11 +102,6 @@ class FalsifySTL(Objective):
     def setup(self, sut):
         super().setup(sut)
 
-        try:
-            import stgem.objective.Robustness as STL
-        except:
-            raise
-
         #if not isinstance(self.specification, STL.TLTK_MTL):
          #   raise Exception("Expected specification to be TLTK class not '{}'".format(type(self.specification)))
 
@@ -171,51 +168,35 @@ class FalsifySTL(Objective):
 
         #self.specification.reset()
 
-        try:
-            import stgem.objective.Robustness as STL
-        except:
-            raise
-
-        timestamps = np.array([0], dtype=np.float32)
+        timestamps = np.arange(1)
         trajectories = {}
         for var in self.formula_variables:
-            if self.M[var][0] == "output":
-                trajectories[var] = np.array([output[self.M[var][1]]], dtype=np.float32)
-            else:
-                trajectories[var] = np.array([test[self.M[var][1]]], dtype=np.float32)
-
+            try:
+                idx = self.sut.outputs.index(var)
+                trajectories[var] = np.array([output[idx]])
+            except ValueError:
+                try:
+                    idx = self.sut.inputs.index[var]
+                    trajectories[var] = np.array([test[idx]])
+                except ValueError:
+                    raise Exception("Variable '{}' not in input or output variables.".format(var))
 
         # Notice that the return value is a Cython MemoryView.
         #robustness_signal = self.specification.eval_interval(trajectories, timestamps)
 
         #robustness = robustness_signal[0]
 
-        temp = STL.Traces(timestamps,trajectories)
-        robustness_signal = self.specification.eval(temp)
+        traces = STL.Traces(timestamps, trajectories)
+        robustness_signal = self.specification.eval(traces)
         robustness = robustness_signal[0]
 
-        # Scale the robustness to [0, 1] if required.
-        if self.scale:
-            if robustness < 0:
-                robustness = 0
-            else:
-                B = self.specification.var_range[1]
-                robustness *= 1/B
-                robustness += self.epsilon
-                robustness = min(1, robustness)
-
-        return robustness
+        return robustness, self.specification.range
 
     def _evaluate_signal(self, test, result):
         input_timestamps = test.input_timestamps
         output_timestamps = result.output_timestamps
         input_signals = test.input_denormalized
         output_signals = result.outputs
-
-        try:
-            import stgem.objective.Robustness as STL
-        except:
-            raise
 
         """
         Here we find the robustness at time 0.
@@ -265,21 +246,26 @@ class FalsifySTL(Objective):
         # Reset time bounds. This allows reusing the specifications.
         self.reset_time_bounds()
 
-        # Scale the robustness to [0, 1] if required.
+        return robustness, self.specification.range
+
+    def __call__(self, t, r):
+        if r.output_timestamps is None:
+            robustness, range = self._evaluate_vector(t.inputs, r.outputs)
+        else:
+            robustness, range = self._evaluate_signal(t, r)
+
+        # Scale the robustness to [0,1] if required.
+        # TODO: Should epsilon be added even if no scaling is applied?
         if self.scale:
+            if range is None:
+                raise Exception("Scaling of robustness values requested but no scale available.")
+
             if robustness < 0:
                 robustness = 0
             else:
-                B = self.specification.range[1]
-                robustness *= 1/B
+                robustness *= 1/range[1]
                 robustness += self.epsilon
                 robustness = min(1, robustness)
 
         return robustness
-
-    def __call__(self, t, r):
-        if r.output_timestamps is None:
-            return self._evaluate_vector(t.inputs, r.outputs)
-        else:
-            return self._evaluate_signal(t, r)
 

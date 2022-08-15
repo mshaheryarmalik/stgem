@@ -26,7 +26,6 @@ class TestSTL(unittest.TestCase):
         return objective(sut_input, sut_output), objective
 
     def test_stl(self):
-        """
         # Test vector-valued output.
         # ---------------------------------------------------------------------
         output = [3, 0.5]
@@ -50,7 +49,6 @@ class TestSTL(unittest.TestCase):
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None))
         assert robustness == correct_robustness
-        """
 
         # Test signal outputs.
         # ---------------------------------------------------------------------
