@@ -120,41 +120,36 @@ class FalsifySTL(Objective):
             if isinstance(node, (STL.Global, STL.Finally)):
                 self.time_bounded.append(node)
 
-        # Sampling period equals the minimum of the smallest positive time
-        # bound referred to in the formula divided by K and the sampling step
-        # of the SUT (if it exists). Compute the first number.
-        K = 10
-        first = 1
-        for x in self.time_bounded:
-            if x.lower_time_bound > 0 and x.lower_time_bound < first:
-                first = x.lower_time_bound
-            if x.upper_time_bound > 0 and x.upper_time_bound < first:
-                first = x.upper_time_bound
-        first /= K
-        if hasattr(self.sut, "sampling_step"):
-            self.sampling_period = min(first, self.sut.sampling_step)
-        else:
-            self.sampling_period = first
-        from math import log10, floor
-        self.precision = abs(floor(log10(self.sampling_period)))
+        """
+        One problem with STL usage is that the differences between timestamps
+        (input or output) from the used Simulink models can be very small and
+        variable. We cannot simply take the minimum difference and use this as
+        a sampling step because this can lead into very small time steps and
+        thus to very long augmented signals. Very small time steps could be
+        unnecessary too as the STL formula might only refer to relatively big
+        time steps.
 
-        # Create a mapping for an easy access to correct signal. Save which
-        # variables refer to input signals and which to output signals.
-        self.M = {}
-        self.input_variables = []
-        self.output_variables = []
-        for var in self.formula_variables:
-            try:
-                idx = self.sut.outputs.index(var)
-                self.output_variables.append(var)
-                self.M[var] = ["output", idx]
-            except ValueError:
-                try:
-                    idx = self.sut.inputs.index(var)
-                    self.input_variables.append(var)
-                    self.M[var] = ["input", idx]
-                except ValueError:
-                    raise Exception("Variable '{}' not in input or output variables.".format(var))
+        Our solution to the above is to figure out the smallest timestep
+        referred to in the STL formula and divide this into K equal pieces
+        (currently K = 10). This determines a sampling period and we sample all
+        signals according to this sampling period (if the SUT specifies even
+        lower sampling period, we use this). This can mean discarding signal
+        values or augmenting a signal. Currently we augment a signal by
+        assuming a constant value.
+        """
+
+        K = 10
+        smallest = 1
+        for x in self.time_bounded:
+            if x.lower_time_bound > 0 and x.lower_time_bound < smallest:
+                smallest = x.lower_time_bound
+            if x.upper_time_bound > 0 and x.upper_time_bound < smallest:
+                smallest = x.upper_time_bound
+        smallest /= K
+        if hasattr(self.sut, "sampling_step"):
+            self.sampling_period = min(smallest, self.sut.sampling_step)
+        else:
+            self.sampling_period = smallest
 
     def adjust_time_bounds(self):
         for x in self.time_bounded:
@@ -226,93 +221,46 @@ class FalsifySTL(Objective):
         Here we find the robustness at time 0.
 
         We assume that the user guarantees that time is increasing. Floating
-        point numbers and the current TLTK do not go well together. The reason
-        is that intervall TLTK calls a function search_sorted to look for
-        timestamps in an array. The timestamp must be an equal match (0.1
-        != 0.1000000001) or otherwise it silently fails and returns the last
-        timestamp. This can lead to errorneous results. The solution is to use
-        integer timestamps.
-
-        Another problem is that the differences between timestamps (input or
-        output) can be very small and variable. We cannot simply take the
-        minimum difference and use this as a sampling step because this can
-        lead into very small time steps and thus to very long augmented
-        signals. Very small time steps could be unnecessary too as the STL
-        formula might only refer to relatively big time steps.
-
-        Our solution to the above is to figure out the smallest timestep
-        referred to in the STL formula (this is already figured out in the
-        setup method) and divide this K equal pieces (currently K = 10). The
-        minimum timestep equals one time unit. This determines a sampling
-        period and we sample all signals according to this sampling period.
-        This can mean discarding signal values or augmenting a signal.
-        Currently we augment a signal by assuming a constant value.
-
-        Using integer timestamps then requires scaling the time intervals
-        occurring in the specification formulas. This as already done in the
-        setup method.
-
-        Currently the code does not work reliably with time steps lower than
-        1e-4, but this should be enough.
+        point numbers and timestamp search do not go well together: we have 0.1
+        != 0.1000000001 etc. This can lead to errorneous results. The solution
+        is to use integer timestamps. Using integer timestamps then requires
+        scaling the time intervals occurring in the specification formulas.
+        This as already done in the setup method.
         """
 
-        # This check is necessary for validity.
-        if output_timestamps[0] != 0 or (input_timestamps is not None and input_timestamps[0] != 0):
-            raise Exception("The first timestamp should be 0 in both input and output signals.")
-
-        T = max(output_timestamps[-1], 0 if input_timestamps is None else input_timestamps[-1])
-        # Round to the same scale as the sampling period.
-        T = round(T, self.precision)
-        timestamps = [i*self.sampling_period for i in range(0, int(T/self.sampling_period) + 1)]
-
-        # Fill in missing signal values for new timestamps by assuming constant
-        # value.
-        # TODO: Don't do extra work if it can be avoided.
-        eps = 1e-5
-        signals = {var:[] for var in self.formula_variables}
-        for var_set, signal_timestamps in [(self.output_variables, output_timestamps)] + ([] if input_timestamps is None else [(self.input_variables, input_timestamps)]):
-            for var in var_set:
-                pos = 0
-                for t in timestamps:
-                    while pos < len(signal_timestamps) and signal_timestamps[pos] <= t + eps:
-                        pos += 1
-
-                    if self.M[var][0] == "output":
-                        value = output_signals[self.M[var][1]][pos - 1]
-                    else:
-                        value = input_signals[self.M[var][1]][pos - 1]
-                    signals[var].append(value)
-
-                    if pos > len(signal_timestamps):
-                        break
-
+        # Reset the specification for object reuse.
         #self.specification.reset()
 
+        # Build trajectories in appropriate form.
+        args = []
+        for var in self.formula_variables:
+            args.append(var)
+            try:
+                idx = self.sut.outputs.index(var)
+                args.append(output_timestamps)
+                args.append(output_signals[idx])
+            except ValueError:
+                try:
+                    idx = self.sut.inputs.index(var)
+                    args.append(input_timestamps)
+                    args.append(input_signals[idx])
+                except ValueError:
+                    raise Exception("Variable '{}' not in input or output variables.".format(var))
+
+        trajectories = STL.Traces.from_mixed_signals(*args, sampling_period=self.sampling_period)
+
+        # Use integer timestamps.
+        trajectories.timestamps = np.arange(len(trajectories.timestamps))
+
         # Allow slight inaccuracy in horizon check.
-        if self.strict_horizon_check and self.horizon - 1e-2 > timestamps[-1]:
-            raise Exception("The horizon {} of the formula is too long compared to signal length {}. The robustness cannot be computed.".format(self.horizon, timestamps[-1]))
+        if self.strict_horizon_check and self.horizon - 1e-2 > trajectories.timestamps[-1]:
+            raise Exception("The horizon {} of the formula is too long compared to signal length {}. The robustness cannot be computed.".format(self.horizon, trajectories.timestamps[-1]))
 
         # Adjust time bounds.
         self.adjust_time_bounds()
 
-        # Build trajectories in appropriate form.
-        # Notice that converting to float32 (as required by TLTK) might lose
-        # some precision. This should be of no consequence regarding
-        # falsification.
-        trajectories = {var:np.asarray(signals[var], dtype=np.float32) for var in self.formula_variables}
-
-        # Use integer timestamps.
-        timestamps = np.array(list(range(len(timestamps))), dtype=np.float32)
-        # Notice that the return value is a Cython MemoryView.
-        #robustness_signal = self.specification.eval_interval(trajectories, timestamps)
-
-
-        temp = STL.Traces(timestamps,trajectories)
-        robustness_signal = self.specification.eval(temp)
+        robustness_signal = self.specification.eval(trajectories)
         robustness = robustness_signal[0]
-        print("OBJECTIF")
-        print(robustness)
-        print("OBJECTIF")
 
         # Reset time bounds. This allows reusing the specifications.
         self.reset_time_bounds()
@@ -322,7 +270,7 @@ class FalsifySTL(Objective):
             if robustness < 0:
                 robustness = 0
             else:
-                B = self.specification.var_range[1]
+                B = self.specification.range[1]
                 robustness *= 1/B
                 robustness += self.epsilon
                 robustness = min(1, robustness)
@@ -334,35 +282,4 @@ class FalsifySTL(Objective):
             return self._evaluate_vector(t.inputs, r.outputs)
         else:
             return self._evaluate_signal(t, r)
-
-    @staticmethod
-    def GreaterThan(A, B, C, D, left_signal=None, right_signal=None):
-        """Static helper method for stating A*L + B >= C*R + D where L and R
-        respectively are the left and right signals."""
-
-        try:
-            import tltk_mtl as STL
-        except:
-            raise
-
-        return STL.LessThan(C, D, A, B, right_signal, left_signal)
-
-    @staticmethod
-    def StrictlyLessThan(A, B, C, D, left_signal=None, right_signal=None):
-        """Static helper method for stating A*L + B < C*R + D where L and R
-        respectively are the left and right signals."""
-
-        try:
-            import tltk_mtl as STL
-        except:
-            raise
-
-        return STL.Not(FalsifySTL.GreaterThan(A, B, C, D, left_signal, right_signal))
-
-    @staticmethod
-    def StrictlyGreaterThan(A, B, C, D, left_signal=None, right_signal=None):
-        """Static helper method for stating A*L + B > C*R + D where L and R
-        respectively are the left and right signals."""
-
-        return FalsifySTL.StrictlyLessThan(C, D, A, B, right_signal, left_signal)
 
