@@ -24,15 +24,15 @@ phi
 
     | phi (IMPLIESOP | EQUIVOP) phi  #opPropExpr
 
-    | predicate                      #predicateExpr
+    | signal RELOP signal            #predicateExpr
+    | signal                         #signalExpr
 ;
 
-predicate
-    : predicate RELOP predicate      #predRelExpr
-    | predicate ARITHOP NUMBER       #predArithRightExpr
-    | NUMBER ARITHOP predicate       #predArithLeftExpr
-    | NUMBER                         #predNumber
-    | NAME                           #predName
+signal
+    : signal ARITHOP NUMBER          #signalArithRightExpr
+    | NUMBER ARITHOP signal          #signalArithLeftExpr
+    | NUMBER                         #signalNumber
+    | NAME                           #signalName
 ;
 
 interval
