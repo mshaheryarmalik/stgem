@@ -16,41 +16,53 @@ class Traces:
     @classmethod
     def from_mixed_signals(C, *args, sampling_period=None):
         """Instantiate the class from signals that have different timestamps
-        and different lengths. This is done by finding the maximum signal
-        length and using that as a signal length, dividing this length into
-        pieces according to the sampling period (smallest observed difference
-        between timestamps if None), and filling values by assuming constant
-        value."""
+        (with 0 as a first timestamp) and different lengths. This is done by
+        finding the maximum signal length and using that as a signal length,
+        dividing this length into pieces according to the sampling period
+        (smallest observed difference between timestamps if None), and filling
+        values by assuming constant value.
 
-        # input: name1, timestamps1, signal1, name2, timestamps2, signal2, ...
+        The input is expected to be of the form
+        name1, timestamps1, signal1, name2, timestamps2, signal2, ..."""
+
+        """
+        Currently the code does not work reliably with time steps lower than
+        1e-4, but this should be enough.
+        """
 
         if sampling_period is None:
             raise NotImplementedError()
 
+        # Check that all timestamps begin with 0. Otherwise the code below is
+        # not valid.
+        for i in range(0, len(args), 3):
+            if args[i+1][0] != 0:
+                raise Exception("The first timestamp should be 0 in all signals.")
+
         # Maximum signal length.
-        T = max(len(args[i]) for i in range(1, len(args), 3))
+        T = max(args[i+1][-1] for i in range(0, len(args), 3))
 
         # New timestamps.
-        timestamps = [i*sampling_period for i in range(0, int(T/self.sampling_period) + 1)]
+        timestamps = [i*sampling_period for i in range(0, int(T/sampling_period) + 1)]
 
         # Check that all signals begin from time 0. Otherwise this does not work.
 
         # Fill the signals by assuming constant value.
         signals = {}
         eps = 1e-5
-        for i in range(len(args), 3):
+        for i in range(0, len(args), 3):
             name = args[i]
             signal_timestamps = args[i+1]
             signal_values = args[i+2]
 
             signals[name] = np.empty(shape=(len(timestamps)))
             pos = 0
-            for t in timestamps[1:]:
+            for n, t in enumerate(timestamps):
                 while pos < len(signal_timestamps) and signal_timestamps[pos] <= t + eps:
                     pos += 1
 
                 value = signal_values[pos - 1]
-                signals[name][pos] = value
+                signals[name][n] = value
 
         return C(timestamps, signals)
 
