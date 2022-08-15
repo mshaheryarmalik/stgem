@@ -114,8 +114,8 @@ def build_specification(selected_specification, mode=None, asut=None):
         beta = 0.03
         # inequality1 := |POS - REF| > alpha + beta*|REF|
         # inequality2 := alpha + beta*|REF| > |POS - REF|
-        inequality1 = FalsifySTL.StrictlyGreaterThan(1, 0, beta, alpha, STL.Abs(STL.Subtract(S("POS"), S("REF"))), STL.Abs(S("REF")))
-        inequality2 = FalsifySTL.StrictlyGreaterThan(beta, alpha, 1, 0, STL.Abs(S("REF")), STL.Abs(STL.Subtract(S("POS"), S("REF"))))
+        inequality1 = FalsifySTL.GreaterThan(STL.Abs(STL.Subtract(S("POS"), S("REF"))),STL.Sum(STL.Constant(alpha),STL.Mult(STL.Constant(beta),STL.Abs(S("REF")))))
+        inequality2 = FalsifySTL.GreaterThan(STL.Sum(STL.Constant(alpha),STL.Mult(STL.Constant(beta),STL.Abs(S("REF")))), STL.Abs(STL.Subtract(S("POS"), S("REF"))))
         # always[1,37]( inequality implies (always[0,2]( eventually[0,1] not inequality )) )
         specification = STL.Global(1, 37, STL.Implication(inequality1, STL.Finally(0, 2, STL.Global(0, 1, inequality2))))
 
@@ -124,15 +124,15 @@ def build_specification(selected_specification, mode=None, asut=None):
         epsilon = 0.01
     elif selected_specification == "NNX":
         # eventually[0,1](POS > 3.2)
-        F1 = STL.Finally(0, 1, FalsifySTL.StrictlyGreaterThan(1, 0, 0, 3.2, S("POS")))
+        F1 = STL.Finally(0, 1, FalsifySTL.GreaterThan(S("POS"),STL.Constant(3.2)))
         # eventually[1,1.5]( always[0,0.5](1.75 < POS < 2.25) )
-        L = FalsifySTL.StrictlyLessThan(0, 1.75, 1, 0, None, S("POS"))
-        R = FalsifySTL.StrictlyLessThan(1, 0, 0, 2.25, S("POS"))
+        L = FalsifySTL.LessThan(STL.Constant(1.75), S("POS"))
+        R = FalsifySTL.LessThan(S("POS"),STL.Constant(2.25))
         inequality = STL.And(L, R)
         F2 = STL.Finally(1, 1.5, STL.Global(0, 0.5, inequality))
         # always[2,3](1.825 < POS < 2.175)
-        L = FalsifySTL.StrictlyLessThan(0, 1.825, 1, 0, None, S("POS"))
-        R = FalsifySTL.StrictlyLessThan(1, 0, 0, 2.175, S("POS"))
+        L = FalsifySTL.LessThan(STL.Constant(1.825), S("POS"))
+        R = FalsifySTL.LessThan(S("POS"),STL.Constant(2.175))
         inequality = STL.And(L, R)
         F3 = STL.Global(2, 3, inequality)
 

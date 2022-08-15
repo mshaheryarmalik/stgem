@@ -188,6 +188,23 @@ class GreaterThan(STL):
     def eval(self, traces):
         return Subtract(self.formulas[0], self.formulas[1]).eval(traces)
 
+class Mult(STL):
+
+    def __init__(self,left_formula,right_formula): #the left_formula is a constant
+        self.formulas = [left_formula, right_formula]
+        if self.formulas[0].range is None or self.formulas[1].range is None:
+            self.range = None
+        else:
+            A = self.formulas[0].range[0] * self.formulas[1].range[0]
+            B = self.formulas[0].range[1] * self.formulas[1].range[1]
+        self.horizon = 0
+
+    def eval(self, traces):
+        res = []
+        left_formula_robustness = self.formulas[0]
+        right_formula_robustness = self.formulas[1].eval(traces)
+        return left_formula_robustness*right_formula_robustness
+
 class LessThan(STL):
 
     def __init__(self, left_formula, right_formula):
