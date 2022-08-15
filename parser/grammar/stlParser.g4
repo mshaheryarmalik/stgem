@@ -29,10 +29,12 @@ phi
 ;
 
 signal
-    : signal ARITHOP NUMBER          #signalArithRightExpr
-    | NUMBER ARITHOP signal          #signalArithLeftExpr
-    | NUMBER                         #signalNumber
+    : NUMBER                         #signalNumber
     | NAME                           #signalName
+    | (LPAREN) signal (RPAREN)       #signalParenthesisExpr
+    | (SUM | MINUS) signal           #signalUnaryExpr
+    | signal (MULT | DIV) signal     #signalMultExpr
+    | signal (SUM | MINUS) signal    #signalSumExpr
 ;
 
 interval
