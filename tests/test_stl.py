@@ -3,10 +3,9 @@ import unittest, traceback
 import numpy as np
 import pandas as pd
 
-import tltk_mtl as STL
-
 from stgem.sut import SUT, SUTInput, SUTOutput
 from stgem.objective.objective import FalsifySTL
+import stgem.objective.Robustness as STL
 
 class DummySUT(SUT):
     def __init__(self, odim, outputs):
@@ -59,8 +58,8 @@ class TestSTL(unittest.TestCase):
         signals = [s1, s2]
         variables = ["s1", "s2"]
         # always[0,1](s1 >= 0 and s2 >= 0)
-        L = FalsifySTL.GreaterThan(1, 0, 0, 0, STL.Signal("s1"))
-        R = FalsifySTL.GreaterThan(1, 0, 0, 0, STL.Signal("s2"))
+        L = STL.GreaterThan(STL.Signal("s1"), 0)
+        R = STL.GreaterThan(STL.Signal("s2"), 0)
         specification = STL.And(L, R)
         specification = STL.Global(0, 1, specification)
         correct_robustness = 1.0
@@ -81,8 +80,8 @@ class TestSTL(unittest.TestCase):
         variables = ["SPEED", "RPM"]
         scale = False
         # always[0,30](RPM <= 3000)) implies (always[0,4](SPEED <= 35)
-        L = STL.Global(0, 30, STL.LessThan(1, 0, 0, 3000, STL.Signal("RPM")))
-        R = STL.Global(0, 4, STL.LessThan(1, 0, 0, 35, STL.Signal("SPEED")))
+        L = STL.Global(0, 30, STL.LessThan(STL.Signal("RPM"), 3000))
+        R = STL.Global(0, 4, STL.LessThan(STL.Signal("SPEED"), 35))
         specification = STL.Implication(L, R)
         correct_robustness = -4.55048
 
@@ -90,7 +89,7 @@ class TestSTL(unittest.TestCase):
         assert abs(robustness - correct_robustness) < 1e-5
 
         # always[0,30](RPM < 3000)) implies (always[0,8](SPEED < 50)
-        R = STL.Global(0, 8, FalsifySTL.StrictlyLessThan(1, 0, 0, 50, STL.Signal("SPEED")))
+        R = STL.Global(0, 8, STL.StrictlyLessThan(STL.Signal("SPEED"), 50))
         specification = STL.Implication(L, R)
         correct_robustness = 4.936960098864567
 
@@ -98,7 +97,7 @@ class TestSTL(unittest.TestCase):
         assert abs(robustness - correct_robustness) < 1e-5
 
         # always[0,30](RPM < 3000)) implies (always[0,20](SPEED < 65)
-        R = STL.Global(0, 20, FalsifySTL.StrictlyLessThan(1, 0, 0, 65, STL.Signal("SPEED")))
+        R = STL.Global(0, 20, STL.StrictlyLessThan(STL.Signal("SPEED"), 65))
         specification = STL.Implication(L, R)
         correct_robustness = 19.936958
 
@@ -114,8 +113,8 @@ class TestSTL(unittest.TestCase):
         variables = ["s1", "s2"]
         signals = [s1, s2]
         # always[0,10]( (s1 >= 5) implies (eventually[0,1](s2 <= 3)) )
-        L = FalsifySTL.GreaterThan(1, 0, 0, 5, STL.Signal("s1"))
-        R = STL.Finally(0, 1, STL.LessThan(1, 0, 0, 3, STL.Signal("s2")))
+        L = STL.GreaterThan(STL.Signal("s1"), 5)
+        R = STL.Finally(0, 1, STL.LessThan(STL.Signal("s2"), 3))
         specification = STL.Global(0, 10, STL.Implication(L, R))
         correct_robustness = 0
 
@@ -139,9 +138,7 @@ class TestSTL(unittest.TestCase):
         s1 = [2, 2, 2, 2, 2, 2]
         variables = ["s1"]
         # always[0,3](i1 >= s1)
-        L = STL.Signal("i1")
-        R = STL.Signal("s1")
-        specification = FalsifySTL.GreaterThan(1, 0, 1, 0, L, R)
+        specification = STL.GreaterThan(STL.Signal("i1"), STL.Signal("s1"))
         specification = STL.Global(0, 3, specification)
         correct_robustness = -1.0
 
@@ -157,8 +154,8 @@ class TestSTL(unittest.TestCase):
         variables = ["s1", "s2"]
         signals = [s1, s2]
         # 3*s1 <= s2
-        L = STL.Signal("s1", var_range=[0, 200])
-        R = STL.Signal("s2", var_range=[-200, 4500])
+        L = STL.Signal("s1", range=[0, 200])
+        R = STL.Signal("s2", range=[-200, 4500])
         specification = STL.LessThan(3, 0, 1, 0, L, R)
 
         robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)

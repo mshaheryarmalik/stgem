@@ -1,4 +1,5 @@
-import tltk_mtl as STL
+import stgem.objective.Robustness as STL
+
 
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
@@ -81,7 +82,7 @@ def build_specification(selected_specification, afc_mode="normal", asut=None):
     # Notice that the output MODE is never used in the requirements.
     sut_parameters = {"model_file": "afc/run_powertrain",
                       "init_model_file": "afc/init_powertrain",
-                      "input_type": "piecewise constant signal",
+                      "input_type": "piecewise constantant signal",
                       "output_type": "signal",
                       "inputs": ["THROTTLE", "ENGINE"],
                       "outputs": ["MU", "MODE"],
@@ -105,15 +106,16 @@ def build_specification(selected_specification, afc_mode="normal", asut=None):
     if selected_specification == "AFC27":
         beta = 0.008
         # rise := (THROTTLE < 8.8) and (eventually[0,0.05](THROTTLE > 40.0))
-        L = FalsifySTL.StrictlyLessThan(1, 0, 0, 8.8, S("THROTTLE"))
-        R = STL.Finally(0, 0.05, FalsifySTL.StrictlyGreaterThan(1, 0, 0, 40, S("THROTTLE")))
+        L = STL.LessThan(S("THROTTLE"),STL.Constant(8.8))
+        R = STL.Finally(0, 0.05, STL.GreaterThan(S("THROTTLE"),STL.Constant(40)))
         rise = STL.And(L, R)
         # fall := (THROTTLE > 40.0) and (eventually[0,0.05](THROTTLE < 8.8))
-        L = FalsifySTL.StrictlyGreaterThan(1, 0, 0, 40, S("THROTTLE"))
-        R = STL.Finally(0, 0.05, FalsifySTL.StrictlyLessThan(1, 0, 0, 8.8, S("THROTTLE")))
+        L = STL.GreaterThan(S("THROTTLE"),STL.Constant(40))
+        R = STL.Finally(0, 0.05, STL.LessThan(S("THROTTLE"),STL.Constant(8.8)))
         fall = STL.And(L, R)
         # consequence := always[1,5](abs(MU) < beta)
-        consequence = STL.Global(1, 5, FalsifySTL.StrictlyLessThan(1, 0, 0, beta, STL.Abs(S("MU"))))
+        
+        consequence = STL.Global(1, 5, STL.LessThan(STL.Abs(S("MU")),STL.Constant(beta)))
         # always[11,50]( (rise or fall) implies (consequence)
         specification = STL.Global(11, 50, STL.Implication(STL.Or(rise, fall), consequence))
 
@@ -123,7 +125,7 @@ def build_specification(selected_specification, afc_mode="normal", asut=None):
     elif selected_specification == "AFC29":
         gamma = 0.007
         # always[11,50]( abs(MU) < gamma )
-        specification = STL.Global(11, 50, FalsifySTL.StrictlyLessThan(1, 0, 0, gamma, STL.Abs(S("MU"))))
+        specification = STL.Global(11, 50, STL.LessThan(STL.Abs(S("MU")),STL.Constant(gamma)))
 
         specifications = [specification]
         strict_horizon_check = True

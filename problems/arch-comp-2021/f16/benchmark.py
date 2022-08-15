@@ -1,6 +1,7 @@
 import os, sys
 
-import tltk_mtl as STL
+import stgem.objective.Robustness as STL
+
 
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
@@ -96,7 +97,7 @@ def build_specification(selected_specification, mode=None, asut=None):
     S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "F16":
         # always[0,15] ALTITUDE > 0
-        specification = STL.Global(0, 15, FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, S("ALTITUDE")))
+        specification = STL.Global(0, 15, STL.GreaterThan(S("ALTITUDE"),STL.Constant(0)))
 
         specifications = [specification]
         strict_horizon_check = True
