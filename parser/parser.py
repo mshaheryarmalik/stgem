@@ -6,14 +6,14 @@ from antlr4.InputStream import InputStream
 from .stlLexer import stlLexer as Lexer
 from .stlParser import stlParser as Parser
 from .visitor import stlParserVisitor as Visitor
-import stgem.objective.Robustness as rbst
 
-def parse(formula: str, predicates: rbst.Predicate):
-    """TLTk parser parses a specification requirement into an equivalent TLTk structure
+def parse(formula, timestamps, signals):
+    """ parses a specification requirement into an equivalent STL structure
 
     Attributes:
         formula: The formal specification requirement
-        predicates: The set of Predicate(s) used in the requirement
+        signals: The set of Predicate(s) used in the requirement
+        timestamps:
     """
     input_stream = InputStream(formula)
 
@@ -22,6 +22,6 @@ def parse(formula: str, predicates: rbst.Predicate):
 
     parser = Parser(stream)
     tree = parser.stlSpecification()
-    visitor = Visitor(predicates)
+    visitor = Visitor(timestamps, signals)
 
     return visitor.visit(tree)  # type: ignore

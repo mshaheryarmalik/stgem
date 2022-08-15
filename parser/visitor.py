@@ -11,15 +11,16 @@ from stgem.objective.Robustness import *
 
 class stlParserVisitor(ParseTreeVisitor):
 
-    def __init__(self, predicates):
-        self.predicates = predicates
+    def __init__(self, timestamps, signals):
+        self.traces = Traces(timestamps, signals)
 
-# Ovveride this function to ensure that TerminalNodeImpl does not ovveride the returned value with a 'None'
+# Override this function to ensure that TerminalNodeImpl does not override the returned value with a 'None'
     def aggregateResult(self, aggregate, nextResult):
         if not aggregate is None:
             return aggregate
         else:
             return nextResult
+
 
     # Visit a parse tree produced by stlParser#stlSpecification.
     def visitStlSpecification(self, ctx:stlParser.StlSpecificationContext):
@@ -37,90 +38,114 @@ class stlParserVisitor(ParseTreeVisitor):
         return value
 
 
+    # Visit a parse tree produced by stlParser#signalExpr.
+    def visitSignalExpr(self, ctx:stlParser.SignalExprContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by stlParser#opFutureExpr.
     def visitOpFutureExpr(self, ctx:stlParser.OpFutureExprContext):
-        print("-----------------------------------{}------------------------------------------".format("OpFutureExpr"))
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by stlParser#parenPhiExpr.
     def visitParenPhiExpr(self, ctx:stlParser.ParenPhiExprContext):
-        print("-----------------------------------{}------------------------------------------".format("visitParenPhiExpr"))
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by stlParser#opUntilExpr.
     def visitOpUntilExpr(self, ctx:stlParser.OpUntilExprContext):
-        print("-----------------------------------{}------------------------------------------".format("vOpUntilExpr"))
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by stlParser#opGloballyExpr.
     def visitOpGloballyExpr(self, ctx:stlParser.OpGloballyExprContext):
-        print("-----------------------------------{}------------------------------------------".format("OpGloballyExpr"))
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by stlParser#opLogicalExpr.
     def visitOpLogicalExpr(self, ctx:stlParser.OpLogicalExprContext):
-        print("-----------------------------------{}------------------------------------------".format("OpLogicalExpr"))
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by stlParser#opReleaseExpr.
     def visitOpReleaseExpr(self, ctx:stlParser.OpReleaseExprContext):
-        print("-----------------------------------{}------------------------------------------".format("OpReleaseExpr"))
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by stlParser#opNextExpr.
     def visitOpNextExpr(self, ctx:stlParser.OpNextExprContext):
-        print("-----------------------------------{}------------------------------------------".format("visitOpNextExpr"))
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by stlParser#opPropExpr.
     def visitOpPropExpr(self, ctx:stlParser.OpPropExprContext):
-        print("-----------------------------------{}------------------------------------------".format("OpPropExpr"))
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by stlParser#opNegExpr.
     def visitOpNegExpr(self, ctx:stlParser.OpNegExprContext):
-        print("-----------------------------------{}------------------------------------------".format("OpNegExpr"))
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by stlParser#predNumber.
-    def visitPredNumber(self, ctx:stlParser.PredNumberContext):
-        print("-----------------------------------{}------------------------------------------".format("PredNumber"))
+    # Visit a parse tree produced by stlParser#signalParenthesisExpr.
+    def visitSignalParenthesisExpr(self, ctx:stlParser.SignalParenthesisExprContext):
+        print("-----------------------------------{}------------------------------------------".format("SignalParenthesisExpr"))
+        return ctx.getRuleContext().getChild(1).getText()
+
+
+    # Visit a parse tree produced by stlParser#signalName.
+    def visitSignalName(self, ctx:stlParser.SignalNameContext):
+        print("-----------------------------------{}------------------------------------------".format("SignalName"))
+        name = ctx.getText()
+        values = self.traces.signals[name]
+        return Signal(name, [min(values), max(values)])
+
+
+    # Visit a parse tree produced by stlParser#signalUnaryExpr.
+    def visitSignalUnaryExpr(self, ctx:stlParser.SignalUnaryExprContext):
+        operator = ctx.getRuleContext().getChild(0).getText()
+        signal = ctx.getRuleContext().getChild(0).getText()
+        if operator == "+":
+            result = Mult(signal, constant).eval(self.traces)
+        elif operator == "-":
+            result = Subtract(signal, constant).eval(self.traces)
+
+
+    # Visit a parse tree produced by stlParser#signalSumExpr.
+    def visitSignalSumExpr(self, ctx:stlParser.SignalSumExprContext):
+        print("-----------------------------------{}------------------------------------------".format("SignalSumExpr"))
+        constant = ctx.getRuleContext().getChild(0).getText()
+        operator = ctx.getRuleContext().getChild(1).getText()
+        signal = ctx.getRuleContext().getChild(2).getText()
+        if operator == "+":
+            result = Sum(signal, constant).eval(self.traces)
+        elif operator == "-":
+            result = Subtract(signal, constant).eval(self.traces)
+        return Signal(signal.name, result)
+
+
+    # Visit a parse tree produced by stlParser#signalNumber.
+    def visitSignalNumber(self, ctx:stlParser.SignalNumberContext):
+        print("-----------------------------------{}------------------------------------------".format("SignalNumber"))
         value = float(ctx.getText())
-        return Const(value)
+        return Constant(value)
 
 
-    # Visit a parse tree produced by stlParser#predName.
-    def visitPredName(self, ctx:stlParser.PredNameContext):
-        print("-----------------------------------{}------------------------------------------".format("PredName"))
-        name = ctx.getRuleContext().getChild(0).getText()
-        return self.predicates[name]
-
-
-    # Visit a parse tree produced by stlParser#predArithLeftExpr.
-    def visitPredArithLeftExpr(self, ctx:stlParser.PredArithLeftExprContext):
-        print("-----------------------------------{}------------------------------------------".format("PredArithLeftExpr"))
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by stlParser#predArithRightExpr.
-    def visitPredArithRightExpr(self, ctx:stlParser.PredArithRightExprContext):
-        print("-----------------------------------{}------------------------------------------".format("PredArithRightExpr"))
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by stlParser#predRelExpr.
-    def visitPredRelExpr(self, ctx:stlParser.PredRelExprContext):
-        print("-----------------------------------{}------------------------------------------".format("PredRealExpr"))
-        return self.visitChildren(ctx)
+    # Visit a parse tree produced by stlParser#signalMultExpr.
+    def visitSignalMultExpr(self, ctx:stlParser.SignalMultExprContext):
+        print("-----------------------------------{}------------------------------------------".format("SignalMultExpr"))
+        constant = ctx.getRuleContext().getChild(0).getText()
+        operator = ctx.getRuleContext().getChild(1).getText()
+        predicate = ctx.getRuleContext().getChild(2).getText()
+        result = ...
+        if operator == "*":
+            result = ...
+            raise NotImplementedError("Multiplication not implemented")
+        elif operator == "/":
+            result = ...
+            raise NotImplementedError("Division not implemented")
+        return Signal(predicate.name, result)
 
 
     # Visit a parse tree produced by stlParser#interval.
@@ -130,6 +155,5 @@ class stlParserVisitor(ParseTreeVisitor):
         bounds.append(float(ctx.getRuleContext().getChild(1).getText()))
         bounds.append(float(ctx.getRuleContext().getChild(3).getText()))
         return bounds
-
 
 del stlParser

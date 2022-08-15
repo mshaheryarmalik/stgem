@@ -32,9 +32,9 @@ signal
     : NUMBER                         #signalNumber
     | NAME                           #signalName
     | (LPAREN) signal (RPAREN)       #signalParenthesisExpr
-    | (SUM | MINUS) signal           #signalUnaryExpr
+    | (PLUS | MINUS) signal          #signalUnaryExpr
     | signal (MULT | DIV) signal     #signalMultExpr
-    | signal (SUM | MINUS) signal    #signalSumExpr
+    | signal (PLUS | MINUS) signal   #signalSumExpr
 ;
 
 interval
