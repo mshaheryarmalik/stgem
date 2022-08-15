@@ -303,7 +303,7 @@ class Global(STL):
         self.upper_time_bound = upper_time_bound
         self.lower_time_bound = lower_time_bound
         self.formulas = [formula]
-        self.range = None if self.formulas[0].range is None else self.formulas[0].range
+        self.range = None if self.formulas[0].range is None else self.formulas[0].range.copy()
         self.horizon = self.upper_time_bound + self.formulas[0].horizon
 
     def eval(self, traces):
