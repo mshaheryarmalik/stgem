@@ -101,8 +101,8 @@ def build_specification(selected_specification, mode=None, asut=None):
     S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "SC":
         # always[30,35](87 <= pressure <= 87.5)
-        L = STL.LessThan(0, 87, 1, 0, None, S("PRESSURE"))
-        R = STL.LessThan(1, 0, 0, 87.5, S("PRESSURE"))
+        L = STL.LessThan(STL.Constant(87), S("PRESSURE"))
+        R = STL.LessThan(S("PRESSURE"),STL.Constant(87.5))
         inequality = STL.And(L, R)
         specification = STL.Global(30, 35, inequality)
 
