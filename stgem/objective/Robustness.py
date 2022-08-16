@@ -201,7 +201,7 @@ class Mult(STL):
 
     def eval(self, traces):
         res = []
-        left_formula_robustness = self.formulas[0]
+        left_formula_robustness = self.formulas[0].eval(traces)
         right_formula_robustness = self.formulas[1].eval(traces)
         return left_formula_robustness*right_formula_robustness
 

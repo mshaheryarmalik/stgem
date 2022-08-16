@@ -11,9 +11,6 @@ from stgem.objective.Robustness import *
 
 class stlParserVisitor(ParseTreeVisitor):
 
-    def __init__(self, timestamps, signals):
-        self.traces = Traces(timestamps, signals)
-
 # Override this function to ensure that TerminalNodeImpl does not override the returned value with a 'None'
     def aggregateResult(self, aggregate, nextResult):
         if not aggregate is None:
@@ -60,6 +57,7 @@ class stlParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by stlParser#opGloballyExpr.
     def visitOpGloballyExpr(self, ctx:stlParser.OpGloballyExprContext):
+        print("-----------------------------------{}------------------------------------------".format("GloballyExpr"))
         return self.visitChildren(ctx)
 
 
@@ -98,33 +96,29 @@ class stlParserVisitor(ParseTreeVisitor):
     def visitSignalName(self, ctx:stlParser.SignalNameContext):
         print("-----------------------------------{}------------------------------------------".format("SignalName"))
         name = ctx.getText()
-        values = self.traces.signals[name]
-        return Signal(name, [min(values), max(values)])
+        return Signal(name)
 
 
     # Visit a parse tree produced by stlParser#signalUnaryExpr.
     def visitSignalUnaryExpr(self, ctx:stlParser.SignalUnaryExprContext):
         print("-----------------------------------{}------------------------------------------".format("SignalUnaryExpr"))
         operator = ctx.getRuleContext().getChild(0).getText()
-        signal = ctx.getRuleContext().getChild(1).getText()
+        signal = self.visit(ctx.getRuleContext().getChild(1))
         if operator == "+":
-            result = signal
+            return signal
         elif operator == "-":
-            result = Mult(signal, Constant(-1)).eval(self.traces)
-        return result
+            return Mult(Constant(-1), signal)
 
     # Visit a parse tree produced by stlParser#signalSumExpr.
     def visitSignalSumExpr(self, ctx:stlParser.SignalSumExprContext):
         print("-----------------------------------{}------------------------------------------".format("SignalSumExpr"))
-        # TODO: Two signals
-        constant = ctx.getRuleContext().getChild(0).getText()
+        signal1 = self.visit(ctx.getRuleContext().getChild(0))
         operator = ctx.getRuleContext().getChild(1).getText()
-        signal = ctx.getRuleContext().getChild(2).getText()
+        signal2 = self.visit(ctx.getRuleContext().getChild(2))
         if operator == "+":
-            result = Sum(signal, constant).eval(self.traces)
+            return Sum(signal1, signal2)
         elif operator == "-":
-            result = Subtract(signal, constant).eval(self.traces)
-        return Signal(signal.name, result)
+            return Subtract(signal1, signal2)
 
 
     # Visit a parse tree produced by stlParser#signalNumber.
@@ -137,18 +131,15 @@ class stlParserVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by stlParser#signalMultExpr.
     def visitSignalMultExpr(self, ctx:stlParser.SignalMultExprContext):
         print("-----------------------------------{}------------------------------------------".format("SignalMultExpr"))
-        # TODO: Two signals
-        constant = ctx.getRuleContext().getChild(0).getText()
+        signal1 = self.visit(ctx.getRuleContext().getChild(0))
         operator = ctx.getRuleContext().getChild(1).getText()
-        predicate = ctx.getRuleContext().getChild(2).getText()
-        result = ...
+        signal2 = self.visit(ctx.getRuleContext().getChild(2))
         if operator == "*":
-            result = ...
-            raise NotImplementedError("Multiplication not implemented")
+            return Mult(signal1, signal2)
         elif operator == "/":
-            result = ...
-            raise NotImplementedError("Division not implemented")
-        return Signal(predicate.name, result)
+            pass
+            # TODO: add division when implemented in Robustness
+            #return Div?(signal1, signal2)
 
 
     # Visit a parse tree produced by stlParser#interval.

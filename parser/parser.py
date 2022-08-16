@@ -7,7 +7,7 @@ from .stlLexer import stlLexer as Lexer
 from .stlParser import stlParser as Parser
 from .visitor import stlParserVisitor as Visitor
 
-def parse(formula, timestamps, signals):
+def parse(phi):
     """ parses a specification requirement into an equivalent STL structure
 
     Attributes:
@@ -15,13 +15,13 @@ def parse(formula, timestamps, signals):
         signals: The set of Predicate(s) used in the requirement
         timestamps:
     """
-    input_stream = InputStream(formula)
+    input_stream = InputStream(phi)
 
     lexer = Lexer(input_stream)
     stream = CommonTokenStream(lexer)
 
     parser = Parser(stream)
     tree = parser.stlSpecification()
-    visitor = Visitor(timestamps, signals)
+    visitor = Visitor()
 
     return visitor.visit(tree)  # type: ignore

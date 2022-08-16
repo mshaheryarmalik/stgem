@@ -1,14 +1,17 @@
 import numpy as np
 from unittest import TestCase
+import stgem.objective.Robustness as rbst
 
 class ParserTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         cls._signals = {
-            "signal1": [-1, 1],
+            "signal1": np.array([-1, 1]),
+            "signal2": np.array([4, 8]),
         }
+        cls._timestamps = np.arange(len(list(cls._signals.values())[0]))
+        cls._traces = rbst.Traces(cls._timestamps, cls._signals)
 
-        cls._timestamps = {key: np.arange(len(cls._signals[key])) for key in cls._signals}
         """cls._preds = {
             "pred1": rbst.Signal("pred1", [1, 2]),
             "pred2": rbst.Signal("pred2", [1, 4]),
