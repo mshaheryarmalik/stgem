@@ -10,6 +10,7 @@ class ParserTestCase(TestCase):
             "signal2": np.array([4, 8]),
         }
         cls._timestamps = np.arange(len(list(cls._signals.values())[0]))
+        cls._interval = '({}, {})'.format(cls._timestamps[0], cls._timestamps[-1])  # Interval of timestamp length
         cls._traces = rbst.Traces(cls._timestamps, cls._signals)
 
         """cls._preds = {

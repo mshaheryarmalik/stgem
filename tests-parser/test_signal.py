@@ -20,6 +20,7 @@ class SignalTestCase(ParserTestCase):
         key = "signal1"
         self._do_test("{}".format(key), self._signals[key], Signal)
 
+    # TODO: This may be irrelevant as ParenPhiExpr is executed instead of this
     def test_signalParenthesisExpr(self):
         key = "signal1"
         num = 5

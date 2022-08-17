@@ -10,86 +10,153 @@ from stgem.objective.Robustness import *
 # This class defines a complete generic visitor for a parse tree produced by stlParser.
 
 class stlParserVisitor(ParseTreeVisitor):
-
-# Override this function to ensure that TerminalNodeImpl does not override the returned value with a 'None'
-    def aggregateResult(self, aggregate, nextResult):
-        if not aggregate is None:
-            return aggregate
-        else:
-            return nextResult
-
+    """All functions have a temporary debug print that indicates when they are called"""
 
     # Visit a parse tree produced by stlParser#stlSpecification.
     def visitStlSpecification(self, ctx:stlParser.StlSpecificationContext):
         print("-----------------------------------{}------------------------------------------".format("StlSpecification"))
-        value = self.visitChildren(ctx)
-        print("StlSpecification", value)
+        value = self.visit(ctx.getRuleContext().getChild(0))
+        print("StlSpecification", value) # DEBUG
         return value
 
 
     # Visit a parse tree produced by stlParser#predicateExpr.
     def visitPredicateExpr(self, ctx:stlParser.PredicateExprContext):
         print("-----------------------------------{}------------------------------------------".format("PredicateExpr"))
-        value = self.visitChildren(ctx)
-        print("PredicateExpr", value)
-        return value
+        phi1 = self.visit(ctx.getRuleContext().getChild(0))
+        operator = ctx.getRuleContext().getChild(1).getText()
+        phi2 = self.visit(ctx.getRuleContext().getChild(2))
+        if operator == "<=":
+            return LessThan(phi1, phi2)
+        elif operator == ">=":
+            return GreaterThan(phi1, phi2)
+        # TODO: Implement strict forms when implemented in Robustness
+        '''elif operator == "<":
+            return StrictlyLessThan(phi1, phi2)
+        elif operator == ">":
+            return StrictlyGreaterThan(phi1, phi2)'''
 
 
     # Visit a parse tree produced by stlParser#signalExpr.
     def visitSignalExpr(self, ctx:stlParser.SignalExprContext):
-        return self.visitChildren(ctx)
+        print("-----------------------------------{}------------------------------------------".format("SignalExpr"))
+        value = self.visit(ctx.getRuleContext().getChild(0))
+        print("PredicateExpr", value) # DEBUG
+        return value
 
 
     # Visit a parse tree produced by stlParser#opFutureExpr.
     def visitOpFutureExpr(self, ctx:stlParser.OpFutureExprContext):
-        return self.visitChildren(ctx)
+        print("-----------------------------------{}------------------------------------------".format("OpFutureExpr"))
+        if ctx.getRuleContext().getChildCount() == 2:
+            phi = self.visit(ctx.getRuleContext().getChild(1))
+            # TODO: Finally currently requires an interval to function, but the parser accepts the operation without one.
+            #       Implement a default interval?
+            interval = [0, 1] # Temporary default interval
+        elif ctx.getRuleContext().getChildCount() == 3: # Optional interval
+            phi = self.visit(ctx.getRuleContext().getChild(2))
+            interval = self.visit(ctx.getRuleContext().getChild(1))
+        return Finally(interval[0], interval[1], phi)
 
 
     # Visit a parse tree produced by stlParser#parenPhiExpr.
     def visitParenPhiExpr(self, ctx:stlParser.ParenPhiExprContext):
-        return self.visitChildren(ctx)
+        print("-----------------------------------{}------------------------------------------".format("ParenPhiExpr"))
+        return self.visit(ctx.getRuleContext().getChild(1))
 
 
     # Visit a parse tree produced by stlParser#opUntilExpr.
     def visitOpUntilExpr(self, ctx:stlParser.OpUntilExprContext):
-        return self.visitChildren(ctx)
+        print("-----------------------------------{}------------------------------------------".format("OPUntilExpr"))
+        phi1 = self.visit(ctx.getRuleContext().getChild(0))
+        if ctx.getRuleContext().getChildCount() == 3:
+            phi2 = self.visit(ctx.getRuleContext().getChild(2))
+            # TODO: Until will require(?) an interval to function, but the parser accepts the operation without one.
+            #       Implement a default interval?
+            interval = [0, 1]  # Temporary default interval
+            #return Until(interval[0], interval[1], phi1, phi2)
+        elif ctx.getRuleContext().getChildCount() == 4: # Optional interval
+            phi2 = self.visit(ctx.getRuleContext().getChild(3))
+            interval = self.visit(ctx.getRuleContext().getChild(2))
+            # TODO: Use Until when implemented in Robustness
+            #return Until(interval[0], interval[1], phi1, phi2)
 
 
     # Visit a parse tree produced by stlParser#opGloballyExpr.
     def visitOpGloballyExpr(self, ctx:stlParser.OpGloballyExprContext):
         print("-----------------------------------{}------------------------------------------".format("GloballyExpr"))
-        return self.visitChildren(ctx)
+        if ctx.getRuleContext().getChildCount() == 2:
+            phi = self.visit(ctx.getRuleContext().getChild(1))
+            # TODO: Global currently requires an interval to function, but the parser accepts the operation without one.
+            #       Implement a default interval?
+            interval = [0, 1] # Temporary default interval
+        elif ctx.getRuleContext().getChildCount() == 3: # Optional interval
+            phi = self.visit(ctx.getRuleContext().getChild(2))
+            interval = self.visit(ctx.getRuleContext().getChild(1))
+        return Global(interval[0], interval[1], phi)
 
 
     # Visit a parse tree produced by stlParser#opLogicalExpr.
     def visitOpLogicalExpr(self, ctx:stlParser.OpLogicalExprContext):
-        return self.visitChildren(ctx)
+        print("-----------------------------------{}------------------------------------------".format("OpLogicalExpr"))
+        phi1 = self.visit(ctx.getRuleContext().getChild(0))
+        operator = ctx.getRuleContext().getChild(1).getText()
+        phi2 = self.visit(ctx.getRuleContext().getChild(2))
+        if operator in ['and', '/\\', '&&', '&']:
+            return And(phi1, phi2)
+        elif operator in ['or', '\\/', '||', '|']:
+            return Or(phi1, phi2)
 
 
     # Visit a parse tree produced by stlParser#opReleaseExpr.
     def visitOpReleaseExpr(self, ctx:stlParser.OpReleaseExprContext):
-        return self.visitChildren(ctx)
+        print("-----------------------------------{}------------------------------------------".format("OpReleaseExpr"))
+        phi1 = self.visit(ctx.getRuleContext().getChild(0))
+        if ctx.getRuleContext().getChildCount() == 3:
+            phi2 = self.visit(ctx.getRuleContext().getChild(2))
+            # TODO: Release without interval?
+            #return Not(Until(interval[0], interval[1], Not(phi1), Not(phi2)))
+        elif ctx.getRuleContext().getChildCount() == 4: # Optional interval
+            phi2 = self.visit(ctx.getRuleContext().getChild(3))
+            interval = self.visit(ctx.getRuleContext().getChild(2))
+            # TODO: Use Until when implemented in Robustness
+            #return Not(Until(interval[0], interval[1], Not(phi1), Not(phi2)))
 
 
     # Visit a parse tree produced by stlParser#opNextExpr.
     def visitOpNextExpr(self, ctx:stlParser.OpNextExprContext):
-        return self.visitChildren(ctx)
+        print("-----------------------------------{}------------------------------------------".format("OpNextExpr"))
+        if ctx.getRuleContext().getChildCount() == 2:
+            return Next(self.visit(ctx.getRuleContext().getChild(1)))
+        elif ctx.getRuleContext().getChildCount() == 3: # Optional interval
+            # TODO: Add interval as parameter when supported in Robustness
+            return Next(self.visit(ctx.getRuleContext().getChild(2)))
 
 
     # Visit a parse tree produced by stlParser#opPropExpr.
     def visitOpPropExpr(self, ctx:stlParser.OpPropExprContext):
-        return self.visitChildren(ctx)
+        print("-----------------------------------{}------------------------------------------".format("OpPropExpr"))
+        phi1 = self.visit(ctx.getRuleContext().getChild(0))
+        operator = ctx.getRuleContext().getChild(1).getText()
+        phi2 = self.visit(ctx.getRuleContext().getChild(2))
+        if operator in ['implies', '->']:
+            return Implication(phi1, phi2)
+        elif operator in ['iff', '<->']:
+            return Equals(phi1, phi2)
 
 
     # Visit a parse tree produced by stlParser#opNegExpr.
     def visitOpNegExpr(self, ctx:stlParser.OpNegExprContext):
-        return self.visitChildren(ctx)
+        print("-----------------------------------{}------------------------------------------".format("OpNegExpr"))
+        phi = self.visit(ctx.getRuleContext().getChild(1))
+        return Not(phi)
 
 
     # Visit a parse tree produced by stlParser#signalParenthesisExpr.
+    #TODO: This may be irrelevant as ParenPhiExpr is executed instead of this
     def visitSignalParenthesisExpr(self, ctx:stlParser.SignalParenthesisExprContext):
         print("-----------------------------------{}------------------------------------------".format("SignalParenthesisExpr"))
-        return ctx.getRuleContext().getChild(1).getText()
+        return self.visit(ctx.getRuleContext().getChild(1))
 
 
     # Visit a parse tree produced by stlParser#signalName.
