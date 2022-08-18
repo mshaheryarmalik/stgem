@@ -22,12 +22,10 @@ class PhiTestCase(ParserTestCase):
     def test_opNextExpr(self):
         key = "signal1"
         operators = ['next ', 'X '] # NOTE space after operators
-        suffixes1 = ['_', '']
-        suffixes2 = [self._interval, '']
+        suffixes = ['_', '']
         for op in operators:
-            for suff1 in suffixes1:
-                for suff2 in suffixes2:
-                    self._do_test("{}{}{}{}".format(op, suff1, suff2, key), Next)
+            for suff in suffixes:
+                    self._do_test("{}{}{}".format(op, suff, key), Next)
 
     def test_opFutureExpr(self):
         key = "signal1"
@@ -49,24 +47,14 @@ class PhiTestCase(ParserTestCase):
         key = "signal1"
         operators = [' until ', ' U '] # NOTE space surrounding operators
         suffixes = [self._interval, '']
-        # TODO Implement when Until is supported in Robustness
-        '''for op in operators:
+        for op in operators:
             for suff in suffixes:
-                self._do_test("{}{}{}{}".format(key, op, suff, key), Until)'''
-
-    def test_opReleaseExpr(self):
-        key = "signal1"
-        operators = [' release ', ' R '] # NOTE space surrounding operators
-        suffixes = [self._interval, '']
-        # TODO Implement when Release is supported in Robustness (Until?)
-        '''for op in operators:
-            for suff in suffixes:
-                self._do_test("{}{}{}{}".format(key, op, suff, key), Until)'''
+                self._do_test("{}{}{}{}".format(key, op, suff, key), object) # TODO replace object with Until
 
     def test_logicalExpr(self):
         key = "signal1"
-        andOperators = [' and ', '/\\', '&&', '&'] # NOTE space surrounding 'and'
-        orOperators = [' or ', '\\/', '||', '|'] # NOTE space surrounding 'and'
+        andOperators = [' and ', '&'] # NOTE space surrounding 'and'
+        orOperators = [' or ', '|'] # NOTE space surrounding 'and'
         # Test and
         for op in andOperators:
             self._do_test("{}{}{}".format(key, op, key), And)
@@ -87,8 +75,7 @@ class PhiTestCase(ParserTestCase):
 
     def test_predicateExpr(self):
         key = "signal1"
-        # TODO: Implement strict forms when implemented in Robustness
-        operators = ['<=', '>='] #'<', '>'
-        types = [LessThan, GreaterThan] #, StrictlyLessThan, StrictlyGreaterThan
+        operators = ['<=', '>=', '<', '>']
+        types = [LessThan, GreaterThan, StrictlyLessThan, StrictlyGreaterThan]
         for i, op in enumerate(operators):
             self._do_test("{}{}{}".format(key, op, key), types[i])

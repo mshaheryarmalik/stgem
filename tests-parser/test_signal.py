@@ -20,7 +20,6 @@ class SignalTestCase(ParserTestCase):
         key = "signal1"
         self._do_test("{}".format(key), self._signals[key], Signal)
 
-    # TODO: This may be irrelevant as ParenPhiExpr is executed instead of this
     def test_signalParenthesisExpr(self):
         key = "signal1"
         num = 5
@@ -28,16 +27,6 @@ class SignalTestCase(ParserTestCase):
         self._do_test("({})".format(key), self._signals[key], Signal)
         # Test with Constant
         self._do_test("({})".format(num), np.full(len(self._timestamps), num), Constant)
-
-    def test_signalUnaryExpr(self):
-        key = "signal1"
-        num = 5
-        # Test with Signal
-        self._do_test("+{}".format(key), self._signals[key], Signal)
-        self._do_test("-{}".format(key), [-x for x in self._signals[key]], Mult)
-        # Test with Constant
-        self._do_test("+{}".format(num), np.full(len(self._timestamps), num), Constant)
-        self._do_test("-{}".format(num), np.full(len(self._timestamps), -num), Mult)
 
     def _do_test_operator(self, keys, nums, operators, types, funcs):
         """Operator tester method """
@@ -69,10 +58,9 @@ class SignalTestCase(ParserTestCase):
     def test_signalMultExpr(self):
         keys = ["signal1", "signal2"]
         nums = [5, 10]
-        # TODO: add division when implemented in Robustness
-        operators = ["*"] #, "/"
-        types = [Mult] #, "Div?"
-        funcs = [np.multiply] #, np.divide
+        operators = ["*", "/"]
+        types = [Mult, object] # TODO replace object with Div
+        funcs = [np.multiply, np.divide]
         self._do_test_operator(keys, nums, operators, types, funcs)
 
     def test_signalSumExpr(self):

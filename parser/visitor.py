@@ -118,7 +118,6 @@ class stlParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by stlParser#signalSumExpr.
     def visitSignalSumExpr(self, ctx:stlParser.SignalSumExprContext):
-        print("-----------------------------------{}------------------------------------------".format("SignalSumExpr"))
         signal1 = self.visit(ctx.getRuleContext().getChild(0))
         operator = ctx.getRuleContext().getChild(1).getText()
         signal2 = self.visit(ctx.getRuleContext().getChild(2))
@@ -130,14 +129,12 @@ class stlParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by stlParser#signalNumber.
     def visitSignalNumber(self, ctx:stlParser.SignalNumberContext):
-        print("-----------------------------------{}------------------------------------------".format("SignalNumber"))
         value = float(ctx.getText())
         return Constant(value)
 
 
     # Visit a parse tree produced by stlParser#signalMultExpr.
     def visitSignalMultExpr(self, ctx:stlParser.SignalMultExprContext):
-        print("-----------------------------------{}------------------------------------------".format("SignalMultExpr"))
         signal1 = self.visit(ctx.getRuleContext().getChild(0))
         operator = ctx.getRuleContext().getChild(1).getText()
         signal2 = self.visit(ctx.getRuleContext().getChild(2))
