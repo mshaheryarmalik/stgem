@@ -101,7 +101,7 @@ class FalsifySTL(Objective):
 
         self.parameters["epsilon"] = epsilon
         self.parameters["scale"] = scale
-        if self.scale and self.specification.var_range is None:
+        if self.scale and self.specification.range is None:
             raise Exception("The specification does not include a range for robustness. This is needed for scaling.")
         self.parameters["strict_horizon_check"] = strict_horizon_check
 
