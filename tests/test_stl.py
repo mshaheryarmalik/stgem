@@ -5,7 +5,7 @@ import pandas as pd
 
 from stgem.sut import SUT, SUTInput, SUTOutput
 from stgem.objective.objective import FalsifySTL
-import stgem.objective.Robustness as STL
+import stl.robustness as STL
 
 class DummySUT(SUT):
     def __init__(self, odim, outputs):
@@ -19,9 +19,9 @@ class DummySUT(SUT):
 
 class TestSTL(unittest.TestCase):
 
-    def get(self, specification, variables, sut_input, sut_output, scale=False, strict_horizon_check=True):
+    def get(self, specification, variables, sut_input, sut_output, ranges=None, scale=False, strict_horizon_check=True):
         sut = DummySUT(len(variables), variables)
-        objective = FalsifySTL(specification, scale=scale, strict_horizon_check=strict_horizon_check)
+        objective = FalsifySTL(specification, ranges=ranges, scale=scale, strict_horizon_check=strict_horizon_check)
         objective.setup(sut)
         return objective(sut_input, sut_output), objective
 
@@ -30,10 +30,7 @@ class TestSTL(unittest.TestCase):
         # ---------------------------------------------------------------------
         output = [3, 0.5]
         variables = ["foo", "bar"]
-        # foo > 0 and bar > 0
-        L = STL.Signal("foo")
-        R = STL.Signal("bar")
-        specification = STL.And(L, R)
+        specification = "foo > 0 and bar > 0"
         correct_robustness = 0.5
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None))
@@ -41,10 +38,7 @@ class TestSTL(unittest.TestCase):
 
         output = [3, -0.5]
         variables = ["foo", "bar"]
-        # always[0,1](foo > 0 and bar > 0)
-        L = STL.Signal("foo")
-        R = STL.Signal("bar")
-        specification = STL.Global(0, 1, STL.And(L, R))
+        specification = "always[0,1] (foo > 0 and bar > 0)"
         correct_robustness = -0.5
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None))
@@ -57,11 +51,7 @@ class TestSTL(unittest.TestCase):
         s2 = [3.0, 6.0, 1.0, 0.5,  3.0]
         signals = [s1, s2]
         variables = ["s1", "s2"]
-        # always[0,1](s1 >= 0 and s2 >= 0)
-        L = STL.GreaterThan(STL.Signal("s1"), 0)
-        R = STL.GreaterThan(STL.Signal("s2"), 0)
-        specification = STL.And(L, R)
-        specification = STL.Global(0, 1, specification)
+        specification = "always[0,1] (s1 >= 0 and s2 >= 0)"
         correct_robustness = 1.0
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None))
@@ -79,26 +69,19 @@ class TestSTL(unittest.TestCase):
         signals = [s1, s2]
         variables = ["SPEED", "RPM"]
         scale = False
-        # always[0,30](RPM <= 3000)) implies (always[0,4](SPEED <= 35)
-        L = STL.Global(0, 30, STL.LessThan(STL.Signal("RPM"), 3000))
-        R = STL.Global(0, 4, STL.LessThan(STL.Signal("SPEED"), 35))
-        specification = STL.Implication(L, R)
+        specification = "(always[0,30] RPM <= 3000) -> (always[0,4] SPEED <= 35)"
         correct_robustness = -4.55048
 
         robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
-        # always[0,30](RPM < 3000)) implies (always[0,8](SPEED < 50)
-        R = STL.Global(0, 8, STL.StrictlyLessThan(STL.Signal("SPEED"), 50))
-        specification = STL.Implication(L, R)
+        specification = "(always[0,30] RPM <= 3000) -> (always[0,8] SPEED < 50)"
         correct_robustness = 4.936960098864567
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
-        # always[0,30](RPM < 3000)) implies (always[0,20](SPEED < 65)
-        R = STL.Global(0, 20, STL.StrictlyLessThan(STL.Signal("SPEED"), 65))
-        specification = STL.Implication(L, R)
+        specification = "(always[0,30] RPM <= 3000) -> (always[0,20] SPEED < 65)"
         correct_robustness = 19.936958
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
@@ -112,10 +95,7 @@ class TestSTL(unittest.TestCase):
         s2 = [0, 0,  0,  0,  0,  0,  4,  0,  0,  0,  4,  0,  4,  4,  4,  0,  0,  0,  4,  0,  0]
         variables = ["s1", "s2"]
         signals = [s1, s2]
-        # always[0,10]( (s1 >= 5) implies (eventually[0,1](s2 <= 3)) )
-        L = STL.GreaterThan(STL.Signal("s1"), 5)
-        R = STL.Finally(0, 1, STL.LessThan(STL.Signal("s2"), 3))
-        specification = STL.Global(0, 10, STL.Implication(L, R))
+        specification = "always[0,10] ( (s1 >= 5) -> (eventually[0,1] s2 <= 3) )"
         correct_robustness = 0
 
         # Check with strict horizon check.
@@ -137,9 +117,7 @@ class TestSTL(unittest.TestCase):
         t2 = [0, 0.5, 1, 2, 2.5, 3]
         s1 = [2, 2, 2, 2, 2, 2]
         variables = ["s1"]
-        # always[0,3](i1 >= s1)
-        specification = STL.GreaterThan(STL.Signal("i1"), STL.Signal("s1"))
-        specification = STL.Global(0, 3, specification)
+        specification = "always[0,3] i1 >= s1"
         correct_robustness = -1.0
 
         robustness, objective = self.get(specification, variables, SUTInput(None, [i1], t1), SUTOutput([s1], t2, None), scale=scale)
@@ -153,13 +131,11 @@ class TestSTL(unittest.TestCase):
         s2 = [4500, 100, 0, 2300, -100, -5] # scale [-200, 4500]
         variables = ["s1", "s2"]
         signals = [s1, s2]
-        # 3*s1 <= s2
-        L = STL.Signal("s1", range=[0, 200])
-        R = STL.Signal("s2", range=[-200, 4500])
-        specification = STL.LessThan(3, 0, 1, 0, L, R)
+        specification = "3*s1 <= s2"
+        ranges = {"s1": [0, 200], "s2": [-200, 4500]}
 
-        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
-        assert objective.specification.var_range == [-800, 4500]
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), ranges=ranges, scale=scale)
+        assert objective.specification.range == [-800, 4500]
 
 if __name__ == "__main__":
     unittest.main()

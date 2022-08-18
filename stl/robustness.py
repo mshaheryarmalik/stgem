@@ -188,16 +188,10 @@ class GreaterThan(STL):
     def eval(self, traces):
         return Subtract(self.formulas[0], self.formulas[1]).eval(traces)
 
-class Mult(STL):
+class Multiply(STL):
 
     def __init__(self, left_formula, right_formula):
         self.formulas = [left_formula, right_formula]
-        print(left_formula)
-        if isinstance(left_formula, Constant):
-            print(left_formula.val)
-        print(right_formula)
-        if isinstance(right_formula, Constant):
-            print(right_formula.val)
         if self.formulas[0].range is None or self.formulas[1].range is None:
             self.range = None
         else:
@@ -224,8 +218,8 @@ class LessThan(STL):
         if self.formulas[0].range is None or self.formulas[1].range is None:
             self.range = None
         else:
-            A = self.formulas[0].range[0] - self.formulas[1].range[1]
-            B = self.formulas[0].range[1] - self.formulas[1].range[0]
+            A = self.formulas[1].range[0] - self.formulas[0].range[1]
+            B = self.formulas[1].range[1] - self.formulas[0].range[0]
             self.range = [A, B]
 
         self.horizon = 0

@@ -8,7 +8,8 @@ for a single input, multiple objectives must be specified.
 
 import numpy as np
 
-import stgem.objective.Robustness as STL
+import stl.robustness as STL
+from stl.parser import parse
 
 class Objective:
 
@@ -88,11 +89,16 @@ class FalsifySTL(Objective):
     bar a bit can encourage the models to work harder and eventually produce
     robustness which is nonpositive."""
 
-    def __init__(self, specification, epsilon=0, scale=False, strict_horizon_check=True):
+    def __init__(self, specification, ranges=None, epsilon=0, scale=False, strict_horizon_check=True):
         super().__init__()
 
         self.dim = 1
-        self.specification = specification
+
+        if isinstance(specification, STL.STL):
+            self.specification = specification
+        else:
+            self.specification = parse(specification, ranges=ranges)
+
         self.parameters["epsilon"] = epsilon
         self.parameters["scale"] = scale
         if self.scale and self.specification.var_range is None:

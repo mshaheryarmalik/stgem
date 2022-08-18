@@ -1,13 +1,11 @@
-from __future__ import annotations
-
 from antlr4.CommonTokenStream import CommonTokenStream
 from antlr4.InputStream import InputStream
 
-from .stlLexer import stlLexer as Lexer
-from .stlParser import stlParser as Parser
-from .visitor import stlParserVisitor as Visitor
+from stl.stlLexer import stlLexer as Lexer
+from stl.stlParser import stlParser as Parser
+from stl.visitor import stlParserVisitor as Visitor
 
-def parse(phi):
+def parse(phi, ranges=None):
     """ parses a specification requirement into an equivalent STL structure
 
     Attributes:
@@ -23,5 +21,6 @@ def parse(phi):
     parser = Parser(stream)
     tree = parser.stlSpecification()
     visitor = Visitor()
+    visitor.ranges = ranges
 
     return visitor.visit(tree)  # type: ignore
