@@ -1,6 +1,6 @@
-from parser.parser import parse
+from stl.parser import parse
 from _parser import ParserTestCase
-from stgem.objective.Robustness import *
+from stl.robustness import *
 import numpy as np
 
 class SignalTestCase(ParserTestCase):
@@ -63,7 +63,7 @@ class SignalTestCase(ParserTestCase):
         keys = ["signal1", "signal2"]
         nums = [5, 10]
         operators = ["*", "/"]
-        types = [Mult, object] # TODO replace object with Div
+        types = [Multiply, object] # TODO replace object with Div
         funcs = [np.multiply, np.divide]
         self._do_test_operator(keys, nums, operators, types, funcs)
 

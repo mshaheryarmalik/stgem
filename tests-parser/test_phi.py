@@ -1,6 +1,6 @@
-from parser.parser import parse
+from stl.parser import parse
 from _parser import ParserTestCase
-from stgem.objective.Robustness import *
+from stl.robustness import *
 
 class PhiTestCase(ParserTestCase):
 
