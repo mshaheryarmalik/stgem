@@ -5,7 +5,7 @@ if __name__ is not None and "." in __name__:
 else:
     from stlParser import stlParser
 
-from stgem.objective.Robustness import *
+from stl.robustness import *
 
 # This class defines a complete generic visitor for a parse tree produced by stlParser.
 
@@ -26,9 +26,9 @@ class stlParserVisitor(ParseTreeVisitor):
         elif operator == ">=":
             return GreaterThan(phi1, phi2)
         elif operator == "<":
-            raise NotImplementedError("Strict < not implemented.")
+            return StrictlyLessThan(phi1, phi2)
         else:
-            raise NotImplementedError("Strict > not implemented.")
+            return StrictlyGreaterThan(phi1, phi2)
 
 
     # Visit a parse tree produced by stlParser#signalExpr.
@@ -118,7 +118,14 @@ class stlParserVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by stlParser#signalName.
     def visitSignalName(self, ctx:stlParser.SignalNameContext):
         name = ctx.getText()
-        return Signal(name)
+        if hasattr(self, "ranges") and self.ranges is not None:
+            try:
+                range = self.ranges[name]
+            except KeyError:
+                range = None
+        else:
+            range = None
+        return Signal(name, range=range)
 
 
     # Visit a parse tree produced by stlParser#signalSumExpr.
@@ -144,7 +151,7 @@ class stlParserVisitor(ParseTreeVisitor):
         operator = ctx.getRuleContext().getChild(1).getText()
         signal2 = self.visit(ctx.getRuleContext().getChild(2))
         if operator == "*":
-            return Mult(signal1, signal2)
+            return Multiply(signal1, signal2)
         elif operator == "/":
             raise NotImplementedError
 
@@ -152,7 +159,7 @@ class stlParserVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by stlParser#interval.
     def visitInterval(self, ctx:stlParser.IntervalContext):
         A = float(ctx.getRuleContext().getChild(1).getText())
-        B = float(ctx.getRuleContext().getChild(1).getText())
+        B = float(ctx.getRuleContext().getChild(3).getText())
         return [A, B]
 
 
