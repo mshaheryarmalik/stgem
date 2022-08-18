@@ -13,6 +13,10 @@ class PhiTestCase(ParserTestCase):
         key = "signal1"
         self._do_test("({})".format(key), Signal)
 
+    def test_absPhiExpr(self):
+        key = "signal1"
+        self._do_test("|{}|".format(key), Abs)
+
     def test_opNegExpr(self):
         key = "signal1"
         operators = ['~', '!', 'not '] # NOTE space after 'not'
@@ -53,13 +57,15 @@ class PhiTestCase(ParserTestCase):
 
     def test_logicalExpr(self):
         key = "signal1"
-        andOperators = [' and ', '&'] # NOTE space surrounding 'and'
-        orOperators = [' or ', '|'] # NOTE space surrounding 'and'
+        andOperators = [' and '] # NOTE space surrounding 'and'
+        orOperators = [' or '] # NOTE space surrounding 'or'
         # Test and
         for op in andOperators:
             self._do_test("{}{}{}".format(key, op, key), And)
         # Test or
         for op in orOperators:
+            print("OPERATOR")
+            print(op)
             self._do_test("{}{}{}".format(key, op, key), Or)
 
     def test_opPropExpr(self):

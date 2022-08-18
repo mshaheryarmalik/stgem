@@ -10,6 +10,7 @@ stlSpecification
 
 phi
     : LPAREN phi RPAREN              #parenPhiExpr
+    | VBAR phi VBAR                  #absPhiExpr
 
     | NEGATION phi                   #opNegExpr
     | NEXTOP phi                     #opNextExpr

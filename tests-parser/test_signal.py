@@ -34,11 +34,13 @@ class SignalTestCase(ParserTestCase):
         for key in keys:
             for num in nums:
                 for i in range(len(operators)):
+                    print(operators[i])
                     self._do_test("{}{}{}".format(key, operators[i], num),
                                   funcs[i](self._signals[key], np.full(len(self._timestamps), num)),
                                   types[i])
             # Test Signal x Signal
             for i in range(len(operators)):
+                print(operators[i])
                 self._do_test("{}{}{}".format(key, operators[i], keys[keys.index(key) - 1]),
                               funcs[i](self._signals[key], self._signals[keys[keys.index(key) - 1]]),
                               types[i])
@@ -46,11 +48,13 @@ class SignalTestCase(ParserTestCase):
         for num in nums:
             for key in keys:
                 for i in range(len(operators)):
+                    print(operators[i])
                     self._do_test("{}{}{}".format(num, operators[i], key),
                                   funcs[i](np.full(len(self._timestamps), num), self._signals[key]),
                                   types[i])
             # Test Constant x Constant
             for i in range(len(operators)):
+                print(operators[i])
                 self._do_test("{}{}{}".format(num, operators[i], nums[nums.index(num) - 1]),
                               funcs[i](np.full(len(self._timestamps), num), np.full(len(self._timestamps), nums[nums.index(num) - 1])),
                               types[i])
@@ -66,7 +70,7 @@ class SignalTestCase(ParserTestCase):
     def test_signalSumExpr(self):
         keys = ["signal1", "signal2"]
         nums = [5, 10]
-        operators = ["+", "-"]
+        operators = ["+", "- "] # NOTE space after '-' as otherwise following constants would be interpreted as negative
         types = [Sum, Subtract]
         funcs = [np.add, np.subtract]
         self._do_test_operator(keys, nums, operators, types, funcs)

@@ -19,6 +19,9 @@ LBRACK
 RBRACK
     : ']' ;
 
+VBAR
+    : '|' ;
+
 COMMA
     : ',' ;
 
@@ -56,10 +59,10 @@ UNTILOP
     : ('until' | 'U') ;
 
 ANDOP
-    : ('and' | '&') ;
+    : 'and' ;
 
 OROP
-    : ('or' | '|') ;
+    : 'or' ;
 
 IMPLIESOP
     : ('implies' | '->') ;

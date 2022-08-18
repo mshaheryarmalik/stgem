@@ -51,6 +51,11 @@ class stlParserVisitor(ParseTreeVisitor):
         return self.visit(ctx.getRuleContext().getChild(1))
 
 
+    # Visit a parse tree produced by stlParser#absPhiExpr.
+    def visitAbsPhiExpr(self, ctx:stlParser.AbsPhiExprContext):
+        return Abs(self.visit(ctx.getRuleContext().getChild(1)))
+
+
     # Visit a parse tree produced by stlParser#opUntilExpr.
     def visitOpUntilExpr(self, ctx:stlParser.OpUntilExprContext):
         phi1 = self.visit(ctx.getRuleContext().getChild(0))
@@ -77,7 +82,7 @@ class stlParserVisitor(ParseTreeVisitor):
         phi1 = self.visit(ctx.getRuleContext().getChild(0))
         operator = ctx.getRuleContext().getChild(1).getText()
         phi2 = self.visit(ctx.getRuleContext().getChild(2))
-        if operator in ["and", "&"]:
+        if operator in ["and"]:
             return And(phi1, phi2)
         else:
             return Or(phi1, phi2)
