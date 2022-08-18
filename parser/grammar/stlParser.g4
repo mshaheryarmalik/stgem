@@ -12,13 +12,12 @@ phi
     : LPAREN phi RPAREN              #parenPhiExpr
 
     | NEGATION phi                   #opNegExpr
+    | NEXTOP phi                     #opNextExpr
 
-    | NEXTOP        (interval)? phi  #opNextExpr
     | FUTUREOP      (interval)? phi  #opFutureExpr
     | GLOBALLYOP    (interval)? phi  #opGloballyExpr
 
     | phi UNTILOP   (interval)? phi  #opUntilExpr
-    | phi RELEASEOP (interval)? phi  #opReleaseExpr
 
     | phi (ANDOP | OROP) phi         #opLogicalExpr
 
@@ -32,7 +31,6 @@ signal
     : NUMBER                         #signalNumber
     | NAME                           #signalName
     | (LPAREN) signal (RPAREN)       #signalParenthesisExpr
-    | (PLUS | MINUS) signal          #signalUnaryExpr
     | signal (MULT | DIV) signal     #signalMultExpr
     | signal (PLUS | MINUS) signal   #signalSumExpr
 ;

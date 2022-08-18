@@ -55,14 +55,11 @@ GLOBALLYOP
 UNTILOP
     : ('until' | 'U') ;
 
-RELEASEOP
-    : ('release' | 'R') ;
-
 ANDOP
-    : ('and' | '/\\' | '&&' | '&') ;
+    : ('and' | '&') ;
 
 OROP
-    : ('or' | '\\/' | '||' | '|') ;
+    : ('or' | '|') ;
 
 IMPLIESOP
     : ('implies' | '->') ;
@@ -77,9 +74,9 @@ NAME
     : LETTER (LETTER | [0-9] | '_')* ;
 
 NUMBER
-    : INT_NUMBER
-    | FLOAT_NUMBER
-    | SCIENTIFIC_NUMBER
+    : (MINUS)? INT_NUMBER
+    | (MINUS)? FLOAT_NUMBER
+    | (MINUS)? SCIENTIFIC_NUMBER
 ;
 
 INT_NUMBER
