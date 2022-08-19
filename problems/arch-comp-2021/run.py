@@ -27,14 +27,22 @@ def get_seed_factory(init_seed=0):
     return lambda: next(g)
 
 def get_sut_objective_factory(benchmark_module, selected_specification, mode):
-    sut, _, _, _, _ = benchmark_module.build_specification(selected_specification, mode)
+    sut_parameters, _, _ = benchmark_module.build_specification(selected_specification, mode)
+    sut = Matlab_Simulink(sut_parameters)
+    ranges = {}
+    for n in range(len(sut_parameters["input_range"])):
+        ranges[sut_parameters["inputs"][n]] = sut_parameters["input_range"][n]
+    for n in range(len(sut_parameters["output_range"])):
+        ranges[sut_parameters["outputs"][n]] = sut_parameters["output_range"][n]
 
     def sut_factory():
+        # Return the already instantiated SUT many times as Matlab uses a lot
+        # of memory.
         return sut
 
     def objective_factory():
-        _, specifications, scale, strict_horizon_check, epsilon = benchmark_module.build_specification(selected_specification, mode, sut)
-        return [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
+        _, specifications, strict_horizon_check = benchmark_module.build_specification(selected_specification, mode)
+        return [FalsifySTL(specification=specification, ranges=ranges, scale=True, strict_horizon_check=strict_horizon_check) for specification in specifications]
 
     return sut_factory, objective_factory
 
