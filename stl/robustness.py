@@ -270,6 +270,7 @@ class Equals(STL):
 
     def __init__(self, left_formula, right_formula):
         self.formulas = [left_formula, right_formula]
+        self.formula_robustness = Not(Abs(Subtract(self.formulas[0], self.formulas[1])))
 
         if self.formulas[0].range is None or self.formulas[1].range is None:
             self.range = None
@@ -282,12 +283,17 @@ class Equals(STL):
                 self.range = [-max(-A, B), 0]
             else:
                 self.range = [A, B]
+            # Make sure that 1 is included in the interval.
+            if self.range[0] > 1:
+                self.range[0] = 1
+            elif self.range[1] < 1:
+                self.range[1] = 1
 
         self.horizon = 0
 
     def eval(self, traces):
-        formula_robustness = Not(Abs(Subtract(self.formulas[0], self.formulas[1]))).eval(traces)
-        return np.where(formula_robustness == 0, 1, formula_robustness)	
+        robustness = self.formula_robustness.eval(traces)
+        return np.where(robustness == 0, 1, robustness)	
 
 class Not(STL):
 
@@ -354,22 +360,25 @@ class Finally(STL):
         self.upper_time_bound = upper_time_bound
         self.lower_time_bound = lower_time_bound
         self.formulas = [formula]
-        self.range = None if self.formulas[0].range is None else self.formulas[0].range.copy()
+        self.formula_robustness = Not(Global(self.lower_time_bound, self.upper_time_bound, Not(self.formulas[0])))
+        self.range = self.formula_robustness.range.copy() if self.formula_robustness.range is not None else None
         self.horizon = self.upper_time_bound + self.formulas[0].horizon
 
     def eval(self, traces):
-        formula_robustness = Not(Global(self.lower_time_bound, self.upper_time_bound, Not(self.formulas[0])))
-        return formula_robustness.eval(traces)
+        return self.formula_robustness.eval(traces)
 
 class Or(STL):
 
     def __init__(self, *args, nu=None):
-        self.formulas = [Not(And(*[Not(f) for f in args], nu=nu))]
-        self.range = self.formulas[0].range.copy() if self.formulas[0].range is not None else None
-        self.horizon = self.formulas[0].horizon
+        self.formulas = list(args)
+        # We save the actual definition in another attribute in order to work
+        # correctly with nonassociativity and the parser.
+        self.formula_robustness = Not(And(*[Not(f) for f in self.formulas]))
+        self.range = self.formula_robustness.range.copy() if self.formula_robustness.range is not None else None
+        self.horizon = self.formula_robustness.horizon
 
     def eval(self, traces):
-        return self.formulas[0].eval(traces)
+        return self.formula_robustness.eval(traces)
 
 class And(STL):
 

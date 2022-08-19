@@ -27,8 +27,12 @@ class stlParserVisitor(ParseTreeVisitor):
             return GreaterThan(phi1, phi2)
         elif operator == "<":
             return StrictlyLessThan(phi1, phi2)
-        else:
+        elif operator == ">":
             return StrictlyGreaterThan(phi1, phi2)
+        elif operator == "==":
+            return Equals(phi1, phi2)
+        else: # !=
+            return Not(Equals(phi1, phi2))
 
 
     # Visit a parse tree produced by stlParser#signalExpr.
@@ -48,12 +52,11 @@ class stlParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by stlParser#parenPhiExpr.
     def visitParenPhiExpr(self, ctx:stlParser.ParenPhiExprContext):
-        return self.visit(ctx.getRuleContext().getChild(1))
-
-
-    # Visit a parse tree produced by stlParser#absPhiExpr.
-    def visitAbsPhiExpr(self, ctx:stlParser.AbsPhiExprContext):
-        return Abs(self.visit(ctx.getRuleContext().getChild(1)))
+        child = self.visit(ctx.getRuleContext().getChild(1))
+        # We keep track of parenthesized expressions in order to work with
+        # potential And nonassociativity.
+        child.parenthesized = True
+        return child
 
 
     # Visit a parse tree produced by stlParser#opUntilExpr.
@@ -77,15 +80,35 @@ class stlParserVisitor(ParseTreeVisitor):
         return Global(interval[0], interval[1], phi)
 
 
-    # Visit a parse tree produced by stlParser#opLogicalExpr.
-    def visitOpLogicalExpr(self, ctx:stlParser.OpLogicalExprContext):
+    # Visit a parse tree produced by stlParser#opAndExpr.
+    def visitOpAndExpr(self, ctx:stlParser.OpAndExprContext):
+        """
+        We need to be a bit clever here as antlr does not seem to support what
+        we want (maybe it does, but I could not figure it out). Consider two
+        formulas X = 'A and B and C' and Y = 'A and (B and C)'. Since And is
+        possibly nonassociative (for the alternative robustness functions),
+        these are not the same formula to us. We want to return And(A, B, C)
+        for X and And(A, And(B, C)) for Y. In order to accomplish this, we keep
+        track which parts of the formula are in parentheses (see
+        visitParenPhiExpr).
+
+        And yes, you could think that 'A and B and C' would visit this method
+        with getChildCount() = 5, but it does not. Hence the workarounds.
+        """
+
         phi1 = self.visit(ctx.getRuleContext().getChild(0))
-        operator = ctx.getRuleContext().getChild(1).getText()
         phi2 = self.visit(ctx.getRuleContext().getChild(2))
-        if operator in ["and"]:
-            return And(phi1, phi2)
+        formulas = []
+        if isinstance(phi1, And) and not hasattr(phi1, "parenthesized"):
+            formulas += phi1.formulas
         else:
-            return Or(phi1, phi2)
+            formulas.append(phi1)
+        if isinstance(phi2, And) and not hasattr(phi2, "parenthesized"):
+            formulas += phi2.formulas
+        else:
+            formulas.append(phi2)
+
+        return And(*formulas)
 
 
     # Visit a parse tree produced by stlParser#opNextExpr.
@@ -102,6 +125,23 @@ class stlParserVisitor(ParseTreeVisitor):
             return Implication(phi1, phi2)
         elif operator in ["iff", "<->"]:
             raise NotImplementedError("Equivalence not implemented.")
+
+    # Visit a parse tree produced by stlParser#opOrExpr.
+    def visitOpOrExpr(self, ctx:stlParser.OpOrExprContext):
+        # See visitOpAndExpr for explanation.
+        phi1 = self.visit(ctx.getRuleContext().getChild(0))
+        phi2 = self.visit(ctx.getRuleContext().getChild(2))
+        formulas = []
+        if isinstance(phi1, Or) and not hasattr(phi1, "parenthesized"):
+            formulas += phi1.formulas
+        else:
+            formulas.append(phi1)
+        if isinstance(phi2, Or) and not hasattr(phi2, "parenthesized"):
+            formulas += phi2.formulas
+        else:
+            formulas.append(phi2)
+
+        return Or(*formulas)
 
 
     # Visit a parse tree produced by stlParser#opNegExpr.
@@ -126,6 +166,11 @@ class stlParserVisitor(ParseTreeVisitor):
         else:
             range = None
         return Signal(name, range=range)
+
+
+    # Visit a parse tree produced by stlParser#signalAbsExpr.
+    def visitSignalAbsExpr(self, ctx:stlParser.SignalAbsExprContext):
+        return Abs(self.visit(ctx.getRuleContext().getChild(1)))
 
 
     # Visit a parse tree produced by stlParser#signalSumExpr.

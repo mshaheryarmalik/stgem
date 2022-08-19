@@ -10,35 +10,37 @@ else:
 
 def serializedATN():
     return [
-        4,1,28,85,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,1,0,1,0,1,0,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,27,8,1,1,1,
-        1,1,1,1,3,1,32,8,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,40,8,1,1,1,1,1,1,
-        1,3,1,45,8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,54,8,1,10,1,12,1,57,
-        9,1,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,2,66,8,2,1,2,1,2,1,2,1,2,1,2,1,
-        2,5,2,74,8,2,10,2,12,2,77,9,2,1,3,1,3,1,3,1,3,1,3,1,3,1,3,0,2,2,
-        4,4,0,2,4,6,0,7,1,0,19,20,1,0,21,22,1,0,10,11,1,0,8,9,2,0,2,2,4,
-        4,2,0,23,23,25,25,2,0,3,3,5,5,97,0,8,1,0,0,0,2,39,1,0,0,0,4,65,1,
-        0,0,0,6,78,1,0,0,0,8,9,3,2,1,0,9,10,5,0,0,1,10,1,1,0,0,0,11,12,6,
-        1,-1,0,12,13,5,2,0,0,13,14,3,2,1,0,14,15,5,3,0,0,15,40,1,0,0,0,16,
-        17,5,6,0,0,17,18,3,2,1,0,18,19,5,6,0,0,19,40,1,0,0,0,20,21,5,12,
-        0,0,21,40,3,2,1,9,22,23,5,15,0,0,23,40,3,2,1,8,24,26,5,16,0,0,25,
-        27,3,6,3,0,26,25,1,0,0,0,26,27,1,0,0,0,27,28,1,0,0,0,28,40,3,2,1,
-        7,29,31,5,17,0,0,30,32,3,6,3,0,31,30,1,0,0,0,31,32,1,0,0,0,32,33,
-        1,0,0,0,33,40,3,2,1,6,34,35,3,4,2,0,35,36,5,13,0,0,36,37,3,4,2,0,
-        37,40,1,0,0,0,38,40,3,4,2,0,39,11,1,0,0,0,39,16,1,0,0,0,39,20,1,
-        0,0,0,39,22,1,0,0,0,39,24,1,0,0,0,39,29,1,0,0,0,39,34,1,0,0,0,39,
-        38,1,0,0,0,40,55,1,0,0,0,41,42,10,5,0,0,42,44,5,18,0,0,43,45,3,6,
-        3,0,44,43,1,0,0,0,44,45,1,0,0,0,45,46,1,0,0,0,46,54,3,2,1,6,47,48,
-        10,4,0,0,48,49,7,0,0,0,49,54,3,2,1,5,50,51,10,3,0,0,51,52,7,1,0,
-        0,52,54,3,2,1,4,53,41,1,0,0,0,53,47,1,0,0,0,53,50,1,0,0,0,54,57,
-        1,0,0,0,55,53,1,0,0,0,55,56,1,0,0,0,56,3,1,0,0,0,57,55,1,0,0,0,58,
-        59,6,2,-1,0,59,66,5,25,0,0,60,66,5,24,0,0,61,62,5,2,0,0,62,63,3,
-        4,2,0,63,64,5,3,0,0,64,66,1,0,0,0,65,58,1,0,0,0,65,60,1,0,0,0,65,
-        61,1,0,0,0,66,75,1,0,0,0,67,68,10,2,0,0,68,69,7,2,0,0,69,74,3,4,
-        2,3,70,71,10,1,0,0,71,72,7,3,0,0,72,74,3,4,2,2,73,67,1,0,0,0,73,
-        70,1,0,0,0,74,77,1,0,0,0,75,73,1,0,0,0,75,76,1,0,0,0,76,5,1,0,0,
-        0,77,75,1,0,0,0,78,79,7,4,0,0,79,80,7,5,0,0,80,81,5,7,0,0,81,82,
-        7,5,0,0,82,83,7,6,0,0,83,7,1,0,0,0,9,26,31,39,44,53,55,65,73,75
+        4,1,28,88,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,1,0,1,0,1,0,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,23,8,1,1,1,1,1,1,1,3,1,28,
+        8,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,36,8,1,1,1,1,1,1,1,3,1,41,8,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,53,8,1,10,1,12,1,56,9,
+        1,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,2,69,8,2,1,2,1,2,
+        1,2,1,2,1,2,1,2,5,2,77,8,2,10,2,12,2,80,9,2,1,3,1,3,1,3,1,3,1,3,
+        1,3,1,3,0,2,2,4,4,0,2,4,6,0,7,1,0,13,14,1,0,21,22,1,0,10,11,1,0,
+        8,9,2,0,2,2,4,4,2,0,23,23,25,25,2,0,3,3,5,5,101,0,8,1,0,0,0,2,35,
+        1,0,0,0,4,68,1,0,0,0,6,81,1,0,0,0,8,9,3,2,1,0,9,10,5,0,0,1,10,1,
+        1,0,0,0,11,12,6,1,-1,0,12,13,5,2,0,0,13,14,3,2,1,0,14,15,5,3,0,0,
+        15,36,1,0,0,0,16,17,5,12,0,0,17,36,3,2,1,10,18,19,5,15,0,0,19,36,
+        3,2,1,9,20,22,5,16,0,0,21,23,3,6,3,0,22,21,1,0,0,0,22,23,1,0,0,0,
+        23,24,1,0,0,0,24,36,3,2,1,8,25,27,5,17,0,0,26,28,3,6,3,0,27,26,1,
+        0,0,0,27,28,1,0,0,0,28,29,1,0,0,0,29,36,3,2,1,7,30,31,3,4,2,0,31,
+        32,7,0,0,0,32,33,3,4,2,0,33,36,1,0,0,0,34,36,3,4,2,0,35,11,1,0,0,
+        0,35,16,1,0,0,0,35,18,1,0,0,0,35,20,1,0,0,0,35,25,1,0,0,0,35,30,
+        1,0,0,0,35,34,1,0,0,0,36,54,1,0,0,0,37,38,10,6,0,0,38,40,5,18,0,
+        0,39,41,3,6,3,0,40,39,1,0,0,0,40,41,1,0,0,0,41,42,1,0,0,0,42,53,
+        3,2,1,7,43,44,10,5,0,0,44,45,5,19,0,0,45,53,3,2,1,6,46,47,10,4,0,
+        0,47,48,5,20,0,0,48,53,3,2,1,5,49,50,10,3,0,0,50,51,7,1,0,0,51,53,
+        3,2,1,4,52,37,1,0,0,0,52,43,1,0,0,0,52,46,1,0,0,0,52,49,1,0,0,0,
+        53,56,1,0,0,0,54,52,1,0,0,0,54,55,1,0,0,0,55,3,1,0,0,0,56,54,1,0,
+        0,0,57,58,6,2,-1,0,58,69,5,25,0,0,59,69,5,24,0,0,60,61,5,2,0,0,61,
+        62,3,4,2,0,62,63,5,3,0,0,63,69,1,0,0,0,64,65,5,6,0,0,65,66,3,4,2,
+        0,66,67,5,6,0,0,67,69,1,0,0,0,68,57,1,0,0,0,68,59,1,0,0,0,68,60,
+        1,0,0,0,68,64,1,0,0,0,69,78,1,0,0,0,70,71,10,3,0,0,71,72,7,2,0,0,
+        72,77,3,4,2,4,73,74,10,2,0,0,74,75,7,3,0,0,75,77,3,4,2,3,76,70,1,
+        0,0,0,76,73,1,0,0,0,77,80,1,0,0,0,78,76,1,0,0,0,78,79,1,0,0,0,79,
+        5,1,0,0,0,80,78,1,0,0,0,81,82,7,4,0,0,82,83,7,5,0,0,83,84,5,7,0,
+        0,84,85,7,5,0,0,85,86,7,6,0,0,86,7,1,0,0,0,9,22,27,35,40,52,54,68,
+        76,78
     ]
 
 class stlParser ( Parser ):
@@ -185,6 +187,8 @@ class stlParser ( Parser ):
 
         def RELOP(self):
             return self.getToken(stlParser.RELOP, 0)
+        def EQUALITYOP(self):
+            return self.getToken(stlParser.EQUALITYOP, 0)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitPredicateExpr" ):
@@ -253,28 +257,6 @@ class stlParser ( Parser ):
                 return visitor.visitChildren(self)
 
 
-    class AbsPhiExprContext(PhiContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a stlParser.PhiContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def VBAR(self, i:int=None):
-            if i is None:
-                return self.getTokens(stlParser.VBAR)
-            else:
-                return self.getToken(stlParser.VBAR, i)
-        def phi(self):
-            return self.getTypedRuleContext(stlParser.PhiContext,0)
-
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitAbsPhiExpr" ):
-                return visitor.visitAbsPhiExpr(self)
-            else:
-                return visitor.visitChildren(self)
-
-
     class OpUntilExprContext(PhiContext):
 
         def __init__(self, parser, ctx:ParserRuleContext): # actually a stlParser.PhiContext
@@ -322,7 +304,7 @@ class stlParser ( Parser ):
                 return visitor.visitChildren(self)
 
 
-    class OpLogicalExprContext(PhiContext):
+    class OpAndExprContext(PhiContext):
 
         def __init__(self, parser, ctx:ParserRuleContext): # actually a stlParser.PhiContext
             super().__init__(parser)
@@ -336,12 +318,10 @@ class stlParser ( Parser ):
 
         def ANDOP(self):
             return self.getToken(stlParser.ANDOP, 0)
-        def OROP(self):
-            return self.getToken(stlParser.OROP, 0)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitOpLogicalExpr" ):
-                return visitor.visitOpLogicalExpr(self)
+            if hasattr( visitor, "visitOpAndExpr" ):
+                return visitor.visitOpAndExpr(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -361,6 +341,28 @@ class stlParser ( Parser ):
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitOpNextExpr" ):
                 return visitor.visitOpNextExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class OpOrExprContext(PhiContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a stlParser.PhiContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def phi(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(stlParser.PhiContext)
+            else:
+                return self.getTypedRuleContext(stlParser.PhiContext,i)
+
+        def OROP(self):
+            return self.getToken(stlParser.OROP, 0)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitOpOrExpr" ):
+                return visitor.visitOpOrExpr(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -419,7 +421,7 @@ class stlParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 39
+            self.state = 35
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,2,self._ctx)
             if la_ == 1:
@@ -436,96 +438,89 @@ class stlParser ( Parser ):
                 pass
 
             elif la_ == 2:
-                localctx = stlParser.AbsPhiExprContext(self, localctx)
-                self._ctx = localctx
-                _prevctx = localctx
-                self.state = 16
-                self.match(stlParser.VBAR)
-                self.state = 17
-                self.phi(0)
-                self.state = 18
-                self.match(stlParser.VBAR)
-                pass
-
-            elif la_ == 3:
                 localctx = stlParser.OpNegExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 20
+                self.state = 16
                 self.match(stlParser.NEGATION)
-                self.state = 21
+                self.state = 17
+                self.phi(10)
+                pass
+
+            elif la_ == 3:
+                localctx = stlParser.OpNextExprContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
+                self.state = 18
+                self.match(stlParser.NEXTOP)
+                self.state = 19
                 self.phi(9)
                 pass
 
             elif la_ == 4:
-                localctx = stlParser.OpNextExprContext(self, localctx)
+                localctx = stlParser.OpFutureExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
+                self.state = 20
+                self.match(stlParser.FUTUREOP)
                 self.state = 22
-                self.match(stlParser.NEXTOP)
-                self.state = 23
+                self._errHandler.sync(self)
+                la_ = self._interp.adaptivePredict(self._input,0,self._ctx)
+                if la_ == 1:
+                    self.state = 21
+                    self.interval()
+
+
+                self.state = 24
                 self.phi(8)
                 pass
 
             elif la_ == 5:
-                localctx = stlParser.OpFutureExprContext(self, localctx)
+                localctx = stlParser.OpGloballyExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 24
-                self.match(stlParser.FUTUREOP)
-                self.state = 26
+                self.state = 25
+                self.match(stlParser.GLOBALLYOP)
+                self.state = 27
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,0,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input,1,self._ctx)
                 if la_ == 1:
-                    self.state = 25
+                    self.state = 26
                     self.interval()
 
 
-                self.state = 28
+                self.state = 29
                 self.phi(7)
                 pass
 
             elif la_ == 6:
-                localctx = stlParser.OpGloballyExprContext(self, localctx)
-                self._ctx = localctx
-                _prevctx = localctx
-                self.state = 29
-                self.match(stlParser.GLOBALLYOP)
-                self.state = 31
-                self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,1,self._ctx)
-                if la_ == 1:
-                    self.state = 30
-                    self.interval()
-
-
-                self.state = 33
-                self.phi(6)
-                pass
-
-            elif la_ == 7:
                 localctx = stlParser.PredicateExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 34
+                self.state = 30
                 self.signal(0)
-                self.state = 35
-                self.match(stlParser.RELOP)
-                self.state = 36
+                self.state = 31
+                _la = self._input.LA(1)
+                if not(_la==stlParser.RELOP or _la==stlParser.EQUALITYOP):
+                    self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 32
                 self.signal(0)
                 pass
 
-            elif la_ == 8:
+            elif la_ == 7:
                 localctx = stlParser.SignalExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 38
+                self.state = 34
                 self.signal(0)
                 pass
 
 
             self._ctx.stop = self._input.LT(-1)
-            self.state = 55
+            self.state = 54
             self._errHandler.sync(self)
             _alt = self._interp.adaptivePredict(self._input,5,self._ctx)
             while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
@@ -533,68 +528,76 @@ class stlParser ( Parser ):
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
-                    self.state = 53
+                    self.state = 52
                     self._errHandler.sync(self)
                     la_ = self._interp.adaptivePredict(self._input,4,self._ctx)
                     if la_ == 1:
                         localctx = stlParser.OpUntilExprContext(self, stlParser.PhiContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_phi)
-                        self.state = 41
-                        if not self.precpred(self._ctx, 5):
+                        self.state = 37
+                        if not self.precpred(self._ctx, 6):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 5)")
-                        self.state = 42
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 6)")
+                        self.state = 38
                         self.match(stlParser.UNTILOP)
-                        self.state = 44
+                        self.state = 40
                         self._errHandler.sync(self)
                         la_ = self._interp.adaptivePredict(self._input,3,self._ctx)
                         if la_ == 1:
-                            self.state = 43
+                            self.state = 39
                             self.interval()
 
 
-                        self.state = 46
-                        self.phi(6)
+                        self.state = 42
+                        self.phi(7)
                         pass
 
                     elif la_ == 2:
-                        localctx = stlParser.OpLogicalExprContext(self, stlParser.PhiContext(self, _parentctx, _parentState))
+                        localctx = stlParser.OpAndExprContext(self, stlParser.PhiContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_phi)
-                        self.state = 47
-                        if not self.precpred(self._ctx, 4):
+                        self.state = 43
+                        if not self.precpred(self._ctx, 5):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 4)")
-                        self.state = 48
-                        _la = self._input.LA(1)
-                        if not(_la==stlParser.ANDOP or _la==stlParser.OROP):
-                            self._errHandler.recoverInline(self)
-                        else:
-                            self._errHandler.reportMatch(self)
-                            self.consume()
-                        self.state = 49
-                        self.phi(5)
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 5)")
+                        self.state = 44
+                        self.match(stlParser.ANDOP)
+                        self.state = 45
+                        self.phi(6)
                         pass
 
                     elif la_ == 3:
+                        localctx = stlParser.OpOrExprContext(self, stlParser.PhiContext(self, _parentctx, _parentState))
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_phi)
+                        self.state = 46
+                        if not self.precpred(self._ctx, 4):
+                            from antlr4.error.Errors import FailedPredicateException
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 4)")
+                        self.state = 47
+                        self.match(stlParser.OROP)
+                        self.state = 48
+                        self.phi(5)
+                        pass
+
+                    elif la_ == 4:
                         localctx = stlParser.OpPropExprContext(self, stlParser.PhiContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_phi)
-                        self.state = 50
+                        self.state = 49
                         if not self.precpred(self._ctx, 3):
                             from antlr4.error.Errors import FailedPredicateException
                             raise FailedPredicateException(self, "self.precpred(self._ctx, 3)")
-                        self.state = 51
+                        self.state = 50
                         _la = self._input.LA(1)
                         if not(_la==stlParser.IMPLIESOP or _la==stlParser.EQUIVOP):
                             self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
                             self.consume()
-                        self.state = 52
+                        self.state = 51
                         self.phi(4)
                         pass
 
              
-                self.state = 57
+                self.state = 56
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,5,self._ctx)
 
@@ -629,11 +632,11 @@ class stlParser ( Parser ):
             super().__init__(parser)
             self.copyFrom(ctx)
 
+        def LPAREN(self):
+            return self.getToken(stlParser.LPAREN, 0)
         def signal(self):
             return self.getTypedRuleContext(stlParser.SignalContext,0)
 
-        def LPAREN(self):
-            return self.getToken(stlParser.LPAREN, 0)
         def RPAREN(self):
             return self.getToken(stlParser.RPAREN, 0)
 
@@ -656,6 +659,28 @@ class stlParser ( Parser ):
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitSignalName" ):
                 return visitor.visitSignalName(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class SignalAbsExprContext(SignalContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a stlParser.SignalContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def VBAR(self, i:int=None):
+            if i is None:
+                return self.getTokens(stlParser.VBAR)
+            else:
+                return self.getToken(stlParser.VBAR, i)
+        def signal(self):
+            return self.getTypedRuleContext(stlParser.SignalContext,0)
+
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitSignalAbsExpr" ):
+                return visitor.visitSignalAbsExpr(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -735,7 +760,7 @@ class stlParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 65
+            self.state = 68
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [stlParser.NUMBER]:
@@ -743,34 +768,43 @@ class stlParser ( Parser ):
                 self._ctx = localctx
                 _prevctx = localctx
 
-                self.state = 59
+                self.state = 58
                 self.match(stlParser.NUMBER)
                 pass
             elif token in [stlParser.NAME]:
                 localctx = stlParser.SignalNameContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 60
+                self.state = 59
                 self.match(stlParser.NAME)
                 pass
             elif token in [stlParser.LPAREN]:
                 localctx = stlParser.SignalParenthesisExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-
-                self.state = 61
+                self.state = 60
                 self.match(stlParser.LPAREN)
-                self.state = 62
+                self.state = 61
                 self.signal(0)
-
-                self.state = 63
+                self.state = 62
                 self.match(stlParser.RPAREN)
+                pass
+            elif token in [stlParser.VBAR]:
+                localctx = stlParser.SignalAbsExprContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
+                self.state = 64
+                self.match(stlParser.VBAR)
+                self.state = 65
+                self.signal(0)
+                self.state = 66
+                self.match(stlParser.VBAR)
                 pass
             else:
                 raise NoViableAltException(self)
 
             self._ctx.stop = self._input.LT(-1)
-            self.state = 75
+            self.state = 78
             self._errHandler.sync(self)
             _alt = self._interp.adaptivePredict(self._input,8,self._ctx)
             while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
@@ -778,47 +812,47 @@ class stlParser ( Parser ):
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
-                    self.state = 73
+                    self.state = 76
                     self._errHandler.sync(self)
                     la_ = self._interp.adaptivePredict(self._input,7,self._ctx)
                     if la_ == 1:
                         localctx = stlParser.SignalMultExprContext(self, stlParser.SignalContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_signal)
-                        self.state = 67
-                        if not self.precpred(self._ctx, 2):
+                        self.state = 70
+                        if not self.precpred(self._ctx, 3):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 2)")
-                        self.state = 68
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 3)")
+                        self.state = 71
                         _la = self._input.LA(1)
                         if not(_la==stlParser.MULT or _la==stlParser.DIV):
                             self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
                             self.consume()
-                        self.state = 69
-                        self.signal(3)
+                        self.state = 72
+                        self.signal(4)
                         pass
 
                     elif la_ == 2:
                         localctx = stlParser.SignalSumExprContext(self, stlParser.SignalContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_signal)
-                        self.state = 70
-                        if not self.precpred(self._ctx, 1):
+                        self.state = 73
+                        if not self.precpred(self._ctx, 2):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 1)")
-                        self.state = 71
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 2)")
+                        self.state = 74
                         _la = self._input.LA(1)
                         if not(_la==stlParser.PLUS or _la==stlParser.MINUS):
                             self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
                             self.consume()
-                        self.state = 72
-                        self.signal(2)
+                        self.state = 75
+                        self.signal(3)
                         pass
 
              
-                self.state = 77
+                self.state = 80
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,8,self._ctx)
 
@@ -884,30 +918,30 @@ class stlParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 78
+            self.state = 81
             _la = self._input.LA(1)
             if not(_la==stlParser.LPAREN or _la==stlParser.LBRACK):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 79
-            _la = self._input.LA(1)
-            if not(_la==stlParser.INF or _la==stlParser.NUMBER):
-                self._errHandler.recoverInline(self)
-            else:
-                self._errHandler.reportMatch(self)
-                self.consume()
-            self.state = 80
-            self.match(stlParser.COMMA)
-            self.state = 81
-            _la = self._input.LA(1)
-            if not(_la==stlParser.INF or _la==stlParser.NUMBER):
-                self._errHandler.recoverInline(self)
-            else:
-                self._errHandler.reportMatch(self)
-                self.consume()
             self.state = 82
+            _la = self._input.LA(1)
+            if not(_la==stlParser.INF or _la==stlParser.NUMBER):
+                self._errHandler.recoverInline(self)
+            else:
+                self._errHandler.reportMatch(self)
+                self.consume()
+            self.state = 83
+            self.match(stlParser.COMMA)
+            self.state = 84
+            _la = self._input.LA(1)
+            if not(_la==stlParser.INF or _la==stlParser.NUMBER):
+                self._errHandler.recoverInline(self)
+            else:
+                self._errHandler.reportMatch(self)
+                self.consume()
+            self.state = 85
             _la = self._input.LA(1)
             if not(_la==stlParser.RPAREN or _la==stlParser.RBRACK):
                 self._errHandler.recoverInline(self)
@@ -937,24 +971,28 @@ class stlParser ( Parser ):
 
     def phi_sempred(self, localctx:PhiContext, predIndex:int):
             if predIndex == 0:
-                return self.precpred(self._ctx, 5)
+                return self.precpred(self._ctx, 6)
          
 
             if predIndex == 1:
-                return self.precpred(self._ctx, 4)
+                return self.precpred(self._ctx, 5)
          
 
             if predIndex == 2:
+                return self.precpred(self._ctx, 4)
+         
+
+            if predIndex == 3:
                 return self.precpred(self._ctx, 3)
          
 
     def signal_sempred(self, localctx:SignalContext, predIndex:int):
-            if predIndex == 3:
-                return self.precpred(self._ctx, 2)
+            if predIndex == 4:
+                return self.precpred(self._ctx, 3)
          
 
-            if predIndex == 4:
-                return self.precpred(self._ctx, 1)
+            if predIndex == 5:
+                return self.precpred(self._ctx, 2)
          
 
 

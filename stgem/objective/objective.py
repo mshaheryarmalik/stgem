@@ -120,8 +120,11 @@ class FalsifySTL(Objective):
             if isinstance(node, STL.Signal) and node.name not in self.formula_variables:
                 self.formula_variables.append(node.name)
 
-            if isinstance(node, (STL.Global, STL.Finally)):
+            if isinstance(node, STL.Global):
                 self.time_bounded.append(node)
+            if isinstance(node, STL.Finally):
+                self.time_bounded.append(node)
+                self.time_bounded.append(node.formula_robustness.formulas[0])
 
         """
         One problem with STL usage is that the differences between timestamps

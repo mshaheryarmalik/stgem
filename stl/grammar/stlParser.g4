@@ -9,31 +9,32 @@ stlSpecification
     : phi EOF ;
 
 phi
-    : LPAREN phi RPAREN              #parenPhiExpr
-    | VBAR phi VBAR                  #absPhiExpr
+    : LPAREN phi RPAREN                  #parenPhiExpr
 
-    | NEGATION phi                   #opNegExpr
-    | NEXTOP phi                     #opNextExpr
+    | NEGATION phi                       #opNegExpr
+    | NEXTOP phi                         #opNextExpr
 
-    | FUTUREOP      (interval)? phi  #opFutureExpr
-    | GLOBALLYOP    (interval)? phi  #opGloballyExpr
+    | FUTUREOP      (interval)? phi      #opFutureExpr
+    | GLOBALLYOP    (interval)? phi      #opGloballyExpr
 
-    | phi UNTILOP   (interval)? phi  #opUntilExpr
+    | phi UNTILOP   (interval)? phi      #opUntilExpr
 
-    | phi (ANDOP | OROP) phi         #opLogicalExpr
+    | phi ANDOP phi                      #opAndExpr
+    | phi OROP phi                       #opOrExpr
 
-    | phi (IMPLIESOP | EQUIVOP) phi  #opPropExpr
+    | phi (IMPLIESOP | EQUIVOP) phi      #opPropExpr
 
-    | signal RELOP signal            #predicateExpr
-    | signal                         #signalExpr
+    | signal (RELOP | EQUALITYOP) signal #predicateExpr
+    | signal                             #signalExpr
 ;
 
 signal
     : NUMBER                         #signalNumber
     | NAME                           #signalName
-    | (LPAREN) signal (RPAREN)       #signalParenthesisExpr
+    | LPAREN signal RPAREN           #signalParenthesisExpr
     | signal (MULT | DIV) signal     #signalMultExpr
     | signal (PLUS | MINUS) signal   #signalSumExpr
+    | VBAR signal VBAR               #signalAbsExpr
 ;
 
 interval
