@@ -1,6 +1,6 @@
 import os, sys
 
-import stgem.objective.Robustness as STL
+import stl.robustness as STL
 
 
 from stgem.algorithm.ogan.algorithm import OGAN
@@ -96,16 +96,14 @@ def build_specification(selected_specification, mode=None, asut=None):
     scale = True
     S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "F16":
-        # always[0,15] ALTITUDE > 0
-        specification = STL.Global(0, 15, STL.GreaterThan(S("ALTITUDE"),STL.Constant(0)))
-
+        specification = "always[0,15] ALTITUDE > 0"
         specifications = [specification]
         strict_horizon_check = True
         epsilon = 0.0
     else:
         raise Exception("Unknown specification '{}'.".format(selected_specification))
 
-    return asut, specifications, scale, strict_horizon_check, epsilon
+    return asut, specifications, sut_parameters, scale, strict_horizon_check, epsilon
 
 def objective_selector_factory():
     return ObjectiveSelectorAll()

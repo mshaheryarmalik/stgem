@@ -27,14 +27,15 @@ def get_seed_factory(init_seed=0):
     return lambda: next(g)
 
 def get_sut_objective_factory(benchmark_module, selected_specification, mode):
-    sut, _, _, _, _ = benchmark_module.build_specification(selected_specification, mode)
+    sut, _, _, _, _, _ = benchmark_module.build_specification(selected_specification, mode)
 
     def sut_factory():
         return sut
 
     def objective_factory():
-        _, specifications, scale, strict_horizon_check, epsilon = benchmark_module.build_specification(selected_specification, mode, sut)
-        return [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
+        _, specifications, sut_parameters, scale, strict_horizon_check, epsilon = benchmark_module.build_specification(selected_specification, mode, sut)
+        ranges = {sut_parameters["outputs"][i]: sut_parameters["output_range"][i] for i in range(len(sut_parameters["outputs"]))}
+        return [FalsifySTL(specification=specification, ranges=ranges, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
 
     return sut_factory, objective_factory
 
