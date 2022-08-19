@@ -1,6 +1,3 @@
-import stgem.objective.Robustness as STL
-
-
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.ogan.model_keras import OGANK_Model

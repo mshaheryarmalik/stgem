@@ -1,4 +1,6 @@
 import importlib, os, sys
+from stgem.sut.matlab.sut import Matlab
+from stgem.sut.matlab.sut import Matlab_Simulink
 
 import click
 
@@ -27,8 +29,11 @@ def get_seed_factory(init_seed=0):
     return lambda: next(g)
 
 def get_sut_objective_factory(benchmark_module, selected_specification, mode):
-    sut_parameters, _, _ = benchmark_module.build_specification(selected_specification, mode)
-    sut = Matlab_Simulink(sut_parameters)
+    sut_parameters, specifications, strict_horizon_check = benchmark_module.build_specification(selected_specification, mode)
+    if selected_specification in ["AT", "CC"]:
+        sut = Matlab_Simulink(sut_parameters)
+    else:
+        sut = Matlab(sut_parameters)
     ranges = {}
     for n in range(len(sut_parameters["input_range"])):
         ranges[sut_parameters["inputs"][n]] = sut_parameters["input_range"][n]
@@ -74,12 +79,12 @@ specifications = {
         "SC":  ["SC"]
 }
 N_workers = {
-        "AFC": 3,
-        "AT": 3,
-        "CC": 4,
-        "F16": 2,
-        "NN": 3,
-        "SC": 2
+        "AFC": 1,
+        "AT": 1,
+        "CC": 1,
+        "F16": 1,
+        "NN": 1,
+        "SC": 1
 }
 
 @click.command()
