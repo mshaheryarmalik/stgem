@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 """
 All objectives must output a single number. If several outputs are required
 for a single input, multiple objectives must be specified.

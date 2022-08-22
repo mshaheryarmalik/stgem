@@ -31,7 +31,7 @@ ogan_model_parameters = {
         "discriminator_betas": [0.9, 0.999],
         "generator_lr": 0.0005,
         "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 2048,
+        "noise_batch_size": 8192,
         "generator_loss": "MSE,Logit",
         "discriminator_loss": "MSE,Logit",
         "generator_mlm": "GeneratorNetwork",

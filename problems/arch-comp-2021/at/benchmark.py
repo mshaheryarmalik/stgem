@@ -24,7 +24,7 @@ ogan_model_parameters = {
         "discriminator_betas": [0.9, 0.999],
         "generator_lr": 0.0005,
         "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 2048,
+        "noise_batch_size": 8192,
         "generator_loss": "MSE,Logit",
         "discriminator_loss": "MSE,Logit",
         "generator_mlm": "GeneratorNetwork",
@@ -153,6 +153,7 @@ def get_objective_selector_factory():
 
 def step_factory():
     mode = "stop_at_first_objective"
+    #mode = "exhaust_budget"
 
     step_1 = Search(mode=mode,
                     budget_threshold={"executions": 75},
@@ -165,8 +166,8 @@ def step_factory():
                     #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
                     algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                    )
-    #steps = [step_1]
-    steps = [step_1, step_2]
+    steps = [step_1]
+    #steps = [step_1, step_2]
     return steps
 
 def get_step_factory():

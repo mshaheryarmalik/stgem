@@ -33,23 +33,49 @@ are collected into one experiment.
 output_path_base = os.path.join("..", "output")
 
 # Which benchmarks are to be included.
-benchmarks = ["AFC", "F16"]
+#benchmarks = ["AT"]
+benchmarks = ["AFC", "AT"]
 
 # Replica prefixes for collecting the experiments.
-replica_prefixes = {"AFC": ["AFC29"],
+replica_prefixes = {"AFC": ["AFC27"],
+                    "AT": ["AT1", "ATX13", "ATX14", "ATX2", "ATX61", "ATX62"],
                     "F16": ["F16"]}
 
 experiments = loadExperiments(output_path_base, benchmarks, replica_prefixes)
 
 # %% [markdown]
-# # Falsification Rate
+# # Falsification Rate and First Falsifications
 
 # %%
-print("Falsification rates:")
+print("Experiment: Falsification rates:")
 for benchmark in benchmarks:
     for experiment in experiments[benchmark]:
         FR = falsification_rate(experiments[benchmark][experiment])
-        print("{}, {}: {}".format(benchmark, experiment, FR))
+        print("{}/{}, {}".format(benchmark, experiment, FR))
+
+
+# %%
+print("Experiment: Mean: SD:")
+data = []
+labels = []
+for benchmark in benchmarks:
+    labels += replica_prefixes[benchmark]
+    for experiment in experiments[benchmark]:
+        FF = np.array([first_falsification(replica) for replica in experiments[benchmark][experiment]])
+        data.append(FF[FF != None])
+        print("{}/{}, {}, {}".format(benchmark, experiment, np.mean(data[-1]), np.std(data[-1])))
+
+own_boxplot(data, labels, title="First Falsifications", ylabel="First falsification", line=75)
+
+# %% [markdown]
+# # Times
+
+# %%
+print("Experiment: Mean time:")
+for benchmark in benchmarks:
+    for experiment in experiments[benchmark]:
+        T = np.array([times(replica) for replica in experiments[benchmark][experiment]])
+        print("{}/{}, {}".format(benchmark, experiment, np.mean(T)))
 
 # %% [markdown]
 # # Visualize Test Inputs and Outputs
@@ -96,8 +122,8 @@ for i in idx:
 # # Animate Signal Input/Output Test Suite
 
 # %%
-benchmark = "AFC"
-experiment = "AFC29"
+benchmark = "AT"
+experiment = "ATX1_ATX1_10000"
 replica_idx = 0
 
 anim = animateResult(experiments[benchmark][experiment][replica_idx])
