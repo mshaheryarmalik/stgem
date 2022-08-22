@@ -4,27 +4,6 @@
 import numpy as np
 
 from stgem.algorithm import Model
-from scipy.stats import qmc
-
-class Halton(Model):
-    def __init__(self, search_space, parameters = None, device = None, logger = None):
-        self.parameters = parameters
-        self.setup(search_space, device, logger)
-        super()
-    def setup(self, search_space, device, logger):
-        super().setup(search_space, device, logger)
-        self.hal = qmc.Halton(d = search_space.input_dimension, scramble=False)
-        if not "size" in self.parameters:
-            self.parameters["size"] = 100
-        self.ranlist = qmc.scale(self.hal.random(self.parameters["size"]), -1, 1)
-
-    def generate_test(self):
-        if len(self.ranlist) == 0:
-            raise Exception("Test generator ran out of tests, increase parameter 'size' in Halton() (default = 100)")
-        ret = self.ranlist[0]
-        self.ranlist = self.ranlist[1:]
-        return ret
-
 
 class Uniform(Model):
     """Implements a random test model which directly uses the sampling provided by
@@ -66,19 +45,52 @@ class Uniform(Model):
             self.used_points.append(test)
             return test
 
+class Halton(Model):
+    """Random sampling using a Halton sequence."""
+
+    def setup(self, search_space, device, logger, use_previous_rng=False):
+        super().setup(search_space, device, logger)
+
+        # Save current RNG state and use previous.
+        if use_previous_rng:
+            # Simply reset the sampler.
+            self.hal.reset()
+        else:
+            # Get a random seed using the search space RNG.
+            seed = int(self.search_space.rng.uniform() * 2**32)
+
+            from scipy.stats import qmc
+
+            self.hal = qmc.Halton(d=self.search_space.input_dimension, scramble=True, seed=seed)
+
+    def generate_test(self):
+        return 2*self.hal.random().reshape(-1) - 1
+
 class LHS(Model):
     """Implements a random test model based on Latin hypercube design."""
 
-    def setup(self, search_space, device, logger=None):
-        super().setup(search_space, device, logger)
+    def setup(self, search_space, device, logger=None, use_previous_rng=False):
+        super().setup(search_space, device, logger, use_previous_rng)
 
         if not "samples" in self.parameters:
             raise Exception("The 'samples' key must be provided for the algorithm for determining random sample size.")
+
+        # Save current RNG state and use previous.
+        if use_previous_rng:
+            current_rng_state = self.search_space.rng.get_state()
+            self.search_space.rng.set_state(self.previous_rng_state["numpy"])
+        else:
+            self.previous_rng_state = {}
+            self.previous_rng_state["numpy"] = self.search_space.rng.get_state()
 
         # Create the design immediately.
         self.random_tests = 2*(self.lhs(self.search_space.input_dimension, samples=self.samples) - 0.5)
 
         self.current = -1
+
+        # Restore RNG state.
+        if use_previous_rng:
+            self.search_space.rng.set_state(current_rng_state)
 
     def generate_test(self):
         self.current += 1
