@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 """
 All objectives must output a single number. If several outputs are required
 for a single input, multiple objectives must be specified.
@@ -202,7 +199,8 @@ class FalsifySTL(Objective):
             if robustness < 0:
                 robustness = 0
             else:
-                B = self.specification.var_range[1]
+                B = self.specification.evaluated_range[1]
+                #B = self.specification.var_range[1]
                 robustness *= 1/B
                 robustness += self.epsilon
                 robustness = min(1, robustness)
@@ -309,7 +307,8 @@ class FalsifySTL(Objective):
             if robustness < 0:
                 robustness = 0
             else:
-                B = self.specification.var_range[1]
+                B = self.specification.evaluated_range[1]
+                #B = self.specification.var_range[1]
                 robustness *= 1/B
                 robustness += self.epsilon
                 robustness = min(1, robustness)
