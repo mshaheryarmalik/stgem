@@ -101,7 +101,7 @@ def build_specification(selected_specification, mode=None):
         F2 = getSpecification(2)
         F3 = getSpecification(3)
         F4 = getSpecification(4)
-        specification = "({}) and ({}) and ({}) and ({})".format(F1, F2, F3, F4)
+        specification = "{} and {} and {} and {}".format(F1, F2, F3, F4)
 
         #specifications = [specification]
         specifications = [F1, F2, F3, F4]

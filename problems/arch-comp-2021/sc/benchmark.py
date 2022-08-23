@@ -71,7 +71,7 @@ def build_specification(selected_specification, mode=None):
                      }
 
     if selected_specification == "SC":
-        specification = "always[30,35](87 <= PRESSURE <= 87.5)"
+        specification = "always[30,35](87 <= PRESSURE and PRESSURE <= 87.5)"
 
         specifications = [specification]
         strict_horizon_check = True
