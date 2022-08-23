@@ -1,4 +1,4 @@
-import stgem.objective.Robustness as STL
+import stl.robustness as STL
 
 
 from stgem.algorithm.ogan.algorithm import OGAN
@@ -84,17 +84,24 @@ def build_specification(selected_specification, mode=None):
         alpha = 0.005
         beta = 0.03
         inequality1 = "|POS - REF| > {} + {}*|REF|".format(alpha, beta)
+
         inequality2 = "{} + {}*|REF| > |POS - REF|".format(alpha, beta)
+
         specification = "always[1,37]( {} implies (always[0,2]( eventually[0,1] not {} )) )".format(inequality1, inequality2)
+
         specifications = [specification]
         strict_horizon_check = True
     elif selected_specification == "NNX":
         F1 = "eventually[0,1](POS > 3.2)"
+
         F2 = "eventually[1,1.5]( always[0,0.5](1.75 < POS < 2.25) )"
+
         F3 = "always[2,3](1.825 < POS < 2.175)"
+
         conjunctive_specification = "({}) and ({}) and ({})".format(F1, F2, F3)
-        #specifications = [conjunctive_specification]
-        specifications = [F1, F2, F3]
+
+        specifications = [conjunctive_specification]
+        #specifications = [F1, F2, F3]
         strict_horizon_check = True
     else:
         raise Exception("Unknown specification '{}'.".format(selected_specification))

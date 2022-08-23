@@ -70,22 +70,27 @@ def build_specification(selected_specification, mode=None):
     # disabled in some cases.
     if selected_specification == "CC1":
         specification = "always[0,100]( Y5 - Y4 <= 40 )"
+
         specifications = [specification]
         strict_horizon_check = True
     elif selected_specification == "CC2":
         specification = "always[0,70]( eventually[0,30]( Y5 - Y4 >= 15 ) )"
+
         specifications = [specification]
         strict_horizon_check = True
     elif selected_specification == "CC3":
         specification = "always[0,80]( (always[0,20]( Y2 - Y1 <= 20 )) or (eventually[0,20]( Y5 - Y4 >= 40 )) )"
+
         specifications = [specification]
         strict_horizon_check = True
     elif selected_specification == "CC4":
         specification = "always[0,65]( eventually[0,30]( always[0,20]( Y5 - Y4 >= 8 ) ) )"
+
         specifications = [specification]
         strict_horizon_check = False
     elif selected_specification == "CC5":
         specification = "always[0,72]( eventually[0,8]( always[0,5]( Y2 - Y1 >= 9 ) implies always[5,20]( Y5 - Y4 >= 9 ) ) )"
+
         specifications = [specification]
         strict_horizon_check = True
     elif selected_specification == "CCX":
@@ -97,6 +102,7 @@ def build_specification(selected_specification, mode=None):
         F3 = getSpecification(3)
         F4 = getSpecification(4)
         specification = "({}) and ({}) and ({}) and ({})".format(F1, F2, F3, F4)
+
         #specifications = [specification]
         specifications = [F1, F2, F3, F4]
         strict_horizon_check = True

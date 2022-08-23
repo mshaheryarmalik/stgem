@@ -88,6 +88,7 @@ def build_specification(selected_specification, mode=None):
     # Notice that here the input is a vector.
     if selected_specification == "F16":
         specification = "always[0,15] ALTITUDE > 0"
+
         specifications = [specification]
         strict_horizon_check = True
     else:

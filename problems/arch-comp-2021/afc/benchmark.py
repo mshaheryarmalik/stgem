@@ -57,7 +57,7 @@ def build_specification(selected_specification, afc_mode="normal"):
     # Notice that the output MODE is never used in the requirements.
     sut_parameters = {"model_file": "afc/run_powertrain",
                       "init_model_file": "afc/init_powertrain",
-                      "input_type": "piecewise constantant signal",
+                      "input_type": "piecewise constant signal",
                       "output_type": "signal",
                       "inputs": ["THROTTLE", "ENGINE"],
                       "outputs": ["MU", "MODE"],
@@ -75,7 +75,7 @@ def build_specification(selected_specification, afc_mode="normal"):
         rise = "(THROTTLE < 8.8) and (eventually[0,0.05](THROTTLE > 40.0))"
         fall = "(THROTTLE > 40.0) and (eventually[0,0.05](THROTTLE < 8.8))"
         specification = "always[11,50](({} or {}) -> always[1,5](|MU| < 0.008)".format(rise, fall)
-        
+
         specifications = [specification]
         strict_horizon_check = False
     elif selected_specification == "AFC29":

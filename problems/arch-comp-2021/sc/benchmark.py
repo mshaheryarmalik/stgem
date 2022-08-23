@@ -1,4 +1,4 @@
-import stgem.objective.Robustness as STL
+import stl.robustness as STL
 
 
 from stgem.algorithm.ogan.algorithm import OGAN
@@ -72,6 +72,7 @@ def build_specification(selected_specification, mode=None):
 
     if selected_specification == "SC":
         specification = "always[30,35](87 <= PRESSURE <= 87.5)"
+
         specifications = [specification]
         strict_horizon_check = True
     else:

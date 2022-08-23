@@ -242,7 +242,7 @@ class Abs(STL):
               else:
                 self.range = [-B, -A]
             else:
-              self.var_range = [A, B]
+              self.range = [A, B]
 
         self.horizon = 0
 
@@ -396,7 +396,7 @@ class And(STL):
         if None in A or None in B:
             self.range = None
         else:
-            self.range = (min(A), min(B))
+            self.range = [min(A), min(B)]
 
     def eval(self, traces):
         if self.nu is None:
