@@ -116,8 +116,11 @@ class Signal(STL):
         self.range = range.copy() if range is not None else None
         self.horizon = 0
 
-    def eval(self, traces):
-        return traces.signals[self.name]
+    def eval(self, traces, time=None):
+        # We return a copy so that subsequent robustness computations can
+        # safely reuse arrays. We also enforce floats in order to avoid errors.
+        effective_range = self.range if time is not None else None
+        return np.array(traces.signals[self.name], copy=True, dtype="float64"), effective_range
 
 class Constant(STL):
 
@@ -127,8 +130,11 @@ class Constant(STL):
         self.range = [val, val]
         self.horizon = 0
 
-    def eval(self, traces):
-        return np.full(len(traces.timestamps), self.val)
+    def eval(self, traces, time=None):
+        # We must always produce a new array because subsequent robustness
+        # computations can reuse arrays.
+        effective_range = self.range if time is not None else None
+        return np.full(len(traces.timestamps), self.val), effective_range
 
 class Sum(STL):
 
@@ -144,11 +150,11 @@ class Sum(STL):
 
         self.horizon = 0
 
-    def eval(self, traces):
-        res = []
-        left_formula_robustness = self.formulas[0].eval(traces)
-        right_formula_robustness = self.formulas[1].eval(traces)
-        return np.add(left_formula_robustness, right_formula_robustness)
+    def eval(self, traces, time=None):
+        left_formula_robustness, _ = self.formulas[0].eval(traces, time)
+        right_formula_robustness, _ = self.formulas[1].eval(traces, time)
+        effective_range = self.range if time is not None else None
+        return np.add(left_formula_robustness, right_formula_robustness, out=left_formula_robustness), effective_range
 
 class Subtract(STL):
 
@@ -164,8 +170,29 @@ class Subtract(STL):
 
         self.horizon = 0
 
-    def eval(self, traces):
-        return np.subtract(self.formulas[0].eval(traces), self.formulas[1].eval(traces))
+    def eval(self, traces, time=None):
+        left_formula_robustness, _ = self.formulas[0].eval(traces, time)
+        right_formula_robustness, _ = self.formulas[1].eval(traces, time)
+        effective_range = self.range if time is not None else None
+        return np.subtract(left_formula_robustness, right_formula_robustness, out=left_formula_robustness), effective_range
+
+class Multiply(STL):
+
+    def __init__(self, left_formula, right_formula):
+        self.formulas = [left_formula, right_formula]
+        if self.formulas[0].range is None or self.formulas[1].range is None:
+            self.range = None
+        else:
+            A = self.formulas[0].range[0] * self.formulas[1].range[0]
+            B = self.formulas[0].range[1] * self.formulas[1].range[1]
+            self.range = [A, B]
+        self.horizon = 0
+
+    def eval(self, traces, time=None):
+        left_formula_robustness, _ = self.formulas[0].eval(traces, time)
+        right_formula_robustness, _ = self.formulas[1].eval(traces, time)
+        effective_range = self.range if time is not None else None
+        return np.multiply(left_formula_robustness, right_formula_robustness, out=left_formula_robustness), effective_range
 
 class GreaterThan(STL):
 
@@ -185,26 +212,11 @@ class GreaterThan(STL):
 
         self.horizon = 0
 
-    def eval(self, traces):
-        return Subtract(self.formulas[0], self.formulas[1]).eval(traces)
-
-class Multiply(STL):
-
-    def __init__(self, left_formula, right_formula):
-        self.formulas = [left_formula, right_formula]
-        if self.formulas[0].range is None or self.formulas[1].range is None:
-            self.range = None
-        else:
-            A = self.formulas[0].range[0] * self.formulas[1].range[0]
-            B = self.formulas[0].range[1] * self.formulas[1].range[1]
-            self.range = [A, B]
-        self.horizon = 0
-
-    def eval(self, traces):
-        res = []
-        left_formula_robustness = self.formulas[0].eval(traces)
-        right_formula_robustness = self.formulas[1].eval(traces)
-        return left_formula_robustness*right_formula_robustness
+    def eval(self, traces, time=None):
+        left_formula_robustness, _ = self.formulas[0].eval(traces, time)
+        right_formula_robustness, _ = self.formulas[1].eval(traces, time)
+        effective_range = self.range if time is not None else None
+        return np.subtract(left_formula_robustness, right_formula_robustness, out=left_formula_robustness), effective_range
 
 class LessThan(STL):
 
@@ -224,8 +236,11 @@ class LessThan(STL):
 
         self.horizon = 0
 
-    def eval(self, traces):
-        return Subtract(self.formulas[1], self.formulas[0]).eval(traces)
+    def eval(self, traces, time=None):
+        left_formula_robustness, _ = self.formulas[0].eval(traces, time)
+        right_formula_robustness, _ = self.formulas[1].eval(traces, time)
+        effective_range = self.range if time is not None else None
+        return np.subtract(right_formula_robustness, left_formula_robustness, out=right_formula_robustness), effective_range
 
 class Abs(STL):
 
@@ -246,25 +261,10 @@ class Abs(STL):
 
         self.horizon = 0
 
-    def eval(self, traces):
-        return np.abs(self.formulas[0].eval(traces))
-
-class Implication(STL):
-
-    def __init__(self, left_formula, right_formula):
-        self.formulas = [left_formula, right_formula]
-
-        if self.formulas[0].range is None or self.formulas[1].range is None:
-            self.range = None
-        else:
-            A = max(-self.formulas[0].range[1], self.formulas[1].range[0])
-            B = max(-self.formulas[0].range[0], self.formulas[1].range[1])
-            self.range = [A, B]
-
-        self.horizon = max(self.formulas[0].horizon, self.formulas[1].horizon)
-
-    def eval(self, traces):
-        return Or(Not(self.formulas[0]), self.formulas[1]).eval(traces)
+    def eval(self, traces, time=None):
+        formula_robustness, _ = self.formulas[0].eval(traces, time)
+        effective_range = self.range if time is not None else None
+        return np.abs(formula_robustness, out=formula_robustness), effective_range
 
 class Equals(STL):
 
@@ -291,9 +291,106 @@ class Equals(STL):
 
         self.horizon = 0
 
-    def eval(self, traces):
-        robustness = self.formula_robustness.eval(traces)
-        return np.where(robustness == 0, 1, robustness)	
+    def eval(self, traces, time=None):
+        robustness, _ = self.formula_robustness.eval(traces)
+        effective_range = self.range if time is not None else None
+        return np.where(robustness == 0, 1, robustness), effective_range
+
+class Next(STL):
+
+    def __init__(self, formula):
+        self.formulas = [formula]
+        self.range = self.formulas[0].range.copy() if self.formulas[0].range is not None else None
+        self.horizon = 1 + self.formulas[0].horizon
+
+    def eval(self, traces, time=None):
+        formula_robustness, formula_effective_range = self.formulas[0].eval(traces, time)
+        res = np.roll(formula_robustness, -1)
+        return res[:-1], formula_effective_range
+
+class Global(STL):
+
+    def __init__(self, lower_time_bound, upper_time_bound, formula):
+        self.upper_time_bound = upper_time_bound
+        self.lower_time_bound = lower_time_bound
+        self.formulas = [formula]
+        self.range = None if self.formulas[0].range is None else self.formulas[0].range.copy()
+        self.horizon = self.upper_time_bound + self.formulas[0].horizon
+
+    def eval(self, traces, time=None):
+        robustness, formula_effective_range = self.formulas[0].eval(traces, time)
+        result = np.empty(shape=(len(robustness)))
+        # We save the found positions as most often we use integer timestamps and
+        # evenly sampled signals, so this has huge speed benefit.
+        prev_lower_bound_pos = len(traces.timestamps) - 1
+        prev_upper_bound_pos = len(traces.timestamps) - 1
+        prev_min = float("inf")
+        prev_min_idx = len(traces.timestamps)
+        for current_time_pos in range(len(traces.timestamps) - 1, -1, -1):
+            # Lower and upper times for the current time.
+            lower_bound = traces.timestamps[current_time_pos] + self.lower_time_bound
+            upper_bound = traces.timestamps[current_time_pos] + self.upper_time_bound
+
+            # Find the corresponding positions in timestamps.
+            if lower_bound > traces.timestamps[-1]:
+                lower_bound_pos = len(traces.timestamps) - 1
+            else:
+                if traces.timestamps[prev_lower_bound_pos - 1] == lower_bound:
+                    lower_bound_pos = prev_lower_bound_pos - 1
+                else:
+                    lower_bound_pos = traces.search_time_index(lower_bound, start=current_time_pos)
+                    # TODO: This should never happen except for floating point
+                    # inaccuracies. We now raise an exception as otherwise the
+                    # user gets unexpected behavior.
+                    if lower_bound_pos < 0:
+                        raise Exception("No timestamp '{}' found even though it should exist.".format(lower_bound))
+
+            if upper_bound > traces.timestamps[-1]:
+                upper_bound_pos = len(traces.timestamps) - 1
+            else:
+                if traces.timestamps[prev_upper_bound_pos - 1] == upper_bound:
+                    upper_bound_pos = prev_upper_bound_pos - 1
+                else:
+                    upper_bound_pos = traces.search_time_index(upper_bound, start=lower_bound_pos)
+                    # See above.
+                    if upper_bound_pos < 0:
+                        raise Exception("No timestamp '{}' found even though it should exist.".format(upper_bound))
+
+            # Find minimum between the positions.
+            start_pos = lower_bound_pos
+            end_pos = upper_bound_pos + 1
+            # Check if the previous minimum was found in the overlap
+            # between the current search area and the previous one. If so,
+            # then adjust the upper bound by removing the overlap from the
+            # end.
+            if prev_min_idx < end_pos:
+                end_pos -= end_pos - prev_lower_bound_pos
+
+            if start_pos < end_pos:
+                min_idx = start_pos + np.argmin(robustness[start_pos: end_pos])
+                if prev_min_idx > upper_bound_pos or robustness[min_idx] < prev_min:
+                    prev_min_idx = min_idx
+                    prev_min = robustness[min_idx]
+
+            prev_lower_bound_pos = start_pos
+            prev_upper_bound_pos = end_pos - 1
+
+            result[current_time_pos] = prev_min
+
+        return result, formula_effective_range
+
+class Finally(STL):
+
+    def __init__(self, lower_time_bound, upper_time_bound, formula):
+        self.upper_time_bound = upper_time_bound
+        self.lower_time_bound = lower_time_bound
+        self.formulas = [formula]
+        self.formula_robustness = Not(Global(self.lower_time_bound, self.upper_time_bound, Not(self.formulas[0])))
+        self.range = self.formula_robustness.range.copy() if self.formula_robustness.range is not None else None
+        self.horizon = self.upper_time_bound + self.formulas[0].horizon
+
+    def eval(self, traces, time=None):
+        return self.formula_robustness.eval(traces, time)
 
 class Not(STL):
 
@@ -306,66 +403,30 @@ class Not(STL):
 
         self.horizon = self.formulas[0].horizon
 
-    def eval(self, traces):
-        return -1 * self.formulas[0].eval(traces)
+    def eval(self, traces, time=None):
+        formula_robustness, formula_effective_range = self.formulas[0].eval(traces, time)
+        if formula_effective_range is not None:
+            effective_range = [-formula_effective_range[1], -formula_effective_range[0]]
+        else:
+            effective_range = None
+        return np.multiply(-1, formula_robustness, out=formula_robustness), effective_range
 
-class Next(STL):
+class Implication(STL):
 
-    def __init__(self, formula):
-        self.formulas = [formula]
-        self.range = self.formulas[0].range.copy() if self.formulas[0].range is not None else None
-        self.horizon = 1 + self.formulas[0].horizon
+    def __init__(self, left_formula, right_formula):
+        self.formulas = [left_formula, right_formula]
 
-    def eval(self, traces):
-        formula_robustness = self.formulas[0].eval(traces)
-        res = np.roll(formula_robustness, -1)
-        return res[:-1]
+        if self.formulas[0].range is None or self.formulas[1].range is None:
+            self.range = None
+        else:
+            A = max(-self.formulas[0].range[1], self.formulas[1].range[0])
+            B = max(-self.formulas[0].range[0], self.formulas[1].range[1])
+            self.range = [A, B]
 
-class Global(STL):
+        self.horizon = max(self.formulas[0].horizon, self.formulas[1].horizon)
 
-    def __init__(self, lower_time_bound, upper_time_bound, formula):
-        self.upper_time_bound = upper_time_bound
-        self.lower_time_bound = lower_time_bound
-        self.formulas = [formula]
-        self.range = None if self.formulas[0].range is None else self.formulas[0].range.copy()
-        self.horizon = self.upper_time_bound + self.formulas[0].horizon
-
-    def eval(self, traces):
-        robustness = self.formulas[0].eval(traces)
-        result = np.empty(shape=(len(robustness)))
-        for current_time_pos in range(len(traces.timestamps) - 1, -1, -1):
-            # Lower and upper times for the current time.
-            lower_bound = traces.timestamps[current_time_pos] + self.lower_time_bound
-            upper_bound = traces.timestamps[current_time_pos] + self.upper_time_bound
-
-            # Find the corresponding positions in timestamps.
-            lower_bound_pos = traces.search_time_index(lower_bound, start=current_time_pos)
-            upper_bound_pos = traces.search_time_index(upper_bound, start=lower_bound_pos)
-
-            # Find minimum between the positions.
-            if lower_bound_pos == -1:
-                r = float("inf")
-            else:
-                start_pos = lower_bound_pos
-                end_pos = upper_bound_pos + 1 if upper_bound_pos >= 0 else len(traces.timestamps)
-                r = np.min(robustness[start_pos: end_pos])
-
-            result[current_time_pos] = r
-
-        return result
-
-class Finally(STL):
-
-    def __init__(self, lower_time_bound, upper_time_bound, formula):
-        self.upper_time_bound = upper_time_bound
-        self.lower_time_bound = lower_time_bound
-        self.formulas = [formula]
-        self.formula_robustness = Not(Global(self.lower_time_bound, self.upper_time_bound, Not(self.formulas[0])))
-        self.range = self.formula_robustness.range.copy() if self.formula_robustness.range is not None else None
-        self.horizon = self.upper_time_bound + self.formulas[0].horizon
-
-    def eval(self, traces):
-        return self.formula_robustness.eval(traces)
+    def eval(self, traces, time=None):
+        return Or(Not(self.formulas[0]), self.formulas[1]).eval(traces, time)
 
 class Or(STL):
 
@@ -377,8 +438,8 @@ class Or(STL):
         self.range = self.formula_robustness.range.copy() if self.formula_robustness.range is not None else None
         self.horizon = self.formula_robustness.horizon
 
-    def eval(self, traces):
-        return self.formula_robustness.eval(traces)
+    def eval(self, traces, time=None):
+        return self.formula_robustness.eval(traces, time)
 
 class And(STL):
 
@@ -398,27 +459,34 @@ class And(STL):
         else:
             self.range = (min(A), min(B))
 
-    def eval(self, traces):
+    def eval(self, traces, time=None):
         if self.nu is None:
-            return self._eval_traditional(traces)
+            return self._eval_traditional(traces, time)
         else:
-            return self._eval_alternative(traces, self.nu)
+            return self._eval_alternative(traces, self.nu, time)
 
-    def _eval_traditional(self, traces):
+    def _eval_traditional(self, traces, time=None):
         """This is the usual and."""
 
         # Evaluate the robustness of all subformulas and save the robustness
         # signals into one 2D array.
         M = len(self.formulas)
         for i in range(M):
-            r = self.formulas[i].eval(traces)
+            r, effective_range = self.formulas[i].eval(traces, time)
             if i == 0:
                 rho = np.empty(shape=(M, len(r)))
+                effective_ranges = []
             rho[i,:] = r
+            effective_ranges.append(effective_range)
 
-        return np.min(rho, axis=0)
+        if time is not None:
+            idx = np.argmin(rho[:,time])
+            effective_range = effective_ranges[idx]
+        else:
+            effective_range = None
+        return np.min(rho, axis=0), effective_range
 
-    def _eval_alternative(self, traces, nu):
+    def _eval_alternative(self, traces, nu, time=None):
         """This is the alternative and."""
 
         # Evaluate the robustness of all subformulas and save the robustness

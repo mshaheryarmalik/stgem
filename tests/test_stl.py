@@ -6,6 +6,7 @@ import pandas as pd
 from stgem.sut import SUT, SUTInput, SUTOutput
 from stgem.objective.objective import FalsifySTL
 import stl.robustness as STL
+import stl.parser as Parser
 
 class DummySUT(SUT):
     def __init__(self, odim, outputs):
@@ -19,7 +20,26 @@ class DummySUT(SUT):
 
 class TestSTL(unittest.TestCase):
 
-    def get(self, specification, variables, sut_input, sut_output, ranges=None, scale=False, strict_horizon_check=True):
+    def get_with_range(self, specification, timestamps, signals, ranges, time):
+        spec = Parser.parse(specification, ranges=ranges)
+
+        formula_variables = []
+        for node in spec:
+            if isinstance(node, STL.Signal) and node.name not in formula_variables:
+                formula_variables.append(node.name)
+
+        args = []
+        for var in formula_variables:
+            args.append(var)
+            args.append(timestamps)
+            args.append(signals[var])
+
+        trajectories = STL.Traces.from_mixed_signals(*args, sampling_period=1/10)
+        robustness_signal, effective_range = spec.eval(trajectories, time=time)
+
+        return robustness_signal[0], effective_range
+
+    def get(self, specification, variables, sut_input, sut_output, ranges=None, time=None, scale=False, strict_horizon_check=True):
         sut = DummySUT(len(variables), variables)
         objective = FalsifySTL(specification, ranges=ranges, scale=scale, strict_horizon_check=strict_horizon_check)
         objective.setup(sut)
@@ -136,6 +156,22 @@ class TestSTL(unittest.TestCase):
 
         robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), ranges=ranges, scale=scale)
         assert objective.specification.range == [-800, 4500]
+
+        # Test effective ranges.
+        # ---------------------------------------------------------------------
+        specification = "s1 and s2"
+        signals = {"s1": s1, "s2": s2}
+
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
+        assert effective_range == [0, 200]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10)
+        assert effective_range == [-200, 4500]
+
+        specification = "3*s1 or (3*s1 <= s2)"
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
+        assert effective_range == [-800, 4500]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10)
+        assert effective_range == [0, 600]
 
 if __name__ == "__main__":
     unittest.main()
