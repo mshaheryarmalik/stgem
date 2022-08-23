@@ -113,7 +113,7 @@ def build_specification(selected_specification, mode=None):
     elif selected_specification.startswith("ATX1"):
         G = int(selected_specification[-1])
         # Only for G == 3 or G == 4.
-        specification = "always[0,30]( (GEAR == {}) -> (SPEED > 10*{}) )".format(G)
+        specification = "always[0,30]( (GEAR == {0}) -> (SPEED > 10*{0}) )".format(G)
 
         specifications = [specification]
         strict_horizon_check = True

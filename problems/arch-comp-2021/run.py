@@ -1,4 +1,6 @@
 import importlib, os, sys
+from stgem.sut.matlab.sut import Matlab
+from stgem.sut.matlab.sut import Matlab_Simulink
 
 import click
 
@@ -29,8 +31,15 @@ def get_seed_factory(init_seed=0):
     return lambda: next(g)
 
 def get_sut_objective_factory(benchmark_module, selected_specification, mode):
-    sut_parameters, _, _ = benchmark_module.build_specification(selected_specification, mode)
-    sut = Matlab_Simulink(sut_parameters)
+    sut_parameters, specifications, strict_horizon_check = benchmark_module.build_specification(selected_specification, mode)
+    simulink_benchmarks = ["AT", "CC"]
+    simulink_specifications = []
+    for b in simulink_benchmarks:
+        simulink_specifications += specification_names[b]
+    if selected_specification in simulink_specifications:
+        sut = Matlab_Simulink(sut_parameters)
+    else:
+        sut = Matlab(sut_parameters)
     ranges = {}
     for n in range(len(sut_parameters["input_range"])):
         ranges[sut_parameters["inputs"][n]] = sut_parameters["input_range"][n]
@@ -69,7 +78,7 @@ descriptions = {
         "NN":  "Neural-Network Controller",
         "SC":  "Steam Condenser with Recurrent Neural Network Controller"
 }
-specifications = {
+specification_names = {
         "AFC": ["AFC27", "AFC29"],
         "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX13", "ATX14", "ATX1", "ATX2", "ATX61", "ATX62"],
         "CC":  ["CC1", "CC2", "CC3", "CC4", "CC5", "CCX"],
@@ -97,10 +106,10 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
     N = n
 
     # Disable CUDA if multiprocessing is used.
-    if N > 1 and  N_workers[selected_benchmark] > 1:
+    if N > 1 and N_workers[selected_benchmark] > 1:
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-    if not selected_specification in specifications[selected_benchmark]:
+    if not selected_specification in specification_names[selected_benchmark]:
         raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
 
     def callback(idx, result, done):

@@ -1,4 +1,4 @@
-import stgem.objective.Robustness as STL
+import stl.robustness as STL
 
 
 from stgem.algorithm.ogan.algorithm import OGAN
@@ -23,28 +23,6 @@ ogan_parameters = {"fitness_coef": 0.95,
                    }
 
 ogan_model_parameters = {
-    "dense": {
-        "optimizer": "Adam",
-        "discriminator_lr": 0.005,
-        "discriminator_betas": [0.9, 0.999],
-        "generator_lr": 0.0010,
-        "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 512,
-        "generator_loss": "MSE",
-        "discriminator_loss": "MSE",
-        "generator_mlm": "GeneratorNetwork",
-        "generator_mlm_parameters": {
-            "noise_dim": 20,
-            "neurons": 64
-        },
-        "discriminator_mlm": "DiscriminatorNetwork",
-        "discriminator_mlm_parameters": {
-            "neurons": 64,
-            "discriminator_output_activation": "sigmoid"
-        },
-        "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
-        "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32}
-    },
     "convolution": {
         "optimizer": "Adam",
         "discriminator_lr": 0.005,
@@ -71,7 +49,7 @@ ogan_model_parameters = {
     }
 }
 
-def build_specification(selected_specification, mode=None, asut=None):
+def build_specification(selected_specification, mode=None):
     """Builds a specification object and a SUT for the selected specification.
     In addition, returns if scaling and strict horizon check should be used for
     the specification. A previously created SUT can be passed as an argument,
@@ -92,27 +70,15 @@ def build_specification(selected_specification, mode=None, asut=None):
                       "sampling_step": 0.5
                      }
 
-    # We allow reusing the SUT for memory conservation (Matlab takes a lot of
-    # memory).
-    if asut is None:
-        asut = Matlab(sut_parameters)
-
-    scale = True
-    S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "SC":
-        # always[30,35](87 <= pressure <= 87.5)
-        L = STL.LessThan(STL.Constant(87), S("PRESSURE"))
-        R = STL.LessThan(S("PRESSURE"),STL.Constant(87.5))
-        inequality = STL.And(L, R)
-        specification = STL.Global(30, 35, inequality)
+        specification = "always[30,35](87 <= PRESSURE and PRESSURE <= 87.5)"
 
         specifications = [specification]
         strict_horizon_check = True
-        epsilon = 0
     else:
         raise Exception("Unknown specification '{}'.".format(selected_specification))
 
-    return asut, specifications, scale, strict_horizon_check, epsilon
+    return sut_parameters, specifications, strict_horizon_check
 
 def objective_selector_factory():
     objective_selector = ObjectiveSelectorAll()

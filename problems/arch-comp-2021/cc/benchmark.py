@@ -1,4 +1,4 @@
-import stgem.objective.Robustness as STL
+import stl.robustness as STL
 
 
 from stgem.algorithm.ogan.algorithm import OGAN
@@ -21,28 +21,6 @@ ogan_parameters = {"fitness_coef": 0.95,
                    }
 
 ogan_model_parameters = {
-    "dense": {
-        "optimizer": "Adam",
-        "discriminator_lr": 0.005,
-        "discriminator_betas": [0.9, 0.999],
-        "generator_lr": 0.0010,
-        "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 512,
-        "generator_loss": "MSE",
-        "discriminator_loss": "MSE",
-        "generator_mlm": "GeneratorNetwork",
-        "generator_mlm_parameters": {
-            "noise_dim": 20,
-            "neurons": 64
-        },
-        "discriminator_mlm": "DiscriminatorNetwork",
-        "discriminator_mlm_parameters": {
-            "neurons": 64,
-            "discriminator_output_activation": "sigmoid"
-        },
-        "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
-        "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32}
-    },
     "convolution": {
         "optimizer": "Adam",
         "discriminator_lr": 0.005,
@@ -69,7 +47,7 @@ ogan_model_parameters = {
     }
 }
 
-def build_specification(selected_specification, mode=None, asut=None):
+def build_specification(selected_specification, mode=None):
     """Builds a specification object and a SUT for the selected specification.
     In addition, returns if scaling and strict horizon check should be used for
     the specification. A previously created SUT can be passed as an argument,
@@ -86,74 +64,52 @@ def build_specification(selected_specification, mode=None, asut=None):
                       "time_slices": [5, 5],
                       "sampling_step": 0.5
                      }
-    # We allow reusing the SUT for memory conservation (Matlab takes a lot of
-    # memory).
-    if asut is None:
-        asut = Matlab_Simulink(sut_parameters)
 
     # Some ARCH-COMP specifications have requirements whose horizon is longer than
     # the output signal for some reason. Thus strict horizon check needs to be
     # disabled in some cases.
-    scale = True
-    S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "CC1":
-        # always[0,100]( y5 - y4 <= 40 )
-        specification = STL.Global(11, 50, STL.LessThan(STL.Subtract(S("Y5"),S("Y4")),STL.Constant(40)))
-        
+        specification = "always[0,100]( Y5 - Y4 <= 40 )"
+
         specifications = [specification]
         strict_horizon_check = True
-        epsilon = 0.01
     elif selected_specification == "CC2":
-        # always[0,70]( eventually[0,30]( y5 - y4 >= 15 ) )
-        specification = STL.Global(0, 70, STL.Finally(0, 30, STL.GreaterThan(STL.Subtract(S("Y5"),S("Y4")),STL.Constant(15))))
+        specification = "always[0,70]( eventually[0,30]( Y5 - Y4 >= 15 ) )"
+
         specifications = [specification]
         strict_horizon_check = True
-        epsilon = 0.01
     elif selected_specification == "CC3":
-        # always[0,80]( (always[0,20]( y2 - y1 <= 20 )) or (eventually[0,20]( y5 - y4 >= 40 )) )
-
-        L = STL.Global(0, 20, STL.LessThan(STL.Subtract(S("Y2"),S("Y1")),STL.Constant(20)))
-        R = STL.STL.Finally(0, 20, STL.GreaterThan(STL.Subtract(S("Y5"),S("Y4")),STL.Constant(40)))
-        specification = STL.Global(0, 80, STL.And(L, R))
+        specification = "always[0,80]( (always[0,20]( Y2 - Y1 <= 20 )) or (eventually[0,20]( Y5 - Y4 >= 40 )) )"
 
         specifications = [specification]
         strict_horizon_check = True
-        epsilon = 0.01
     elif selected_specification == "CC4":
-        # always[0,65]( eventually[0,30]( always[0,20]( y5 - y4 >= 8 ) ) )
-        specification = STL.Global(0, 65, STL.Finally(0, 30, STL.Global(0, 20, STL.GreaterThan(STL.Subtract(S("Y5"),S("Y4")),STL.Constant(8)))))
+        specification = "always[0,65]( eventually[0,30]( always[0,20]( Y5 - Y4 >= 8 ) ) )"
 
         specifications = [specification]
         strict_horizon_check = False
-        epsilon = 0.01
     elif selected_specification == "CC5":
-        # always[0,72]( eventually[0,8]( always[0,5]( y2 - y1 >= 9 ) implies always[5,20]( y5 - y4 >= 9 ) ) )
-        L = STL.Global(0, 5, STL.GreaterThan(STL.Subtract(S("Y2"),S("Y1")),STL.Constant(20)))
-        R = STL.Global(5, 20, STL.GreaterThan(STL.Subtract(S("Y5"),S("Y4")),STL.Constant(9)))
-        specification = STL.Global(0, 72, STL.Finally(0, 8, STL.Implication(L, R)))
+        specification = "always[0,72]( eventually[0,8]( always[0,5]( Y2 - Y1 >= 9 ) implies always[5,20]( Y5 - Y4 >= 9 ) ) )"
 
         specifications = [specification]
         strict_horizon_check = True
-        epsilon = 0.01
     elif selected_specification == "CCX":
-        # always[0,50]( y2 - y1 > 7.5 ) and always[0,50]( y3 - y2 > 7.5 ) and always[0,50]( y4 - y3 > 7.5 ) and always[0,50]( y5 - y4 > 7.5 )
         def getSpecification(N):
-            return STL.Global(0, 50, STL.GreaterThan(STL.Subtract(S("Y{}".format(N+1)),S("Y{}".format(N))),STL.Constant(7.5)))
+            return "always[0, 50](Y{} - Y{} > 7.5)".format(N+1, N)
 
         F1 = getSpecification(1)
         F2 = getSpecification(2)
         F3 = getSpecification(3)
         F4 = getSpecification(4)
-        specification = STL.And(F1, F2, F3, F4)
+        specification = "{} and {} and {} and {}".format(F1, F2, F3, F4)
 
         #specifications = [specification]
         specifications = [F1, F2, F3, F4]
         strict_horizon_check = True
-        epsilon = 0.01
     else:
         raise Exception("Unknown specification '{}'.".format(selected_specification))
 
-    return asut, specifications, scale, strict_horizon_check, epsilon
+    return sut_parameters, specifications, strict_horizon_check
 
 def objective_selector_factory():
     objective_selector = ObjectiveSelectorAll()
