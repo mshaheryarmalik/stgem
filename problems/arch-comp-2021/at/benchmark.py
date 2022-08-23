@@ -6,7 +6,6 @@ from stgem.algorithm.wogan.algorithm import WOGAN
 from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.generator import Search
 from stgem.objective_selector import ObjectiveSelectorAll, ObjectiveSelectorMAB
-import stgem.objective.Robustness as STL
 from stgem.sut.matlab.sut import Matlab_Simulink
 
 mode = "stop_at_first_objective"
@@ -80,7 +79,7 @@ def build_specification(selected_specification, mode=None):
         strict_horizon_check = True
     elif selected_specification.startswith("AT5"):
         G = int(selected_specification[-1])
-        specification = "always[0,30]( ( not(GEAR == {0}) and (eventually[0.001,0.1](GEAR == {0})) ) -> ( eventually[0.001,0.1]( always[0,2.5](GEAR == {0}) ) ) )".format(G)
+        specification = "always[0,30]( ( GEAR != {0} and (eventually[0.001,0.1](GEAR == {0})) ) -> ( eventually[0.001,0.1]( always[0,2.5](GEAR == {0}) ) ) )".format(G)
 
         specifications = [specification]
         strict_horizon_check = False
@@ -98,7 +97,7 @@ def build_specification(selected_specification, mode=None):
                 UB = 20
                 SL = 65
               
-            return specification = "always[0,30](RPM < 3000)) -> (always[0,{0}](SPEED < {1})".format(UB, SL)
+            return "always[0,30](RPM < 3000) -> always[0,{0}](SPEED < {1})".format(UB, SL)
 
         if selected_specification.endswith("ABC"):
             specification = "({}) and ({}) and ({})".format(getSpecification("A"), getSpecification("B"), getSpecification("C"))
