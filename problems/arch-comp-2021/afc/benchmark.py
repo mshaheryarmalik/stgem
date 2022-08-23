@@ -74,7 +74,7 @@ def build_specification(selected_specification, afc_mode="normal"):
     if selected_specification == "AFC27":
         rise = "(THROTTLE < 8.8) and (eventually[0,0.05](THROTTLE > 40.0))"
         fall = "(THROTTLE > 40.0) and (eventually[0,0.05](THROTTLE < 8.8))"
-        specification = "always[11,50](({} or {}) -> always[1,5](|MU| < 0.008)".format(rise, fall)
+        specification = "always[11,50](({} or {}) -> always[1,5](|MU| < 0.008))".format(rise, fall)
 
         specifications = [specification]
         strict_horizon_check = False

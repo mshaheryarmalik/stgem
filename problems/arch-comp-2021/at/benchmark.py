@@ -97,7 +97,7 @@ def build_specification(selected_specification, mode=None):
                 UB = 20
                 SL = 65
               
-            return "always[0,30](RPM < 3000)) -> (always[0,{0}](SPEED < {1})".format(UB, SL)
+            return "(always[0,30](RPM < 3000)) -> (always[0,{0}](SPEED < {1}))".format(UB, SL)
 
         if selected_specification.endswith("ABC"):
             specification = "({}) and ({}) and ({})".format(getSpecification("A"), getSpecification("B"), getSpecification("C"))

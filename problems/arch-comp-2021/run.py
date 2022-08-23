@@ -83,12 +83,12 @@ specification_names = {
         "SC":  ["SC"]
 }
 N_workers = {
-        "AFC": 1,
-        "AT": 1,
-        "CC": 1,
-        "F16": 1,
-        "NN": 1,
-        "SC": 1
+        "AFC": 3,
+        "AT": 3,
+        "CC": 4,
+        "F16": 2,
+        "NN": 3,
+        "SC": 2
 }
 
 @click.command()
