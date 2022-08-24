@@ -49,7 +49,8 @@ def build_specification(selected_specification, mode=None):
     the specification. A previously created SUT can be passed as an argument,
     and then it will be reused."""
 
-    sut_parameters = {"model_file": "at/Autotrans_shift",
+    sut_parameters = {"type": "simulink",
+                      "model_file": "at/Autotrans_shift",
                       "input_type": "piecewise constant signal",
                       "output_type": "signal",
                       "inputs": ["THROTTLE", "BRAKE"],

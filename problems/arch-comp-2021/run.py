@@ -32,14 +32,12 @@ def get_seed_factory(init_seed=0):
 
 def get_sut_objective_factory(benchmark_module, selected_specification, mode):
     sut_parameters, specifications, strict_horizon_check = benchmark_module.build_specification(selected_specification, mode)
-    simulink_benchmarks = ["AT", "CC"]
-    simulink_specifications = []
-    for b in simulink_benchmarks:
-        simulink_specifications += specification_names[b]
-    if selected_specification in simulink_specifications:
+
+    if "type" in sut_parameters and sut_parameters["type"] == "simulink":
         sut = Matlab_Simulink(sut_parameters)
     else:
         sut = Matlab(sut_parameters)
+
     ranges = {}
     for n in range(len(sut_parameters["input_range"])):
         ranges[sut_parameters["inputs"][n]] = sut_parameters["input_range"][n]
@@ -78,7 +76,7 @@ descriptions = {
         "NN":  "Neural-Network Controller",
         "SC":  "Steam Condenser with Recurrent Neural Network Controller"
 }
-specification_names = {
+specifications = {
         "AFC": ["AFC27", "AFC29"],
         "AT":  ["AT1", "AT2", "AT51", "AT52", "AT53", "AT54", "AT6A", "AT6B", "AT6C", "AT6ABC", "ATX13", "ATX14", "ATX1", "ATX2", "ATX61", "ATX62"],
         "CC":  ["CC1", "CC2", "CC3", "CC4", "CC5", "CCX"],
@@ -109,7 +107,7 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
     if N > 1 and N_workers[selected_benchmark] > 1:
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-    if not selected_specification in specification_names[selected_benchmark]:
+    if not selected_specification in specifications[selected_benchmark]:
         raise Exception("No specification '{}' for benchmark {}.".format(selected_specification, selected_benchmark))
 
     def callback(idx, result, done):
