@@ -193,10 +193,9 @@ class FalsifySTL(Objective):
         #robustness = robustness_signal[0]
 
         traces = STL.Traces(timestamps, trajectories)
-        robustness_signal, effective_range = self.specification.eval(traces, time=0)
-        robustness = robustness_signal[0]
+        robustness_signal, effective_range_signal = self.specification.eval(traces)
 
-        return robustness, effective_range
+        return robustness_signal[0], effective_range_signal[0] if effective_range_signal is not None else None
 
     def _evaluate_signal(self, test, result):
         input_timestamps = test.input_timestamps
@@ -246,13 +245,12 @@ class FalsifySTL(Objective):
         # Adjust time bounds.
         self.adjust_time_bounds()
 
-        robustness_signal, effective_range = self.specification.eval(trajectories, time=0)
-        robustness = robustness_signal[0]
+        robustness_signal, effective_range_signal = self.specification.eval(trajectories)
 
         # Reset time bounds. This allows reusing the specifications.
         self.reset_time_bounds()
 
-        return robustness, effective_range
+        return robustness_signal[0], effective_range_signal[0] if effective_range_signal is not None else None
 
     def __call__(self, t, r):
         if r.output_timestamps is None:

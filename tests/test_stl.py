@@ -35,9 +35,9 @@ class TestSTL(unittest.TestCase):
             args.append(signals[var])
 
         trajectories = STL.Traces.from_mixed_signals(*args, sampling_period=1/10)
-        robustness_signal, effective_range = spec.eval(trajectories, time=time)
+        robustness_signal, effective_range = spec.eval(trajectories)
 
-        return robustness_signal[0], effective_range
+        return robustness_signal[time], effective_range[time]
 
     def get(self, specification, variables, sut_input, sut_output, ranges=None, time=None, scale=False, strict_horizon_check=True):
         sut = DummySUT(len(variables), variables)
@@ -163,15 +163,15 @@ class TestSTL(unittest.TestCase):
         signals = {"s1": s1, "s2": s2}
 
         robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
-        assert effective_range == [0, 200]
+        assert (effective_range == np.array([0, 200])).all()
         robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10)
-        assert effective_range == [-200, 4500]
+        assert (effective_range == [-200, 4500]).all()
 
         specification = "3*s1 or (3*s1 <= s2)"
         robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
-        assert effective_range == [-800, 4500]
+        assert (effective_range == [-800, 4500]).all()
         robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10)
-        assert effective_range == [0, 600]
+        assert (effective_range == [0, 600]).all()
 
 if __name__ == "__main__":
     unittest.main()
