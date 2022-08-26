@@ -20,13 +20,20 @@ class DummySUT(SUT):
 
 class TestSTL(unittest.TestCase):
 
-    def get_with_range(self, specification, timestamps, signals, ranges, time):
-        spec = Parser.parse(specification, ranges=ranges)
+    def get_with_range(self, specification, timestamps, signals, ranges, time, nu=None):
+        spec = Parser.parse(specification, ranges=ranges, nu=nu)
 
         formula_variables = []
+        time_bounded = []
         for node in spec:
             if isinstance(node, STL.Signal) and node.name not in formula_variables:
                 formula_variables.append(node.name)
+
+            if isinstance(node, STL.Global):
+                time_bounded.append(node)
+            if isinstance(node, STL.Finally):
+                time_bounded.append(node)
+                time_bounded.append(node.formula_robustness.formulas[0])
 
         args = []
         for var in formula_variables:
@@ -34,14 +41,27 @@ class TestSTL(unittest.TestCase):
             args.append(timestamps)
             args.append(signals[var])
 
-        trajectories = STL.Traces.from_mixed_signals(*args, sampling_period=1/10)
+        # Adjust time bounds to integers.
+        sampling_period = 1/10
+        for x in time_bounded:
+            x.old_lower_time_bound = x.lower_time_bound
+            x.old_upper_time_bound = x.upper_time_bound
+            x.lower_time_bound = int(x.lower_time_bound / sampling_period)
+            x.upper_time_bound = int(x.upper_time_bound / sampling_period)
+
+        trajectories = STL.Traces.from_mixed_signals(*args, sampling_period=sampling_period)
         robustness_signal, effective_range = spec.eval(trajectories)
+
+        # Reset time bounds.
+        for x in time_bounded:
+            x.lower_time_bound = x.old_lower_time_bound
+            x.upper_time_bound = x.old_upper_time_bound
 
         return robustness_signal[time], effective_range[time]
 
-    def get(self, specification, variables, sut_input, sut_output, ranges=None, time=None, scale=False, strict_horizon_check=True):
+    def get(self, specification, variables, sut_input, sut_output, ranges=None, time=None, scale=False, strict_horizon_check=True, nu=None):
         sut = DummySUT(len(variables), variables)
-        objective = FalsifySTL(specification, ranges=ranges, scale=scale, strict_horizon_check=strict_horizon_check)
+        objective = FalsifySTL(specification, ranges=ranges, scale=scale, strict_horizon_check=strict_horizon_check, nu=nu)
         objective.setup(sut)
         return objective(sut_input, sut_output), objective
 
@@ -172,6 +192,59 @@ class TestSTL(unittest.TestCase):
         assert (effective_range == [-800, 4500]).all()
         robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10)
         assert (effective_range == [0, 600]).all()
+
+        specification = "always[3,4] (s1 and s2)"
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
+        assert (effective_range == [-200, 4500]).all()
+
+        # Test alternative robustness.
+        # ---------------------------------------------------------------------
+        specification = "s1 and s2"
+        variables = ["s1", "s2"]
+
+        eps = 1e-4
+
+        correct_robustness = 100.0
+        correct_interval = [-1.55622645e-17, 2.00000000e+02]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0, nu=1)
+        assert robustness == correct_robustness
+        assert abs(effective_range[0] - correct_interval[0]) < eps and abs(effective_range[1] - correct_interval[1]) < eps
+        correct_robustness = 118.87703343990728
+        correct_interval = [-124.49186624, 2876.57512417]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        assert abs(effective_range[0] - correct_interval[0]) < eps and abs(effective_range[1] - correct_interval[1]) < eps
+        correct_robustness = 0
+        correct_interval = [0, 0]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=20, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        assert abs(effective_range[0] - correct_interval[0]) < eps and abs(effective_range[1] - correct_interval[1]) < eps
+        correct_robustness = -95.07160938995717
+        correct_interval = [-189.56928738, 4275.73967876]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=40, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        assert abs(effective_range[0] - correct_interval[0]) < eps and abs(effective_range[1] - correct_interval[1]) < eps
+
+        # Test alternative robustness nonassociativity.
+        # ---------------------------------------------------------------------
+        specification = "s1 and s2 and s1/3"
+        ranges = {"s1": [0.5, 200], "s2": [-200, 4500]}
+
+        correct_robustness = 71.23948086977792
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        correct_robustness = -4.998798729741061
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=50, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+
+        specification = "s1 and (s2 and s1/3)"
+
+        correct_robustness = 81.06600514116339
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        correct_robustness = -4.998798729743643
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=50, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
 
 if __name__ == "__main__":
     unittest.main()

@@ -216,6 +216,33 @@ class Multiply(STL):
         right_formula_robustness, _ = self.formulas[1].eval(traces, return_effective_range=False)
         return np.multiply(left_formula_robustness, right_formula_robustness, out=left_formula_robustness), effective_range_signal
 
+class Divide(STL):
+
+    def __init__(self, left_formula, right_formula):
+        self.formulas = [left_formula, right_formula]
+        if self.formulas[0].range is None or self.formulas[1].range is None:
+            self.range = None
+        else:
+            if self.formulas[1].range[1] == 0:
+                raise Exception("Cannot determine a finite range for division as the right formula upper bound is 0.")
+            if self.formulas[1].range[0] == 0:
+                raise Exception("Cannot determine a finite range for division as the right formula lower bound is 0.")
+            A = self.formulas[0].range[0] / self.formulas[1].range[1]
+            B = self.formulas[0].range[1] / self.formulas[1].range[0]
+            self.range = [A, B]
+        self.horizon = 0
+
+    def eval(self, traces, return_effective_range=True):
+        if return_effective_range and self.range is not None:
+            effective_range_signal = np.empty(shape=(len(traces.timestamps), 2))
+            effective_range_signal[:] = np.array([self.range[0], self.range[1]]).reshape(1, 2)
+        else:
+            effective_range_signal = None
+
+        left_formula_robustness, _ = self.formulas[0].eval(traces, return_effective_range=False)
+        right_formula_robustness, _ = self.formulas[1].eval(traces, return_effective_range=False)
+        return np.divide(left_formula_robustness, right_formula_robustness, out=left_formula_robustness), effective_range_signal
+
 class GreaterThan(STL):
 
     def __init__(self, left_formula, right_formula):
@@ -605,7 +632,7 @@ class And(STL):
                 if ranges_initialized:
                     range_signal[i,0] = np.dot(weights, bounds[:,i,0]) / np.sum(weights)
                     range_signal[i,1] = np.dot(weights, bounds[:,i,1]) / np.sum(weights)
-        
+
         return robustness, range_signal if ranges_initialized else None
 
 # TODO: Implement these.

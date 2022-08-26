@@ -208,7 +208,7 @@ class stlParserVisitor(ParseTreeVisitor):
         if operator == "*":
             return Multiply(signal1, signal2)
         elif operator == "/":
-            raise NotImplementedError
+            return Divide(signal1, signal2)
 
 
     # Visit a parse tree produced by stlParser#interval.
