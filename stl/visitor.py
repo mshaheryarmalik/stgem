@@ -108,7 +108,12 @@ class stlParserVisitor(ParseTreeVisitor):
         else:
             formulas.append(phi2)
 
-        return And(*formulas)
+        if hasattr(self, "nu"):
+            nu = self.nu
+        else:
+            nu = None
+
+        return And(*formulas, nu=nu)
 
 
     # Visit a parse tree produced by stlParser#opNextExpr.
@@ -141,7 +146,12 @@ class stlParserVisitor(ParseTreeVisitor):
         else:
             formulas.append(phi2)
 
-        return Or(*formulas)
+        if hasattr(self, "nu"):
+            nu = self.nu
+        else:
+            nu = None
+
+        return Or(*formulas, nu=nu)
 
 
     # Visit a parse tree produced by stlParser#opNegExpr.

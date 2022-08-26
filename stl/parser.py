@@ -5,7 +5,7 @@ from stl.stlLexer import stlLexer as Lexer
 from stl.stlParser import stlParser as Parser
 from stl.visitor import stlParserVisitor as Visitor
 
-def parse(phi, ranges=None):
+def parse(phi, ranges=None, nu=None):
     """ parses a specification requirement into an equivalent STL structure
 
     Attributes:
@@ -22,5 +22,7 @@ def parse(phi, ranges=None):
     tree = parser.stlSpecification()
     visitor = Visitor()
     visitor.ranges = ranges
+    visitor.nu = nu
 
     return visitor.visit(tree)  # type: ignore
+

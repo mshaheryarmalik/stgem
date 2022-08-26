@@ -368,7 +368,7 @@ class Global(STL):
         formula_robustness, formula_effective_range_signal = self.formulas[0].eval(traces, return_effective_range)
         robustness = np.empty(shape=(len(formula_robustness)))
         if return_effective_range and formula_effective_range_signal is not None:
-            effective_range_signal = np.empty(shape=(len(formula_effective_range_signal)))
+            effective_range_signal = np.empty(shape=(len(formula_effective_range_signal), 2))
         # We save the found positions as most often we use integer timestamps and
         # evenly sampled signals, so this has huge speed benefit.
         prev_lower_bound_pos = len(traces.timestamps) - 1
@@ -557,7 +557,7 @@ class And(STL):
         for i in range(M):
             formula_robustness, formula_range_signal = self.formulas[i].eval(traces, return_effective_range)
             if i == 0:
-                rho = np.empty(shape=(M, len(r)))
+                rho = np.empty(shape=(M, len(formula_robustness)))
                 if return_effective_range and formula_range_signal is not None:
                     bounds = np.empty(shape=(M, formula_range_signal.shape[0], 2))
                     ranges_initialized = True
@@ -580,55 +580,67 @@ class And(STL):
             # x-axis in advance? Does it use potentially much memory for no
             # speedup?
             j = rho_argmin[i]
-            rho_tilde = rho[:,i]/rho[j,i] - 1
 
-            if rho_min[i] < 0:
-                # Robustness.
-                r_numerator = rho[j,i] * np.sum(np.exp((1+nu) * rho_tilde))
-                r_denominator = np.sum(np.exp(nu * rho_tilde))
-                # Effective range.
-                if ranges_initialized:
-                    lb_min = bounds[j,i,0]
-                    ub_min = bounds[j,i,1]
-
-                    bound_tilde = bounds[:,i,1]/lb_min - 1
-                    lb_denominator = np.sum(np.exp(nu * bound_tilde))
-                    ub_numerator = ub_min * np.sum(np.exp((1+nu) * bound_tilde))
-
-                    bound_tilde = np.maximum(bounds[:,i,0], np.full(M, ub_min))/ub_min - 1
-                    lb_numerator = lb_min * np.sum(np.exp((1+nu) * bound_tilde))
-                    ub_denominator = np.sum(np.exp(nu * bound_tilde))
-            elif rho_min[i] > 0:
-                # Robustness.
-                r_numerator = np.sum(np.multiply(rho[:,i], np.exp(-nu * rho_tilde)))
-                r_denominator = np.sum(np.exp(-1 * nu * rho_tilde))
-                # Effective range.
-                if ranges_initialized:
-                    lb_min = bounds[j,i,0]
-                    ub_min = bounds[j,i,1]
-
-                    v1 = bounds[:,i,1]
-                    v2 = np.maximum(bounds[:,i,0], np.full(M, ub_min))
-
-                    bound_tilde = v1/lb_min - 1
-                    lb_numerator = np.sum(np.multiply(v2, np.exp(-nu * bound_tilde)))
-                    up_denominator = np.sum(np.exp(-nu * bound_tilde))
-
-                    bound_tilde = v2/ub_min - 1
-                    lb_denominator = np.sum(np.exp(-nu * bound_tilde))
-                    ub_numerator = np.sum(np.multiply(v1, np.exp(-nu * bound_tilde)))
-            else:
+            if rho[j,i] == 0:
                 # Robustness.
                 r_numerator = 0
                 r_denominator = 1
                 # Effective range.
-                lb_numerator = 0
-                lb_denominator = 1
-                up_numerator = np.max(bounds[:,i,1])
-                up_denominator = 1
+                if ranges_initialized:
+                    lb_numerator = 0
+                    lb_denominator = 1
+                    up_numerator = np.max(bounds[:,i,1])
+                    up_denominator = 1
 
-            # Robustness.
-            robustness[i] = r_numerator/r_denominator
+                robustness[i] = 0
+            else:
+                rho_tilde = rho[:,i]/rho[j,i] - 1
+                if rho[j,i] < 0:
+                    weights = np.exp(np.multiply(nu, rho_tilde))
+                    weighted = np.multiply(rho[j,i], np.exp(rho_tilde))
+
+                    # Robustness.
+                    r_numerator = rho[j,i] * np.sum(np.exp((1+nu) * rho_tilde))
+                    r_denominator = np.sum(np.exp(nu * rho_tilde))
+                    # Effective range.
+                    if ranges_initialized:
+                        lb_min = bounds[j,i,0]
+                        ub_min = bounds[j,i,1]
+
+                        bound_tilde = bounds[:,i,1]/lb_min - 1
+                        lb_denominator = np.sum(np.exp(nu * bound_tilde))
+                        ub_numerator = ub_min * np.sum(np.exp((1+nu) * bound_tilde))
+
+                        bound_tilde = np.maximum(bounds[:,i,0], np.full(M, ub_min))/ub_min - 1
+                        lb_numerator = lb_min * np.sum(np.exp((1+nu) * bound_tilde))
+                        ub_denominator = np.sum(np.exp(nu * bound_tilde))
+                elif rho[j,i] > 0:
+                    weights = np.exp(np.multiply(-nu, rho_tilde))
+                    weighted = rho[:,i]
+
+                    # Robustness.
+                    r_numerator = np.sum(np.multiply(rho[:,i], np.exp(-nu * rho_tilde)))
+                    r_denominator = np.sum(np.exp(-1 * nu * rho_tilde))
+                    # Effective range.
+                    if ranges_initialized:
+                        lb_min = bounds[j,i,0]
+                        ub_min = bounds[j,i,1]
+
+                        v1 = bounds[:,i,1]
+                        v2 = np.maximum(bounds[:,i,0], np.full(M, ub_min))
+
+                        bound_tilde = v1/lb_min - 1
+                        lb_numerator = np.sum(np.multiply(v2, np.exp(-nu * bound_tilde)))
+                        ub_denominator = np.sum(np.exp(-nu * bound_tilde))
+
+                        bound_tilde = v2/ub_min - 1
+                        lb_denominator = np.sum(np.exp(-nu * bound_tilde))
+                        ub_numerator = np.sum(np.multiply(v1, np.exp(-nu * bound_tilde)))
+
+                # Robustness.
+                robustness[i] = np.dot(weights, weighted) / np.sum(weights)
+
+            #robustness[i] = r_numerator/r_denominator
             # Effective range.
             if ranges_initialized:
                 range_signal[i,0] = lb_numerator / lb_denominator

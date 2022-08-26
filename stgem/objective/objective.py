@@ -86,7 +86,7 @@ class FalsifySTL(Objective):
     bar a bit can encourage the models to work harder and eventually produce
     robustness which is nonpositive."""
 
-    def __init__(self, specification, ranges=None, epsilon=0, scale=False, strict_horizon_check=True):
+    def __init__(self, specification, ranges=None, epsilon=0, scale=False, strict_horizon_check=True, nu=None):
         super().__init__()
 
         self.dim = 1
@@ -94,7 +94,7 @@ class FalsifySTL(Objective):
         if isinstance(specification, STL.STL):
             self.specification = specification
         else:
-            self.specification = parse(specification, ranges=ranges)
+            self.specification = parse(specification, ranges=ranges, nu=nu)
 
         self.parameters["epsilon"] = epsilon
         self.parameters["scale"] = scale
