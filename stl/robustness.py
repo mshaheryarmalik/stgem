@@ -576,75 +576,35 @@ class And(STL):
         if ranges_initialized:
             range_signal = np.empty(shape=(len(rho_argmin), 2))
         for i in range(len(rho_argmin)):
-            # TODO: Would it make sense to compute rho_tilde for the complete
-            # x-axis in advance? Does it use potentially much memory for no
-            # speedup?
             j = rho_argmin[i]
 
             if rho[j,i] == 0:
-                # Robustness.
-                r_numerator = 0
-                r_denominator = 1
-                # Effective range.
-                if ranges_initialized:
-                    lb_numerator = 0
-                    lb_denominator = 1
-                    up_numerator = np.max(bounds[:,i,1])
-                    up_denominator = 1
-
                 robustness[i] = 0
+
+                if ranges_initialized:
+                    range_signal[i,0] = 0
+                    range_signal[i,1] = 0
             else:
+                # TODO: Would it make sense to compute rho_tilde for the complete
+                # x-axis in advance? Does it use potentially much memory for no
+                # speedup?
                 rho_tilde = rho[:,i]/rho[j,i] - 1
                 if rho[j,i] < 0:
                     weights = np.exp(np.multiply(nu, rho_tilde))
                     weighted = np.multiply(rho[j,i], np.exp(rho_tilde))
-
-                    # Robustness.
-                    r_numerator = rho[j,i] * np.sum(np.exp((1+nu) * rho_tilde))
-                    r_denominator = np.sum(np.exp(nu * rho_tilde))
-                    # Effective range.
-                    if ranges_initialized:
-                        lb_min = bounds[j,i,0]
-                        ub_min = bounds[j,i,1]
-
-                        bound_tilde = bounds[:,i,1]/lb_min - 1
-                        lb_denominator = np.sum(np.exp(nu * bound_tilde))
-                        ub_numerator = ub_min * np.sum(np.exp((1+nu) * bound_tilde))
-
-                        bound_tilde = np.maximum(bounds[:,i,0], np.full(M, ub_min))/ub_min - 1
-                        lb_numerator = lb_min * np.sum(np.exp((1+nu) * bound_tilde))
-                        ub_denominator = np.sum(np.exp(nu * bound_tilde))
                 elif rho[j,i] > 0:
                     weights = np.exp(np.multiply(-nu, rho_tilde))
                     weighted = rho[:,i]
 
-                    # Robustness.
-                    r_numerator = np.sum(np.multiply(rho[:,i], np.exp(-nu * rho_tilde)))
-                    r_denominator = np.sum(np.exp(-1 * nu * rho_tilde))
-                    # Effective range.
-                    if ranges_initialized:
-                        lb_min = bounds[j,i,0]
-                        ub_min = bounds[j,i,1]
-
-                        v1 = bounds[:,i,1]
-                        v2 = np.maximum(bounds[:,i,0], np.full(M, ub_min))
-
-                        bound_tilde = v1/lb_min - 1
-                        lb_numerator = np.sum(np.multiply(v2, np.exp(-nu * bound_tilde)))
-                        ub_denominator = np.sum(np.exp(-nu * bound_tilde))
-
-                        bound_tilde = v2/ub_min - 1
-                        lb_denominator = np.sum(np.exp(-nu * bound_tilde))
-                        ub_numerator = np.sum(np.multiply(v1, np.exp(-nu * bound_tilde)))
-
-                # Robustness.
+                """
+                if i in [0, 10, 20, 30, 40]:
+                    print("weights: {}".format(weights/np.sum(weights)))
+                """
                 robustness[i] = np.dot(weights, weighted) / np.sum(weights)
 
-            #robustness[i] = r_numerator/r_denominator
-            # Effective range.
-            if ranges_initialized:
-                range_signal[i,0] = lb_numerator / lb_denominator
-                range_signal[i,1] = ub_numerator / ub_denominator
+                if ranges_initialized:
+                    range_signal[i,0] = np.dot(weights, bounds[:,i,0]) / np.sum(weights)
+                    range_signal[i,1] = np.dot(weights, bounds[:,i,1]) / np.sum(weights)
         
         return robustness, range_signal if ranges_initialized else None
 
