@@ -264,7 +264,7 @@ class FalsifySTL(Objective):
             if range is None:
                 raise Exception("Scaling of robustness values requested but no scale available.")
 
-            if robustness < 0:
+            if robustness <= 0:
                 robustness = 0
             else:
                 robustness *= 1/range[1]

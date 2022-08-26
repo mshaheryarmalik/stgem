@@ -485,7 +485,7 @@ class Not(STL):
         formula_robustness, formula_effective_range_signal = self.formulas[0].eval(traces, return_effective_range)
         if return_effective_range and formula_effective_range_signal is not None:
             np.multiply(-1, formula_effective_range_signal, out=formula_effective_range_signal)
-            effective_range_signal = np.roll(formula_effective_range_signal, -1, axis=0)
+            effective_range_signal = np.roll(formula_effective_range_signal, -1, axis=1)
         else:
             effective_range_signal = None
 
@@ -495,18 +495,17 @@ class Implication(STL):
 
     def __init__(self, left_formula, right_formula):
         self.formulas = [left_formula, right_formula]
+        self.formula_robustness = Or(Not(self.formulas[0]), self.formulas[1])
 
         if self.formulas[0].range is None or self.formulas[1].range is None:
             self.range = None
         else:
-            A = max(-self.formulas[0].range[1], self.formulas[1].range[0])
-            B = max(-self.formulas[0].range[0], self.formulas[1].range[1])
-            self.range = [A, B]
+            self.range = self.formula_robustness.range.copy() if self.formula_robustness.range is not None else None
 
         self.horizon = max(self.formulas[0].horizon, self.formulas[1].horizon)
 
     def eval(self, traces, return_effective_range=True):
-        return Or(Not(self.formulas[0]), self.formulas[1]).eval(traces, return_effective_range)
+        return self.formula_robustness.eval(traces, return_effective_range)
 
 class Or(STL):
 
@@ -623,10 +622,6 @@ class And(STL):
                     weights = np.exp(np.multiply(-nu, rho_tilde))
                     weighted = rho[:,i]
 
-                """
-                if i in [0, 10, 20, 30, 40]:
-                    print("weights: {}".format(weights/np.sum(weights)))
-                """
                 robustness[i] = np.dot(weights, weighted) / np.sum(weights)
 
                 if ranges_initialized:

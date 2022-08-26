@@ -56,7 +56,7 @@ def build_specification(selected_specification, mode=None):
                       "inputs": ["THROTTLE", "BRAKE"],
                       "outputs": ["SPEED", "RPM", "GEAR"],
                       "input_range": [[0, 100], [0, 325]],
-                      "output_range": [[0, 121], [0, 4800], [0, 4]],
+                      "output_range": [[0, 125], [0, 4800], [0, 4]],
                       "simulation_time": 30,
                       "time_slices": [5, 5],
                       "sampling_step": 0.01
