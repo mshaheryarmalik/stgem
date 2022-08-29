@@ -3,10 +3,10 @@ import unittest, traceback
 import numpy as np
 import pandas as pd
 
-import tltk_mtl as STL
-
 from stgem.sut import SUT, SUTInput, SUTOutput
 from stgem.objective.objective import FalsifySTL
+import stl.robustness as STL
+import stl.parser as Parser
 
 class DummySUT(SUT):
     def __init__(self, odim, outputs):
@@ -20,9 +20,48 @@ class DummySUT(SUT):
 
 class TestSTL(unittest.TestCase):
 
-    def get(self, specification, variables, sut_input, sut_output, scale=False, strict_horizon_check=True):
+    def get_with_range(self, specification, timestamps, signals, ranges, time, nu=None):
+        spec = Parser.parse(specification, ranges=ranges, nu=nu)
+
+        formula_variables = []
+        time_bounded = []
+        for node in spec:
+            if isinstance(node, STL.Signal) and node.name not in formula_variables:
+                formula_variables.append(node.name)
+
+            if isinstance(node, STL.Global):
+                time_bounded.append(node)
+            if isinstance(node, STL.Finally):
+                time_bounded.append(node)
+                time_bounded.append(node.formula_robustness.formulas[0])
+
+        args = []
+        for var in formula_variables:
+            args.append(var)
+            args.append(timestamps)
+            args.append(signals[var])
+
+        # Adjust time bounds to integers.
+        sampling_period = 1/10
+        for x in time_bounded:
+            x.old_lower_time_bound = x.lower_time_bound
+            x.old_upper_time_bound = x.upper_time_bound
+            x.lower_time_bound = int(x.lower_time_bound / sampling_period)
+            x.upper_time_bound = int(x.upper_time_bound / sampling_period)
+
+        trajectories = STL.Traces.from_mixed_signals(*args, sampling_period=sampling_period)
+        robustness_signal, effective_range = spec.eval(trajectories)
+
+        # Reset time bounds.
+        for x in time_bounded:
+            x.lower_time_bound = x.old_lower_time_bound
+            x.upper_time_bound = x.old_upper_time_bound
+
+        return robustness_signal[time], effective_range[time]
+
+    def get(self, specification, variables, sut_input, sut_output, ranges=None, time=None, scale=False, strict_horizon_check=True, nu=None):
         sut = DummySUT(len(variables), variables)
-        objective = FalsifySTL(specification, scale=scale, strict_horizon_check=strict_horizon_check)
+        objective = FalsifySTL(specification, ranges=ranges, scale=scale, strict_horizon_check=strict_horizon_check, nu=nu)
         objective.setup(sut)
         return objective(sut_input, sut_output), objective
 
@@ -31,10 +70,7 @@ class TestSTL(unittest.TestCase):
         # ---------------------------------------------------------------------
         output = [3, 0.5]
         variables = ["foo", "bar"]
-        # foo > 0 and bar > 0
-        L = STL.Signal("foo")
-        R = STL.Signal("bar")
-        specification = STL.And(L, R)
+        specification = "foo > 0 and bar > 0"
         correct_robustness = 0.5
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None))
@@ -42,10 +78,7 @@ class TestSTL(unittest.TestCase):
 
         output = [3, -0.5]
         variables = ["foo", "bar"]
-        # always[0,1](foo > 0 and bar > 0)
-        L = STL.Signal("foo")
-        R = STL.Signal("bar")
-        specification = STL.Global(0, 1, STL.And(L, R))
+        specification = "always[0,1] (foo > 0 and bar > 0)"
         correct_robustness = -0.5
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None))
@@ -58,11 +91,7 @@ class TestSTL(unittest.TestCase):
         s2 = [3.0, 6.0, 1.0, 0.5,  3.0]
         signals = [s1, s2]
         variables = ["s1", "s2"]
-        # always[0,1](s1 >= 0 and s2 >= 0)
-        L = FalsifySTL.GreaterThan(1, 0, 0, 0, STL.Signal("s1"))
-        R = FalsifySTL.GreaterThan(1, 0, 0, 0, STL.Signal("s2"))
-        specification = STL.And(L, R)
-        specification = STL.Global(0, 1, specification)
+        specification = "always[0,1] (s1 >= 0 and s2 >= 0)"
         correct_robustness = 1.0
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None))
@@ -80,26 +109,19 @@ class TestSTL(unittest.TestCase):
         signals = [s1, s2]
         variables = ["SPEED", "RPM"]
         scale = False
-        # always[0,30](RPM <= 3000)) implies (always[0,4](SPEED <= 35)
-        L = STL.Global(0, 30, STL.LessThan(1, 0, 0, 3000, STL.Signal("RPM")))
-        R = STL.Global(0, 4, STL.LessThan(1, 0, 0, 35, STL.Signal("SPEED")))
-        specification = STL.Implication(L, R)
+        specification = "(always[0,30] RPM <= 3000) -> (always[0,4] SPEED <= 35)"
         correct_robustness = -4.55048
 
         robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
-        # always[0,30](RPM < 3000)) implies (always[0,8](SPEED < 50)
-        R = STL.Global(0, 8, FalsifySTL.StrictlyLessThan(1, 0, 0, 50, STL.Signal("SPEED")))
-        specification = STL.Implication(L, R)
+        specification = "(always[0,30] RPM <= 3000) -> (always[0,8] SPEED < 50)"
         correct_robustness = 4.936960098864567
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
-        # always[0,30](RPM < 3000)) implies (always[0,20](SPEED < 65)
-        R = STL.Global(0, 20, FalsifySTL.StrictlyLessThan(1, 0, 0, 65, STL.Signal("SPEED")))
-        specification = STL.Implication(L, R)
+        specification = "(always[0,30] RPM <= 3000) -> (always[0,20] SPEED < 65)"
         correct_robustness = 19.936958
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
@@ -113,10 +135,7 @@ class TestSTL(unittest.TestCase):
         s2 = [0, 0,  0,  0,  0,  0,  4,  0,  0,  0,  4,  0,  4,  4,  4,  0,  0,  0,  4,  0,  0]
         variables = ["s1", "s2"]
         signals = [s1, s2]
-        # always[0,10]( (s1 >= 5) implies (eventually[0,1](s2 <= 3)) )
-        L = FalsifySTL.GreaterThan(1, 0, 0, 5, STL.Signal("s1"))
-        R = STL.Finally(0, 1, STL.LessThan(1, 0, 0, 3, STL.Signal("s2")))
-        specification = STL.Global(0, 10, STL.Implication(L, R))
+        specification = "always[0,10] ( (s1 >= 5) -> (eventually[0,1] s2 <= 3) )"
         correct_robustness = 0
 
         # Check with strict horizon check.
@@ -138,11 +157,7 @@ class TestSTL(unittest.TestCase):
         t2 = [0, 0.5, 1, 2, 2.5, 3]
         s1 = [2, 2, 2, 2, 2, 2]
         variables = ["s1"]
-        # always[0,3](i1 >= s1)
-        L = STL.Signal("i1")
-        R = STL.Signal("s1")
-        specification = FalsifySTL.GreaterThan(1, 0, 1, 0, L, R)
-        specification = STL.Global(0, 3, specification)
+        specification = "always[0,3] i1 >= s1"
         correct_robustness = -1.0
 
         robustness, objective = self.get(specification, variables, SUTInput(None, [i1], t1), SUTOutput([s1], t2, None), scale=scale)
@@ -156,13 +171,80 @@ class TestSTL(unittest.TestCase):
         s2 = [4500, 100, 0, 2300, -100, -5] # scale [-200, 4500]
         variables = ["s1", "s2"]
         signals = [s1, s2]
-        # 3*s1 <= s2
-        L = STL.Signal("s1", var_range=[0, 200])
-        R = STL.Signal("s2", var_range=[-200, 4500])
-        specification = STL.LessThan(3, 0, 1, 0, L, R)
+        specification = "3*s1 <= s2"
+        ranges = {"s1": [0, 200], "s2": [-200, 4500]}
 
-        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
-        assert objective.specification.var_range == [-800, 4500]
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), ranges=ranges, scale=scale)
+        assert objective.specification.range == [-800, 4500]
+
+        # Test effective ranges.
+        # ---------------------------------------------------------------------
+        specification = "s1 and s2"
+        signals = {"s1": s1, "s2": s2}
+
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
+        assert (effective_range == np.array([0, 200])).all()
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10)
+        assert (effective_range == [-200, 4500]).all()
+
+        specification = "3*s1 or (3*s1 <= s2)"
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
+        assert (effective_range == [-800, 4500]).all()
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10)
+        assert (effective_range == [0, 600]).all()
+
+        specification = "always[3,4] (s1 and s2)"
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
+        assert (effective_range == [-200, 4500]).all()
+
+        # Test alternative robustness.
+        # ---------------------------------------------------------------------
+        specification = "s1 and s2"
+        variables = ["s1", "s2"]
+
+        eps = 1e-4
+
+        correct_robustness = 100.0
+        correct_interval = [-1.55622645e-17, 2.00000000e+02]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0, nu=1)
+        assert robustness == correct_robustness
+        assert abs(effective_range[0] - correct_interval[0]) < eps and abs(effective_range[1] - correct_interval[1]) < eps
+        correct_robustness = 118.87703343990728
+        correct_interval = [-124.49186624, 2876.57512417]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        assert abs(effective_range[0] - correct_interval[0]) < eps and abs(effective_range[1] - correct_interval[1]) < eps
+        correct_robustness = 0
+        correct_interval = [0, 0]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=20, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        assert abs(effective_range[0] - correct_interval[0]) < eps and abs(effective_range[1] - correct_interval[1]) < eps
+        correct_robustness = -95.07160938995717
+        correct_interval = [-189.56928738, 4275.73967876]
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=40, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        assert abs(effective_range[0] - correct_interval[0]) < eps and abs(effective_range[1] - correct_interval[1]) < eps
+
+        # Test alternative robustness nonassociativity.
+        # ---------------------------------------------------------------------
+        specification = "s1 and s2 and s1/3"
+        ranges = {"s1": [0.5, 200], "s2": [-200, 4500]}
+
+        correct_robustness = 71.23948086977792
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        correct_robustness = -4.998798729741061
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=50, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+
+        specification = "s1 and (s2 and s1/3)"
+
+        correct_robustness = 81.06600514116339
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=10, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
+        correct_robustness = -4.998798729743643
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=50, nu=1)
+        assert abs(robustness - correct_robustness) < 1e-4
 
 if __name__ == "__main__":
     unittest.main()
