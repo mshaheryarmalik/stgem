@@ -13,4 +13,3 @@ STGEM is under development and we are adding new algorithms and features. So far
 Read the [CONTRIBUTING.md](CONTRIBUTING.md) file to learn how to set up stgem.
 
 STGEM is developed at [Åbo Akademi University](https://www.abo.fi). Contact Ivan Porres ivan.porres@abo.fi for more information.
-
