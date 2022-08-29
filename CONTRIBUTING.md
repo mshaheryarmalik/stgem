@@ -38,14 +38,10 @@ Clone your forked repo to your local machine. Go to the cloned directory to
 install the dependencies into the venv. 
 
 ```shell
-git clone https://gitlab.abo.fi/aidoart/stgem.git
+git clone https://gitlab.abo.fi/stc.git
 cd stgem
 pip install -r requirements.txt
 ````
-
-It seems that there is a version issue with a antlr, a dependency of rtamt. Until it is fixed upstream, we need to run this after installing the requirements:
-```
-pip install antlr4-python3-runtime==4.9
 ```
 
 The environment setup is completed. 
@@ -77,9 +73,6 @@ pytest
 
 Follow these steps to submit your code contribution.
 
-### Step 0. Sign the Contributor Agreement
-
-TBA
 
 ### Step 1. Open an issue, Create a merge request
 
