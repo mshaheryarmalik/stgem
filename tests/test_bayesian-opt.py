@@ -26,7 +26,7 @@ class TestBayesOptSampler(unittest.TestCase):
                        algorithm=Random(model_factory=(lambda: Uniform()))),
                 Search(budget_threshold={"executions": 5},
                        mode=mode,
-                       algorithm=BayesOptSampler())
+                       algorithm=BayesianOptimization())
                   ]
             )
         r = generator.run()
