@@ -8,7 +8,7 @@ To setup your local dev environment, you will need the following tools.
 2.  [python](https://www.python.org/) to build and code in Keras.
 
 The following commands checks the tools above are successfully installed. Note
-that stgem requires at least Python 3.7 to run.
+that stgem requires at least Python 3.9 to run.
 
 ```shell
 git --version
