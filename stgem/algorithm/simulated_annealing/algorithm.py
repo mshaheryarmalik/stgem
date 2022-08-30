@@ -8,82 +8,64 @@ from stgem.algorithm import Algorithm
 class SimulatedAnnealing(Algorithm):
     """Implements simulated annealing."""
 
-    default_parameters = {"radius": 0.1}
+    default_parameters = {"radius": 0.01}
     
     def setup(self, search_space, device=None, logger=None):
         super().setup(search_space, device, logger)
         self.prec = 0
         self.rounds = 0
 
+    def _temperature(self, budget_remaining):
+        # This is in a way arbitrary, but seems to give reasonably small
+        # probabilities when the diff is small (as we often have).
+        return 0.5*budget_remaining**4
+
+    def _probability(self, diff, temperature):
+        # This is the standard Metropolis condition.
+        return np.exp(-diff / temperature)
+
+    def _neighbor(self, x):
+        # Return a random displacement of x.
+        neighbor = x + self.radius * np.random.uniform(-1, 1, size=len(x))
+        np.clip(neighbor, -1, 1, out=neighbor)
+
+        return neighbor
+
     def do_train(self, active_outputs, test_repository, budget_remaining):
         pass
 
     def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
-        #====Find the minimum between the variables of a vector (the objectives) that are in the active outputs====
-        def find_min_vect(active_outputs,v):
-            return min(v[i] for i in active_outputs)
-
-        #====Return the proba to accept a bad solution====
-        def find_proba(delta, T):
-            print(delta, T, delta/T)
-            return np.exp(delta / T)
-
-        #====Finds a random neighbor of the point x====    
-        def neighbor(x):
-            neighbor = np.array(x) + self.radius * np.random.uniform(-1, 1, size=self.search_space.input_dimension)
-            np.clip(neighbor, -1, 1, out=neighbor)
-            return neighbor
-        
-        #====Calculation of the temperature====
-        def init_T():
-            return 0.5*budget_remaining**4
-
-        dim = self.search_space.input_dimension #input dimension
-        invalid = 0 #number of invalid test
-        T = init_T() #the temperature which is between 0 and 100 
-
-        #====Random for the first iteration====
-        if self.rounds == 0:
-            new_test = np.random.uniform(-1, 1, size=self.search_space.input_dimension)
-            self.prec = 0
- 
-        #====Neighbor for the second iteration====    
-        if self.rounds == 1:
-            x,z,y =test_repository.get(-1)
-            new_test = neighbor(x.inputs)
-
-        while True and (self.rounds >= 2):
-            x1, _, y1 = test_repository.get(-1) #values of the previous test (which is called the "next")
-            x2, _, y2 = test_repository.get(-2 + self.prec) #values of the test that we get before the previous one (wich is called the "prev")
-
-            f_Next = find_min_vect(active_outputs, y1) #the minimum objective of the previous test
-            f_Prev = find_min_vect(active_outputs, y2) #the minimum objective that is kept (before the previous one)
-
-            #====If the solution is better we accept and if it is not we accept with a certain probability====
-            if (f_Prev > f_Next):
-                #====Calculate the next test from the new solution====
-                new_test = neighbor(x1.inputs)
-                #====The previous index is the new solution (so the index is -2)====
-                self.prec = 0
+        if test_repository.tests <= 1:
+            # The first two tests are completely random.
+            # TODO: Invalid tests for the first two rounds do not work exactly
+            # nicely, but we ignore this for now.
+            new_test = self.search_space.sample_input_space()
+            if test_repository.tests == 0:
+                self.candidate = new_test
+                self.current = self.candidate
             else:
-                p1 = find_proba(f_Prev - f_Next, T)
-                #====Accept less good solutions====
-                if p1 > np.random.random():
-                    #====Calculate the next test from the less good solution====
-                    new_test = neighbor(x1.inputs)
-                    #====The previous index is the less good solution (so the index is -2)====
-                    self.prec = 0
-                    #====If we don't accept the solution====
-                else:
-                    #====Calculate the next test from the previous solution====
-                    new_test = neighbor(x2.inputs)
-                    #====The previous value remains the same====
-                    self.prec -= 1
-            if self.search_space.is_valid(new_test) == 0:
-                invalid += 1
-                continue
-            break
+                v = test_repository.get(-1)[2]
+                self.current_obj = min(v[i] for i in active_outputs)
+                self.candidate = new_test
+        else:
+            # Find the minimum objective for the previously proposed test.
+            v = test_repository.get(-1)[2]
+            self.candidate_obj = min(v[i] for i in active_outputs)
 
-        self.rounds += 1
-        return new_test
+            # If the new test is better, accept it as the new current test.
+            # Otherwise accept it with a certain probability.
+            diff = self.candidate_obj - self.current_obj
+            if diff < 0 or np.random.random_sample() < self._probability(diff, self._temperature(budget_remaining)):
+                self.current = self.candidate
+                self.current_obj = self.candidate_obj
+
+        invalid = 0
+        while True:
+            # Propose a neighbor of the current test.
+            self.candidate = self._neighbor(self.current)
+
+            if self.search_space.is_valid(self.candidate) == 1: break
+            invalid += 1
+
+        return self.candidate
 
