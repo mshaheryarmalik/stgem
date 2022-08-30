@@ -71,8 +71,10 @@ def build_specification(selected_specification, afc_mode="normal"):
     # the output signal for some reason. Thus strict horizon check needs to be
     # disabled in some cases.
     if selected_specification == "AFC27":
-        rise = "(THROTTLE < 8.8) and (eventually[0,0.05](THROTTLE > 40.0))"
-        fall = "(THROTTLE > 40.0) and (eventually[0,0.05](THROTTLE < 8.8))"
+        E = 0.1 # Used in Ernst et al.
+        #E = 0.05 # Used in ARCH-COMP 2021.
+        rise = "(THROTTLE < 8.8) and (eventually[0,{}](THROTTLE > 40.0))".format(E)
+        fall = "(THROTTLE > 40.0) and (eventually[0,{}](THROTTLE < 8.8))".format(E)
         specification = "always[11,50](({} or {}) -> always[1,5](|MU| < 0.008))".format(rise, fall)
 
         specifications = [specification]
