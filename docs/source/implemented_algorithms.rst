@@ -9,7 +9,6 @@ stgem's implemented algorithms
 
    doc/Bayesian.md
    doc/OGAN.md
-   doc/Platypus.md
    doc/Random.md
    doc/SimulatedAnnealing.md
    doc/WOGAN.md

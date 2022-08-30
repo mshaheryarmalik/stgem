@@ -17,9 +17,7 @@ It is up to the child class to implement RNG saving and restoration.
 """
 
 class Model:
-    """
-    Base class for all models.
-    """
+    """Base class for all models. """
 
     default_parameters = {}
 
@@ -56,28 +54,24 @@ class Model:
         pass
 
     def generate_test(self, N=1):
-        """
-        Generate N random tests.
+        """Generate N random tests.
 
         Args:
-          N (int): Number of tests to be generated.
+            N (int): Number of tests to be generated.
 
         Returns:
-          output (np.ndarray): Array of shape (N, self.search_space.input_dimension).
-        """
+            output (np.ndarray): Array of shape (N, self.search_space.input_dimension)."""
 
         raise NotImplementedError()
 
     def predict_objective(self, test):
-        """
-        Predicts the objective function value of the given tests.
+        """Predicts the objective function value of the given tests.
 
         Args:
-          test (np.ndarray): Array of shape (N, self.search_space.input_dimension).
+            test (np.ndarray): Array of shape (N, self.search_space.input_dimension).
 
         Returns:
-          output (np.ndarray): Array of shape (N, 1).
-        """
+            output (np.ndarray): Array of shape (N, 1)."""
 
         raise NotImplementedError()
 

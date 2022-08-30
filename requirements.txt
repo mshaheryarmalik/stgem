@@ -7,7 +7,9 @@ Platypus-Opt~=1.0.4
 pandas
 pytest
 click
+matplotlib
 multiprocess
+GPyOpt
 scipy
 sphinx
 sphinx-rtd-theme

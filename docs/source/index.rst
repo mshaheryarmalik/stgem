@@ -8,18 +8,20 @@ stgem documentation
 Welcome to stgem's documentation!
 
 .. toctree::
-   :caption: Contents
-   :maxdepth: 1
+    :caption: Contents
+    :maxdepth: 2
 
-   installation
-   tutorials
-   implemented_algorithms
+    ../../README
+    ../../INSTALLATION
+    ../../CONTRIBUTING
+    tutorials
+    implemented_algorithms
 
 .. toctree::
-   :caption: Structure
-   :maxdepth: 2
+    :caption: Structure
+    :maxdepth: 2
 
-   classes
+    classes
 
 Indices and tables
 ==================

@@ -32,8 +32,6 @@ class Uniform(Model):
         return True
 
     def generate_test(self):
-        """Generates a test for the SUT."""
-
         if self.min_dist == 0:
             return self.search_space.sample_input_space()
         else:
@@ -102,6 +100,7 @@ class LHS(Model):
 
     def lhs(self, n, samples=None, criterion=None, iterations=None):
         """
+        :meta private:
         Generate a latin-hypercube design.
         
         Args:

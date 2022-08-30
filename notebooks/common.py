@@ -366,9 +366,9 @@ def visualize3DTestSuite(experiment, idx):
 
     falsify_pct = 0.05 # Robustness percent needed for classifying as a falsified test
 
-    # Divide the tests indices into two classes.rst: those that correspond to tests
+    # Divide the tests indices into two classes: those that correspond to tests
     # with robustness below the given threshold and the rest. Find also the range
-    # of the robustness values in both classes.rst.
+    # of the robustness values in both classes.
     interval_false = [1, -1] # Min & Max robustness values
     interval_persist = [1, -1]
     c = list() # List for tracking input indexes that fail the test

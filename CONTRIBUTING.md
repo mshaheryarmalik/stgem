@@ -1,4 +1,6 @@
-# Setup environment
+# Contributing
+
+## Setup environment
 
 To setup your local dev environment, you will need the following tools.
 
@@ -38,32 +40,15 @@ Clone your forked repo to your local machine. Go to the cloned directory to
 install the dependencies into the venv. 
 
 ```shell
-git clone https://gitlab.abo.fi/aidoart/stgem.git
+git clone https://gitlab.abo.fi/stc.git
 cd stgem
 pip install -r requirements.txt
 ````
-
-It seems that there is a version issue with a antlr, a dependency of rtamt. Until it is fixed upstream, we need to run this after installing the requirements:
-```
-pip install antlr4-python3-runtime==4.9
 ```
 
 The environment setup is completed. 
 
-## Install MATLAB
-
-Installing MATLAB is only necessary if you want to use a SUT that uses MATLAB. If this is the case, you should install MATLAB in your computer and obtain a license for it. Then you should install MATLAB support for your Python interpreter following the instructions from:
-
-https://se.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html
-
-After that, you can check your setup with these Python commands:
-
-```python
-import matlab.engine
-eng = matlab.engine.start_matlab()
-```
-
-## Run tests
+### Run tests
 
 You can use pytest to run all the tests automatically:
 
@@ -73,15 +58,15 @@ cd test
 pytest
 ```
 
-# How to contribute code
+## How to contribute code
 
 Follow these steps to submit your code contribution.
 
-## Step 0. Sign the Contributor Agreement
+### Step 0. Sign the Contributor Agreement
 
 TBA
 
-## Step 1. Open an issue, Create a merge request
+### Step 1. Open an issue, Create a merge request
 
 Before making any changes, we recommend opening an issue (if one doesn't already
 exist) and discussing your proposed changes. This way, we can give you feedback
@@ -95,7 +80,7 @@ to open a PR without discussion.
 3. At the gitlab issue page, `Create merge request`. You can do that even before you starting coding. This will create a git branch to work with the issue.
 
 
-## Step 2. Make code changes
+### Step 2. Make code changes
 
 To make code changes, you need to fork the repository. You will need to setup a
 development environment and run the unit tests. This is covered in section
@@ -107,18 +92,18 @@ development environment and run the unit tests. This is covered in section
 7. You should watch for changes in the main branch, specially if you work in the same branch for many days. Merge updates from main to your branch often. This way you simplify the  integration work in the future.
 
 
-## Step 3. Mark the merge request as ready 
+### Step 3. Mark the merge request as ready 
 
 8. Once your task is ready, `Mark as ready` the merge request. 
 
 A reviewer will review the pull request and provide comments.  There may be several rounds of comments and code changes before merge pull request gets
 approved by the reviewer. 
 
-## Step 4. Merge into Main
+### Step 4. Merge into Main
 
 Once the merge request is approved, the reviewer will take care of the merging.
 
-# How to report errors
+## How to report errors
 
 If you want to report an error please make sure that your report contains the following information:
 
