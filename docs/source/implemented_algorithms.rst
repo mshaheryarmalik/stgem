@@ -12,3 +12,4 @@ stgem's implemented algorithms
    doc/Random.md
    doc/SimulatedAnnealing.md
    doc/WOGAN.md
+
