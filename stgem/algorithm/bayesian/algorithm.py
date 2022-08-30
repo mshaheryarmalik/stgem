@@ -3,7 +3,7 @@ import GPyOpt
 
 from stgem.algorithm import Algorithm
 
-class BayesOptSampler(Algorithm):
+class BayesianOptimization(Algorithm):
     """Implements Bayesian optimization algorithm.
 
     Currently defined only for continuous domains."""

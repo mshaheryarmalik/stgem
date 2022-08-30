@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["stgem"]
+
+[project]
+name = "stgem"
+version = "1.0.0"
+authors = [
+  { name="Jarkko Peltomäki", email="japeltom@abo.fi" },
+  { name="Ivan Porres", email="iporres@abo.fi" },
+]
+description = "Tool for system testing using generative models"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://gitlab.abo.fi/stc/stgem"
+"Bug Tracker" = "https://gitlab.abo.fi/stc/stgem/issues"
+

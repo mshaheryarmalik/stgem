@@ -6,6 +6,7 @@ See Algorithm.md for detailed documentation and ideas. Remember to edit this
 documentation if you make changes to Algorithm!
 """
 
+
 import copy
 
 from stgem.performance import PerformanceData
@@ -37,6 +38,14 @@ class Algorithm:
         self.parameters = self.default_parameters | parameters
 
     def setup(self, search_space, device=None, logger=None):
+        """Setup an algorithm before usage.
+
+        Args:
+            search_space (SearchSpace): The search space for the algorithm
+            device (pytorch, optional): CUDA device
+            logger (Logger, optional): The logger
+        """
+
         self.search_space =  search_space
         self.device = device
         self.logger = logger
@@ -70,6 +79,7 @@ class Algorithm:
 
     def initialize(self):
         """A Step calls this method before the first generate_test call"""
+
         pass
 
     def train(self, active_outputs, test_repository, budget_remaining):
@@ -95,5 +105,4 @@ class Algorithm:
         algorithm will no longer be used."""
 
         pass
-
 

@@ -1,6 +1,6 @@
 import os, unittest, math
 
-from stgem.algorithm.bayesian.algorithm import BayesOptSampler
+from stgem.algorithm.bayesian.algorithm import BayesianOptimization
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform
 from stgem.generator import STGEM, Search
@@ -26,7 +26,7 @@ class TestBayesOptSampler(unittest.TestCase):
                        algorithm=Random(model_factory=(lambda: Uniform()))),
                 Search(budget_threshold={"executions": 5},
                        mode=mode,
-                       algorithm=BayesOptSampler())
+                       algorithm=BayesianOptimization())
                   ]
             )
         r = generator.run()

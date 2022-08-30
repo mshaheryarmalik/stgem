@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 class GeneratorNetwork(nn.Module):
     """
-    Define the neural network model for the GAN generator.
+    Defines the neural network model for the GAN generator.
     """
 
     def __init__(self, noise_dim, output_shape, neurons):
@@ -30,6 +30,7 @@ class GeneratorNetwork(nn.Module):
         torch.nn.init.xavier_uniform_(self.glayer3.weight)
 
     def forward(self, x):
+        """:meta private:"""
         x = F.relu(self.glayer1(x))
         x = F.relu(self.glayer2(x))
         x = torch.tanh(self.glayer3(x)) # Squash the output values to [-1, 1].
@@ -38,7 +39,7 @@ class GeneratorNetwork(nn.Module):
 
 class DiscriminatorNetwork(nn.Module):
     """
-    Define the neural network model for the GAN discriminator.
+    Defines the neural network model for the GAN discriminator.
     """
 
     def __init__(self, input_shape, neurons, discriminator_output_activation="linear"):
@@ -68,6 +69,7 @@ class DiscriminatorNetwork(nn.Module):
             raise Exception("Unknown output activation function '{}'.".format(a))
 
     def forward(self, x):
+        """:meta private:"""
         x = F.leaky_relu(self.dlayer1(x), negative_slope=0.1) # LeakyReLU recommended in the literature for GANs discriminators.
         x = F.leaky_relu(self.dlayer2(x), negative_slope=0.1)
         x = self.output_activation(self.dlayer3(x))
@@ -75,10 +77,8 @@ class DiscriminatorNetwork(nn.Module):
         return x
 
 class DiscriminatorNetwork1dConv(nn.Module):
-    """
-    Defines a neural network module for the GAN discriminator which uses 1D
-    convolution. Useful when the test can be viewed as a time series.
-    """
+    """Defines a neural network module for the GAN discriminator which uses 1D
+    convolution. Useful when the test can be viewed as a time series."""
 
     def __init__(self, input_shape, feature_maps, kernel_sizes, convolution_activation, dense_neurons):
         """
@@ -154,6 +154,7 @@ class DiscriminatorNetwork1dConv(nn.Module):
         self.bottom = nn.Linear(self.dense_neurons, 1)
 
     def forward(self, x):
+        """:meta private:"""
         # Reshape to 1 channel.
         x = x.view(x.size()[0], 1, x.size()[1])
         for n in range(len(self.conv_layers)):

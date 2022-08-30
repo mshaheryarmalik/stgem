@@ -1,4 +1,12 @@
-# MATLAB Installation for STGEM
+# STGEM Installation
+
+## Installing STGEM Python Module
+
+* We recommend to use a virtual environment for Python version 3.9. The version 3.9 is currently (August 2022) needed for communicating with MATLAB from Python. If you do not intend to use MATLAB, later Python versions should work fine.
+* After setuping Python, install the required dependencies: `pip3 install -r requirements.txt`
+* Run `pip3 install -e .` after which STGEM is available as the Python module `stgem`.
+
+## MATLAB Installation for STGEM
 
 * Go to <https://mathworks.com/products/get-matlab.html>, click download, and create a MathWorks account using your university email.
 * Download MATLAB for Linux and extract it.
@@ -15,16 +23,4 @@
 * Notice that MATLAB support for Linux is flaky. For example, running several MATLAB instances in parallel computation might lead to silent crashes.
 
 [0] <https://mathworks.com/matlabcentral/answers/1464434-why-is-the-linux-matlab-install-script-not-opening-the-installer-window>
-
-# TLTk for Robustness-Based Falsification
-We use the library TLTk for computing values of robustness functions. This library is available at [0]. However, we needed to do some in-house modifications to the code, so the fork available at [1] should be installed. The installation is done as follows on Ubuntu.
-
-* Install the Ubuntu package `build-essential` for compilation support.
-* Install the Ubuntu package `python3-dev` for Python headers.
-* Clone the repository `git clone https://gitlab.abo.fi/japeltom/tltk`.
-* `cd tltk/robustness`
-* Use `pip3 install -e .` to install TLTk locally.
-
-[0] <https://bitbucket.org/versyslab/tltk/>
-[1] <https://gitlab.abo.fi/japeltom/tltk>
 

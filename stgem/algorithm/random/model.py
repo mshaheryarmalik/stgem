@@ -32,8 +32,6 @@ class Uniform(Model):
         return True
 
     def generate_test(self):
-        """Generates a test for the SUT."""
-
         if self.min_dist == 0:
             return self.search_space.sample_input_space()
         else:
@@ -102,33 +100,24 @@ class LHS(Model):
 
     def lhs(self, n, samples=None, criterion=None, iterations=None):
         """
-        Generate a latin-hypercube design
+        :meta private:
+        Generate a latin-hypercube design.
         
-        Parameters
-        ----------
-        n : int
-            The number of factors to generate samples for
+        Args:
+            n (int): The number of factors to generate samples for.
+            samples (int, optional): The number of samples to generate for each factor. Defaults to n.
+            criterion (str, optional): Allowable values are "center" or "c", "maximin" or "m",
+                "centermaximin" or "cm", and "correlation" or "corr". If no value
+                given, the design is simply randomized.
+            iterations (int, optional): The number of iterations in the maximin
+                and correlations algorithms. Defaults to 5.
+
+        Returns:
+            2d-array: An n-by-samples design matrix that has been normalized
+                so factor values are uniformly spaced between zero and one.
         
-        Optional
-        --------
-        samples : int
-            The number of samples to generate for each factor (Default: n)
-        criterion : str
-            Allowable values are "center" or "c", "maximin" or "m", 
-            "centermaximin" or "cm", and "correlation" or "corr". If no value 
-            given, the design is simply randomized.
-        iterations : int
-            The number of iterations in the maximin and correlations algorithms
-            (Default: 5).
-        
-        Returns
-        -------
-        H : 2d-array
-            An n-by-samples design matrix that has been normalized so factor values
-            are uniformly spaced between zero and one.
-        
-        Example
-        -------
+        Examples:
+
         A 3-factor design (defaults to 3 samples)::
         
             >>> lhs(3)

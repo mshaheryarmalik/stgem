@@ -19,17 +19,20 @@ import numpy as np
 
 from stgem.performance import PerformanceData
 
+
 @dataclass
 class SUTInput:
     inputs: ...
     input_denormalized: ...
     input_timestamps: ...
 
+
 @dataclass
 class SUTOutput:
     outputs: ...
     output_timestamps: ...
     error: ...
+
 
 class SearchSpace:
     def __init__(self):
@@ -53,6 +56,7 @@ class SearchSpace:
 
     def sample_input_space(self):
         return self.rng.uniform(-1, 1, size=self.input_dimension)
+
 
 class SUT:
     """Base class implementing a system under test. """
@@ -162,7 +166,7 @@ class SUT:
                 if var_name == v:
                     return self.output_range[n]
         if hasattr(self, "input_range"):
-            for  n, v in enumerate(self.inputs):
+            for n, v in enumerate(self.inputs):
                 if var_name == v:
                     return self.input_range[n]
 
@@ -176,18 +180,19 @@ class SUT:
         """
 
         if len(intervals) < x.shape[1]:
-            raise Exception("Not enough intervals ({}) for scaling a vector of length {}.".format(len(intervals), x.shape[1]))
+            raise Exception(
+                "Not enough intervals ({}) for scaling a vector of length {}.".format(len(intervals), x.shape[1]))
 
         y = np.zeros_like(x)
         for i in range(x.shape[1]):
             if intervals[i] is not None:
                 A = intervals[i][0]
                 B = intervals[i][1]
-                C = (target_B-target_A)/(B-A)
-                D = target_A - C*A
-                y[:,i] = C*x[:,i] + D
+                C = (target_B - target_A) / (B - A)
+                D = target_A - C * A
+                y[:, i] = C * x[:, i] + D
             else:
-                y[:,i] = x[:,i]
+                y[:, i] = x[:, i]
 
         return y
 
@@ -202,9 +207,9 @@ class SUT:
         if interval is not None:
             A = interval[0]
             B = interval[1]
-            C = (target_B-target_A)/(B-A)
-            D = target_A - C*A
-            return C*y + D
+            C = (target_B - target_A) / (B - A)
+            D = target_A - C * A
+            return C * y + D
         else:
             return y
 
@@ -216,18 +221,19 @@ class SUT:
         """
 
         if len(intervals) < x.shape[1]:
-            raise Exception("Not enough intervals ({}) for descaling a vector of length {}.".format(len(intervals), x.shape[1]))
+            raise Exception(
+                "Not enough intervals ({}) for descaling a vector of length {}.".format(len(intervals), x.shape[1]))
 
         y = np.zeros_like(x)
         for i in range(x.shape[1]):
             if intervals[i] is not None:
                 target_A = intervals[i][0]
                 target_B = intervals[i][1]
-                C = (target_B-target_A)/(B-A)
-                D = target_A - C*A
-                y[:,i] = C*x[:,i] + D
+                C = (target_B - target_A) / (B - A)
+                D = target_A - C * A
+                y[:, i] = C * x[:, i] + D
             else:
-                y[:,i] = x[:,i]
+                y[:, i] = x[:, i]
 
         return y
 
@@ -258,7 +264,7 @@ class SUT:
             elif self.output_type == "signal":
                 if output.output_timestamps is None or len(output.outputs.shape) == 1:
                     raise Exception("Vector output for signal output SUT.")
-        
+
         return output
 
     def validity(self, test: SUTInput) -> int:
