@@ -12,7 +12,7 @@ that stgem requires at least Python 3.9 to run.
 
 ```shell
 git --version
-python --version
+python3 --version
 ```
 
 A [Python virtual environment](https://docs.python.org/3/tutorial/venv.html)
@@ -42,7 +42,7 @@ install the dependencies into the venv.
 ```shell
 git clone https://gitlab.abo.fi/stc.git
 cd stgem
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ````
 ```
 
@@ -53,7 +53,7 @@ The environment setup is completed.
 You can use pytest to run all the tests automatically:
 
 ```shell
-pip install pytest
+pip3 install pytest
 cd test
 pytest
 ```
@@ -61,10 +61,6 @@ pytest
 # How to contribute code
 
 Follow these steps to submit your code contribution.
-
-## Step 0. Sign the Contributor Agreement
-
-TBA
 
 ## Step 1. Open an issue, Create a merge request
 
