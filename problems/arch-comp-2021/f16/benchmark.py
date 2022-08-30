@@ -1,6 +1,7 @@
 import os, sys
 
-import tltk_mtl as STL
+import stl.robustness as STL
+
 
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
@@ -52,7 +53,7 @@ ogan_model_parameters = {
     }
 }
 
-def build_specification(selected_specification, mode=None, asut=None):
+def build_specification(selected_specification, mode=None):
     from math import pi
 
     # ARCH-COMP
@@ -84,27 +85,16 @@ def build_specification(selected_specification, mode=None, asut=None):
                       "simulation_time": 15
                      }
 
-    # We allow reusing the SUT for memory conservation (Matlab takes a lot of
-    # memory).
-    if asut is None:
-        asut = Matlab(sut_parameters)
-        #asut = F16GCAS_PYTHON2(sut_parameters)
-        #asut = F16GCAS_PYTHON3(sut_parameters)
-
     # Notice that here the input is a vector.
-    scale = True
-    S = lambda var: STL.Signal(var, asut.variable_range(var) if scale else None)
     if selected_specification == "F16":
-        # always[0,15] ALTITUDE > 0
-        specification = STL.Global(0, 15, FalsifySTL.StrictlyGreaterThan(1, 0, 0, 0, S("ALTITUDE")))
+        specification = "always[0,15] ALTITUDE > 0"
 
         specifications = [specification]
         strict_horizon_check = True
-        epsilon = 0.0
     else:
         raise Exception("Unknown specification '{}'.".format(selected_specification))
 
-    return asut, specifications, scale, strict_horizon_check, epsilon
+    return sut_parameters, specifications, strict_horizon_check
 
 def objective_selector_factory():
     return ObjectiveSelectorAll()
