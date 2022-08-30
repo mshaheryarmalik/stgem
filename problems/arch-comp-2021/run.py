@@ -1,4 +1,6 @@
 import importlib, os, sys
+from stgem.sut.matlab.sut import Matlab
+from stgem.sut.matlab.sut import Matlab_Simulink
 
 import click
 
@@ -29,14 +31,26 @@ def get_seed_factory(init_seed=0):
     return lambda: next(g)
 
 def get_sut_objective_factory(benchmark_module, selected_specification, mode):
-    sut, _, _, _, _ = benchmark_module.build_specification(selected_specification, mode)
+    sut_parameters, specifications, strict_horizon_check = benchmark_module.build_specification(selected_specification, mode)
+
+    if "type" in sut_parameters and sut_parameters["type"] == "simulink":
+        sut = Matlab_Simulink(sut_parameters)
+    else:
+        sut = Matlab(sut_parameters)
+
+    ranges = {}
+    for n in range(len(sut_parameters["input_range"])):
+        ranges[sut_parameters["inputs"][n]] = sut_parameters["input_range"][n]
+    for n in range(len(sut_parameters["output_range"])):
+        ranges[sut_parameters["outputs"][n]] = sut_parameters["output_range"][n]
 
     def sut_factory():
+        # Return the already instantiated SUT many times as Matlab uses a lot
+        # of memory.
         return sut
 
     def objective_factory():
-        _, specifications, scale, strict_horizon_check, epsilon = benchmark_module.build_specification(selected_specification, mode, sut)
-        return [FalsifySTL(specification=specification, epsilon=epsilon, scale=scale, strict_horizon_check=strict_horizon_check) for specification in specifications]
+        return [FalsifySTL(specification=specification, ranges=ranges, scale=True, strict_horizon_check=strict_horizon_check) for specification in specifications]
 
     return sut_factory, objective_factory
 
@@ -90,7 +104,7 @@ def main(selected_benchmark, selected_specification, mode, n, init_seed, identif
     N = n
 
     # Disable CUDA if multiprocessing is used.
-    if N > 1 and  N_workers[selected_benchmark] > 1:
+    if N > 1 and N_workers[selected_benchmark] > 1:
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
     if not selected_specification in specifications[selected_benchmark]:

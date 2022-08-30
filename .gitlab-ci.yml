@@ -30,10 +30,6 @@ before_script:
   - source venv/bin/activate
   - pip install -r requirements.txt
   - pip install pytest-xdist 
-  - git clone https://gitlab.abo.fi/japeltom/tltk.git # Install our own version of TLTk.
-  - cd tltk/robustness
-  - pip3 install -e .
-  - cd ../..
 
 pytest:
   stage: test
