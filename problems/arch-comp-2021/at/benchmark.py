@@ -21,9 +21,9 @@ ogan_model_parameters = {
         "optimizer": "Adam",
         "discriminator_lr": 0.005,
         "discriminator_betas": [0.9, 0.999],
-        "generator_lr": 0.0005,
+        "generator_lr": 0.0001,
         "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 8192,
+        "noise_batch_size": 12000,
         "generator_loss": "MSE,Logit",
         "discriminator_loss": "MSE,Logit",
         "generator_mlm": "GeneratorNetwork",
@@ -166,8 +166,8 @@ def step_factory():
                     #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
                     algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
                    )
-    steps = [step_1]
-    #steps = [step_1, step_2]
+    #steps = [step_1]
+    steps = [step_1, step_2]
     return steps
 
 def get_step_factory():

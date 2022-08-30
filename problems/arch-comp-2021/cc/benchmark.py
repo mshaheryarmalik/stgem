@@ -1,6 +1,3 @@
-import stl.robustness as STL
-
-
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.random.algorithm import Random
@@ -9,7 +6,6 @@ from stgem.algorithm.wogan.algorithm import WOGAN
 from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.generator import Search
 from stgem.objective_selector import ObjectiveSelectorAll
-from stgem.objective import FalsifySTL
 from stgem.sut.matlab.sut import Matlab_Simulink
 
 mode = "stop_at_first_objective"
@@ -25,9 +21,9 @@ ogan_model_parameters = {
         "optimizer": "Adam",
         "discriminator_lr": 0.005,
         "discriminator_betas": [0.9, 0.999],
-        "generator_lr": 0.0005,
+        "generator_lr": 0.0001,
         "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 2048,
+        "noise_batch_size": 12000,
         "generator_loss": "MSE,Logit",
         "discriminator_loss": "MSE,Logit",
         "generator_mlm": "GeneratorNetwork",

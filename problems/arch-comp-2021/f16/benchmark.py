@@ -1,11 +1,7 @@
 import os, sys
 
-import stl.robustness as STL
-
-
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
-from stgem.algorithm.ogan.model_keras import OGANK_Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.algorithm.wogan.algorithm import WOGAN
@@ -29,9 +25,9 @@ ogan_model_parameters = {
         "optimizer": "Adam",
         "discriminator_lr": 0.005,
         "discriminator_betas": [0.9, 0.999],
-        "generator_lr": 0.0005,
+        "generator_lr": 0.0001,
         "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 8192,
+        "noise_batch_size": 12000,
         "generator_loss": "MSE,Logit",
         "discriminator_loss": "MSE,Logit",
         "generator_mlm": "GeneratorNetwork",
