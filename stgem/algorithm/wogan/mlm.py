@@ -1,14 +1,9 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 class WOGAN_NN(nn.Module):
-    """
-    Base class for simple dense neural networks.
-    """
+    """Base class for simple dense neural networks."""
 
     def __init__(self, input_shape, hidden_neurons, output_shape, output_activation, hidden_activation, batch_normalization=False, layer_normalization=False):
         super().__init__()
@@ -46,11 +41,11 @@ class WOGAN_NN(nn.Module):
 
         # We use fully connected layers with the specified number of neurons.
         self.top = nn.Linear(self.input_shape, self.hidden_neurons[0])
-        self.hidden = []
+        self.hidden = nn.ModuleList()
         if self.batch_normalization:
-            self.norm = [nn.BatchNorm1d(self.hidden_neurons[0])]
+            self.norm = nn.ModuleList([nn.BatchNorm1d(self.hidden_neurons[0])])
         if self.layer_normalization:
-            self.norm = [nn.LayerNorm(self.hidden_neurons[0])]
+            self.norm = nn.ModuleList([nn.LayerNorm(self.hidden_neurons[0])])
         for i, neurons in enumerate(self.hidden_neurons[1:]):
             self.hidden.append(nn.Linear(self.hidden_neurons[i], neurons))
             if self.batch_normalization:
@@ -73,9 +68,7 @@ class WOGAN_NN(nn.Module):
         return x
 
 class AnalyzerNetwork(WOGAN_NN):
-    """
-    Define a regression neural network model for the WOGAN analyzer.
-    """
+    """Define a regression neural network model for the WOGAN analyzer."""
 
     def __init__(self, input_shape, hidden_neurons, hidden_activation="relu", layer_normalization=False):
         super().__init__(input_shape=input_shape,
@@ -87,9 +80,7 @@ class AnalyzerNetwork(WOGAN_NN):
                         )
     
 class AnalyzerNetwork_classifier(WOGAN_NN):
-    """
-    Define a classification neural network model for the WOGAN analyzer.
-    """
+    """Define a classification neural network model for the WOGAN analyzer."""
 
     def __init__(self, classes, input_shape, hidden_neurons):
         # Number of classes.
@@ -103,9 +94,7 @@ class AnalyzerNetwork_classifier(WOGAN_NN):
                         )
 
 class CriticNetwork(WOGAN_NN):
-    """
-    Define the neural network model for the WGAN critic.
-    """
+    """Define the neural network model for the WGAN critic."""
 
     def __init__(self, input_shape, hidden_neurons):
         super().__init__(input_shape=input_shape,
@@ -116,9 +105,7 @@ class CriticNetwork(WOGAN_NN):
                         )
 
 class GeneratorNetwork(WOGAN_NN):
-    """
-    Define the neural network model for the WGAN generator.
-    """
+    """Define the neural network model for the WGAN generator."""
 
     def __init__(self, noise_dim, hidden_neurons, output_shape, batch_normalization=False, layer_normalization=False):
         super().__init__(input_shape=noise_dim,

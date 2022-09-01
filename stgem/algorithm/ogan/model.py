@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import importlib
 
 import numpy as np
@@ -26,12 +23,11 @@ class OGAN_Model(Model):
         "generator_mlm": "GeneratorNetwork",
         "generator_mlm_parameters": {
             "noise_dim": 20,
-            "neurons": 64
+            "hidden_neurons": [64, 64]
         },
         "discriminator_mlm": "DiscriminatorNetwork",
         "discriminator_mlm_parameters": {
-            "neurons": 64,
-            "discriminator_output_activation": "sigmoid"
+            "hidden_neurons": [64, 64]
         },
         "train_settings_init": {
             "epochs": 2,

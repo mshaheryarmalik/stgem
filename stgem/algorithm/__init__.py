@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 from stgem.algorithm.algorithm import Algorithm
 from stgem.algorithm.model import Model
 

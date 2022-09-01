@@ -29,7 +29,7 @@ ogan_model_parameters = {
         "generator_mlm": "GeneratorNetwork",
         "generator_mlm_parameters": {
             "noise_dim": 20,
-            "neurons": 64
+            "neurons": [64, 64]
         },
         "discriminator_mlm": "DiscriminatorNetwork1dConv",
         "discriminator_mlm_parameters": {

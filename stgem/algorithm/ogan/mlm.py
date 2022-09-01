@@ -1,63 +1,76 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 class GeneratorNetwork(nn.Module):
-    """
-    Defines the neural network model for the GAN generator.
-    """
+    """Defines the neural network model for the GAN generator. """
 
-    def __init__(self, noise_dim, output_shape, neurons):
-        super(GeneratorNetwork, self).__init__()
+    def __init__(self, noise_dim, output_shape, hidden_neurons):
+        super().__init__()
 
         # The dimension of the input vector.
         self.input_shape = noise_dim
         # The dimension of the output vector.
         self.output_shape = output_shape
-        # Number of neurons per layer.
-        self.neurons = neurons
+        # List of numbers of neurons in the hidden layers.
+        self.hidden_neurons = hidden_neurons
 
-        # We use three fully connected layers with self.neurons many neurons.
-        self.glayer1 = nn.Linear(self.input_shape, self.neurons)
-        self.glayer2 = nn.Linear(self.neurons, self.neurons)
-        self.glayer3 = nn.Linear(self.neurons, self.output_shape)
+        self.layers = nn.ModuleList()
+
+        # Top layer.
+        top = nn.Linear(self.input_shape, self.hidden_neurons[0])
         # Use uniform Glorot initialization of weights as in Keras.
-        torch.nn.init.xavier_uniform_(self.glayer1.weight)
-        torch.nn.init.xavier_uniform_(self.glayer2.weight)
-        torch.nn.init.xavier_uniform_(self.glayer3.weight)
+        torch.nn.init.xavier_uniform_(top.weight)
+        self.layers.append(top)
+
+        # Hidden layers.
+        for i, neurons in enumerate(self.hidden_neurons[1:]):
+            hidden_layer = nn.Linear(self.hidden_neurons[i], neurons)
+            torch.nn.init.xavier_uniform_(hidden_layer.weight)
+            self.layers.append(hidden_layer)
+
+        # Bottom layer.
+        bottom = nn.Linear(self.hidden_neurons[-1], self.output_shape)
+        torch.nn.init.xavier_uniform_(bottom.weight)
+        self.layers.append(bottom)
 
     def forward(self, x):
         """:meta private:"""
-        x = F.relu(self.glayer1(x))
-        x = F.relu(self.glayer2(x))
-        x = torch.tanh(self.glayer3(x)) # Squash the output values to [-1, 1].
+        for layer in self.layers[:-1]:
+            x = F.relu(layer(x))
+        x = torch.tanh(self.layers[-1](x)) # Squash the output values to [-1, 1].
 
         return x
 
 class DiscriminatorNetwork(nn.Module):
-    """
-    Defines the neural network model for the GAN discriminator.
-    """
+    """Defines the neural network model for the GAN discriminator."""
 
-    def __init__(self, input_shape, neurons, discriminator_output_activation="linear"):
-        super(DiscriminatorNetwork, self).__init__()
+    def __init__(self, input_shape, hidden_neurons, discriminator_output_activation="sigmoid"):
+        super().__init__()
 
         # The dimension of the input vector.
         self.input_shape = input_shape
-        # Number of neurons per layer.
-        self.neurons = neurons
+        # List of numbers of neurons in the hidden layers.
+        self.hidden_neurons = hidden_neurons
 
-        # We use three fully connected layers with self.neurons many neurons.
-        self.dlayer1 = nn.Linear(self.input_shape, self.neurons)
-        self.dlayer2 = nn.Linear(self.neurons, self.neurons)
-        self.dlayer3 = nn.Linear(self.neurons, 1)
+        self.layers = nn.ModuleList()
+
+        # Top layer.
+        top = nn.Linear(self.input_shape, self.hidden_neurons[0])
         # Use uniform Glorot initialization of weights as in Keras.
-        torch.nn.init.xavier_uniform_(self.dlayer1.weight)
-        torch.nn.init.xavier_uniform_(self.dlayer2.weight)
-        torch.nn.init.xavier_uniform_(self.dlayer3.weight)
+        torch.nn.init.xavier_uniform_(top.weight)
+        self.layers.append(top)
+
+        # Hidden layers.
+        for i, neurons in enumerate(self.hidden_neurons[1:]):
+            hidden_layer = nn.Linear(self.hidden_neurons[i], neurons)
+            torch.nn.init.xavier_uniform_(hidden_layer.weight)
+            self.layers.append(hidden_layer)
+
+        # Bottom layer.
+        bottom = nn.Linear(self.hidden_neurons[-1], 1)
+        torch.nn.init.xavier_uniform_(bottom.weight)
+        self.layers.append(bottom)
 
         # Select the output activation function.
         a = discriminator_output_activation
@@ -70,9 +83,9 @@ class DiscriminatorNetwork(nn.Module):
 
     def forward(self, x):
         """:meta private:"""
-        x = F.leaky_relu(self.dlayer1(x), negative_slope=0.1) # LeakyReLU recommended in the literature for GANs discriminators.
-        x = F.leaky_relu(self.dlayer2(x), negative_slope=0.1)
-        x = self.output_activation(self.dlayer3(x))
+        for layer in self.layers[:-1]:
+            x = F.relu(layer(x))
+        x = self.output_activation(self.layers[-1](x))
 
         return x
 
@@ -120,8 +133,8 @@ class DiscriminatorNetwork1dConv(nn.Module):
         # Define the convolutional layers and maxpool layers. Compute
         # simultaneously the number of inputs for the final dense layer by
         # feeding an input vector through the network.
-        self.conv_layers = []
-        self.maxpool_layers = []
+        self.conv_layers = nn.ModuleList()
+        self.maxpool_layers = nn.ModuleList()
         x = torch.zeros(1, 1, self.input_shape)
         C = nn.Conv1d(in_channels=1,
                       out_channels=feature_maps[0],
