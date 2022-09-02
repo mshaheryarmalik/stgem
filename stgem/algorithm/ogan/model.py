@@ -1,15 +1,80 @@
-import importlib
+import copy, importlib
 
 import numpy as np
 import torch
 
 from stgem import algorithm
-from stgem.algorithm import Model
+from stgem.algorithm import Model, ModelSkeleton
 
-class OGAN_Model(Model):
-    """
-    Implements the WOGAN model.
-    """
+class OGAN_ModelSkeleton(ModelSkeleton):
+
+    def __init__(self, parameters):
+        super().__init__(parameters)
+        self.modelG = None
+        self.modelD = None
+
+    def _generate_test(self, N=1, device=None):
+        if self.modelG is None:
+            raise Exception("No machine learning models available. Has the model been setup correctly?")
+
+        if N <= 0:
+            raise ValueError("The number of tests should be positive.")
+
+        training_G = self.modelG.training
+        # Generate uniform noise in [-1, 1].
+        noise = (torch.rand(size=(N, self.modelG.input_shape))*2 - 1).to(device)
+        self.modelG.train(False)
+        result = self.modelG(noise).cpu().detach().numpy()
+        self.modelG.train(training_G)
+        return result
+
+    def generate_test(self, N=1, device=None):
+        """
+        Generate N random tests.
+
+        Args:
+          N (int):      Number of tests to be generated.
+          device (obj): CUDA device or None.
+
+        Returns:
+          output (np.ndarray): Array of shape (N, self.input_ndimension).
+
+        Raises:
+        """
+
+        try:
+            return self._generate_test(N, device)
+        except:
+            raise
+
+    def _predict_objective(self, test, device=None):
+        if self.modelG is None or self.modelD is None:
+            raise Exception("No machine learning models available. Has the model been setup correctly?")
+
+        test_tensor = torch.from_numpy(test).float().to(device)
+        return self.modelD(test_tensor).cpu().detach().numpy()
+
+    def predict_objective(self, test, device=None):
+        """
+        Predicts the objective function value of the given tests.
+
+        Args:
+          test (np.ndarray): Array of shape (N, self.input_ndimension).
+          device (obj):      CUDA device or None.
+
+        Returns:
+          output (np.ndarray): Array of shape (N, 1).
+
+        Raises:
+        """
+
+        try:
+            return self._predict_objective(test, device)
+        except:
+            raise
+
+class OGAN_Model(Model,OGAN_ModelSkeleton):
+    """Implements the OGAN model."""
 
     default_parameters = {
         "optimizer": "Adam",
@@ -40,6 +105,10 @@ class OGAN_Model(Model):
             "generator_batch_size": 32
         }
     }
+
+    def __init__(self, parameters=None):
+        Model.__init__(self, parameters)
+        OGAN_ModelSkeleton.__init__(self, parameters)
 
     def setup(self, search_space, device, logger=None, use_previous_rng=False):
         super().setup(search_space, device, logger, use_previous_rng)
@@ -118,10 +187,26 @@ class OGAN_Model(Model):
         self.perf.save_history("discriminator_loss", self.losses_D, single=True)
         self.perf.save_history("generator_loss", self.losses_G, single=True)
 
+    @classmethod
+    def setup_from_skeleton(C, skeleton, search_space, device, logger=None, use_previous_rng=False):
+        model = C(skeleton.parameters)
+        model.setup(search_space, device, logger, use_previous_rng)
+        model.modelG = skeleton.modelG.to(device)
+        model.modelD = skeleton.modelD.to(device)
+
+        return model
+
+    def skeletonize(self):
+        skeleton = OGAN_ModelSkeleton(self.parameters)
+        skeleton.modelG = copy.deepcopy(self.modelG).to("cpu")
+        skeleton.modelD = copy.deepcopy(self.modelD).to("cpu")
+
+        return skeleton
+
     def reset(self):
         self._initialize()
 
-    def train_with_batch(self, dataX, dataY, train_settings):
+    def train_with_batch(self, dataX, dataY, train_settings=None):
         """
         Train the OGAN with a batch of training data.
 
@@ -142,6 +227,12 @@ class OGAN_Model(Model):
                                  The default for each missing key is 1. Keys
                                  not found above are ignored.
         """
+
+        if self.modelG is None or self.modelD is None:
+            raise Exception("No machine learning models available. Has the model been setup correctly?")
+
+        if train_settings is None:
+            train_settings = self.default_parameters["train_settings"]
 
         if len(dataY) < len(dataX):
             raise ValueError("There should be at least as many training outputs as there are inputs.")
@@ -237,22 +328,18 @@ class OGAN_Model(Model):
         Generate N random tests.
 
         Args:
-          N (int): Number of tests to be generated.
+          N (int):      Number of tests to be generated.
 
         Returns:
           output (np.ndarray): Array of shape (N, self.input_ndimension).
+
+        Raises:
         """
 
-        if N <= 0:
-            raise ValueError("The number of tests should be positive.")
-
-        training_G = self.modelG.training
-        # Generate uniform noise in [-1, 1].
-        noise = (torch.rand(size=(N, self.modelG.input_shape))*2 - 1).to(self.device)
-        self.modelG.train(False)
-        result = self.modelG(noise).cpu().detach().numpy()
-        self.modelG.train(training_G)
-        return result
+        try:
+            return self._generate_test(N, device=self.device)
+        except:
+            raise
 
     def predict_objective(self, test):
         """
@@ -263,8 +350,12 @@ class OGAN_Model(Model):
 
         Returns:
           output (np.ndarray): Array of shape (N, 1).
+
+        Raises:
         """
 
-        test_tensor = torch.from_numpy(test).float().to(self.device)
-        return self.modelD(test_tensor).cpu().detach().numpy()
+        try:
+            return self._predict_objective(test, self.device)
+        except:
+            raise
 

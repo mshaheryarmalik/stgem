@@ -1,18 +1,68 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
-import importlib
+import copy, importlib
 
 import numpy as np
 import torch
-import copy
-from stgem import algorithm
-from stgem.algorithm import Model
 
-class WOGAN_Model(Model):
-    """
-    Implements the WOGAN model.
-    """
+from stgem import algorithm
+from stgem.algorithm import Model, ModelSkeleton
+
+class WOGAN_ModelSkeleton(ModelSkeleton):
+
+    def __init__(self, parameters):
+        super().__init__(parameters)
+        self.modelA = None
+        self.modelG = None
+        self.modelC = None
+
+    def _generate_test(self, N=1, device=None):
+        if self.modelG is None:
+            raise Exception("No machine learning models available. Has the model been setup correctly?")
+
+        if N <= 0:
+            raise ValueError("The number of tests should be positive.")
+
+        training_G = self.modelG.training
+        # Generate uniform noise in [-1, 1].
+        noise = (2*torch.rand(size=(N, self.modelG.input_shape)) - 1).to(device)
+        self.modelG.train(False)
+        result = self.modelG(noise).cpu().detach().numpy()
+        self.modelG.train(training_G)
+        return result
+
+    def generate_test(self, N=1, device=None):
+        """
+        Generate N random tests.
+
+        Args:
+          N (int): Number of tests to be generated.
+
+        Returns:
+          output (np.ndarray): Array of shape (N, self.input_dimensions).
+        """
+
+        try:
+            return self._generate_test(N, device)
+        except:
+            raise
+
+    def predict_objective(self, test):
+        """
+        Predicts the objective function value for the given test.
+
+        Args:
+          test (np.ndarray): Array with shape (1, N) or (N).
+
+        Returns:
+          output (float)
+        """
+
+        if self.modelA is None:
+            raise Exception("No machine learning models available. Has the model been setup correctly?")
+
+        return self.modelA.predict(test)
+
+class WOGAN_Model(Model,WOGAN_ModelSkeleton):
+    """Implements the WOGAN model."""
 
     default_parameters = {
         "critic_optimizer": "Adam",
@@ -60,6 +110,10 @@ class WOGAN_Model(Model):
             "generator_steps": 1
         }
     }
+
+    def __init__(self, parameters=None):
+        Model.__init__(self, parameters)
+        WOGAN_ModelSkeleton.__init__(self, parameters)
 
     def setup(self, search_space, device, logger=None, use_previous_rng=False):
         super().setup(search_space, device, logger, use_previous_rng)
@@ -117,6 +171,27 @@ class WOGAN_Model(Model):
         if use_previous_rng:
             torch.random.set_rng_state(current_rng_state)
 
+    @classmethod
+    def setup_from_skeleton(C, skeleton, search_space, device, logger=None, use_previous_rng=False):
+        model = C(skeleton.parameters)
+        model.setup(search_space, device, logger, use_previous_rng)
+        model.modelA.device = device
+        model.modelA.modelA = skeleton.modelA.modelA.to(device)
+        model.modelG = skeleton.modelG.to(device)
+        model.modelC = skeleton.modelC.to(device)
+
+        return model
+
+    def skeletonize(self):
+        skeleton = WOGAN_ModelSkeleton(self.parameters)
+        skeleton.modelA = copy.deepcopy(self.modelA)
+        skeleton.modelA.device = torch.device("cpu")
+        skeleton.modelA.modelA = skeleton.modelA.modelA.to("cpu")
+        skeleton.modelG = copy.deepcopy(self.modelG).to("cpu")
+        skeleton.modelC = copy.deepcopy(self.modelC).to("cpu")
+
+        return skeleton
+
     def train_analyzer_with_batch(self, data_X, data_Y, train_settings):
         """
         Train the analyzer part of the model with a batch of training data.
@@ -145,7 +220,7 @@ class WOGAN_Model(Model):
         self.losses_A.append(losses)
         self.log("Analyzer epochs {}, Loss: {} -> {} (mean {})".format(train_settings["analyzer_epochs"], losses[0], losses[-1], m))
 
-    def train_with_batch(self, data_X, train_settings):
+    def train_with_batch(self, data_X, train_settings=None):
         """
         Train the WGAN with a batch of training data.
 
@@ -165,6 +240,9 @@ class WOGAN_Model(Model):
                                  The default for each missing key is 1. Keys
                                  not found above are ignored.
         """
+
+        if train_settings is None:
+            train_settings = self.default_parameters["train_settings"]
 
         data_X = torch.from_numpy(data_X).float().to(self.device)
 
@@ -294,27 +372,8 @@ class WOGAN_Model(Model):
           output (np.ndarray): Array of shape (N, self.input_dimensions).
         """
 
-        if N <= 0:
-            raise ValueError("The number of tests should be positive.")
-
-        training_G = self.modelG.training
-        # Generate uniform noise in [-1, 1].
-        noise = (2*torch.rand(size=(N, self.modelG.input_shape)) - 1).to(self.device)
-        self.modelG.train(False)
-        result = self.modelG(noise).cpu().detach().numpy()
-        self.modelG.train(training_G)
-        return result
-
-    def predict_objective(self, test):
-        """
-        Predicts the objective function value for the given test.
-
-        Args:
-          test (np.ndarray): Array with shape (1, N) or (N).
-
-        Returns:
-          output (float)
-        """
-
-        return self.modelA.predict(test)
+        try:
+            return self._generate_test(N, self.device)
+        except:
+            raise
 

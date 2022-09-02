@@ -19,7 +19,7 @@ class Random(Algorithm):
 
         while True:
             rounds += 1
-            new_test = self.models[m].generate_test()
+            new_test = self.models[m].generate_test().reshape(-1)
             if self.search_space.is_valid(new_test) == 0:
                 invalid += 1
                 continue

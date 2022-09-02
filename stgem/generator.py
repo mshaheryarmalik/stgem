@@ -22,6 +22,7 @@ class StepResult:
         self.algorithm_performance = None
         self.model_performance = None
         self.models  = []
+        self.final_model = None
 
 class STGEMResult:
 
@@ -43,6 +44,9 @@ class STGEMResult:
         return obj
 
     def dump_to_file(self, file_name: str):
+        if os.path.exists(file_name):
+            raise FileExistsError(file_name)
+
         o = gzip.open if file_name.endswith(".gz") else open
         # first create a temporary file
         temp_file_name = "{}.tmp".format(file_name)
@@ -53,7 +57,7 @@ class STGEMResult:
 
 class Step:
 
-    def run(self, checkpoint_callback=None) -> StepResult:
+    def run(self) -> StepResult:
         raise NotImplementedError
 
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
@@ -70,7 +74,7 @@ class Step:
 class Search(Step):
     """A search step."""
 
-    def __init__(self, algorithm: Algorithm, budget_threshold, mode="exhaust_budget", results_include_models=False, results_checkpoint_period=0):
+    def __init__(self, algorithm: Algorithm, budget_threshold, mode="exhaust_budget", results_include_models=False, results_checkpoint_period=1):
         self.algorithm = algorithm
         self.budget = None
         self.budget_threshold = budget_threshold
@@ -90,8 +94,11 @@ class Search(Step):
             device=self.device,
             logger=self.logger)
 
-    def run(self, checkpoint_callback=None) -> StepResult:
+    def run(self) -> StepResult:
         self.budget.update_threshold(self.budget_threshold)
+
+        # A list for saving model skeletons.
+        model_skeletons = []
 
         # Allow the algorithm to initialize itself.
         self.algorithm.initialize()
@@ -135,8 +142,11 @@ class Search(Step):
                     self.log("First success at test {}.".format(i + 1))
                     self.success = True
 
-                if checkpoint_callback is not None and self.results_checkpoint_period != 0 and i % self.results_checkpoint_period == 0:
-                    checkpoint_callback(self._generate_step_result())
+                # Save the models if requested.
+                if self.results_include_models and self.results_checkpoint_period != 0 and i % self.results_checkpoint_period == 0:
+                    model_skeletons.append([model.skeletonize() for model in self.algorithm.models])
+                else:
+                    model_skeletons.append(None)
 
                 i += 1
 
@@ -149,14 +159,11 @@ class Search(Step):
         # Report results.
         self.log("Step minimum objective component: {}".format(self.test_repository.minimum_objective))
 
-        result = self._generate_step_result()
-
-        if checkpoint_callback is not None and self.results_checkpoint_period != 0 and (i-1) % self.results_checkpoint_period != 0:
-            checkpoint_callback(result)
+        result = self._generate_step_result(model_skeletons)
 
         return result
 
-    def _generate_step_result(self):
+    def _generate_step_result(self, model_skeletons):
         # Save certain parameters in the StepResult object.
         parameters = {}
         parameters["algorithm_name"] = self.algorithm.__class__.__name__
@@ -173,12 +180,8 @@ class Search(Step):
         step_result.algorithm_performance = self.algorithm.perf
         step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
         if self.results_include_models:
-            step_result.models = self.algorithm.models
-            # Delete the SUTs from the models in order to avoid pickling
-            # errors. Notice that this results in saved models that need
-            # resetup if used again.
-            for model in step_result.models:
-                model.search_space.sut = None
+            step_result.models = model_skeletons
+            step_result.final_models = [model.skeletonize() for model in self.algorithm.models]
 
         return step_result
 
@@ -196,7 +199,7 @@ class Load(Step):
         self.mode = mode
         self.range_load = range_load
 
-    def run(self, checkpoint_callback=None) -> StepResult:
+    def run(self, results_include_models=False, results_checkpoint_period=1) -> StepResult:
         try:
             raw_data = STGEMResult.restore_from_file(self.file_name)
         except:
@@ -335,17 +338,13 @@ class STGEM:
     def _generate_result(self, step_results):
         return STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
 
-    def _checkpoint(self, sr):
-        r = self._generate_result(self.step_results + [sr])
-        r.dump_to_file("{}_checkpoint_{}.pickle".format(self.description, self.test_repository.tests))
-
     def _run(self) -> STGEMResult:
         # Running this assumes that setup has been run.
 
         # Setup and run steps sequentially.
         self.step_results = []
         for step in self.steps:
-            self.step_results.append(step.run(checkpoint_callback=self._checkpoint))
+            self.step_results.append(step.run())
 
         return self._generate_result(self.step_results)
 

@@ -1,23 +1,56 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import numpy as np
 
-from stgem.algorithm import Model
+from stgem.algorithm import Model, ModelSkeleton
 
-class Uniform(Model):
+class Random_Model(Model):
+
+    def skeletonize(self):
+        return Random_ModelSkeleton(self.parameters)
+
+    @classmethod
+    def setup_from_skeleton(C, skeleton, search_space, device, logger=None, use_previous_rng=False):
+        model = C(skeleton.parameters)
+        model.setup(search_space, device, logger, use_previous_rng)
+
+        return model
+
+class Random_ModelSkeleton(ModelSkeleton):
+
+    def __init__(self, parameters):
+        super().__init__(parameters)
+
+        self.random_func = lambda: np.random.uniform(-1, 1, size=self.input_dimension)
+
+    def _generate_test(self, N=1, random_func=None):
+        result = np.empty(shape=(N, self.input_dimension))
+        for i in range(N):
+            result[i,:] = random_func()
+
+        return result
+
+    def generate_test(self, N=1):
+        return self._generate_test(N, self.random_func)
+
+    def predict_objective(self, test):
+        return 1
+
+class Uniform(Random_Model,Random_ModelSkeleton):
     """Implements a random test model which directly uses the sampling provided by
     the SUT."""
 
-    default_parameters = {"min_dist": 0.0}
+    default_parameters = {"min_distance": 0.0}
+
+    def __init__(self, parameters=None):
+        Model.__init__(self, parameters)
+        Random_ModelSkeleton.__init__(self, parameters)
 
     def setup(self, search_space, device, logger=None, use_previous_rng=False):
         super().setup(search_space, device, logger, use_previous_rng)
 
-        if self.min_dist < 0:
+        if self.min_distance < 0:
             raise Exception("Random search minimum distance must be nonnegative.")
 
-        if self.min_dist > 0:
+        if self.min_distance > 0:
             # If all used points were stored in a Numpy array, we could use
             # faster Numpy operations on it, but then array growing is an
             # issue. Since we are not likely to have more than some hundreds
@@ -26,25 +59,31 @@ class Uniform(Model):
 
     def _satisfies_min_distance(self, test):
         for p in self.used_points:
-            if np.linalg.norm(p - test) < self.min_dist:
+            if np.linalg.norm(p - test) < self.min_distance:
                 return False
         
         return True
 
-    def generate_test(self):
-        if self.min_dist == 0:
-            return self.search_space.sample_input_space()
-        else:
-            while True:
-                test = self.searh_space.sample_input_space()
-                if self._satisfies_min_distance(test):
-                    break
+    def generate_test(self, N=1):
+        result = np.empty(shape=(N, self.input_dimension))
+        c = 0
+        while c < N:
+            test = self.search_space.sample_input_space()
+            if self.min_distance == 0 or self._satisfies_min_distance(test):
+                result[c,:] = test
+                c += 1
 
-            self.used_points.append(test)
-            return test
+                if self.min_distance > 0:
+                    self.used_points.append(test.reshape(-1))
 
-class Halton(Model):
+        return result
+
+class Halton(Random_Model,Random_ModelSkeleton):
     """Random sampling using a Halton sequence."""
+
+    def __init__(self, parameters=None):
+        Model.__init__(self, parameters)
+        Random_ModelSkeleton.__init__(self, parameters)
 
     def setup(self, search_space, device, logger, use_previous_rng=False):
         super().setup(search_space, device, logger)
@@ -61,11 +100,14 @@ class Halton(Model):
 
             self.hal = qmc.Halton(d=self.search_space.input_dimension, scramble=True, seed=seed)
 
-    def generate_test(self):
-        return 2*self.hal.random().reshape(-1) - 1
+        self.random_func = lambda: 2*self.hal.random().reshape(-1) - 1
 
-class LHS(Model):
+class LHS(Random_Model,Random_ModelSkeleton):
     """Implements a random test model based on Latin hypercube design."""
+
+    def __init__(self, parameters=None):
+        Model.__init__(self, parameters)
+        Random_ModelSkeleton.__init__(self, parameters)
 
     def setup(self, search_space, device, logger=None, use_previous_rng=False):
         super().setup(search_space, device, logger, use_previous_rng)
@@ -90,13 +132,15 @@ class LHS(Model):
         if use_previous_rng:
             self.search_space.rng.set_state(current_rng_state)
 
-    def generate_test(self):
-        self.current += 1
+        def random_func(self):
+            self.current += 1
+            
+            if self.current >= len(self.random_tests):
+                raise Exception("Random sample exhausted.")
 
-        if self.current >= len(self.random_tests):
-            raise Exception("Random sample exhausted.")
+            return self.random_tests[self.current]
 
-        return self.random_tests[self.current]
+        self.random_func = lambda: random_func(self)
 
     def lhs(self, n, samples=None, criterion=None, iterations=None):
         """

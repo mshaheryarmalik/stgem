@@ -7,7 +7,7 @@ from stgem.objective import Minimize
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform
 from stgem.algorithm.ogan.algorithm import OGAN
-from stgem.algorithm.ogan.model_keras import OGANK_Model
+from stgem.algorithm.ogan.model import OGAN_Model
 
 def myfunction(input: [[-15, 15], [-15, 15], [-15, 15]]) -> [[0, 350], [0, 350], [0, 350]]:
     x1, x2, x3 = input[0], input[1], input[2]
@@ -30,7 +30,7 @@ class MyTestCase(unittest.TestCase):
                        algorithm=Random(model_factory=(lambda: Uniform())),
                        ),
                 Search(budget_threshold={"executions": 4},
-                       algorithm=OGAN(model_factory=(lambda: OGANK_Model())),
+                       algorithm=OGAN(model_factory=(lambda: OGAN_Model())),
                        results_include_models=True
                        )
             ]
@@ -40,12 +40,9 @@ class MyTestCase(unittest.TestCase):
         file_name = generator.description + ".pickle"
         r.dump_to_file(file_name)
         result2 = STGEMResult.restore_from_file(file_name)
-        for s in result2.step_results:
-            print(s.success)
-            print(s.models)
 
-        # check the the model still works
-        print(result2.step_results[1].models[0].predict_objective(np.array([np.array([0,0,0])])))
+        # check that the model still works
+        y = result2.step_results[1].models[0][0].predict_objective(np.array([0,0,0]).reshape(1, -1))
 
         os.remove(file_name)
 

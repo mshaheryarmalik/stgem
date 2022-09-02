@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import importlib
 
 import numpy as np
@@ -9,9 +6,7 @@ import torch
 from stgem import algorithm
 
 class Analyzer:
-    """
-    Base class for WOGAN analyzers.
-    """
+    """Base class for WOGAN analyzers."""
 
     default_parameters = {}
 

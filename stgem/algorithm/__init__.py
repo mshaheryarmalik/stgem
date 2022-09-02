@@ -1,5 +1,5 @@
 from stgem.algorithm.algorithm import Algorithm
-from stgem.algorithm.model import Model
+from stgem.algorithm.model import Model, ModelSkeleton
 
 import importlib, inspect
 

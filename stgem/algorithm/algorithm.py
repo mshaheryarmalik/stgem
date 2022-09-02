@@ -27,8 +27,8 @@ class Algorithm:
         self.model= model
         self.models= models
         self.model_factory = model_factory
-        self.search_space= None
-        self.perf=PerformanceData()
+        self.search_space = None
+        self.perf = PerformanceData()
 
         if parameters is None:
             parameters = {}
@@ -43,10 +43,10 @@ class Algorithm:
         Args:
             search_space (SearchSpace): The search space for the algorithm
             device (pytorch, optional): CUDA device
-            logger (Logger, optional): The logger
+            logger (Logger, optional):  The logger
         """
 
-        self.search_space =  search_space
+        self.search_space = search_space
         self.device = device
         self.logger = logger
         self.log = lambda msg: (self.logger("algorithm", msg) if logger is not None else None)
@@ -57,13 +57,13 @@ class Algorithm:
 
         # Create models by cloning
         if self.model:
-            self.models=[]
-            for _ in range(self.search_space.output_dimension):
+            self.models = []
+            for _ in range(self.search_space.objectives):
                 self.models.append(copy.deepcopy(self.model))
 
         # Create models by factory
         if self.model_factory:
-            self.models = [self.model_factory() for _ in range(self.search_space.output_dimension)]
+            self.models = [self.model_factory() for _ in range(self.search_space.objectives)]
 
         # setup the models
         self.N_models = len(self.models)

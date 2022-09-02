@@ -39,13 +39,14 @@ class SearchSpace:
         self.sut = None
         self.input_dimension = 0
         self.output_dimension = 0
+        self.objectives = 0
         self.rng = None
 
     def setup(self, sut, objectives, rng):
         self.sut = sut
         self.input_dimension = self.sut.idim
         self.output_dimension = self.sut.odim
-        self.odim = len(objectives)
+        self.objectives = len(objectives)
         self.rng = rng
 
     def is_valid(self, test) -> bool:

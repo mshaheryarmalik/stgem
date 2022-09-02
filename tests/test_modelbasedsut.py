@@ -37,7 +37,7 @@ class TestModelBasedSUT(unittest.TestCase):
                 Search(budget_threshold={"executions": 5},
                        algorithm=OGAN(models=models),
                        results_include_models=True,
-                       results_checkpoint_period=1,
+                       results_checkpoint_period=1
                        )
             ],
 
@@ -53,7 +53,7 @@ class TestModelBasedSUT(unittest.TestCase):
 
         generator2 = STGEM(
             description="mo3d-mbst-model",
-            sut=ModelBasedSUT(models=r2.step_results[1].models),
+            sut=ModelBasedSUT(models=r2.step_results[1].final_models),
             objectives=[Minimize(selected=[0], scale=True),
                         Minimize(selected=[1], scale=True),
                         Minimize(selected=[2], scale=True)
