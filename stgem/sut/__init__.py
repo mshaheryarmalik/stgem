@@ -52,7 +52,7 @@ class SearchSpace:
     def is_valid(self, test) -> bool:
         # This is here until valid tests are changed to preconditions. This
         # line ensures that model-based SUTs work and can be pickled.
-        if self.sut is None: return True
+        if self.sut is None: return 1
         return self.sut.validity(test)
 
     def sample_input_space(self):
