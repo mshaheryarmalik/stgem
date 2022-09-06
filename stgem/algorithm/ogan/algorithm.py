@@ -40,7 +40,8 @@ class OGAN(Algorithm):
                 X, _, Y = test_repository.get()
                 dataX = np.asarray([sut_input.inputs for sut_input in X])
                 dataY = np.array(Y)[:, i].reshape(-1, 1)
-                for epoch in range(self.models[i].train_settings_init["epochs"]):
+                epochs = self.models[i].train_settings["epochs"] if not self.first_training else self.models[i].train_settings_init["epochs"]
+                for epoch in range(epochs):
                     if self.first_training:
                         train_settings = self.models[i].train_settings_init
                     else:
