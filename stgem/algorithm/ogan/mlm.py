@@ -17,16 +17,18 @@ class GeneratorNetwork(nn.Module):
 
         self.layers = nn.ModuleList()
 
+        # We use Xavier (Glorot) initialization with tanh and sigmoid
+        # activations and Kaiming (He) initialization with ReLU.
+
         # Top layer.
         top = nn.Linear(self.input_shape, self.hidden_neurons[0])
-        # Use uniform Glorot initialization of weights as in Keras.
-        torch.nn.init.xavier_uniform_(top.weight)
+        torch.nn.init.kaiming_uniform_(top.weight)
         self.layers.append(top)
 
         # Hidden layers.
         for i, neurons in enumerate(self.hidden_neurons[1:]):
             hidden_layer = nn.Linear(self.hidden_neurons[i], neurons)
-            torch.nn.init.xavier_uniform_(hidden_layer.weight)
+            torch.nn.init.kaiming_uniform_(hidden_layer.weight)
             self.layers.append(hidden_layer)
 
         # Bottom layer.
@@ -58,13 +60,15 @@ class DiscriminatorNetwork(nn.Module):
         # Top layer.
         top = nn.Linear(self.input_shape, self.hidden_neurons[0])
         # Use uniform Glorot initialization of weights as in Keras.
-        torch.nn.init.xavier_uniform_(top.weight)
+        torch.nn.init.kaiming_uniform_(top.weight)
+        #torch.nn.init.xavier_uniform_(top.weight)
         self.layers.append(top)
 
         # Hidden layers.
         for i, neurons in enumerate(self.hidden_neurons[1:]):
             hidden_layer = nn.Linear(self.hidden_neurons[i], neurons)
-            torch.nn.init.xavier_uniform_(hidden_layer.weight)
+            #torch.nn.init.xavier_uniform_(hidden_layer.weight)
+            torch.nn.init.kaiming_uniform_(hidden_layer.weight)
             self.layers.append(hidden_layer)
 
         # Bottom layer.
@@ -147,12 +151,13 @@ class DiscriminatorNetwork1dConv(nn.Module):
         x = M(C(x))
         self.conv_layers.append(C)
         self.maxpool_layers.append(M)
-        for n, K in enumerate(feature_maps[1:]):
-            C = nn.Conv1d(in_channels=feature_maps[n],
+        for i, K in enumerate(feature_maps[1:]):
+            C = nn.Conv1d(in_channels=feature_maps[i],
                           out_channels=K,
                           kernel_size=kernel_sizes[i+1][0],
                           padding=kernel_sizes[i+1][0]-1
                          )
+            torch.nn.init.kaiming_uniform_(C.weight)
             M = nn.MaxPool1d(kernel_size=kernel_sizes[i+1][1],
                              padding=kernel_sizes[i+1][1]-1
                             )
@@ -164,6 +169,7 @@ class DiscriminatorNetwork1dConv(nn.Module):
         self.flatten = nn.Flatten()
         I = x.reshape(-1).size()[0]
         self.dense_layer = nn.Linear(I, self.dense_neurons)
+        torch.nn.init.xavier_uniform_(self.dense_layer.weight)
         self.bottom = nn.Linear(self.dense_neurons, 1)
 
     def forward(self, x):
