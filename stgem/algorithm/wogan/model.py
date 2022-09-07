@@ -5,6 +5,7 @@ import torch
 
 from stgem import algorithm
 from stgem.algorithm import Model, ModelSkeleton
+from stgem.exceptions import AlgorithmException
 
 class WOGAN_ModelSkeleton(ModelSkeleton):
 
@@ -25,9 +26,13 @@ class WOGAN_ModelSkeleton(ModelSkeleton):
         # Generate uniform noise in [-1, 1].
         noise = (2*torch.rand(size=(N, self.modelG.input_shape)) - 1).to(device)
         self.modelG.train(False)
-        result = self.modelG(noise).cpu().detach().numpy()
+        result = self.modelG(noise)
+
+        if torch.any(torch.isinf(result)) or torch.any(torch.isnan(result)):
+            raise AlgorithmException("Generator produced a test with inf or NaN entries.")
+
         self.modelG.train(training_G)
-        return result
+        return result.cpu().detach().numpy()
 
     def generate_test(self, N=1, device=None):
         """
