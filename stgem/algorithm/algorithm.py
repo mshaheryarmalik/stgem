@@ -1,11 +1,7 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 """
 See Algorithm.md for detailed documentation and ideas. Remember to edit this
 documentation if you make changes to Algorithm!
 """
-
 
 import copy
 
@@ -92,7 +88,10 @@ class Algorithm:
 
     def generate_next_test(self, active_outputs, test_repository, budget_remaining):
         self.perf.timer_start("generation")
-        r = self.do_generate_next_test(active_outputs, test_repository, budget_remaining)
+        try:
+            r = self.do_generate_next_test(active_outputs, test_repository, budget_remaining)
+        except:
+            raise
         self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
 
         return r

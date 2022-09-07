@@ -5,6 +5,7 @@ import torch
 
 from stgem import algorithm
 from stgem.algorithm import Model, ModelSkeleton
+from stgem.exceptions import AlgorithmException
 
 class OGAN_ModelSkeleton(ModelSkeleton):
 
@@ -24,9 +25,13 @@ class OGAN_ModelSkeleton(ModelSkeleton):
         # Generate uniform noise in [-1, 1].
         noise = (torch.rand(size=(N, self.modelG.input_shape))*2 - 1).to(device)
         self.modelG.train(False)
-        result = self.modelG(noise).cpu().detach().numpy()
+        result = self.modelG(noise)
+
+        if torch.any(torch.isinf(result)) or torch.any(torch.isnan(result)):
+            raise AlgorithmException("Generator produced a test with inf or NaN entries.")
+
         self.modelG.train(training_G)
-        return result
+        return result.cpu().detach().numpy()
 
     def generate_test(self, N=1, device=None):
         """
@@ -263,7 +268,8 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
 
         self.losses_D.append(losses)
         m = np.mean(losses)
-        self.log("Discriminator epochs {}, Loss: {} -> {} (mean {})".format(discriminator_epochs, losses[0], losses[-1], m))
+        if discriminator_epochs > 0:
+            self.log("Discriminator epochs {}, Loss: {} -> {} (mean {})".format(discriminator_epochs, losses[0], losses[-1], m))
 
         self.modelD.train(False)
 
@@ -312,7 +318,8 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
 
         self.losses_G.append(losses)
         m = np.mean(losses)
-        self.log("Generator steps {}, Loss: {} -> {}, mean {}".format(self.noise_batch_size//generator_batch_size + 1, losses[0], losses[-1], m))
+        if self.noise_batch_size > 0:
+            self.log("Generator steps {}, Loss: {} -> {}, mean {}".format(self.noise_batch_size//generator_batch_size + 1, losses[0], losses[-1], m))
 
         self.modelG.train(False)
 

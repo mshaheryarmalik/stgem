@@ -71,7 +71,7 @@ def main(selected_benchmark, selected_specification, mode, init_seed_experiments
 
     N = 25
     experiment_factory = get_experiment_factory(N, benchmark_module, selected_specification, mode, init_seed_experiments)
-    hp_sut_parameters["N_workers"] = N_workers[selected_benchmark]
+    hp_sut_parameters["N_workers"] = min(N, N_workers[selected_benchmark])
 
     generator = STGEM(
                       description="Hyperparameter search for benchmark {} and specification {}".format(selected_benchmark, selected_specification),

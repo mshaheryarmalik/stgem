@@ -69,7 +69,10 @@ class OGAN(Algorithm):
                     # Generate several tests and pick the one with best
                     # predicted objective function component. We do this as
                     # long as we find at least one valid test.
-                    candidate_tests = self.models[i].generate_test(self.N_candidate_tests)
+                    try:
+                        candidate_tests = self.models[i].generate_test(self.N_candidate_tests)
+                    except:
+                        raise
 
                     # Pick only the valid tests.
                     valid_idx = [i for i in range(self.N_candidate_tests) if self.search_space.is_valid(candidate_tests[i]) == 1]

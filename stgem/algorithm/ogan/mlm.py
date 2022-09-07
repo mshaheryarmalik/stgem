@@ -59,15 +59,12 @@ class DiscriminatorNetwork(nn.Module):
 
         # Top layer.
         top = nn.Linear(self.input_shape, self.hidden_neurons[0])
-        # Use uniform Glorot initialization of weights as in Keras.
         torch.nn.init.kaiming_uniform_(top.weight)
-        #torch.nn.init.xavier_uniform_(top.weight)
         self.layers.append(top)
 
         # Hidden layers.
         for i, neurons in enumerate(self.hidden_neurons[1:]):
             hidden_layer = nn.Linear(self.hidden_neurons[i], neurons)
-            #torch.nn.init.xavier_uniform_(hidden_layer.weight)
             torch.nn.init.kaiming_uniform_(hidden_layer.weight)
             self.layers.append(hidden_layer)
 

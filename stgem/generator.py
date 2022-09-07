@@ -7,6 +7,7 @@ import numpy as np
 
 from stgem.algorithm.algorithm import Algorithm
 from stgem.budget import Budget
+from stgem.exceptions import *
 from stgem.logger import Logger
 from stgem.objective_selector import ObjectiveSelectorAll
 from stgem.sut import SearchSpace, SUT, SUTInput
@@ -117,7 +118,15 @@ class Search(Step):
 
                 # TODO: Should we catch any exceptions here?
                 self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
-                next_test = self.algorithm.generate_next_test(self.objective_selector.select(), self.test_repository, self.budget.remaining())
+                try:
+                    next_test = self.algorithm.generate_next_test(self.objective_selector.select(), self.test_repository, self.budget.remaining())
+                except AlgorithmException:
+                    # We encountered an algorithm error. There might be many
+                    # reasons such as explosion of gradients. We take this as
+                    # an indication that the algorithm is unable to keep going,
+                    # so we exit.
+                    break
+
                 self.budget.consume("generation_time", self.algorithm.perf.get_history("generation_time")[-1])
                 self.log("Generated test {}.".format(next_test))
                 if not self.budget.remaining() > 0: break
