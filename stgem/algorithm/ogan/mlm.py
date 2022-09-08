@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class GeneratorNetwork(nn.Module):
     """Defines the neural network model for the GAN generator. """
 
-    def __init__(self, noise_dim, output_shape, hidden_neurons):
+    def __init__(self, noise_dim, output_shape, hidden_neurons, hidden_activation):
         super().__init__()
 
         # The dimension of the input vector.
@@ -14,6 +14,16 @@ class GeneratorNetwork(nn.Module):
         self.output_shape = output_shape
         # List of numbers of neurons in the hidden layers.
         self.hidden_neurons = hidden_neurons
+
+        activations = {"leaky_relu": F.leaky_relu,
+                       "linear": nn.Identity(),
+                       "relu": F.relu,
+                       "sigmoid": torch.sigmoid,
+                       "tanh": torch.tanh}
+
+        if not hidden_activation in activations:
+            raise Exception("Unknown activation function '{}'.".format(hidden_activation))
+        self.hidden_activation = activations[hidden_activation]
 
         self.layers = nn.ModuleList()
 
@@ -28,7 +38,10 @@ class GeneratorNetwork(nn.Module):
         # Hidden layers.
         for i, neurons in enumerate(self.hidden_neurons[1:]):
             hidden_layer = nn.Linear(self.hidden_neurons[i], neurons)
-            torch.nn.init.kaiming_uniform_(hidden_layer.weight)
+            if hidden_activation in ["relu", "leaky_relu"]:
+                torch.nn.init.kaiming_uniform_(hidden_layer.weight)
+            else:
+                torch.nn.init.xavier_uniform_(hidden_layer.weight)
             self.layers.append(hidden_layer)
 
         # Bottom layer.
@@ -39,7 +52,7 @@ class GeneratorNetwork(nn.Module):
     def forward(self, x):
         """:meta private:"""
         for layer in self.layers[:-1]:
-            x = F.relu(layer(x))
+            x = self.hidden_activation(layer(x))
         x = torch.tanh(self.layers[-1](x)) # Squash the output values to [-1, 1].
 
         return x
@@ -47,13 +60,23 @@ class GeneratorNetwork(nn.Module):
 class DiscriminatorNetwork(nn.Module):
     """Defines the neural network model for the GAN discriminator."""
 
-    def __init__(self, input_shape, hidden_neurons, discriminator_output_activation="sigmoid"):
+    def __init__(self, input_shape, hidden_neurons, hidden_activation, discriminator_output_activation="sigmoid"):
         super().__init__()
 
         # The dimension of the input vector.
         self.input_shape = input_shape
         # List of numbers of neurons in the hidden layers.
         self.hidden_neurons = hidden_neurons
+
+        activations = {"leaky_relu": F.leaky_relu,
+                       "linear": nn.Identity(),
+                       "relu": F.relu,
+                       "sigmoid": torch.sigmoid,
+                       "tanh": torch.tanh}
+
+        if not hidden_activation in activations:
+            raise Exception("Unknown activation function '{}'.".format(hidden_activation))
+        self.hidden_activation = activations[hidden_activation]
 
         self.layers = nn.ModuleList()
 
@@ -65,7 +88,10 @@ class DiscriminatorNetwork(nn.Module):
         # Hidden layers.
         for i, neurons in enumerate(self.hidden_neurons[1:]):
             hidden_layer = nn.Linear(self.hidden_neurons[i], neurons)
-            torch.nn.init.kaiming_uniform_(hidden_layer.weight)
+            if hidden_activation in ["relu", "leaky_relu"]:
+                torch.nn.init.kaiming_uniform_(hidden_layer.weight)
+            else:
+                torch.nn.init.xavier_uniform_(hidden_layer.weight)
             self.layers.append(hidden_layer)
 
         # Bottom layer.
@@ -85,7 +111,7 @@ class DiscriminatorNetwork(nn.Module):
     def forward(self, x):
         """:meta private:"""
         for layer in self.layers[:-1]:
-            x = F.relu(layer(x))
+            x = self.hidden_activation(layer(x))
         x = self.output_activation(self.layers[-1](x))
 
         return x

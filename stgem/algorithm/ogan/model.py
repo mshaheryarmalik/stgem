@@ -167,12 +167,14 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
                 # to make errors near 0 and 1 more drastic. Since logit is
                 # undefined in 0 and 1, we actually first transform the values
                 # to the interval [0.01, 0.99].
+                L = 0.01
+                g = torch.logit
                 if loss_s == "mse,logit":
-                    g = torch.nn.MSELoss()
+                    def f(X, Y):
+                        return ((g(0.98*X+0.01) - g(0.98*Y+0.01))**2 + L*(g((1+X-Y)/2))**2).mean()
                 else:
-                    g = torch.nn.L1Loss()
-                def f(X, Y):
-                    return g(torch.logit(0.98*X + 0.01), torch.logit(0.98*Y + 0.01))
+                    def f(X, Y):
+                        return (torch.abs(g(0.98*X+0.01) - g(0.98*Y+0.01)) + L*torch.abs(g((1+X-Y)/2))).mean()
                 loss = f
             else:
                 raise Exception("Unknown loss function '{}'.".format(loss_s))

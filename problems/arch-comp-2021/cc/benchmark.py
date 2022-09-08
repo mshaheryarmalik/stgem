@@ -1,12 +1,9 @@
 from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.random.algorithm import Random
-from stgem.algorithm.random.model import Uniform, LHS
-from stgem.algorithm.wogan.algorithm import WOGAN
-from stgem.algorithm.wogan.model import WOGAN_Model
+from stgem.algorithm.random.model import Uniform
 from stgem.generator import Search
 from stgem.objective_selector import ObjectiveSelectorAll
-from stgem.sut.matlab.sut import Matlab_Simulink
 
 mode = "stop_at_first_objective"
 
@@ -29,17 +26,19 @@ ogan_model_parameters = {
         "generator_mlm": "GeneratorNetwork",
         "generator_mlm_parameters": {
             "noise_dim": 20,
-            "neurons": [64, 64]
+            "hidden_neurons": [128,128,128],
+            "hidden_activation": "leaky_relu"
         },
         "discriminator_mlm": "DiscriminatorNetwork1dConv",
         "discriminator_mlm_parameters": {
-            "feature_maps": [16],
-            "kernel_sizes": [[2,2]],
+            "feature_maps": [16, 16],
+            "kernel_sizes": [[2,2], [2,2]],
             "convolution_activation": "relu",
-            "dense_neurons": 32
+            "convolution_activation": "leaky_relu",
+            "dense_neurons": 128
         },
-        "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
-        "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32}
+        "train_settings_init": {"epochs": 1, "discriminator_epochs": 15, "generator_batch_size": 32},
+        "train_settings": {"epochs": 1, "discriminator_epochs": 15, "generator_batch_size": 32}
     }
 }
 
@@ -119,14 +118,12 @@ def step_factory():
 
     step_1 = Search(mode=mode,
                     budget_threshold={"executions": 75},
-                    #algorithm=Random(model_factory=(lambda: LHS(parameters={"samples": 75})))
                     algorithm=Random(model_factory=(lambda: Uniform()))
                    )      
     step_2 = Search(mode=mode,
                     budget_threshold={"executions": 300},
-                    #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model()))
-                    #algorithm=OGAN(model_factory=(lambda: OGANK_Model()))
-                    algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters)
+                    algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters),
+                    results_include_models=False
                    )
     #steps = [step_1]
     steps = [step_1, step_2]

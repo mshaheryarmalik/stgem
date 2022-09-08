@@ -1,6 +1,5 @@
 import importlib, os, sys
-from stgem.sut.matlab.sut import Matlab
-from stgem.sut.matlab.sut import Matlab_Simulink
+from stgem.sut.matlab.sut import Matlab, Matlab_Simulink
 
 import click
 

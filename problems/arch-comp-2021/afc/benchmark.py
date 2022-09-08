@@ -28,17 +28,18 @@ ogan_model_parameters = {
         "generator_mlm": "GeneratorNetwork",
         "generator_mlm_parameters": {
             "noise_dim": 20,
-            "hidden_neurons": [64, 64]
+            "hidden_neurons": [128,128,128],
+            "hidden_activation": "leaky_relu"
         },
         "discriminator_mlm": "DiscriminatorNetwork1dConv",
         "discriminator_mlm_parameters": {
-            "feature_maps": [16],
-            "kernel_sizes": [[2,2]],
-            "convolution_activation": "relu",
-            "dense_neurons": 32
+            "feature_maps": [16, 16],
+            "kernel_sizes": [[2,2], [2,2]],
+            "convolution_activation": "leaky_relu",
+            "dense_neurons": 128
         },
-        "train_settings_init": {"epochs": 2, "discriminator_epochs": 20, "generator_batch_size": 32},
-        "train_settings": {"epochs": 1, "discriminator_epochs": 30, "generator_batch_size": 32}
+        "train_settings_init": {"epochs": 1, "discriminator_epochs": 15, "generator_batch_size": 32},
+        "train_settings": {"epochs": 1, "discriminator_epochs": 15, "generator_batch_size": 32}
     }
 }
 
