@@ -85,28 +85,30 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
         "optimizer": "Adam",
         "discriminator_lr": 0.005,
         "discriminator_betas": [0.9, 0.999],
-        "generator_lr": 0.001,
+        "generator_lr": 0.0001,
         "generator_betas": [0.9, 0.999],
         "noise_batch_size": 512,
-        "generator_loss": "MSE",
-        "discriminator_loss": "MSE",
+        "generator_loss": "MSE,Logit",
+        "discriminator_loss": "MSE,Logit",
         "generator_mlm": "GeneratorNetwork",
         "generator_mlm_parameters": {
             "noise_dim": 20,
-            "hidden_neurons": [64, 64]
+            "hidden_neurons": [128,128,128],
+            "hidden_activation": "leaky_relu"
         },
         "discriminator_mlm": "DiscriminatorNetwork",
         "discriminator_mlm_parameters": {
-            "hidden_neurons": [64, 64]
+            "hidden_neurons": [128,128],
+            "hidden_activation": "leaky_relu"
         },
         "train_settings_init": {
             "epochs": 2,
-            "discriminator_epochs": 20,
+            "discriminator_epochs": 10,
             "generator_batch_size": 32
         },
         "train_settings": {
             "epochs": 1,
-            "discriminator_epochs": 30,
+            "discriminator_epochs": 15,
             "generator_batch_size": 32
         }
     }
