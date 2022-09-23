@@ -50,6 +50,7 @@ class TestSTL(unittest.TestCase):
             x.upper_time_bound = int(x.upper_time_bound / sampling_period)
 
         trajectories = STL.Traces.from_mixed_signals(*args, sampling_period=sampling_period)
+        trajectories.timestamps = np.arange(len(trajectories.timestamps))
         robustness_signal, effective_range = spec.eval(trajectories)
 
         # Reset time bounds.
@@ -66,6 +67,25 @@ class TestSTL(unittest.TestCase):
         return objective(sut_input, sut_output), objective
 
     def test_stl(self):
+        # Test the moving window.
+        # ---------------------------------------------------------------------
+        sequence = [2, 1, 2, 3, 4, 5, 6, 7, 0, 9]
+        window = STL.Window(sequence)
+        assert window.update(10, 15) == -1
+        assert window.update(-5, -2) == -1
+        assert window.update(9, 15) == 9
+        assert window.update(8, 14) == 8
+        assert window.update(7, 10) == 8
+        assert window.update(7, 8) == 7
+        assert window.update(4, 6) == 4
+        assert window.update(0, 5) == 1
+        assert window.update(0, 4) == 1
+        assert window.update(2, 4) == 2
+        assert window.update(1, 6) == 1
+        assert window.update(3, 8) == 3
+        assert window.update(1, 9) == 8
+        assert window.update(2, 8) == 2
+
         # Test vector-valued output.
         # ---------------------------------------------------------------------
         output = [3, 0.5]
