@@ -3,8 +3,8 @@ import numpy as np
 # TODO: Save computed robustness values for efficiency and implement reset for reuse.
 
 class Window:
-    """A class for sliding a varying-length window along a signal to the left
-    and for finding the minimum or maximum over the window."""
+    """A class for sliding a varying-length window along a signal and for
+    finding the minimum or maximum over the window."""
 
     def __init__(self, sequence, find_min=True):
         self.sequence = sequence
@@ -20,6 +20,9 @@ class Window:
         self.prev_end_pos = len(self.sequence)
 
     def update(self, start_pos, end_pos):
+        """Update the window location, and return the best value (minimum or
+        maximum) in the updated window."""
+
         start = start_pos
         end = end_pos
 
@@ -32,7 +35,7 @@ class Window:
         start = max(start, 0)
 
         if start >= end:
-            raise Exception("Windows start position {} before its end position {}.".format(start, end))
+            raise Exception("Window start position {} before its end position {}.".format(start, end))
 
         # We have three areas we need to care about: an overlap, for which we
         # hopefully know the answer, and two areas to the left and right of the
@@ -507,12 +510,16 @@ class Until(STL):
         self.horizon = self.upper_time_bound +  max(self.formulas[0].horizon, self.formulas[1].horizon)
 
     def eval(self, traces, return_effective_range=True):
-        left_formula_robustness, left_formula_effective_range = self.formulas[0].eval(traces, return_effective_range)
-        right_formula_robustness, right_formula_effective_range = self.formulas[1].eval(traces, return_effective_range)
+        left_formula_robustness, left_formula_effective_range_signal = self.formulas[0].eval(traces, return_effective_range)
+        right_formula_robustness, right_formula_effective_range_signal = self.formulas[1].eval(traces, return_effective_range)
 
-        # We save the previous found positions as most often we use integer
-        # timestamps and evenly sampled signals, so the correct answer is
-        # directly previous position - 1. This has a huge speed benefit.
+        robustness = np.empty(shape=(len(left_formula_robustness)))
+        return_effective_range = return_effective_range and left_formula_effective_range_signal is not None and left_formula_effective_range_signal is not None
+        if return_effective_range:
+            effective_range_signal = np.empty(shape=(len(left_formula_effective_range_signal), 2))
+
+        # We save the previously found positions; see the corresponding comment
+        # in eval of Global.
         prev_lower_bound_pos = len(traces.timestamps) - 1
         prev_upper_bound_pos = len(traces.timestamps) - 1
         window = Window(left_formula_robustness)
@@ -524,7 +531,16 @@ class Until(STL):
             # Find the corresponding positions in timestamps.
             # Lower bound.
             if lower_bound > traces.timestamps[-1]:
-                lower_bound_pos = len(traces.timestamps)
+                # If the lower bound is out of scope, then the right robustness
+                # term in the min clause does not exist, so it is reasonable to
+                # compute the inf term to the end of the signal and use that as
+                # the robustness.
+                inf_min_idx = window.update(current_time_pos, len(traces.timestamps))
+                robustness[current_time_pos] = left_formula_robustness[inf_min_idx]
+                if return_effective_range:
+                    effective_range_signal[current_time_pos] = left_formula_effective_range_signal[inf_min_idx]
+
+                continue
             else:
                 if traces.timestamps[prev_lower_bound_pos - 1] == lower_bound:
                     lower_bound_pos = prev_lower_bound_pos - 1
@@ -552,25 +568,52 @@ class Until(STL):
             # Compute
             # TODO:
             maximum = float("-inf")
-            for offset in range(upper_bound_pos - lower_bound_pos + 1, -1, -1):
-                window_pos = lower_bound_pos + offset
-                min_idx = window.update(current_time_pos, window_pos + 1)
-                if min_idx == -1:
-                    # The window was out of scope. We guess here that the
-                    # robustness is the final robustness value observed. We don't
-                    # know the future, but this is our last observation.
-                    min_idx = upper_bound_pos
+            maximum_idx = None
+            maximum_robustness = None
+            for window_end_pos in range(lower_bound_pos, upper_bound_pos + 1):
+                # This is the infimum term.
+                if current_time_pos == window_end_pos:
+                    # This is a special case where the infimum term is taken
+                    # over an empty interval. We return an infinite value to
+                    # always select other robustness value.
+                    inf_min_idx = window_end_pos
+                    L = float("inf")
+                else:
+                    inf_min_idx = window.update(current_time_pos, window_end_pos)
+                    if inf_min_idx == -1:
+                        # The window was out of scope. This happens only in
+                        # exceptional circumstances. We guess the value then to be
+                        # the final robustness value observed.
+                        inf_min_idx = len(traces.timestamps) - 1
+                    L = left_formula_robustness[inf_min_idx]
 
-                R = min(left_formula_robustness[min_idx], right_formula_robustness[window_pos])
-                if R > maximum:
-                    maximum = R
+                # Compute the minimum of the right robustness and the inf term.
+                R = right_formula_robustness[window_end_pos]
+                if R < L:
+                    minimum_idx = window_end_pos
+                    minimum_robustness = 1
+                    v = R
+                else:
+                    minimum_idx = inf_min_idx
+                    minimum_robustness = 0
+                    v = L
 
-            robustness[current_time_pos] = maximum
-            if return_effective_range and formula_effective_range_signal is not None:
-                #effective_range_signal[current_time_pos] = formula_effective_range_signal[min_idx]
-                pass
+                # Update the maximum if needed.
+                if v > maximum:
+                    maximum = v
+                    maximum_idx = minimum_idx
+                    maximum_robustness = minimum_robustness
 
-        return robustness, effective_range_signal if return_effective_range and formula_effective_range_signal is not None else None
+            if maximum_robustness == 0:
+                robustness[current_time_pos] = left_formula_robustness[maximum_idx]
+                if return_effective_range:
+                    effective_range_signal[current_time_pos] = left_formula_effective_range_signal[maximum_idx]
+            else:
+                robustness[current_time_pos] = right_formula_robustness[maximum_idx]
+                if return_effective_range:
+                    effective_range_signal[current_time_pos] = right_formula_effective_range_signal[maximum_idx]
+
+        return robustness, effective_range_signal if return_effective_range else None
 
 class Global(STL):
 
@@ -587,7 +630,7 @@ class Global(STL):
         if return_effective_range and formula_effective_range_signal is not None:
             effective_range_signal = np.empty(shape=(len(formula_effective_range_signal), 2))
 
-        # We save the previous found positions as most often we use integer
+        # We save the previously found positions as most often we use integer
         # timestamps and evenly sampled signals, so the correct answer is
         # directly previous position - 1. This has a huge speed benefit.
         prev_lower_bound_pos = len(traces.timestamps) - 1

@@ -29,7 +29,7 @@ class TestSTL(unittest.TestCase):
             if isinstance(node, STL.Signal) and node.name not in formula_variables:
                 formula_variables.append(node.name)
 
-            if isinstance(node, STL.Global):
+            if isinstance(node, (STL.Global, STL.Until)):
                 time_bounded.append(node)
             if isinstance(node, STL.Finally):
                 time_bounded.append(node)
@@ -132,7 +132,7 @@ class TestSTL(unittest.TestCase):
         specification = "(always[0,30] RPM <= 3000) -> (always[0,4] SPEED <= 35)"
         correct_robustness = -4.55048
 
-        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
         specification = "(always[0,30] RPM <= 3000) -> (always[0,8] SPEED < 50)"
@@ -145,7 +145,24 @@ class TestSTL(unittest.TestCase):
         correct_robustness = 19.936958
 
         robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
-        assert abs(robustness == correct_robustness) < 1e-5
+        assert abs(robustness - correct_robustness) < 1e-5
+
+        # Test until operator.
+        # ---------------------------------------------------------------------
+        specification = "SPEED < 2.10 until[0.1,0.2] RPM > 2000"
+        correct_robustness = 0.0033535970602489584
+
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
+        assert abs(robustness - correct_robustness) < 1e-5
+
+        s3 = 10000*np.ones_like(s1)
+        signals = [s1, s2, s3]
+        variables = ["SPEED", "RPM", "VERUM"]
+        specification = "(not (VERUM until[0,30] RPM > 3000)) -> (not (VERUM until[0,4] SPEED > 35))"
+        correct_robustness = -4.55048
+
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
+        assert abs(robustness - correct_robustness) < 1e-5
 
         # Test time horizon.
         # ---------------------------------------------------------------------
@@ -216,6 +233,14 @@ class TestSTL(unittest.TestCase):
         specification = "always[3,4] (s1 and s2)"
         robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
         assert (effective_range == [-200, 4500]).all()
+
+        specification = "s1 until[0,4] (not s2)"
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=0)
+        assert (effective_range == [0, 200]).all()
+
+        specification = "s1 until[0,2] (not s2)"
+        robustness, effective_range = self.get_with_range(specification, t, signals, ranges, time=1)
+        assert (effective_range == [-4500, 200]).all()
 
         # Test alternative robustness.
         # ---------------------------------------------------------------------
