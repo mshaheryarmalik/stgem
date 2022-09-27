@@ -505,11 +505,11 @@ class Until(STL):
         self.upper_time_bound = upper_time_bound
         self.lower_time_bound = lower_time_bound
         self.formulas = [left_formula, right_formula]
-        if self.left_formula.range is None or self.right_formula.range is None:
+        if self.formulas[0].range is None or self.formulas[1].range is None:
             self.range = None
         else:
-            A = max(self.left_formula.range[1], self.right_formula.range[1])
-            B = min(self.left_formula.range[0], self.right_formula.range[0])
+            A = max(self.formulas[0].range[1], self.formulas[1].range[1])
+            B = min(self.formulas[0].range[0], self.formulas[1].range[0])
             self.range = [A, B]
 
         self.horizon = self.upper_time_bound +  max(self.formulas[0].horizon, self.formulas[1].horizon)
