@@ -117,7 +117,7 @@ class FalsifySTL(Objective):
             if isinstance(node, STL.Signal) and node.name not in self.formula_variables:
                 self.formula_variables.append(node.name)
 
-            if isinstance(node, STL.Global):
+            if isinstance(node, (STL.Global, STL.Until)):
                 self.time_bounded.append(node)
             if isinstance(node, STL.Finally):
                 self.time_bounded.append(node)

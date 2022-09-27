@@ -67,7 +67,7 @@ class stlParserVisitor(ParseTreeVisitor):
         elif ctx.getRuleContext().getChildCount() == 4: # Optional interval
             phi2 = self.visit(ctx.getRuleContext().getChild(3))
             interval = self.visit(ctx.getRuleContext().getChild(2))
-            raise NotImplementedError("Until not implemented.")
+            return Until(interval[0], interval[1], phi1, phi2)
 
 
     # Visit a parse tree produced by stlParser#opGloballyExpr.
