@@ -2,6 +2,8 @@ from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform
+from stgem.algorithm.wogan.algorithm import WOGAN
+from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.generator import Search
 from stgem.objective_selector import ObjectiveSelectorAll
 
@@ -16,11 +18,11 @@ ogan_parameters = {"fitness_coef": 0.95,
 ogan_model_parameters = {
     "convolution": {
         "optimizer": "Adam",
-        "discriminator_lr": 0.005,
+        "discriminator_lr": 0.001,
         "discriminator_betas": [0.9, 0.999],
         "generator_lr": 0.0001,
         "generator_betas": [0.9, 0.999],
-        "noise_batch_size": 12000,
+        "noise_batch_size": 8192,
         "generator_loss": "MSE,Logit",
         "discriminator_loss": "MSE,Logit",
         "generator_mlm": "GeneratorNetwork",
@@ -55,7 +57,8 @@ def build_specification(selected_specification, mode=None):
                       "inputs": ["THROTTLE", "BRAKE"],
                       "outputs": ["Y1", "Y2", "Y3", "Y4", "Y5"],
                       "input_range": [[0, 1], [0, 1]],
-                      "output_range": [[-5000, 0], [-5000, 0], [-5000, 0], [-5000, 0], [-5000, 0]],
+                      "output_range": [[-300, 0], [-300, 0], [-300, 0], [-300, 0], [-300, 0]],
+                      #"output_range": [[-5000, 0], [-5000, 0], [-5000, 0], [-5000, 0], [-5000, 0]],
                       "simulation_time": 100,
                       "time_slices": [5, 5],
                       "sampling_step": 0.5
@@ -123,6 +126,7 @@ def step_factory():
     step_2 = Search(mode=mode,
                     budget_threshold={"executions": 300},
                     algorithm=OGAN(model_factory=(lambda: OGAN_Model(ogan_model_parameters["convolution"])), parameters=ogan_parameters),
+                    #algorithm=WOGAN(model_factory=(lambda: WOGAN_Model())),
                     results_include_models=False
                    )
     #steps = [step_1]

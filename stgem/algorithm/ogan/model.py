@@ -83,7 +83,7 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
 
     default_parameters = {
         "optimizer": "Adam",
-        "discriminator_lr": 0.005,
+        "discriminator_lr": 0.001,
         "discriminator_betas": [0.9, 0.999],
         "generator_lr": 0.0001,
         "generator_betas": [0.9, 0.999],
@@ -98,12 +98,12 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
         },
         "discriminator_mlm": "DiscriminatorNetwork",
         "discriminator_mlm_parameters": {
-            "hidden_neurons": [128,128],
+            "hidden_neurons": [128,128,128],
             "hidden_activation": "leaky_relu"
         },
         "train_settings_init": {
-            "epochs": 2,
-            "discriminator_epochs": 10,
+            "epochs": 1,
+            "discriminator_epochs": 15,
             "generator_batch_size": 32
         },
         "train_settings": {
@@ -169,7 +169,7 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
                 # to make errors near 0 and 1 more drastic. Since logit is
                 # undefined in 0 and 1, we actually first transform the values
                 # to the interval [0.01, 0.99].
-                L = 0.01
+                L = 0.001
                 g = torch.logit
                 if loss_s == "mse,logit":
                     def f(X, Y):

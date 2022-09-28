@@ -83,34 +83,34 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
         "analyzer": "Analyzer_NN",
         "analyzer_parameters": {
             "optimizer": "Adam",
-            "lr": 0.005,
+            "lr": 0.001,
             "betas": [0, 0.9],
             "loss": "MSE,Logit",
             "l2_regularization_coef": 0.001,
             "analyzer_mlm": "AnalyzerNetwork",
             "analyzer_mlm_parameters": {
-                "hidden_neurons": [64, 64],
+                "hidden_neurons": [128,128,128],
                 "layer_normalization": False
             },
         },
         "generator_mlm": "GeneratorNetwork",
         "generator_mlm_parameters": {
             "noise_dim": 20,
-            "hidden_neurons": [128, 128],
+            "hidden_neurons": [128,128,128],
             "batch_normalization": False,
             "layer_normalization": False
         },
         "critic_mlm": "CriticNetwork",
-        "critic_mlm_parameters": {"hidden_neurons": [128, 128]},
+        "critic_mlm_parameters": {"hidden_neurons": [128,128,128]},
         "train_settings_init": {
-            "epochs": 3,
-            "analyzer_epochs": 20,
+            "epochs": 1,
+            "analyzer_epochs": 15,
             "critic_steps": 5,
             "generator_steps": 1
         },
         "train_settings": {
             "epochs": 10,
-            "analyzer_epochs": 1,
+            "analyzer_epochs": 5,
             "critic_steps": 5,
             "generator_steps": 1
         }

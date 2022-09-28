@@ -49,7 +49,9 @@ def get_sut_objective_factory(benchmark_module, selected_specification, mode):
         return sut
 
     def objective_factory():
-        return [FalsifySTL(specification=specification, ranges=ranges, scale=True, strict_horizon_check=strict_horizon_check) for specification in specifications]
+        nu = None
+        #nu = 1
+        return [FalsifySTL(specification=specification, ranges=ranges, scale=True, strict_horizon_check=strict_horizon_check, nu=nu) for specification in specifications]
 
     return sut_factory, objective_factory
 
