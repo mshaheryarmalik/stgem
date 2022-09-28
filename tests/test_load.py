@@ -44,7 +44,7 @@ class TestLoad(unittest.TestCase):
             objective_selector=ObjectiveSelectorAll(),
             steps=[Load(file_name=file_name,
                         mode=mode_load,
-                        range_load=20)
+                        range_load=15)
                   ]
         )
 

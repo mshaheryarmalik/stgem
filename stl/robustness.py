@@ -2,6 +2,123 @@ import numpy as np
 
 # TODO: Save computed robustness values for efficiency and implement reset for reuse.
 
+class Window:
+    """A class for sliding a varying-length window along a signal and for
+    finding the minimum or maximum over the window."""
+
+    def __init__(self, sequence, find_min=True):
+        self.sequence = sequence
+        self.find_min = find_min
+
+        self.argminmax = np.argmin if find_min else np.argmax
+        self.better = lambda x, y: x < y if find_min else lambda x, y: x > y
+
+        self.prev_best_idx = len(self.sequence)
+        self.prev_best = float("inf") if self.find_min else float("-inf")
+
+        self.prev_start_pos = len(self.sequence)
+        self.prev_end_pos = len(self.sequence)
+
+    def update(self, start_pos, end_pos):
+        """Update the window location, and return the best value (minimum or
+        maximum) in the updated window."""
+
+        start = start_pos
+        end = end_pos
+
+        # If the window is outside of the sequence, return -1.
+        if start >= len(self.sequence) or end < 0:
+            return -1
+
+        # Adjust the beginning and end if out of scope.
+        end = min(end, len(self.sequence))
+        start = max(start, 0)
+
+        if start >= end:
+            raise Exception("Window start position {} before its end position {}.".format(start, end))
+
+        # We have three areas we need to care about: an overlap, for which we
+        # hopefully know the answer, and two areas to the left and right of the
+        # overlap. Each of these three areas can be empty.
+        if start < self.prev_start_pos:
+            if end <= self.prev_start_pos:
+                # Disjoint and to the left.
+                l_s = start
+                l_e = end
+                o_s = -1
+                o_e = -1
+                r_s = -1
+                r_e = -1
+            else:
+                if end <= self.prev_end_pos:
+                    # Intersects from left but does not extend over to the right.
+                    l_s = start
+                    l_e = self.prev_start_pos
+                    o_s = self.prev_start_pos
+                    o_e = end
+                    r_s = -1
+                    r_e = -1
+                else:
+                    # Contains the previous completely and has left and right areas nonempty.
+                    l_s = start
+                    l_e = self.prev_start_pos
+                    o_s = self.prev_start_pos
+                    o_e = self.prev_end_pos
+                    r_s = self.prev_end_pos
+                    r_e = end
+        else:
+            if start >= self.prev_end_pos:
+                # Disjoint and to the right.
+                l_s = -1
+                l_e = -1
+                o_s = -1
+                o_e = -1
+                r_s = start
+                r_e = end
+            else:
+                if end <= self.prev_end_pos:
+                    # Is contained completely in the previous.
+                    l_s = -1
+                    l_e = -1
+                    o_s = start
+                    o_e = end
+                    r_s = -1
+                    r_e = -1
+                else:
+                    # Intersects from the right but does not extend over to the left.
+                    l_s = -1
+                    l_e = -1
+                    o_s = start
+                    o_e = self.prev_end_pos
+                    r_s = self.prev_end_pos
+                    r_e = end
+
+        # Find the minimums from each area. If the previous best value is not
+        # in the overlap, we need to search the whole overlap.
+        best_idx = -1
+        if o_s < o_e:
+            if o_s <= self.prev_best_idx < o_e:
+                best_idx = self.prev_best_idx
+            else:
+                best_idx = o_s + self.argminmax(self.sequence[o_s:o_e])
+                self.prev_best = self.sequence[best_idx]
+        if l_s < l_e:
+            left_idx = l_s + self.argminmax(self.sequence[l_s:l_e])
+            if best_idx == -1 or self.better(self.sequence[left_idx], self.prev_best):
+                best_idx = left_idx
+                self.prev_best = self.sequence[best_idx]
+        if r_s < r_e:
+            right_idx = r_s + self.argminmax(self.sequence[r_s:r_e])
+            if best_idx == -1 or self.better(self.sequence[right_idx], self.prev_best):
+                best_idx = right_idx
+                self.prev_best = self.sequence[best_idx]
+
+        self.prev_best_idx = best_idx
+        self.prev_start_pos = start_pos
+        self.prev_end_pos = end_pos
+
+        return self.prev_best_idx
+
 class Traces:
 
     def __init__(self, timestamps, signals):
@@ -382,6 +499,127 @@ class Next(STL):
 
         return robustness, formula_effective_range
 
+class Until(STL):
+
+    def __init__(self, lower_time_bound, upper_time_bound, left_formula, right_formula):
+        self.upper_time_bound = upper_time_bound
+        self.lower_time_bound = lower_time_bound
+        self.formulas = [left_formula, right_formula]
+        if self.formulas[0].range is None or self.formulas[1].range is None:
+            self.range = None
+        else:
+            A = max(self.formulas[0].range[1], self.formulas[1].range[1])
+            B = min(self.formulas[0].range[0], self.formulas[1].range[0])
+            self.range = [A, B]
+
+        self.horizon = self.upper_time_bound +  max(self.formulas[0].horizon, self.formulas[1].horizon)
+
+    def eval(self, traces, return_effective_range=True):
+        left_formula_robustness, left_formula_effective_range_signal = self.formulas[0].eval(traces, return_effective_range)
+        right_formula_robustness, right_formula_effective_range_signal = self.formulas[1].eval(traces, return_effective_range)
+
+        robustness = np.empty(shape=(len(left_formula_robustness)))
+        return_effective_range = return_effective_range and left_formula_effective_range_signal is not None and left_formula_effective_range_signal is not None
+        if return_effective_range:
+            effective_range_signal = np.empty(shape=(len(left_formula_effective_range_signal), 2))
+
+        # We save the previously found positions; see the corresponding comment
+        # in eval of Global.
+        prev_lower_bound_pos = len(traces.timestamps) - 1
+        prev_upper_bound_pos = len(traces.timestamps) - 1
+        window = Window(left_formula_robustness)
+        for current_time_pos in range(len(traces.timestamps) - 1, -1, -1):
+            # Lower and upper times for the current time.
+            lower_bound = traces.timestamps[current_time_pos] + self.lower_time_bound
+            upper_bound = traces.timestamps[current_time_pos] + self.upper_time_bound
+
+            # Find the corresponding positions in timestamps.
+            # Lower bound.
+            if lower_bound > traces.timestamps[-1]:
+                # If the lower bound is out of scope, then the right robustness
+                # term in the min clause does not exist, so it is reasonable to
+                # compute the inf term to the end of the signal and use that as
+                # the robustness.
+                inf_min_idx = window.update(current_time_pos, len(traces.timestamps))
+                robustness[current_time_pos] = left_formula_robustness[inf_min_idx]
+                if return_effective_range:
+                    effective_range_signal[current_time_pos] = left_formula_effective_range_signal[inf_min_idx]
+
+                continue
+            else:
+                if traces.timestamps[prev_lower_bound_pos - 1] == lower_bound:
+                    lower_bound_pos = prev_lower_bound_pos - 1
+                else:
+                    lower_bound_pos = traces.search_time_index(lower_bound, start=current_time_pos)
+                    # TODO: This should never happen except for floating point
+                    # inaccuracies. We now raise an exception as otherwise the
+                    # user gets unexpected behavior.
+                    if lower_bound_pos < 0:
+                        raise Exception("No timestamp '{}' found even though it should exist.".format(lower_bound))
+            # Upper bound.
+            if upper_bound > traces.timestamps[-1]:
+                upper_bound_pos = len(traces.timestamps) - 1
+            else:
+                if traces.timestamps[prev_upper_bound_pos - 1] == upper_bound:
+                    upper_bound_pos = prev_upper_bound_pos - 1
+                else:
+                    upper_bound_pos = traces.search_time_index(upper_bound, start=lower_bound_pos)
+                    # See above.
+                    if upper_bound_pos < 0:
+                        raise Exception("No timestamp '{}' found even though it should exist.".format(upper_bound))
+
+            # Move a window with start position current_time_pos and end
+            # position in the interval determined by lower_bound_pos and upper_bound_pos.
+            # Compute
+            # TODO:
+            maximum = float("-inf")
+            maximum_idx = None
+            maximum_robustness = None
+            for window_end_pos in range(lower_bound_pos, upper_bound_pos + 1):
+                # This is the infimum term.
+                if current_time_pos == window_end_pos:
+                    # This is a special case where the infimum term is taken
+                    # over an empty interval. We return an infinite value to
+                    # always select other robustness value.
+                    inf_min_idx = window_end_pos
+                    L = float("inf")
+                else:
+                    inf_min_idx = window.update(current_time_pos, window_end_pos)
+                    if inf_min_idx == -1:
+                        # The window was out of scope. This happens only in
+                        # exceptional circumstances. We guess the value then to be
+                        # the final robustness value observed.
+                        inf_min_idx = len(traces.timestamps) - 1
+                    L = left_formula_robustness[inf_min_idx]
+
+                # Compute the minimum of the right robustness and the inf term.
+                R = right_formula_robustness[window_end_pos]
+                if R < L:
+                    minimum_idx = window_end_pos
+                    minimum_robustness = 1
+                    v = R
+                else:
+                    minimum_idx = inf_min_idx
+                    minimum_robustness = 0
+                    v = L
+
+                # Update the maximum if needed.
+                if v > maximum:
+                    maximum = v
+                    maximum_idx = minimum_idx
+                    maximum_robustness = minimum_robustness
+
+            if maximum_robustness == 0:
+                robustness[current_time_pos] = left_formula_robustness[maximum_idx]
+                if return_effective_range:
+                    effective_range_signal[current_time_pos] = left_formula_effective_range_signal[maximum_idx]
+            else:
+                robustness[current_time_pos] = right_formula_robustness[maximum_idx]
+                if return_effective_range:
+                    effective_range_signal[current_time_pos] = right_formula_effective_range_signal[maximum_idx]
+
+        return robustness, effective_range_signal if return_effective_range else None
+
 class Global(STL):
 
     def __init__(self, lower_time_bound, upper_time_bound, formula):
@@ -396,20 +634,22 @@ class Global(STL):
         robustness = np.empty(shape=(len(formula_robustness)))
         if return_effective_range and formula_effective_range_signal is not None:
             effective_range_signal = np.empty(shape=(len(formula_effective_range_signal), 2))
-        # We save the found positions as most often we use integer timestamps and
-        # evenly sampled signals, so this has huge speed benefit.
+
+        # We save the previously found positions as most often we use integer
+        # timestamps and evenly sampled signals, so the correct answer is
+        # directly previous position - 1. This has a huge speed benefit.
         prev_lower_bound_pos = len(traces.timestamps) - 1
         prev_upper_bound_pos = len(traces.timestamps) - 1
-        prev_min = float("inf")
-        prev_min_idx = len(traces.timestamps)
+        window = Window(formula_robustness)
         for current_time_pos in range(len(traces.timestamps) - 1, -1, -1):
             # Lower and upper times for the current time.
             lower_bound = traces.timestamps[current_time_pos] + self.lower_time_bound
             upper_bound = traces.timestamps[current_time_pos] + self.upper_time_bound
 
             # Find the corresponding positions in timestamps.
+            # Lower bound.
             if lower_bound > traces.timestamps[-1]:
-                lower_bound_pos = len(traces.timestamps) - 1
+                lower_bound_pos = len(traces.timestamps)
             else:
                 if traces.timestamps[prev_lower_bound_pos - 1] == lower_bound:
                     lower_bound_pos = prev_lower_bound_pos - 1
@@ -420,7 +660,7 @@ class Global(STL):
                     # user gets unexpected behavior.
                     if lower_bound_pos < 0:
                         raise Exception("No timestamp '{}' found even though it should exist.".format(lower_bound))
-
+            # Upper bound.
             if upper_bound > traces.timestamps[-1]:
                 upper_bound_pos = len(traces.timestamps) - 1
             else:
@@ -432,28 +672,22 @@ class Global(STL):
                     if upper_bound_pos < 0:
                         raise Exception("No timestamp '{}' found even though it should exist.".format(upper_bound))
 
-            # Find minimum between the positions.
-            start_pos = lower_bound_pos
-            end_pos = upper_bound_pos + 1
-            # Check if the previous minimum was found in the overlap
-            # between the current search area and the previous one. If so,
-            # then adjust the upper bound by removing the overlap from the
-            # end.
-            if prev_min_idx < end_pos:
-                end_pos -= end_pos - prev_lower_bound_pos
+            # Slide a window corresponding to the indices and find the index of
+            # the minimum. The value -1 signifies that the window was out of
+            # scope.
+            min_idx = window.update(lower_bound_pos, upper_bound_pos + 1)
+            if min_idx == -1:
+                # The window was out of scope. We guess here that the
+                # robustness is the final robustness value observed. We don't
+                # know the future, but this is our last observation.
+                min_idx = len(traces.timestamps) - 1
 
-            if start_pos < end_pos:
-                min_idx = start_pos + np.argmin(formula_robustness[start_pos: end_pos])
-                if prev_min_idx > upper_bound_pos or formula_robustness[min_idx] < prev_min:
-                    prev_min_idx = min_idx
-                    prev_min = formula_robustness[min_idx]
-
-            prev_lower_bound_pos = start_pos
-            prev_upper_bound_pos = end_pos - 1
-
-            robustness[current_time_pos] = prev_min
+            robustness[current_time_pos] = formula_robustness[min_idx]
             if return_effective_range and formula_effective_range_signal is not None:
-                effective_range_signal[current_time_pos] = formula_effective_range_signal[prev_min_idx]
+                effective_range_signal[current_time_pos] = formula_effective_range_signal[min_idx]
+
+            prev_lower_bound_pos = prev_lower_bound_pos
+            prev_upper_bound_pos = prev_upper_bound_pos
 
         return robustness, effective_range_signal if return_effective_range and formula_effective_range_signal is not None else None
 
