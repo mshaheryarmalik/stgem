@@ -40,7 +40,7 @@ Clone your forked repo to your local machine. Go to the cloned directory to
 install the dependencies into the venv. 
 
 ```shell
-git clone https://gitlab.abo.fi/stc.git
+git clone your_repository_address
 cd stgem
 pip3 install -r requirements.txt
 ````
