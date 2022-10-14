@@ -37,7 +37,9 @@ class MaxOOB(Objective):
         #return 1 - max(r.outputs)
         return 1 - max(r.outputs[0])
 
-mode = "stop_at_first_objective"
+# These are the settings used to get the results of "Wasserstein Generative
+# Adversarial Networks for Online Test Generation for Cyber Physical Systems".
+mode = "exhaust_budget"
 
 sut_parameters = {
     "beamng_home":  "C:/BeamNG/BeamNG.tech.v0.24.0.1",
@@ -60,10 +62,10 @@ wogan_parameters = {
 
 wogan_model_parameters = {
     "critic_optimizer": "Adam",
-    "critic_lr": 0.001,
+    "critic_lr": 0.00005,
     "critic_betas": [0, 0.9],
     "generator_optimizer": "Adam",
-    "generator_lr": 0.001,
+    "generator_lr": 0.00005,
     "generator_betas": [0, 0.9],
     "noise_batch_size": 32,
     "gp_coefficient": 10,
@@ -72,26 +74,28 @@ wogan_model_parameters = {
     "analyzer": "Analyzer_NN",
     "analyzer_parameters": {
         "optimizer": "Adam",
-        "lr": 0.005,
+        "lr": 0.001,
         "betas": [0, 0.9],
         "loss": "MSE,logit",
-        "l2_regularization_coef": 0.001,
+        "l2_regularization_coef": 0.01,
         "analyzer_mlm": "AnalyzerNetwork",
         "analyzer_mlm_parameters": {
-            "hidden_neurons": [64, 64],
+            "hidden_neurons": [32, 32],
             "layer_normalization": False
         },
     },
     "generator_mlm": "GeneratorNetwork",
     "generator_mlm_parameters": {
-        "noise_dim": 20,
+        "noise_dim": 10,
         "hidden_neurons": [128, 128],
+        "activation": "relu",
         "batch_normalization": False,
         "layer_normalization": False
     },
     "critic_mlm": "CriticNetwork",
     "critic_mlm_parameters": {
-        "hidden_neurons": [128, 128]
+        "hidden_neurons": [128, 128],
+        "activation": "leaky_relu"
     },
     "train_settings_init": {
         "epochs": 3,
@@ -100,8 +104,8 @@ wogan_model_parameters = {
         "generator_steps": 1
     },
     "train_settings": {
-        "epochs": 10,
-        "analyzer_epochs": 1,
+        "epochs": 2,
+        "analyzer_epochs": 10,
         "critic_steps": 5,
         "generator_steps": 1
     },
@@ -115,13 +119,14 @@ generator = STGEM(
                   objective_selector=ObjectiveSelectorAll(),
                   steps=[
                          Search(mode=mode,
-                                budget_threshold={"executions": 50},
+                                budget_threshold={"wall_time": 1800},
                                 algorithm=Random(model_factory=(lambda: UniformDependent()))),
                          Search(mode=mode,
-                                budget_threshold={"executions": 200},
+                                budget_threshold={"wall_time": 7200},
                                 algorithm=WOGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)), parameters=wogan_parameters))
                         ]
                   )
 
 if __name__ == "__main__":
     r = generator.run()
+
