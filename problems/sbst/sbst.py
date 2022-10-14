@@ -88,14 +88,14 @@ wogan_model_parameters = {
     "generator_mlm_parameters": {
         "noise_dim": 10,
         "hidden_neurons": [128, 128],
-        "activation": "relu",
+        "hidden_activation": "relu",
         "batch_normalization": False,
         "layer_normalization": False
     },
     "critic_mlm": "CriticNetwork",
     "critic_mlm_parameters": {
         "hidden_neurons": [128, 128],
-        "activation": "leaky_relu"
+        "hidden_activation": "leaky_relu"
     },
     "train_settings_init": {
         "epochs": 3,
