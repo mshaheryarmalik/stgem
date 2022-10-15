@@ -9,12 +9,12 @@ class Budget:
         self.budget_end_values = {name:math.inf for name in self.budget_ids}
         # We start wall time counting only when the thresholds have been
         # updated for the first time.
-        self.budget_start_values["wall_time"] = -1
+        self.initial_wall_time = -1
 
     def update_threshold(self, budget_threshold):
         # We setup the wall time counter here if it has not been started yet.
-        if self.budget_start_values["wall_time"] < 0:
-            self.budget_start_values["wall_time"] = time.perf_counter()
+        if self.initial_wall_time < 0:
+            self.initial_wall_time = time.perf_counter()
 
         # Use specified values, infinite budget for nonspecified budgets.
         for name in budget_threshold:
@@ -34,7 +34,7 @@ class Budget:
         result = {}
         for name in self.budget_ids:
             start = self.budget_start_values[name]
-            value = self.budget_values[name] if name != "wall_time" else time.perf_counter()
+            value = self.budget_values[name] if name != "wall_time" else time.perf_counter() - self.initial_wall_time
             end = self.budget_end_values[name]
             if value >= self.budget_start_values[name]:
                 left = 1.0 - (value - start) / (end - start)
