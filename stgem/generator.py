@@ -89,7 +89,6 @@ class Search(Step):
     def setup(self, sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger):
         super().setup(sut, search_space, test_repository, budget, objective_funcs, objective_selector, device, logger)
 
-        self.budget.update_threshold(self.budget_threshold)
         self.algorithm.setup(
             search_space=self.search_space,
             device=self.device,

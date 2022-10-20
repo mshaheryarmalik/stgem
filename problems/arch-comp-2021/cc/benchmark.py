@@ -50,6 +50,7 @@ def build_specification(selected_specification, mode=None):
     the specification. A previously created SUT can be passed as an argument,
     and then it will be reused."""
 
+    # Notice that the output_range is changed in some specifications.
     sut_parameters = {"type": "simulink",
                       "model_file": "cc/cars",
                       "input_type": "piecewise constant signal",
@@ -57,8 +58,7 @@ def build_specification(selected_specification, mode=None):
                       "inputs": ["THROTTLE", "BRAKE"],
                       "outputs": ["Y1", "Y2", "Y3", "Y4", "Y5"],
                       "input_range": [[0, 1], [0, 1]],
-                      "output_range": [[-300, 0], [-300, 0], [-300, 0], [-300, 0], [-300, 0]],
-                      #"output_range": [[-5000, 0], [-5000, 0], [-5000, 0], [-5000, 0], [-5000, 0]],
+                      "output_range": [[-5000, 0], [-5000, 10], [-5000, 20], [-5000, 30], [-5000, 40]],
                       "simulation_time": 100,
                       "time_slices": [5, 5],
                       "sampling_step": 0.5
@@ -79,11 +79,17 @@ def build_specification(selected_specification, mode=None):
         strict_horizon_check = True
     elif selected_specification == "CC3":
         specification = "always[0,80]( (always[0,20]( Y2 - Y1 <= 20 )) or (eventually[0,20]( Y5 - Y4 >= 40 )) )"
+        # This range is determined by the minimum and maximum over a 1000
+        # random executions.
+        sut_parameters["output_range"] = [[-250, 0], [-250, 10], [-250, 20], [-200, 30], [-200, 40]],
 
         specifications = [specification]
         strict_horizon_check = True
     elif selected_specification == "CC4":
         specification = "always[0,65]( eventually[0,30]( always[0,20]( Y5 - Y4 >= 8 ) ) )"
+        # This range is determined by the minimum and maximum over a 1000
+        # random executions.
+        sut_parameters["output_range"] = [[-250, 0], [-250, 10], [-250, 20], [-200, 30], [-200, 40]],
 
         specifications = [specification]
         strict_horizon_check = False

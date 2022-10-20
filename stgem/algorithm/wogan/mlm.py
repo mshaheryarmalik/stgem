@@ -96,23 +96,23 @@ class AnalyzerNetwork_classifier(WOGAN_NN):
 class CriticNetwork(WOGAN_NN):
     """Define the neural network model for the WGAN critic."""
 
-    def __init__(self, input_shape, hidden_neurons):
+    def __init__(self, input_shape, hidden_neurons, hidden_activation="leaky_relu"):
         super().__init__(input_shape=input_shape,
                          hidden_neurons=hidden_neurons,
                          output_shape=1,
                          output_activation="linear",
-                         hidden_activation="leaky_relu"
+                         hidden_activation=hidden_activation
                         )
 
 class GeneratorNetwork(WOGAN_NN):
     """Define the neural network model for the WGAN generator."""
 
-    def __init__(self, noise_dim, hidden_neurons, output_shape, batch_normalization=False, layer_normalization=False):
+    def __init__(self, noise_dim, hidden_neurons, output_shape, hidden_activation="relu", batch_normalization=False, layer_normalization=False):
         super().__init__(input_shape=noise_dim,
                          hidden_neurons=hidden_neurons,
                          output_shape=output_shape,
                          output_activation="tanh",
-                         hidden_activation="relu",
+                         hidden_activation=hidden_activation,
                          batch_normalization=batch_normalization,
                          layer_normalization=layer_normalization
                         )
