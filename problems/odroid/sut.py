@@ -3,23 +3,22 @@ import os
 import numpy as np
 
 from stgem.sut import SUT, SUTOutput, SUTInput
-from .util import generate_odroid_data
+from util import generate_odroid_data
 
 class OdroidSUT(SUT):
-    """
-    Implements the Odroid system under test.
+    """Implements the Odroid system under test.
 
-    The input is the SUT configuration with dimension 6 and the output of a test
-    is a 3-tuple (power, performance, efficiency) scaled to [0, 1].
-    """
+    The input is a configuration of 6 parameters in [-1, 1], and the output is
+    a 3-tuple (POWER, PERFORMANCE, EFFICIENCY)."""
 
     def __init__(self, parameters):
         super().__init__(parameters)
 
         self.idim = 6
         self.odim = 3
+        self.outputs = ["POWER", "PERFORMANCE", "EFFICIENCY"]
         self.input_range = [[-1, 1] for _ in range(self.idim)]
-        self.output_range = [[0, 1] for _ in range(self.odim)]
+        self.output_range = [[0, 9], [1850000, 16120770000], [4790000, 8129710000]]
 
         self.ndimensions = None
         self.dataX = None
@@ -56,13 +55,6 @@ class OdroidSUT(SUT):
         # Normalize the inputs to [-1, 1].
         self.scaleX = self.dataX.max(axis=0)
         self.dataX = (self.dataX / self.scaleX) * 2 - 1
-        # Normalize the outputs to [0, 1].
-        self.scaleY1 = self.dataY[:, 0].max(axis=0)
-        self.dataY[:, 0] = self.dataY[:, 0] / self.scaleY1
-        self.scaleY2 = self.dataY[:, 1].max(axis=0)
-        self.dataY[:, 1] = self.dataY[:, 1] / self.scaleY2
-        self.scaleY3 = self.dataY[:, 2].max(axis=0)
-        self.dataY[:, 2] = self.dataY[:, 2] / self.scaleY3
 
     def _execute_test(self, sut_input):
         """
