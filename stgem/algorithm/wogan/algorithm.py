@@ -83,6 +83,7 @@ class WOGAN(Algorithm):
         for n in range(self.bins):
             weights[n] = self.bin_weight(h((n + 0.5) * (1/self.bins)) - shift)
         # Normalize weights.
+        weights = 1 - weights
         weights = weights / np.sum(weights)
 
         idx = np.random.choice(list(range(self.bins)), N, p=weights)
