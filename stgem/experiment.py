@@ -53,7 +53,7 @@ class Experiment:
 
                 # Delete generator and force garbage collection. This is
                 # especially important when using Matleb SUTs as several
-                # Matlab instances take quite lot of memory.
+                # Matlab instances take quite a lot of memory.
                 del generator
                 if self.garbage_collect:
                     gc.collect()

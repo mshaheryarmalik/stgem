@@ -309,7 +309,7 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
         # the computation, its parameters are present in the computation graph.
         # These parameters are however not updated because the optimizer is
         # initialized only for the parameters of 'self.modelG' (see the
-        # initialization of 'self.modelG'.
+        # initialization of 'self.modelG').
 
         losses = []
         for n in range(0, self.noise_batch_size, generator_batch_size):

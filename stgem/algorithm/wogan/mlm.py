@@ -53,6 +53,10 @@ class WOGAN_NN(nn.Module):
             if self.layer_normalization:
                 self.norm.append(nn.LayerNorm(neurons))
         self.bottom = nn.Linear(self.hidden_neurons[-1], self.output_shape)
+        if self.batch_normalization:
+            self.norm.append(nn.BatchNorm1d(self.output_shape))
+        if self.layer_normalization:
+            self.norm.append(nn.LayerNorm(self.output_shape))
 
     def forward(self, x):
         """:meta private:"""
@@ -63,7 +67,10 @@ class WOGAN_NN(nn.Module):
                 x = self.hidden_activation(self.norm[i](L(x)))
             else:
                 x = self.hidden_activation(L(x))
-        x = self.output_activation(self.bottom(x))
+        if self.batch_normalization or self.layer_normalization:
+            x = self.output_activation(self.norm[-1](self.bottom(x)))
+        else:
+            x = self.output_activation(self.bottom(x))
 
         return x
 
@@ -96,13 +103,15 @@ class AnalyzerNetwork_classifier(WOGAN_NN):
 class CriticNetwork(WOGAN_NN):
     """Define the neural network model for the WGAN critic."""
 
-    def __init__(self, input_shape, hidden_neurons, hidden_activation="leaky_relu"):
+    def __init__(self, input_shape, hidden_neurons, hidden_activation="leaky_relu", batch_normalization=False, layer_normalization=False):
         super().__init__(input_shape=input_shape,
                          hidden_neurons=hidden_neurons,
                          output_shape=1,
                          output_activation="linear",
-                         hidden_activation=hidden_activation
-                        )
+                         hidden_activation=hidden_activation,
+                         batch_normalization=batch_normalization,
+                         layer_normalization=layer_normalization
+        )
 
 class GeneratorNetwork(WOGAN_NN):
     """Define the neural network model for the WGAN generator."""

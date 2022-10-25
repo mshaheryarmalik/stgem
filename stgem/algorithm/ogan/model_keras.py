@@ -1,4 +1,3 @@
-import dill as pickle
 import numpy as np
 
 from stgem.algorithm import ModelSkeleton

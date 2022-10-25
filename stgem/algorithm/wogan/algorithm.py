@@ -26,7 +26,7 @@ class WOGAN(Algorithm):
     def setup(self, search_space, device=None, logger=None):
         super().setup(search_space, device, logger)
    
-        # Setup the shift function for sampling training data.
+        # Set up the shift function for sampling training data.
         # ---------------------------------------------------------------------
         # The initial shift value is determined at the minimum budget left when
         # the function do_train is called for the first time. The final shift
@@ -39,7 +39,7 @@ class WOGAN(Algorithm):
         if not self.shift_function in ["linear"]:
             raise Exception("No shift function type '{}'.".format(self.shift_function))
 
-        # Setup the function for computing the bin weights.
+        # Set up the function for computing the bin weights.
         # ---------------------------------------------------------------------
         self.bin_weight = lambda x: 1 / (1 + np.exp(-1 * x))
 
@@ -83,9 +83,12 @@ class WOGAN(Algorithm):
         for n in range(self.bins):
             weights[n] = self.bin_weight(h((n + 0.5) * (1/self.bins)) - shift)
         # Normalize weights.
+        weights = 1 - weights
         weights = weights / np.sum(weights)
 
         idx = np.random.choice(list(range(self.bins)), N, p=weights)
+        # Invert because we minimize. The old code maximized.
+        idx = [(self.bins - i) % self.bins for i in idx]
         return idx
 
     def training_sample(self, N, X, B, shift):
@@ -99,9 +102,9 @@ class WOGAN(Algorithm):
         sample_X = np.zeros(shape=(N, X.shape[1]))
         available = {n: v.copy() for n, v in B.items()}
         for n, bin_idx in enumerate(self.bin_sample(N, shift)):
-            # If a bin is empty, try one lower bin.
+            # If a bin is empty, try one greater bin.
             while len(available[bin_idx]) == 0:
-                bin_idx -= 1
+                bin_idx += 1
                 bin_idx = bin_idx % self.bins
             idx = np.random.choice(available[bin_idx])
             available[bin_idx].remove(idx)

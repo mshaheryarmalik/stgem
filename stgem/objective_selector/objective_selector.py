@@ -29,7 +29,7 @@ class ObjectiveSelector:
 
 class ObjectiveSelectorAll(ObjectiveSelector):
     """
-    Model selector which ignores everything an just returns all models.
+    Model selector which ignores everything and just returns all models.
     """
 
     def select(self):
@@ -50,7 +50,7 @@ class ObjectiveSelectorMAB(ObjectiveSelector):
 
     def setup(self, objectives):
         super().setup(objectives)
-        self.model_successes = [0 for i in range(self.dim)]
+        self.model_successes = [0 for _ in range(self.dim)]
 
     def select(self):
         if self.total_calls <= self.warm_up:

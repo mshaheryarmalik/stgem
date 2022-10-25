@@ -70,7 +70,7 @@ class HyperParameter(SUT):
 
             self.odim = 1
         else:
-            raise Exception("Unknown mode '{}'.".format(falsification_rate))
+            raise Exception("Unknown mode '{}'.".format(self.mode))
 
     def edit_generator(self, generator, test):
         for n, (hp_func, _) in enumerate(self.hyperparameters):
