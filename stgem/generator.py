@@ -1,4 +1,4 @@
-import copy, datetime, gzip, os, random, time, string
+import copy, datetime, gzip, os, random
 
 import torch
 
@@ -257,7 +257,7 @@ class Load(Step):
 
 class STGEM:
 
-    def __init__(self, description, sut: SUT, objectives, objective_selector=None, budget: Budget = None, steps=[]):
+    def __init__(self, description, sut: SUT, objectives, objective_selector=None, budget: Budget = None, steps=None):
         self.description = description
         # The description might be used as a file name, so we check for some
         # nongood characters.
@@ -278,7 +278,7 @@ class STGEM:
             objective_selector = ObjectiveSelectorAll()
         self.objective_selector = objective_selector
 
-        self.steps = steps
+        self.steps = [] if steps is None else steps
         self.device = None
 
         self.logger = Logger()

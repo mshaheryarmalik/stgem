@@ -29,12 +29,12 @@ class Algorithm:
         if parameters is None:
             parameters = {}
 
-        # merge deafult_parameters and parameters, the later takes priority if a key appears in both dictionaries
+        # merge default_parameters and parameters, the later takes priority if a key appears in both dictionaries
         # the result is a new dictionary
         self.parameters = self.default_parameters | parameters
 
     def setup(self, search_space, device=None, logger=None):
-        """Setup an algorithm before usage.
+        """Set up an algorithm before usage.
 
         Args:
             search_space (SearchSpace): The search space for the algorithm
@@ -61,7 +61,7 @@ class Algorithm:
         if self.model_factory:
             self.models = [self.model_factory() for _ in range(self.search_space.objectives)]
 
-        # setup the models
+        # set up the models
         self.N_models = len(self.models)
         for m in self.models:
             m.setup(self.search_space, self.device, self.logger)

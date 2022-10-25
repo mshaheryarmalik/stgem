@@ -1,7 +1,7 @@
 from stgem.algorithm.algorithm import Algorithm
 from stgem.algorithm.model import Model, ModelSkeleton
 
-import importlib, inspect
+import inspect
 
 def filter_arguments(dictionary, target):
     allowed_keys = [param.name for param in inspect.signature(target).parameters.values() if param.kind == param.POSITIONAL_OR_KEYWORD]

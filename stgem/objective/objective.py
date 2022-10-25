@@ -48,7 +48,7 @@ class Minimize(Objective):
             # from them.
             v = np.array([min(signal) for signal in r.outputs[idx,:]])
         else:
-            # Just select the desired comporents.
+            # Just select the desired components.
             v = r.outputs[idx]
 
         if self.invert:
@@ -68,7 +68,7 @@ class Minimize(Objective):
             return min(output)
 
 class FalsifySTL(Objective):
-    """Objective function to falsify a STL specification. By default the
+    """Objective function to falsify an STL specification. By default the
     robustness is not scaled, but if scale is True and variable ranges have
     been specified for the signals, then the robustness is scaled to
     [0, 1].
@@ -208,7 +208,7 @@ class FalsifySTL(Objective):
 
         We assume that the user guarantees that time is increasing. Floating
         point numbers and timestamp search do not go well together: we have 0.1
-        != 0.1000000001 etc. This can lead to errorneous results. The solution
+        != 0.1000000001 etc. This can lead to erroneous results. The solution
         is to use integer timestamps. Using integer timestamps then requires
         scaling the time intervals occurring in the specification formulas.
         This as already done in the setup method.

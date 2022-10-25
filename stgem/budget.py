@@ -12,7 +12,7 @@ class Budget:
         self.initial_wall_time = -1
 
     def update_threshold(self, budget_threshold):
-        # We setup the wall time counter here if it has not been started yet.
+        # We set up the wall time counter here if it has not been started yet.
         if self.initial_wall_time < 0:
             self.initial_wall_time = time.perf_counter()
 

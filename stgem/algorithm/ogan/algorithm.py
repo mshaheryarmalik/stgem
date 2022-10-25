@@ -15,7 +15,7 @@ class OGAN(Algorithm):
     def setup(self, search_space, device=None, logger=None):
         super().setup(search_space, device, logger)
         self.first_training = True
-        self.model_trained = [0 for m in range(self.N_models)] # keeps track how many tests were generated when a model was previously trained
+        self.model_trained = [0 for _ in range(self.N_models)] # keeps track how many tests were generated when a model was previously trained
 
     def do_train(self, active_outputs, test_repository, budget_remaining):
         # Take into account how many tests a previous step (usually random
