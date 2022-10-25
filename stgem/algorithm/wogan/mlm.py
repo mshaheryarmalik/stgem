@@ -53,6 +53,10 @@ class WOGAN_NN(nn.Module):
             if self.layer_normalization:
                 self.norm.append(nn.LayerNorm(neurons))
         self.bottom = nn.Linear(self.hidden_neurons[-1], self.output_shape)
+        if self.batch_normalization:
+            self.norm.append(nn.BatchNorm1d(self.output_shape))
+        if self.layer_normalization:
+            self.norm.append(nn.LayerNorm(self.output_shape))
 
     def forward(self, x):
         """:meta private:"""
@@ -63,7 +67,10 @@ class WOGAN_NN(nn.Module):
                 x = self.hidden_activation(self.norm[i](L(x)))
             else:
                 x = self.hidden_activation(L(x))
-        x = self.output_activation(self.bottom(x))
+        if self.batch_normalization or self.layer_normalization:
+            x = self.output_activation(self.norm[-1](self.bottom(x)))
+        else:
+            x = self.output_activation(self.bottom(x))
 
         return x
 

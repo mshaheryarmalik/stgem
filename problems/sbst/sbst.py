@@ -1,13 +1,19 @@
+import os
+
+import click
+
 import numpy as np
 
-from stgem.generator import STGEM, Search
+from stgem.generator import STGEM, Search, Step, StepResult
 from stgem.algorithm import Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
 from stgem.algorithm.wogan.algorithm import WOGAN
 from stgem.algorithm.wogan.model import WOGAN_Model
+from stgem.experiment import Experiment
 from stgem.objective import Objective
 from stgem.objective_selector import ObjectiveSelectorAll
+from stgem.sut import SUTInput, SUTOutput
 
 from sut import SBSTSUT, SBSTSUT_validator
 
@@ -34,7 +40,6 @@ class MaxOOB(Objective):
     returns 1-M for minimization."""
 
     def __call__(self, t, r):
-        #return 1 - max(r.outputs)
         return 1 - max(r.outputs[0])
 
 # These are the settings used to get the results of "Wasserstein Generative
@@ -42,7 +47,8 @@ class MaxOOB(Objective):
 mode = "exhaust_budget"
 
 sut_parameters = {
-    "beamng_home":  "C:/BeamNG/BeamNG.tech.v0.24.0.1",
+    #"beamng_home":  "C:/BeamNG/BeamNG.tech.v0.24.0.1",
+    "beamng_home":  "C:/Users/japeltom/BeamNG/BeamNG.tech.v0.24.0.1",
     "curvature_points": 5,
     "curvature_range": 0.07,
     "step_size": 15,
@@ -89,7 +95,7 @@ wogan_model_parameters = {
         "noise_dim": 10,
         "hidden_neurons": [128, 128],
         "hidden_activation": "relu",
-        "batch_normalization": False,
+        "batch_normalization": True,
         "layer_normalization": False
     },
     "critic_mlm": "CriticNetwork",
@@ -111,22 +117,55 @@ wogan_model_parameters = {
     },
 }
 
-generator = STGEM(
-                  description="SBST 2022 BeamNG.tech simulator",
-                  sut=SBSTSUT(sut_parameters),
-                  #sut=SBSTSUT_validator(sut_parameters),
-                  objectives=[MaxOOB()],
-                  objective_selector=ObjectiveSelectorAll(),
-                  steps=[
-                         Search(mode=mode,
-                                budget_threshold={"wall_time": 1800},
-                                algorithm=Random(model_factory=(lambda: UniformDependent()))),
-                         Search(mode=mode,
-                                budget_threshold={"wall_time": 7200},
-                                algorithm=WOGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)), parameters=wogan_parameters))
-                        ]
-                  )
+@click.command()
+@click.argument("n", type=int)
+@click.argument("init_seed", type=int)
+@click.argument("identifier", type=str, default="")
+def main(n, init_seed, identifier):
+    N = n
+
+    # Share SUT objects.
+    sbst_sut = SBSTSUT(sut_parameters)
+
+    def stgem_factory():
+        nonlocal sbst_sut
+
+        generator = STGEM(
+            description="SBST 2022 BeamNG.tech simulator",
+            sut=sbst_sut,
+            objectives=[MaxOOB()],
+            objective_selector=ObjectiveSelectorAll(),
+            steps=[
+                Search(mode=mode,
+                       budget_threshold={"wall_time": 1800},
+                       algorithm=Random(model_factory=(lambda: UniformDependent()))),
+                Search(mode=mode,
+                       budget_threshold={"wall_time": 7200},
+                       algorithm=WOGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)),
+                                       parameters=wogan_parameters))
+            ]
+        )
+        return generator
+
+    def get_seed_factory(init_seed=0):
+        def seed_generator(init_seed):
+            c = init_seed
+            while True:
+                yield c
+                c += 1
+
+        g = seed_generator(init_seed)
+        return lambda: next(g)
+
+    def result_callback(idx, result, done):
+        path = os.path.join("..", "..", "output", "sbst")
+        time = str(result.timestamp).replace(" ", "_").replace(":", "")
+        file_name = "SBST{}_{}_{}.pickle.gz".format("_" + identifier if len(identifier) > 0 else "", time, idx)
+        os.makedirs(path, exist_ok=True)
+        result.dump_to_file(os.path.join(path, file_name))
+
+    experiment = Experiment(N, stgem_factory, get_seed_factory(init_seed), result_callback=result_callback)
+    experiment.run(N_workers=1)
 
 if __name__ == "__main__":
-    r = generator.run()
-
+    main()

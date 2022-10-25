@@ -13,7 +13,7 @@ def test_to_road_points(test, step_length, map_size):
     """Converts a test to road points.
 
     Args:
-      test (list): List of floats in [-1, 1].
+      test (list): List of floats in the curvature range.
 
     Returns:
       output (list): List of length len(test) of coordinate tuples.
