@@ -47,8 +47,7 @@ class MaxOOB(Objective):
 mode = "exhaust_budget"
 
 sut_parameters = {
-    #"beamng_home":  "C:/BeamNG/BeamNG.tech.v0.24.0.1",
-    "beamng_home":  "C:/Users/japeltom/BeamNG/BeamNG.tech.v0.24.0.1",
+    "beamng_home":  "C:/BeamNG/BeamNG.tech.v0.24.0.1",
     "curvature_points": 5,
     "curvature_range": 0.07,
     "step_size": 15,
