@@ -97,10 +97,11 @@ class SBSTSUT(SUT):
         self.input_range = [range]*self.idim
 
         self.output_type = "signal"
-        self.odim = 3
-        self.outputs = ["bolp", "distance_left", "distance_right"]
+        self.odim = 4
+        self.outputs = ["bolp", "distance_left", "distance_right", "steering_angle"]
         # The road width is fixed to 8 in _interpolate of code_pipeline/tests_generation.py
-        self.output_range = [[0, 1], [-4, 4], [-4, 4]]
+        # TODO: What is the correct range for steering angle?
+        self.output_range = [[0, 1], [-4, 4], [-4, 4], [-180, 180]]
 
         if self.map_size <= 0:
             raise ValueError("The map size must be positive.")
@@ -280,12 +281,13 @@ class SBSTSUT(SUT):
         # simulation states.
         states = sim_data_collector.get_simulation_data().states
         timestamps = np.zeros(len(states))
-        signals = np.zeros(shape=(3, len(states)))
+        signals = np.zeros(shape=(4, len(states)))
         for i, state in enumerate(states):
             timestamps[i] = state.timer
             signals[0, i] = state.oob_percentage
             signals[1, i] = state.oob_distance_left
             signals[2, i] = state.oob_distance_right
+            signals[3, i] = state.steering
 
         # Prepare the final input form as well.
         input_signals = np.zeros(shape=(2, len(nodes)))
