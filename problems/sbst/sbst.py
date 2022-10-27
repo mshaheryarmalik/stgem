@@ -42,6 +42,20 @@ class MaxOOB(Objective):
     def __call__(self, t, r):
         return 1 - max(r.outputs[0])
 
+class ScaledDistance(Objective):
+    """Objective based on distance to the left and right edges of the lane."""
+
+    def __call__(self, t, r):
+        # alpha is a number such that -alpha distance to the right of the right
+        # edge of the lane corresponds to a falsification with falsification
+        # threshold of BOLP < 0.95. The value is obtained experimentally from
+        # 1000 random test executions.
+        alpha = 1.75
+        L = r.outputs[1] / (4 + alpha)
+        R = (r.outputs[2] + alpha) / (4 + alpha)
+
+        return min(np.min(L), np.min(R))
+
 # These are the settings used to get the results of "Wasserstein Generative
 # Adversarial Networks for Online Test Generation for Cyber Physical Systems".
 mode = "exhaust_budget"
@@ -133,6 +147,7 @@ def main(n, init_seed, identifier):
             description="SBST 2022 BeamNG.tech simulator",
             sut=sbst_sut,
             objectives=[MaxOOB()],
+            #objectives=[ScaledDistance()],
             objective_selector=ObjectiveSelectorAll(),
             steps=[
                 Search(mode=mode,
