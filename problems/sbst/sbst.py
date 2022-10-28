@@ -51,8 +51,8 @@ class ScaledDistance(Objective):
         # threshold of BOLP < 0.95. The value is obtained experimentally from
         # 1000 random test executions.
         alpha = 1.75
-        L = r.outputs[1] / (4 + alpha)
-        R = (r.outputs[2] + alpha) / (4 + alpha)
+        L = np.clip(r.outputs[1], 0, 2 + alpha) / (2 + alpha)
+        R = (np.clip(r.outputs[2], -alpha, 2) + alpha) / (2 + alpha)
 
         return min(np.min(L), np.min(R))
 
@@ -114,7 +114,7 @@ wogan_model_parameters = {
     "critic_mlm": "CriticNetwork",
     "critic_mlm_parameters": {
         "hidden_neurons": [128, 128],
-        "hidden_activation": "leaky_relu"
+        "hidden_activation": "leaky_relu",
     },
     "train_settings_init": {
         "epochs": 3,
@@ -151,10 +151,10 @@ def main(n, init_seed, identifier):
             objective_selector=ObjectiveSelectorAll(),
             steps=[
                 Search(mode=mode,
-                       budget_threshold={"wall_time": 1800},
+                       budget_threshold={"executions": 75},
                        algorithm=Random(model_factory=(lambda: UniformDependent()))),
                 Search(mode=mode,
-                       budget_threshold={"wall_time": 7200},
+                       budget_threshold={"executions": 300},
                        algorithm=WOGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)),
                                        parameters=wogan_parameters))
             ]

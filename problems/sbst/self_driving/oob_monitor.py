@@ -88,7 +88,12 @@ class OutOfBoundsMonitor:
         # right lane and self.road_polygon.left_polyline is the middle of
         # the left lane. This explains the slightly awkward code.
 
-        car_point = Point(self.vehicle_state_reader.get_state().pos)
+        # Old point. Were not sure what this is exactly.
+        #car_point = Point(self.vehicle_state_reader.get_state().pos)
+        # New point. This is the center of the car.
+        car_polygon = self._get_car_bbox_polygon()
+        car_point = car_polygon.centroid
+
         lane_width = self.road_polygon.road_width / 2
         if wrt == "right":
             left_edge = self.road_polygon.polyline
