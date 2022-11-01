@@ -223,7 +223,7 @@ class Load(Step):
             # Use the search space RNG to ensure consistent selection.
             idx = self.search_space.rng.choice(np.arange(range_max), size=self.range_load, replace=False)
         elif self.mode == "initial":
-            idx = range(range_max)
+            idx = range(self.range_load)
 
         already_successful = self.test_repository.minimum_objective <= 0
 
