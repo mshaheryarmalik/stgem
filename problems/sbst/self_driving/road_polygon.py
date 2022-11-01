@@ -32,6 +32,10 @@ class RoadPolygon:
         self.polyline = self._compute_polyline()
         self.right_polyline = self._compute_right_polyline()
         self.left_polyline = self._compute_left_polyline()
+        # Left edge of the right lane.
+        self.lane_left_polyline = self._compute_lane_left_polyline()
+        # Right edge of the right lane.
+        self.lane_right_polyline = self._compute_lane_right_polyline()
         self.num_polygons = len(self.polygons)
 
     def _compute_polygons(self) -> List[Polygon]:
@@ -82,6 +86,17 @@ class RoadPolygon:
         of the spin (or middle) of the left lane of the road."""
         return LineString([((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2) for p1, p2 in
                            zip(self.road_points.left, self.road_points.middle)])
+
+    def _compute_lane_right_polyline(self) ->LineString:
+        """Computes and returns a LineSTring representing the polyline
+        of the right edge of the right lane of the road."""
+        return LineString([(n[0], n[1]) for n in self.road_points.right])
+
+    def _compute_lane_left_polyline(self) ->LineString:
+        """Computes and returns a LineSTring representing the polyline
+        of the left edge of the right lane of the road."""
+        # The left edge of the right lane is the middle of the road.
+        return LineString([(n[0], n[1]) for n in self.road_points.middle])
 
     def _get_neighbouring_polygons(self, i: int) -> List[int]:
         """Returns the indices of the neighbouring polygons of the polygon
