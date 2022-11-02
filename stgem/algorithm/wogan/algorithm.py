@@ -194,13 +194,12 @@ class WOGAN(Algorithm):
         heap = []
         target_fitness = 0
         entry_count = 0 # this is to avoid comparing tests when two tests added to the heap have the same predicted objective
-        rounds = 0
-        invalid = 0
+        N_generated = 0
+        N_invalid = 0
         self.log("Generating using WOGAN models {}.".format(",".join(str(m + 1) for m in active_outputs)))
 
         while True:
             # TODO: Avoid selecting similar or same tests.
-            rounds += 1
             for i in active_outputs:
                 while True:
                     # Generate several tests and pick the one with best
@@ -211,7 +210,8 @@ class WOGAN(Algorithm):
                     # Pick only the valid tests.
                     valid_idx = [i for i in range(self.N_candidate_tests) if self.search_space.is_valid(candidate_tests[i]) == 1]
                     candidate_tests = candidate_tests[valid_idx]
-                    invalid += self.N_candidate_tests - len(valid_idx)
+                    N_generated += self.N_candidate_tests
+                    N_invalid += self.N_candidate_tests - len(valid_idx)
                     if candidate_tests.shape[0] == 0:
                         continue
 
@@ -234,15 +234,14 @@ class WOGAN(Algorithm):
 
         # Save information on how many tests needed to be generated etc.
         # -----------------------------------------------------------------
-        N_generated = rounds*self.N_candidate_tests
         self.perf.save_history("N_tests_generated", N_generated)
-        self.perf.save_history("N_invalid_tests_generated", invalid)
+        self.perf.save_history("N_invalid_tests_generated", N_invalid)
 
         best_test = heap[0][3]
         best_model = heap[0][2]
         best_estimated_objective = heap[0][0]
 
-        self.log("Chose test {} with predicted minimum objective {} on WGAN model {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, best_model + 1, rounds, invalid))
+        self.log("Chose test {} with predicted minimum objective {} on WGAN model {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, best_model + 1, N_generated, N_invalid))
 
         return best_test
 
