@@ -51,10 +51,12 @@ class ScaledDistance(Objective):
         # alpha is a number such that -alpha distance to the right of the right
         # edge of the lane corresponds to a falsification with falsification
         # threshold of BOLP < 0.95. The value is obtained experimentally from
-        # 1000 random test executions.
-        alpha = 1.75
-        L = np.clip(r.outputs[1], 0, 2 + alpha) / (2 + alpha)
-        R = (np.clip(r.outputs[2], -alpha, 2) + alpha) / (2 + alpha)
+        # 1000 random test executions. The same holds symmetrically from the
+        # left. In fact, the minimum for the left distance was -2.03 and -1.69
+        # for the right distance, so this is a sort of compromise.
+        alpha = 1.70
+        L = (np.clip(r.outputs[1], -alpha, 2) + alpha) / (2 + alpha)
+        R = (np.clip(r.outputs[1], -alpha, 2) + alpha) / (2 + alpha)
 
         return min(np.min(L), np.min(R))
 
