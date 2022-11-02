@@ -8,6 +8,8 @@ from stgem.generator import STGEM, Search, Step, StepResult
 from stgem.algorithm import Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
+from stgem.algorithm.ogan.algorithm import OGAN
+from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.wogan.algorithm import WOGAN
 from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.experiment import Experiment
@@ -157,6 +159,9 @@ def main(n, init_seed, identifier):
                        budget_threshold={"executions": 300},
                        algorithm=WOGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)),
                                        parameters=wogan_parameters))
+                #Search(mode=mode,
+                #       budget_threshold={"executions": 300},
+                #       algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
             ]
         )
         return generator
