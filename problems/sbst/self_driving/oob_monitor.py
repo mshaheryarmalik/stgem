@@ -91,9 +91,6 @@ class OutOfBoundsMonitor:
         if not wrt == "right":
             raise Exception("Currently only the distance with respect to the right lane is supported.")
 
-        self.lane_left_polyline = self._compute_lane_left_polyline()
-        self.lane_right_polyline = self._compute_lane_right_polyline()
-
         # Old point. Were not sure what this is exactly.
         #car_point = Point(self.vehicle_state_reader.get_state().pos)
         # New point. This is the center of the car.
@@ -114,7 +111,7 @@ class OutOfBoundsMonitor:
         elif dL > dR and dL > lane_width:
             # Out from the right.
             dR *= -1
-        elif:
+        else:
             # In the middle.
             pass
 
