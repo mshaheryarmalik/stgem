@@ -220,7 +220,7 @@ class Load(Step):
             raise ValueError("The load range {} is out of bounds. Loaded maximum range for loaded data is {}.".format(self.range_load, range_max))
 
         if self.mode == "random":
-            # Use the search space RNG to ensure consistent selection.
+            # Use the search space RNG to ensure deterministic selection.
             idx = self.search_space.rng.choice(np.arange(range_max), size=self.range_load, replace=False)
         elif self.mode == "initial":
             idx = range(self.range_load)
@@ -242,6 +242,10 @@ class Load(Step):
 
             self.test_repository.record(x, y, z)
 
+        if self.mode == "initial":
+            self.log("Loaded initial {} tests from the result file {}.".format(self.range_load, self.file_name))
+        else:
+            self.log("Loaded randomly {} tests from the result file {}.".format(self.range_load, self.file_name))
         success = not already_successful and self.test_repository.minimum_objective <= 0
 
         # Save certain parameters in the StepResult object.

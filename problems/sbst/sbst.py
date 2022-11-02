@@ -4,7 +4,7 @@ import click
 
 import numpy as np
 
-from stgem.generator import STGEM, Search, Step, StepResult
+from stgem.generator import STGEM, Search, Load
 from stgem.algorithm import Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
@@ -15,7 +15,6 @@ from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.experiment import Experiment
 from stgem.objective import Objective
 from stgem.objective_selector import ObjectiveSelectorAll
-from stgem.sut import SUTInput, SUTOutput
 
 from sut import SBSTSUT, SBSTSUT_validator
 
@@ -154,6 +153,9 @@ def main(n, init_seed, identifier):
             #objectives=[ScaledDistance()],
             objective_selector=ObjectiveSelectorAll(),
             steps=[
+                #Load(file_name=os.path.join("..", "..", "output", "SBST", "1000_2022-11-01.pickle.gz"),
+                #     mode="random",
+                #     range_load=75),
                 Search(mode=mode,
                        budget_threshold={"executions": 75},
                        algorithm=Random(model_factory=(lambda: UniformDependent()))),
