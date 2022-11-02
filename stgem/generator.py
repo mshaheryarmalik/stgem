@@ -196,7 +196,7 @@ class Search(Step):
 class Load(Step):
     """Step which simply loads pregenerated data from a file."""
 
-    def __init__(self, file_name, mode="initial", range_load=None):
+    def __init__(self, file_name, mode="initial", range_load=None, recompute_objective=False):
         self.file_name = file_name
         if not os.path.exists(self.file_name):
             raise Exception("Pregenerated date file '{}' does not exist.".format(self.file_name))
@@ -206,6 +206,7 @@ class Load(Step):
             raise ValueError("The load range {} cannot be negative.".format(range_load))
         self.mode = mode
         self.range_load = range_load
+        self.recompute_objective = recompute_objective
 
     def run(self, results_include_models=False, results_checkpoint_period=1) -> StepResult:
         try:
@@ -229,18 +230,22 @@ class Load(Step):
 
         for i in idx:
             if self.budget.remaining() == 0: break
-            x, y, z = raw_data.test_repository.get(i)
+            x, z, y = raw_data.test_repository.get(i)
 
             if len(x.inputs) != self.search_space.input_dimension:
                 raise ValueError("Loaded sample input dimension {} does not match SUT input dimension {}".format(len(x.inputs), self.search_space.input_dimension))
-            if y.output_timestamps is None:
-                if len(y.outputs) != self.search_space.output_dimension:
-                    raise ValueError("Loaded sample vector output dimension {} does not match SUT vector output dimension {}.".format(len(y.outputs), self.search_space.output_dimension))
+            if z.output_timestamps is None:
+                if len(z.outputs) != self.search_space.output_dimension:
+                    raise ValueError("Loaded sample vector output dimension {} does not match SUT vector output dimension {}.".format(len(z.outputs), self.search_space.output_dimension))
             else:
-                if y.outputs.shape[0] != self.search_space.output_dimension:
-                    raise ValueError("Loaded sample signal number {} does not match SUT signal number {}.".format(y.outputs.shape[0], self.search_space.output_dimension))
+                if z.outputs.shape[0] != self.search_space.output_dimension:
+                    raise ValueError("Loaded sample signal number {} does not match SUT signal number {}.".format(z.outputs.shape[0], self.search_space.output_dimension))
 
-            self.test_repository.record(x, y, z)
+            # Recompute the objective of requested.
+            if self.recompute_objective:
+                y = [objective(x, z) for objective in self.objective_funcs]
+
+            self.test_repository.record(x, z, y)
 
         if self.mode == "initial":
             self.log("Loaded initial {} tests from the result file {}.".format(self.range_load, self.file_name))

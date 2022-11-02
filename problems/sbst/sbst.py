@@ -155,7 +155,8 @@ def main(n, init_seed, identifier):
             steps=[
                 #Load(file_name=os.path.join("..", "..", "output", "SBST", "1000_2022-11-01.pickle.gz"),
                 #     mode="random",
-                #     range_load=75),
+                #     range_load=75,
+                #     recompute_objective=True),
                 Search(mode=mode,
                        budget_threshold={"executions": 75},
                        algorithm=Random(model_factory=(lambda: UniformDependent()))),
