@@ -117,6 +117,7 @@ class Search(Step):
 
                 # TODO: Should we catch any exceptions here?
                 self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
+                could_generate = True
                 try:
                     next_test = self.algorithm.generate_next_test(self.objective_selector.select(), self.test_repository, self.budget.remaining())
                 except AlgorithmException:
@@ -125,30 +126,38 @@ class Search(Step):
                     # an indication that the algorithm is unable to keep going,
                     # so we exit.
                     break
+                except GenerationException:
+                    # We encountered a generation error. We take this as an
+                    # indication that another training phase could correct the
+                    # problem, so we do not exit completely.
+                    could_generate = False
 
                 self.budget.consume("generation_time", self.algorithm.perf.get_history("generation_time")[-1])
-                self.log("Generated test {}.".format(next_test))
                 if not self.budget.remaining() > 0: break
+                if could_generate:
+                    self.log("Generated test {}.".format(next_test))
 
-                self.log("Executing the test...")
-                self.algorithm.perf.timer_start("execution")
-                sut_input = SUTInput(next_test, None, None)
-                sut_result = self.sut.execute_test(sut_input)
-                self.algorithm.perf.save_history("execution_time", self.algorithm.perf.timer_reset("execution"))
-                self.budget.consume("executions")
-                self.budget.consume("execution_time", self.algorithm.perf.get_history("execution_time")[-1])
-                self.log("Input to the SUT: {}".format(sut_input))
-                self.log("Result from the SUT: {}".format(sut_result))
-                output = [objective(sut_input, sut_result) for objective in self.objective_funcs]
-                self.log("The actual objective: {}".format(output))
+                    self.log("Executing the test...")
+                    self.algorithm.perf.timer_start("execution")
+                    sut_input = SUTInput(next_test, None, None)
+                    sut_result = self.sut.execute_test(sut_input)
+                    self.algorithm.perf.save_history("execution_time", self.algorithm.perf.timer_reset("execution"))
+                    self.budget.consume("executions")
+                    self.budget.consume("execution_time", self.algorithm.perf.get_history("execution_time")[-1])
+                    self.log("Input to the SUT: {}".format(sut_input))
+                    self.log("Result from the SUT: {}".format(sut_result))
+                    output = [objective(sut_input, sut_result) for objective in self.objective_funcs]
+                    self.log("The actual objective: {}".format(output))
 
-                # TODO: Argmin does not take different scales into account.
-                self.objective_selector.update(np.argmin(output))
-                self.test_repository.record(sut_input, sut_result, output)
+                    # TODO: Argmin does not take different scales into account.
+                    self.objective_selector.update(np.argmin(output))
+                    self.test_repository.record(sut_input, sut_result, output)
 
-                if not self.success and self.test_repository.minimum_objective <= 0.0:
-                    self.log("First success at test {}.".format(i + 1))
-                    self.success = True
+                    if not self.success and self.test_repository.minimum_objective <= 0.0:
+                        self.log("First success at test {}.".format(i + 1))
+                        self.success = True
+                else:
+                    self.log("Encountered a problem with test generation. Skipping to next training phase.")
 
                 # Save the models if requested.
                 if self.results_include_models and self.results_checkpoint_period != 0 and i % self.results_checkpoint_period == 0:

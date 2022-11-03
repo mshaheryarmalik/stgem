@@ -19,6 +19,7 @@ class WOGAN(Algorithm):
         "fitness_coef": 0.95,
         "train_delay": 3,
         "N_candidate_tests": 1,
+        "invalid_threshold": 500,
         "shift_function": "linear",
         "shift_function_parameters": {"initial": 0, "final": 3},
     }
@@ -202,10 +203,19 @@ class WOGAN(Algorithm):
             # TODO: Avoid selecting similar or same tests.
             for i in active_outputs:
                 while True:
+                    # If we have already generated many tests and all have been
+                    # invalid, we give up and hope that the next training phase
+                    # will fix things.
+                    if N_invalid >= self.invalid_threshold:
+                        raise GenerationException("Could not generate a valid test within {} tests.".format(N_invalid))
+
                     # Generate several tests and pick the one with best
                     # predicted objective function component. We do this as
                     # long as we find at least one valid test.
-                    candidate_tests = self.models[i].generate_test(self.N_candidate_tests)
+                    try:
+                        candidate_tests = self.models[i].generate_test(self.N_candidate_tests)
+                    except:
+                        raise
 
                     # Pick only the valid tests.
                     valid_idx = [i for i in range(self.N_candidate_tests) if self.search_space.is_valid(candidate_tests[i]) == 1]
