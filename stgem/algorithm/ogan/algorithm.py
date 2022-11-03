@@ -14,7 +14,7 @@ class OGAN(Algorithm):
         "fitness_coef": 0.95,
         "train_delay": 1,
         "N_candidate_tests": 1,
-        "invalid_threshold": 500,
+        "invalid_threshold": 100,
         "reset_each_training": False
     }
 

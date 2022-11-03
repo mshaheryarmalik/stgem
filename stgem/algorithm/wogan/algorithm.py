@@ -19,7 +19,7 @@ class WOGAN(Algorithm):
         "fitness_coef": 0.95,
         "train_delay": 3,
         "N_candidate_tests": 1,
-        "invalid_threshold": 500,
+        "invalid_threshold": 100,
         "shift_function": "linear",
         "shift_function_parameters": {"initial": 0, "final": 3},
     }
