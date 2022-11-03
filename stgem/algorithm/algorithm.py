@@ -92,7 +92,8 @@ class Algorithm:
             r = self.do_generate_next_test(active_outputs, test_repository, budget_remaining)
         except:
             raise
-        self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
+        finally:
+            self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
 
         return r
 
