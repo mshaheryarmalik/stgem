@@ -35,7 +35,7 @@ class F16GCAS_PYTHON2(SUT):
             v = self.initial_altitude
 
         test.input_denormalized = denormalized
-        return SUTOutput(np.asarray([v]), None, None)
+        return SUTOutput(np.asarray([v]), None, None, None)
 
 class F16GCAS_PYTHON3(SUT):
     """SUT for the Python 3 version of the F16 problem. The parameters set in
@@ -100,5 +100,5 @@ class F16GCAS_PYTHON3(SUT):
         t = res["times"]
         altitude = res["states"][:,11]
         test.input_denormalized = denormalized
-        return SUTOutput(np.array([altitude]), np.array(t), None)
+        return SUTOutput(np.array([altitude]), np.array(t), None, None)
 

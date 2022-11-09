@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import numpy as np
 from stgem.sut import SUT, SUTOutput
 
@@ -39,5 +36,5 @@ class ModelBasedSUT(SUT):
 
         test.input_denormalized = test.inputs
 
-        return SUTOutput(output, None, None)
+        return SUTOutput(output, None, None, None)
 

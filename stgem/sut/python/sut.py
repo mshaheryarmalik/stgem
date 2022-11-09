@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import math
 import numpy as np
 import inspect
@@ -46,5 +43,5 @@ class PythonFunction(SUT):
 
         test.input_denormalized = denormalized
 
-        return SUTOutput(np.asarray(output), None, error)
+        return SUTOutput(np.asarray(output), None, None, error)
 

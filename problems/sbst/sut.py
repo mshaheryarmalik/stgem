@@ -187,7 +187,7 @@ class SBSTSUT(SUT):
         valid, msg = self.validator.validate_test(the_test)
         if not valid:
             # print("Invalid test, not run on SUT.")
-            return SUTOutput(None, None, "invalid")
+            return SUTOutput(None, None, None, "invalid")
 
         # For the execution we need the interpolated points
         nodes = the_test.interpolated_points
@@ -277,8 +277,8 @@ class SBSTSUT(SUT):
 
             self.end_iteration()
 
-        # Build a time series for the distances and OOB percentage based on
-        # simulation states.
+        # Build a time series for the distances, OOB percentages, and steering
+        # angles based on simulation states.
         states = sim_data_collector.get_simulation_data().states
         timestamps = np.zeros(len(states))
         signals = np.zeros(shape=(4, len(states)))
@@ -295,7 +295,7 @@ class SBSTSUT(SUT):
             input_signals[0, i] = point[0]
             input_signals[1, i] = point[1]
 
-        return input_signals, SUTOutput(signals, timestamps, None)
+        return input_signals, SUTOutput(signals, timestamps, {"simulation_time": timestamps[-1]}, None)
 
     def _execute_test(self, test):
         denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
