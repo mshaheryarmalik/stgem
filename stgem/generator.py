@@ -144,6 +144,7 @@ class Search(Step):
                     self.algorithm.perf.save_history("execution_time", self.algorithm.perf.timer_reset("execution"))
                     self.budget.consume("executions")
                     self.budget.consume("execution_time", self.algorithm.perf.get_history("execution_time")[-1])
+                    self.budget.consume(sut_result)
                     self.log("Input to the SUT: {}".format(sut_input))
                     self.log("Result from the SUT: {}".format(sut_result))
                     output = [objective(sut_input, sut_result) for objective in self.objective_funcs]
