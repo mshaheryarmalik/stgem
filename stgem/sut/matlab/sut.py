@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import os, math
 
 import numpy as np
@@ -97,7 +94,7 @@ class Matlab_Simulink_Signal(SUT):
 
         output_timestamps = np.array(out_timestamps).flatten()
 
-        return SUTOutput(result, output_timestamps, None)
+        return SUTOutput(result, output_timestamps, None, None)
 
 class Matlab_Simulink(Matlab_Simulink_Signal):
     """Generic class for using Matlab Simulink models using piecewise constant
@@ -269,7 +266,7 @@ class Matlab(SUT):
         matlab_result = self.matlab_func(*(float(x) for x in test), nargout=self.odim)
         matlab_result = np.asarray(matlab_result)
 
-        return SUTOutput(matlab_result, None, None)
+        return SUTOutput(matlab_result, None, None, None)
 
     def _execute_vector_signal(self, test):
         if not hasattr(self, "engine"):
@@ -284,7 +281,7 @@ class Matlab(SUT):
         for i in range(self.odim):
             output_signals[i] = data[:, i]
 
-        return SUTOutput(output_signals, output_timestamps, None)
+        return SUTOutput(output_signals, output_timestamps, None, None)
 
     def _execute_signal_vector(self, timestamps, signals):
         if not hasattr(self, "engine"):
@@ -296,7 +293,7 @@ class Matlab(SUT):
 
         matlab_result = self.matlab_func(model_input, nargout=self.odim)
 
-        return SUTOutput(matlab_result, None, None)
+        return SUTOutput(matlab_result, None, None, None)
 
     def _execute_signal_signal(self, timestamps, signals):
         if not hasattr(self, "engine"):
@@ -315,7 +312,7 @@ class Matlab(SUT):
         for i in range(self.odim):
             output_signals[i] = data[:, i]
 
-        return SUTOutput(output_signals, output_timestamps, None)
+        return SUTOutput(output_signals, output_timestamps, None, None)
 
     def _execute_test(self, test):
         # TODO: Add error handling in case of wrong input or Matlab errors.
