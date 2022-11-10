@@ -59,6 +59,12 @@ class Budget:
 
         result = {}
         for name in self.budgets:
+            # If budget range does not exist, we set it to default. This can
+            # happen if the user defines a new budget by adding a key to
+            # self.budgets.
+            if not name in self.budget_ranges:
+                self.budget_ranges[name] = [0,math.inf]
+
             start = self.budget_ranges[name][0]
             end = self.budget_ranges[name][1]
             value = self.budgets[name](self.quantities)
