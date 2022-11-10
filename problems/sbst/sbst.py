@@ -64,7 +64,7 @@ class ScaledDistance(Objective):
 mode = "exhaust_budget"
 
 sut_parameters = {
-    "beamng_home":  "C:/BeamNG/BeamNG.tech.v0.24.0.1",
+    "beamng_home": "C:/BeamNG/BeamNG.tech.v0.24.0.1",
     "curvature_points": 5,
     "curvature_range": 0.07,
     "step_size": 15,
@@ -80,6 +80,19 @@ wogan_parameters = {
     "N_candidate_tests": 1,
     "shift_function": "linear",
     "shift_function_parameters": {"initial": 0, "final": 3},
+}
+
+analyzer_mlm_parameters = {
+    "dense": {
+        "hidden_neurons": [32,32],
+        "layer_normalization": False
+    },
+    "convolution": {
+        "feature_maps": [16, 16],
+        "kernel_sizes": [[2, 2], [2, 2]],
+        "convolution_activation": "leaky_relu",
+        "dense_neurons": 128
+    }
 }
 
 wogan_model_parameters = {
@@ -101,10 +114,9 @@ wogan_model_parameters = {
         "loss": "MSE,logit",
         "l2_regularization_coef": 0.01,
         "analyzer_mlm": "AnalyzerNetwork",
-        "analyzer_mlm_parameters": {
-            "hidden_neurons": [32, 32],
-            "layer_normalization": False
-        },
+        #"analyzer_mlm": "AnalyzerNetwork_conv",
+        "analyzer_mlm_parameters": analyzer_mlm_parameters["dense"],
+        #"analyzer_mlm_parameters": analyzer_mlm_parameters["convolution"],
     },
     "generator_mlm": "GeneratorNetwork",
     "generator_mlm_parameters": {
