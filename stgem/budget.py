@@ -35,6 +35,12 @@ class Budget:
             if budget_threshold[name] < self.budgets[name](self.quantities):
                 raise Exception("Cannot update budget threshold '{}' to '{}' since its below the already consumed budget '{}'.".format(name, quantity_threshold[name], self.budgets[name](self.quantities)))
 
+            # If budget range does not exist, we set it to default. This can
+            # happen if the user defines a new budget by adding a key to
+            # self.budgets.
+            if not name in self.budget_ranges:
+                self.budget_ranges[name] = [0,math.inf]
+
             if self.budget_ranges[name][1] < budget_threshold[name]:
                 self.budget_ranges[name][0] = self.budget_ranges[name][1]
                 self.budget_ranges[name][1] = budget_threshold[name]

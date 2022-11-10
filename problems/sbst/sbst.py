@@ -12,11 +12,25 @@ from stgem.algorithm.ogan.algorithm import OGAN
 from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.wogan.algorithm import WOGAN
 from stgem.algorithm.wogan.model import WOGAN_Model
+from stgem.budget import Budget
 from stgem.experiment import Experiment
 from stgem.objective import Objective
 from stgem.objective_selector import ObjectiveSelectorAll
 
 from sut import SBSTSUT, SBSTSUT_validator
+
+class CustomBudget(Budget):
+    """A custom budget that adds a new budget 'total_GTS' time which tracks the
+    total of generation time, training time, and simulated time."""
+
+    def __init__(self):
+        super().__init__()
+        self.quantities["simulated_time"] = 0
+        self.budgets["simulated_time"] = lambda quantities: quantities["simulated_time"]
+        self.budgets["total_GTS_time"] = lambda quantities: quantities["generation_time"] + quantities["training_time"] + quantities["simulated_time"]
+
+    def _consume_on_output(self, output):
+        self.budget_values["simulated_time"] += output.features["simulation_time"]
 
 class UniformDependent(Model):
     """Model for uniformly random search which does not select components
@@ -149,6 +163,7 @@ def main(n, init_seed, identifier):
         generator = STGEM(
             description="SBST 2022 BeamNG.tech simulator",
             sut=sbst_sut,
+            budget=CustomBudget(),
             objectives=[MaxOOB()],
             #objectives=[ScaledDistance()],
             objective_selector=ObjectiveSelectorAll(),
