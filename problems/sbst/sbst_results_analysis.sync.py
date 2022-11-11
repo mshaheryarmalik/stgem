@@ -16,11 +16,64 @@ import itertools, math, os, sys
 sys.path.append(os.path.join("..", ".."))
 sys.path.append(os.path.join("..", "..", "notebooks"))
 from common import *
+from util import test_to_road_points
 
 # %% [markdown]
 # # Domain-Specific Code
 
 # %%
+def descale(test, input_range):
+    """Descale a test without loading the actual SBST SUT."""
+
+    from stgem.sut import SUT
+    sut = SUT()
+    input_range = [input_range]*len(test)
+    return sut.descale(test.reshape(1, -1), input_range).reshape(-1)
+
+def road_visualization(result, start, end):
+    """Function for visualizing roads in a replica. The numbers start and end
+    indicate which roads (tests) to include. For best results, ensure that
+    end - start is a multiple of 10."""
+    
+    columns = 10
+    rows = int((end - start)/columns)
+
+    # Input range for descaling tests.
+    input_range = [-result.sut_parameters["curvature_range"], result.sut_parameters["curvature_range"]]
+    
+    fig, axes = plt.subplots(rows, columns, figsize=(64, 64), sharex = True, sharey = True)
+    plt.xticks([])
+    plt.yticks([])
+    idx = 0
+    failed_cnt = 0
+    for row in range(rows):
+        for column in range(columns):
+            _input, _, _objective = result.test_repository.get(start + idx)
+            robustness = round(_objective[0], 3)
+            axes[row, column].title.set_text(f"[{(start+idx)}] - Robustness: {robustness}")
+            
+            # Highlight the roads that produced a failed test
+            if robustness <= 0.05:
+                color = "r"
+                failed_cnt += 1
+            else:
+                color = "b"
+
+            # Plot interpolated points connected by lines.
+            x, y = _input.input_denormalized
+            axes[row,column].plot(x, y, color=color)
+
+            # Plot the control points.
+            points = np.array(test_to_road_points(descale(_input.inputs, input_range), result.sut_parameters["step_length"], result.sut_parameters["map_size"]))
+            axes[row,column].plot(points[:,0], points[:,1], "{}o".format(color))
+
+            idx += 1
+
+    fig.suptitle(f'Road visualization of {idx} test runs where {failed_cnt} failed - Seed: {result.seed}', fontsize=40) 
+    #plt.savefig(f'road_images/{filename}.png', pad_inches=0.1, dpi=150)
+    #plt.close(fig)
+    plt.show()
+
 def move_road(P, x0, y0):
     """Moves the sequence of points P in such a way that the initial point is
     at (x0, y0) and the initial direction is up."""
@@ -135,7 +188,7 @@ output_path_base = os.path.join("..", "..", "output")
 
 # Replica prefixes for collecting the experiments.
 replica_prefixes = {
-    "SBST": ["OLD"]
+    "SBST": ["SBST_OLD"]
 }
 
 experiments = loadExperiments(output_path_base, ["SBST"], replica_prefixes)
@@ -193,4 +246,17 @@ print(diversity_values)
 diversity_values = [[direction_coverage(result.test_repository) for result in experiments[identifier]] for identifier in experiments]
 
 print(diversity_values)
+
+# %% [markdown]
+# # Replica Road Visualization
+
+#%%
+experiment_identifier = "SBST_OLD"
+replica = 0
+
+start = 200
+end = 300
+#end = experiments[experiment_identifier][replica].test_repository.tests
+
+road_visualization(experiments[experiment_identifier][replica], start, end)
 
