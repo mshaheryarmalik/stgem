@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import heapq
 
 import numpy as np
@@ -8,10 +5,8 @@ import numpy as np
 from stgem.algorithm import Algorithm
 
 class WOGAN(Algorithm):
-    """
-    Implements the test suite generation based on online Wasserstein generative
-    adversarial networks.
-    """
+    """Implements the test suite generation based on online Wasserstein
+    generative adversarial networks."""
 
     default_parameters = {
         "bins": 10,
@@ -42,7 +37,7 @@ class WOGAN(Algorithm):
 
         # Set up the function for computing the bin weights.
         # ---------------------------------------------------------------------
-        self.bin_weight = lambda x: 1 / (1 + np.exp(-1 * x))
+        self.bin_weight = lambda x: 1 - 1 / (1 + np.exp(-1 * x))
 
         self.get_bin = (lambda x: int(x * self.bins) if x < 1.0 else self.bins - 1)
 
@@ -53,19 +48,18 @@ class WOGAN(Algorithm):
         self.first_training = True
 
     def bin_sample(self, N, shift):
-        """
-        Samples N bin indices.
-        """
+        """Samples N bin indices."""
 
         """
         The distribution on the indices is defined as follows. Suppose that S
-        is a nonnegative function satisfying S(-x) = 1 - x for all x. Consider
-        the middle points of the bins. We map the middle point of the middle
-        bin to 0 and the remaining middle points symmetrically around 0 with
-        first middle point corresponding to -1 and the final to 1. We then
-        shift these mapped middle points to the right by the given amount. The
-        weight of the bin will is S(x) where x is the mapped and shifted middle
-        point. We use the function self.bin_weight for S.
+        is a nonnegative and decreasing function satisfying S(-x) = 1 - S(x)
+        for all x. Consider the middle points of the bins. We map the middle
+        point of the middle bin to 0 and the remaining middle points
+        symmetrically around 0 with first middle point corresponding to -1 and
+        the final to 1. We then shift these mapped middle points to the left by
+        the given amount. The weight of the bin will is S(x) where x is the
+        mapped and shifted middle point. We use the function self.bin_weight
+        for S.
         """
 
         # If the number of bins is odd, then the middle point of the middle bin
@@ -82,23 +76,18 @@ class WOGAN(Algorithm):
         # bin weight.
         weights = np.zeros(shape=(self.bins))
         for n in range(self.bins):
-            weights[n] = self.bin_weight(h((n + 0.5) * (1/self.bins)) - shift)
+            weights[n] = self.bin_weight(h((n + 0.5) * (1/self.bins)) + shift)
         # Normalize weights.
-        weights = 1 - weights
         weights = weights / np.sum(weights)
 
         idx = np.random.choice(list(range(self.bins)), N, p=weights)
-        # Invert because we minimize. The old code maximized.
-        idx = [(self.bins - i) % self.bins for i in idx]
         return idx
 
     def training_sample(self, N, X, B, shift):
-        """
-        Samples N elements from X. The sampling is done by picking a bin and
+        """Samples N elements from X. The sampling is done by picking a bin and
         uniformly randomly selecting a test from the bin, but we do not select
         the same test twice. The probability of picking each bin is computed
-        via the function bin_sample.
-        """
+        via the function bin_sample."""
 
         sample_X = np.zeros(shape=(N, X.shape[1]))
         available = {n: v.copy() for n, v in B.items()}
