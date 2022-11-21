@@ -111,6 +111,7 @@ class Search(Step):
             # generation and discard the final test if this is so.
             i = 0
             while self.budget.remaining() > 0:
+                self.log("Budget remaining {}.".format(self.budget.remaining()))
                 self.algorithm.train(self.objective_selector.select(), self.test_repository, self.budget.remaining())
                 self.budget.consume("training_time", self.algorithm.perf.get_history("training_time")[-1])
                 if not self.budget.remaining() > 0: break
@@ -249,6 +250,7 @@ class Load(Step):
 
         for i in idx:
             if self.budget.remaining() == 0: break
+            self.log("Budget remaining {}.".format(self.budget.remaining()))
             X, Z, Y = raw_data.test_repository.get(i)
 
             if len(X.inputs) != self.search_space.input_dimension:
@@ -278,6 +280,11 @@ class Load(Step):
                 Y = [objective(X, Z) for objective in self.objective_funcs]
 
             self.test_repository.record(X, Z, Y)
+            self.log("Loaded randomly a test with input")
+            self.log(str(X))
+            self.log("and output")
+            self.log(str(Z))
+            self.log("and objective {}.".format(Y))
 
         if self.mode == "initial":
             self.log("Loaded initial {} tests from the result file {}.".format(self.load_range, self.file_name))
