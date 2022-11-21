@@ -243,4 +243,3 @@ class WOGAN(Algorithm):
         self.log("Chose test {} with predicted minimum objective {} on WGAN model {}. Generated total {} tests of which {} were invalid.".format(best_test, best_estimated_objective, best_model + 1, N_generated, N_invalid))
 
         return best_test
-

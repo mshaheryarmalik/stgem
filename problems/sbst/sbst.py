@@ -79,12 +79,16 @@ mode = "exhaust_budget"
 
 sut_parameters = {
     "beamng_home": "C:/BeamNG/BeamNG.tech.v0.24.0.1",
+    "dave2_model": "dave2/self-driving-car-010-2020.h5",
     "curvature_points": 5,
     "curvature_range": 0.07,
     "step_size": 15,
     "map_size": 200,
-    "max_speed": 75.0
+    "max_speed": 70.0
 }
+
+if "dave2_model" in sut_parameters and sut_parameters["dave2_model"] is not None:
+    sut_parameters["max_speed"] = 35.0
 
 wogan_parameters = {
     "bins": 10,
@@ -180,17 +184,17 @@ def main(n, init_seed, identifier):
             #objectives=[ScaledDistance()],
             objective_selector=ObjectiveSelectorAll(),
             steps=[
-                #Load(file_name=os.path.join("..", "..", "output", "SBST", "1000_2022-11-01.pickle.gz"),
+                #Load(file_name=os.path.join("..", "..", "output", "SBST", "1000_2022-11-10.pickle.gz"),
                 #     mode="random",
                 #     load_range=75,
                 #     recompute_objective=True),
                 Search(mode=mode,
-                       budget_threshold={"executions": 75},
-                #       budget_threshold={"total_GTS_time": 900},
+                #       budget_threshold={"executions": 75},
+                       budget_threshold={"total_GTS_time": 900},
                        algorithm=Random(model_factory=(lambda: UniformDependent()))),
                 Search(mode=mode,
-                       budget_threshold={"executions": 300},
-                #       budget_threshold={"total_GTS_time": 3600},
+                #       budget_threshold={"executions": 300},
+                       budget_threshold={"total_GTS_time": 3600},
                        algorithm=WOGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)),
                                        parameters=wogan_parameters))
                 #Search(mode=mode,
