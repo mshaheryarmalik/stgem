@@ -8,8 +8,6 @@ from stgem.generator import STGEM, Search, Load
 from stgem.algorithm import Model
 from stgem.algorithm.random.algorithm import Random
 from stgem.algorithm.random.model import Uniform, LHS
-from stgem.algorithm.ogan.algorithm import OGAN
-from stgem.algorithm.ogan.model import OGAN_Model
 from stgem.algorithm.wogan.algorithm import WOGAN
 from stgem.algorithm.wogan.model import WOGAN_Model
 from stgem.budget import Budget
@@ -79,16 +77,12 @@ mode = "exhaust_budget"
 
 sut_parameters = {
     "beamng_home": "C:/BeamNG/BeamNG.tech.v0.24.0.1",
-    "dave2_model": "dave2/self-driving-car-010-2020.h5",
     "curvature_points": 5,
     "curvature_range": 0.07,
     "step_size": 15,
     "map_size": 200,
     "max_speed": 70.0
 }
-
-if "dave2_model" in sut_parameters and sut_parameters["dave2_model"] is not None:
-    sut_parameters["max_speed"] = 35.0
 
 wogan_parameters = {
     "bins": 10,
@@ -171,36 +165,50 @@ def main(n, init_seed, identifier):
     N = n
 
     # Share SUT objects.
+    if identifier.startswith("DAVE2"):
+        sut_parameters["dave2_model"] = "dave2/self-driving-car-010-2020.h5"
+        sut_parameters["max_speed"] = 35.0
     sbst_sut = SBSTSUT(sut_parameters)
 
     def stgem_factory():
-        nonlocal sbst_sut
+        nonlocal sbst_sut, identifier
+
+        load_pregenerated_tests = True
+        pregenerated_test_file = os.path.join("..", "..", "output", "SBST", "1000_2022-11-10.pickle.gz")
+
+        budget_thresholds = [{"total_GTS_time": 900}, {"total_GTS_time": 3600}]
+
+        if identifier in ["NEW_DISTANCE", "DAVE2_NEW_DISTANCE"]:
+            objective = ScaledDistance()
+        else:
+            objective = MaxOOB()
+
+        if load_pregenerated_tests:
+            first_step = Load(
+                file_name=pregenerated_test_file,
+                mode="random",
+                load_range=75,
+                recompute_objective=True
+            )
+        else:
+            first_step = Search(
+                mode=mode,
+                budget_threshold=budget_thresholds[0],
+                algorithm=Random(model_factory=(lambda: UniformDependent()))
+            )
 
         generator = STGEM(
             description="SBST 2022 BeamNG.tech simulator",
             sut=sbst_sut,
             budget=CustomBudget(),
-            objectives=[MaxOOB()],
-            #objectives=[ScaledDistance()],
+            objectives=[objective],
             objective_selector=ObjectiveSelectorAll(),
             steps=[
-                #Load(file_name=os.path.join("..", "..", "output", "SBST", "1000_2022-11-10.pickle.gz"),
-                #     mode="random",
-                #     load_range=75,
-                #     recompute_objective=True),
+                first_step,
                 Search(mode=mode,
-                #       budget_threshold={"executions": 75},
-                       budget_threshold={"total_GTS_time": 900},
-                       algorithm=Random(model_factory=(lambda: UniformDependent()))),
-                Search(mode=mode,
-                #       budget_threshold={"executions": 300},
-                       budget_threshold={"total_GTS_time": 3600},
+                       budget_threshold=budget_thresholds[1],
                        algorithm=WOGAN(model_factory=(lambda: WOGAN_Model(wogan_model_parameters)),
                                        parameters=wogan_parameters))
-                #Search(mode=mode,
-                #       budget_threshold={"executions": 300},
-                ##       budget_threshold = {"total_GTS_time": 3600},
-                #algorithm=OGAN(model_factory=(lambda: OGAN_Model())))
             ]
         )
         return generator
