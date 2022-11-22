@@ -1,7 +1,8 @@
 import os, sys
 import subprocess
 
-python_exe = "C:\\Users\\japeltom\\PycharmProjects\\stgem\\venv\\Scripts\\python.exe"
+#python_exe = "C:\\Users\\japeltom\\PycharmProjects\\stgem\\venv\\Scripts\\python.exe"
+python_exe = "C:\\Users\\japeltom\\AppData\\Local\\Programs\\Python\\Python37\\python.exe"
 
 if len(sys.argv) < 2:
     raise Exception("Please specify the number of replicas as a command line argument.")

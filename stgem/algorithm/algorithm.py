@@ -29,9 +29,13 @@ class Algorithm:
         if parameters is None:
             parameters = {}
 
-        # merge default_parameters and parameters, the later takes priority if a key appears in both dictionaries
-        # the result is a new dictionary
-        self.parameters = self.default_parameters | parameters
+        # Merge default_parameters and parameters, the latter takes priority if a key appears in both dictionaries.
+        # We would like to write the following but this is not supported in Python 3.7.
+        #self.parameters = self.default_parameters | parameters
+        self.parameters = parameters
+        for key in self.default_parameters:
+            if not key in self.parameters:
+                self.parameters[key] = self.default_parameters[key]
 
     def setup(self, search_space, device=None, logger=None):
         """Set up an algorithm before usage.
@@ -105,4 +109,3 @@ class Algorithm:
         algorithm will no longer be used."""
 
         pass
-
