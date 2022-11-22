@@ -64,7 +64,12 @@ class Model(ModelSkeleton):
 
         # Merge default_parameters and parameters. The latter takes priority if
         # a key appears in both dictionaries.
-        super().__init__(self.default_parameters | parameters)
+        # We would like to write the following but this is not supported in Python 3.7.
+        #super().__init__(self.default_parameters | parameters)
+        for key in self.default_parameters:
+            if not key in parameters:
+                parameters[key] = self.default_parameters[key]
+        super().__init__(parameters)
 
         self.previous_rng_state = None
 
@@ -94,4 +99,3 @@ class Model(ModelSkeleton):
 
     def train_with_batch(self, dataX, dataY):
         pass
-

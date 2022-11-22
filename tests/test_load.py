@@ -29,6 +29,10 @@ class TestLoad(unittest.TestCase):
 
         file_name = "test-load.pickle"
         r = generator.run()
+        try:
+            os.remove(file_name)
+        except:
+            pass
         r.dump_to_file(file_name)
 
         #mode_load = "random"
@@ -44,7 +48,8 @@ class TestLoad(unittest.TestCase):
             objective_selector=ObjectiveSelectorAll(),
             steps=[Load(file_name=file_name,
                         mode=mode_load,
-                        range_load=15)
+                        load_range=15,
+                        recompute_objective=True)
                   ]
         )
 

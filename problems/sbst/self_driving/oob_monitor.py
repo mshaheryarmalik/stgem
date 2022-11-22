@@ -29,7 +29,7 @@ class OutOfBoundsMonitor:
 
         last_max_oob_percentage = self.last_max_oob_percentage if oob_bb else float("nan")
         #oob_distance = self.oob_distance(wrt=wrt)
-        oob_distance_left, oob_distance_right = self.oob_distances(wrt=wrt)
+        oob_distance_left, oob_distance_right = self.oob_distances(wrt="right")
         oob_percentage = self.oob_percentage(wrt=wrt)
 
         return is_oob, self.oob_counter, last_max_oob_percentage, oob_distance_left, oob_distance_right, oob_percentage
@@ -88,35 +88,34 @@ class OutOfBoundsMonitor:
         # right lane and self.road_polygon.left_polyline is the middle of
         # the left lane. This explains the slightly awkward code.
 
-        car_point = Point(self.vehicle_state_reader.get_state().pos)
+        if not wrt == "right":
+            raise Exception("Currently only the distance with respect to the right lane is supported.")
+
+        # Old point. Were not sure what this is exactly.
+        #car_point = Point(self.vehicle_state_reader.get_state().pos)
+        # New point. This is the center of the car.
+        car_polygon = self._get_car_bbox_polygon()
+        car_point = car_polygon.centroid
+
+        left_edge = self.road_polygon.lane_left_polyline
+        right_edge = self.road_polygon.lane_right_polyline
+
+        dL = left_edge.distance(car_point)
+        dR = right_edge.distance(car_point)
+
         lane_width = self.road_polygon.road_width / 2
-        if wrt == "right":
-            left_edge = self.road_polygon.polyline
-            right_edge = self.road_polygon.right_polyline
 
-            d1 = left_edge.distance(car_point)
-            d2 = right_edge.distance(car_point)
-        elif wrt == "left":
-            left_edge = self.road_polygon.left_polyline
-            right_edge = self.road_polygon.polyline
-
-            d2 = left_edge.distance(car_point)
-            d1 = right_edge.distance(car_point)
+        if dR > dL and dR > lane_width:
+            # Out from the left.
+            dL *= -1
+        elif dL > dR and dL > lane_width:
+            # Out from the right.
+            dR *= -1
         else:
-            raise Exception("The argument 'wrt' should be 'left' or 'right'")
+            # In the middle.
+            pass
 
-        if d1 < d2:
-            if d1 <= lane_width/2:
-                return d1, d2 + lane_width/2
-            else:
-                return -d1, d2 + lane_width/2
-        else:
-            if d1 <= lane_width/2:
-                return d1, d2 + lane_width/2
-            elif lane_width/2 < d1 <= lane_width:
-                return d1, lane_width/2 - d2
-            else:
-                return d1, lane_width/2 - d2
+        return dL, dR
 
     def is_oob(self, wrt="right") -> bool:
         """Returns true if the car is an out-of-bound (OOB).

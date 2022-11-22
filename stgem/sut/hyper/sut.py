@@ -89,5 +89,5 @@ class HyperParameter(SUT):
         experiment.run(N_workers=self.N_workers, silent=True, use_gpu=use_gpu)
 
         test.input_denormalized = denormalized
-        return SUTOutput(np.array([self.report()]), None, None)
+        return SUTOutput(np.array([self.report()]), None, None, None)
 

@@ -93,7 +93,7 @@ class TestSTL(unittest.TestCase):
         specification = "foo > 0 and bar > 0"
         correct_robustness = 0.5
 
-        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None))
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None, None))
         assert robustness == correct_robustness
 
         output = [3, -0.5]
@@ -101,7 +101,7 @@ class TestSTL(unittest.TestCase):
         specification = "always[0,1] (foo > 0 and bar > 0)"
         correct_robustness = -0.5
 
-        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None))
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(output, None, None, None))
         assert robustness == correct_robustness
 
         # Test signal outputs.
@@ -114,7 +114,7 @@ class TestSTL(unittest.TestCase):
         specification = "always[0,1] (s1 >= 0 and s2 >= 0)"
         correct_robustness = 1.0
 
-        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None))
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None, None))
         assert robustness == correct_robustness
 
         data = pd.read_csv("data/stl_at.csv")
@@ -132,19 +132,19 @@ class TestSTL(unittest.TestCase):
         specification = "(always[0,30] RPM <= 3000) -> (always[0,4] SPEED <= 35)"
         correct_robustness = -4.55048
 
-        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
         specification = "(always[0,30] RPM <= 3000) -> (always[0,8] SPEED < 50)"
         correct_robustness = 4.936960098864567
 
-        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
         specification = "(always[0,30] RPM <= 3000) -> (always[0,20] SPEED < 65)"
         correct_robustness = 19.936958
 
-        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
+        robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
         # Test until operator.
@@ -152,7 +152,7 @@ class TestSTL(unittest.TestCase):
         specification = "SPEED < 2.10 until[0.1,0.2] RPM > 2000"
         correct_robustness = 0.0033535970602489584
 
-        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
         s3 = 10000*np.ones_like(s1)
@@ -161,7 +161,7 @@ class TestSTL(unittest.TestCase):
         specification = "(not (VERUM until[0,30] RPM > 3000)) -> (not (VERUM until[0,4] SPEED > 35))"
         correct_robustness = -4.55048
 
-        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale)
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None, None), scale=scale)
         assert abs(robustness - correct_robustness) < 1e-5
 
         # Test time horizon.
@@ -177,13 +177,13 @@ class TestSTL(unittest.TestCase):
 
         # Check with strict horizon check.
         try:
-            robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale, strict_horizon_check=True)
+            robustness, _ = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None, None), scale=scale, strict_horizon_check=True)
         except Exception as E:
             if not E.args[0].startswith("The horizon"):
                 traceback.print_exc()
                 raise
         # Check without strict horizon check.
-        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), scale=scale, strict_horizon_check=False)
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None, None), scale=scale, strict_horizon_check=False)
         assert objective.horizon == 11
         assert robustness == correct_robustness
 
@@ -197,7 +197,7 @@ class TestSTL(unittest.TestCase):
         specification = "always[0,3] i1 >= s1"
         correct_robustness = -1.0
 
-        robustness, objective = self.get(specification, variables, SUTInput(None, [i1], t1), SUTOutput([s1], t2, None), scale=scale)
+        robustness, objective = self.get(specification, variables, SUTInput(None, [i1], t1), SUTOutput([s1], t2, None, None), scale=scale)
         assert objective.horizon == 3
         assert robustness == correct_robustness
 
@@ -211,7 +211,7 @@ class TestSTL(unittest.TestCase):
         specification = "3*s1 <= s2"
         ranges = {"s1": [0, 200], "s2": [-200, 4500]}
 
-        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None), ranges=ranges, scale=scale)
+        robustness, objective = self.get(specification, variables, SUTInput(None, None, None), SUTOutput(signals, t, None, None), ranges=ranges, scale=scale)
         assert objective.specification.range == [-800, 4500]
 
         # Test effective ranges.

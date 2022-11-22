@@ -293,8 +293,10 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
         while k < inputs.shape[0]:
             noise = torch.rand(1, self.modelG.input_shape)*2 - 1
             new_test = self.modelG(noise.to(self.device)).cpu().detach().numpy()
-            # TODO
-            if self.search_space.is_valid(new_test) == 0: continue
+            # TODO: Currently this can cause an infinite loop, so validity
+            # check is disabled. On the other hand, it would make sense update
+            # the generator based on valid tests only. What gives?
+            #if self.search_space.is_valid(new_test) == 0: continue
             inputs[k,:] = noise[0,:]
             k += 1
         self.modelG.train(True)

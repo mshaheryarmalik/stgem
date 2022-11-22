@@ -111,12 +111,14 @@ class Search(Step):
             # generation and discard the final test if this is so.
             i = 0
             while self.budget.remaining() > 0:
+                self.log("Budget remaining {}.".format(self.budget.remaining()))
                 self.algorithm.train(self.objective_selector.select(), self.test_repository, self.budget.remaining())
                 self.budget.consume("training_time", self.algorithm.perf.get_history("training_time")[-1])
                 if not self.budget.remaining() > 0: break
 
                 # TODO: Should we catch any exceptions here?
                 self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
+                could_generate = True
                 try:
                     next_test = self.algorithm.generate_next_test(self.objective_selector.select(), self.test_repository, self.budget.remaining())
                 except AlgorithmException:
@@ -125,30 +127,39 @@ class Search(Step):
                     # an indication that the algorithm is unable to keep going,
                     # so we exit.
                     break
+                except GenerationException:
+                    # We encountered a generation error. We take this as an
+                    # indication that another training phase could correct the
+                    # problem, so we do not exit completely.
+                    could_generate = False
 
                 self.budget.consume("generation_time", self.algorithm.perf.get_history("generation_time")[-1])
-                self.log("Generated test {}.".format(next_test))
                 if not self.budget.remaining() > 0: break
+                if could_generate:
+                    self.log("Generated test {}.".format(next_test))
 
-                self.log("Executing the test...")
-                self.algorithm.perf.timer_start("execution")
-                sut_input = SUTInput(next_test, None, None)
-                sut_result = self.sut.execute_test(sut_input)
-                self.algorithm.perf.save_history("execution_time", self.algorithm.perf.timer_reset("execution"))
-                self.budget.consume("executions")
-                self.budget.consume("execution_time", self.algorithm.perf.get_history("execution_time")[-1])
-                self.log("Input to the SUT: {}".format(sut_input))
-                self.log("Result from the SUT: {}".format(sut_result))
-                output = [objective(sut_input, sut_result) for objective in self.objective_funcs]
-                self.log("The actual objective: {}".format(output))
+                    self.log("Executing the test...")
+                    self.algorithm.perf.timer_start("execution")
+                    sut_input = SUTInput(next_test, None, None)
+                    sut_result = self.sut.execute_test(sut_input)
+                    self.algorithm.perf.save_history("execution_time", self.algorithm.perf.timer_reset("execution"))
+                    self.budget.consume("executions")
+                    self.budget.consume("execution_time", self.algorithm.perf.get_history("execution_time")[-1])
+                    self.budget.consume(sut_result)
+                    self.log("Input to the SUT: {}".format(sut_input))
+                    self.log("Result from the SUT: {}".format(sut_result))
+                    output = [objective(sut_input, sut_result) for objective in self.objective_funcs]
+                    self.log("The actual objective: {}".format(output))
 
-                # TODO: Argmin does not take different scales into account.
-                self.objective_selector.update(np.argmin(output))
-                self.test_repository.record(sut_input, sut_result, output)
+                    # TODO: Argmin does not take different scales into account.
+                    self.objective_selector.update(np.argmin(output))
+                    self.test_repository.record(sut_input, sut_result, output)
 
-                if not self.success and self.test_repository.minimum_objective <= 0.0:
-                    self.log("First success at test {}.".format(i + 1))
-                    self.success = True
+                    if not self.success and self.test_repository.minimum_objective <= 0.0:
+                        self.log("First success at test {}.".format(i + 1))
+                        self.success = True
+                else:
+                    self.log("Encountered a problem with test generation. Skipping to next training phase.")
 
                 # Save the models if requested.
                 if self.results_include_models and self.results_checkpoint_period != 0 and i % self.results_checkpoint_period == 0:
@@ -194,18 +205,25 @@ class Search(Step):
         return step_result
 
 class Load(Step):
-    """Step which simply loads pregenerated data from a file."""
+    """Step which simply loads pregenerated data from a file. By default we
+    record every loaded test into the test repository and consume the budget
+    based on the information found in the data file. The budget consumption can
+    be disabled by setting consume_budget to False. This can be useful if the
+    user wants to populate the test repository with prior data which is not
+    meant to consume any budget."""
 
-    def __init__(self, file_name, mode="initial", range_load=None):
+    def __init__(self, file_name, mode="initial", load_range=None, consume_budget=True, recompute_objective=False):
         self.file_name = file_name
         if not os.path.exists(self.file_name):
             raise Exception("Pregenerated date file '{}' does not exist.".format(self.file_name))
         if mode not in ["initial", "random"]:
             raise ValueError("Unknown load mode '{}'.".format(mode))
-        if range_load < 0:
-            raise ValueError("The load range {} cannot be negative.".format(range_load))
+        if load_range < 0:
+            raise ValueError("The load range {} cannot be negative.".format(load_range))
         self.mode = mode
-        self.range_load = range_load
+        self.load_range = load_range
+        self.consume_budget = consume_budget
+        self.recompute_objective = recompute_objective
 
     def run(self, results_include_models=False, results_checkpoint_period=1) -> StepResult:
         try:
@@ -213,42 +231,75 @@ class Load(Step):
         except:
             raise Exception("Error loading STGEMResult object from file '{}'.".format(self.file_name))
 
+        """
+        If load_range is defined and consume_budget is True, then we stop when
+        either the budget is consumed or we have loaded load_range many tests.
+        """
+
         range_max = raw_data.test_repository.tests
-        if self.range_load is None:
-            self.range_load = range_max
-        elif self.range_load > range_max:
-            raise ValueError("The load range {} is out of bounds. Loaded maximum range for loaded data is {}.".format(self.range_load, range_max))
+        if self.load_range is None:
+            self.load_range = range_max
+        elif self.load_range > range_max:
+            raise ValueError("The load range {} is out of bounds. The maximum range for loaded data is {}.".format(self.load_range, range_max))
 
         if self.mode == "random":
-            # Use the search space RNG to ensure consistent selection.
-            idx = self.search_space.rng.choice(np.arange(range_max), size=self.range_load, replace=False)
+            # Use the search space RNG to ensure deterministic selection.
+            idx = self.search_space.rng.choice(np.arange(range_max), size=self.load_range, replace=False)
         elif self.mode == "initial":
-            idx = range(range_max)
-
-        already_successful = self.test_repository.minimum_objective <= 0
+            idx = range(self.load_range)
 
         for i in idx:
             if self.budget.remaining() == 0: break
-            x, y, z = raw_data.test_repository.get(i)
+            self.log("Budget remaining {}.".format(self.budget.remaining()))
+            X, Z, Y = raw_data.test_repository.get(i)
 
-            if len(x.inputs) != self.search_space.input_dimension:
-                raise ValueError("Loaded sample input dimension {} does not match SUT input dimension {}".format(len(x.inputs), self.search_space.input_dimension))
-            if y.output_timestamps is None:
-                if len(y.outputs) != self.search_space.output_dimension:
-                    raise ValueError("Loaded sample vector output dimension {} does not match SUT vector output dimension {}.".format(len(y.outputs), self.search_space.output_dimension))
+            if len(X.inputs) != self.search_space.input_dimension:
+                raise ValueError("Loaded sample input dimension {} does not match SUT input dimension {}".format(len(X.inputs), self.search_space.input_dimension))
+            if Z.output_timestamps is None:
+                if len(Z.outputs) != self.search_space.output_dimension:
+                    raise ValueError("Loaded sample vector output dimension {} does not match SUT vector output dimension {}.".format(len(Z.outputs), self.search_space.output_dimension))
             else:
-                if y.outputs.shape[0] != self.search_space.output_dimension:
-                    raise ValueError("Loaded sample signal number {} does not match SUT signal number {}.".format(y.outputs.shape[0], self.search_space.output_dimension))
+                if Z.outputs.shape[0] != self.search_space.output_dimension:
+                    raise ValueError("Loaded sample signal number {} does not match SUT signal number {}.".format(Z.outputs.shape[0], self.search_space.output_dimension))
 
-            self.test_repository.record(x, y, z)
+            # Consume the budget if requested.
+            if self.consume_budget:
+                # TODO: Redesign PerformanceData handling to allow fetching of
+                # these times.
+                training_time = 0
+                generation_time = 0
+                execution_time = 0
+                self.budget.consume("training_time", training_time)
+                self.budget.consume("generation_time", generation_time)
+                self.budget.consume("execution_time", execution_time)
+                self.budget.consume("executions")
+                self.budget.consume(Z)
 
-        success = not already_successful and self.test_repository.minimum_objective <= 0
+            # Recompute the objective of requested.
+            if self.recompute_objective:
+                Y = [objective(X, Z) for objective in self.objective_funcs]
+
+            self.test_repository.record(X, Z, Y)
+            self.log("Loaded randomly a test with input")
+            self.log(str(X))
+            self.log("and output")
+            self.log(str(Z))
+            self.log("and objective {}.".format(Y))
+
+        if self.mode == "initial":
+            self.log("Loaded initial {} tests from the result file {}.".format(self.load_range, self.file_name))
+        else:
+            self.log("Loaded randomly {} tests from the result file {}.".format(self.load_range, self.file_name))
+
+        success = self.test_repository.minimum_objective <= 0
 
         # Save certain parameters in the StepResult object.
         parameters = {}
         parameters["file_name"] = self.file_name
         parameters["mode"] = self.mode
-        parameters["load_range"] = self.range_load
+        parameters["load_range"] = self.load_range
+        parameters["consume_budget"] = self.consume_budget
+        parameters["recompute_objective"] = self.recompute_objective
 
         # Build StepResult object with test_repository
         step_result = StepResult(self.test_repository, success, parameters)

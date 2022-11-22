@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 """
 Here you can find SUTs relevant to the SBST CPS competition where the
 BeamNG.tech car simulator is being tested for faults.
@@ -21,7 +18,6 @@ The parameters dictionary for the SUT has the following parameters:
 """
 
 import os, time, traceback
-from math import pi, sin, cos
 import logging
 
 import numpy as np
@@ -33,9 +29,6 @@ for id in ["shapely.geos", "beamngpy.BeamNGpy", "beamngpy.beamng", "beamngpy.Sce
     logger.disabled = True
 
 from shapely.geometry import Point
-from shapely.geometry import LineString, Polygon
-from shapely.affinity import translate, rotate
-from descartes import PolygonPatch
 
 from stgem.sut import SUT, SUTOutput
 from util import test_to_road_points, frechet_distance, sbst_validate_test
@@ -51,7 +44,6 @@ from self_driving.vehicle_state_reader import VehicleStateReader
 
 from code_pipeline.tests_generation import RoadTestFactory
 from code_pipeline.validation import TestValidator
-from code_pipeline.visualization import RoadTestVisualizer
 
 class SBSTSUT(SUT):
     """A class for the SBST SUT which uses an input representation based on a
@@ -97,10 +89,11 @@ class SBSTSUT(SUT):
         self.input_range = [range]*self.idim
 
         self.output_type = "signal"
-        self.odim = 3
-        self.outputs = ["bolp", "distance_left", "distance_right"]
+        self.odim = 4
+        self.outputs = ["bolp", "distance_left", "distance_right", "steering_angle"]
         # The road width is fixed to 8 in _interpolate of code_pipeline/tests_generation.py
-        self.output_range = [[0, 1], [-4, 4], [-4, 4]]
+        # TODO: What is the correct range for steering angle?
+        self.output_range = [[0, 1], [-4, 4], [-4, 4], [-180, 180]]
 
         if self.map_size <= 0:
             raise ValueError("The map size must be positive.")
@@ -118,6 +111,16 @@ class SBSTSUT(SUT):
         # Check for activation key.
         if not os.path.exists(os.path.join(self.beamng_user, "tech.key")):
             raise Exception("The activation key 'tech.key' must be in the directory {}.".format(self.beamng_user))
+
+        # Check for DAVE-2 model if requested.
+        if "dave2_model" in self.parameters and self.dave2_model is not None:
+            if not os.path.exists(self.dave2_model):
+                raise Exception("The DAVE-2 model file '{}' does not exist.".format(self.dave2_model))
+            from tensorflow.python.keras.models import load_model
+            self.load_model = load_model
+            self.dave2 = True
+        else:
+            self.dave2 = False
 
         # For validating the executed roads.
         self.validator = TestValidator(map_size=self.map_size)
@@ -186,7 +189,7 @@ class SBSTSUT(SUT):
         valid, msg = self.validator.validate_test(the_test)
         if not valid:
             # print("Invalid test, not run on SUT.")
-            return SUTOutput(None, None, "invalid")
+            return SUTOutput(None, None, None, "invalid")
 
         # For the execution we need the interpolated points
         nodes = the_test.interpolated_points
@@ -206,7 +209,8 @@ class SBSTSUT(SUT):
         maps.install_map_if_needed()
         maps.beamng_map.generated().write_items(brewer.decal_road.to_json() + "\n" + waypoint_goal.to_json())
 
-        vehicle_state_reader = VehicleStateReader(self.vehicle, beamng, additional_sensors=None)
+        additional_sensors = BeamNGCarCameras().cameras_array if self.dave2 else None
+        vehicle_state_reader = VehicleStateReader(self.vehicle, beamng, additional_sensors=additional_sensors)
         brewer.vehicle_start_pose = brewer.road_points.vehicle_start_pose()
 
         steps = brewer.params.beamng_steps
@@ -228,14 +232,19 @@ class SBSTSUT(SUT):
         try:
             # start = timeit.default_timer()
             brewer.bring_up()
+            if self.dave2:
+                if not hasattr(self, "model"):
+                    self.model = self.load_model(self.dave2_model)
+                predict = NvidiaPrediction(self.model, self.max_speed)
             # iterations_count = int(self.test_time_budget/250)
             # idx = 0
 
-            brewer.vehicle.ai_set_aggression(self.risk_value)
-            # Sets the target speed for the AI in m/s, limit means this is the maximum value (not the reference one)
-            brewer.vehicle.ai_set_speed(self.max_speed_in_ms, mode="limit")
-            brewer.vehicle.ai_drive_in_lane(True)
-            brewer.vehicle.ai_set_waypoint(waypoint_goal.name)
+            if not self.dave2:
+                brewer.vehicle.ai_set_aggression(self.risk_value)
+                # Sets the target speed for the AI in m/s, limit means this is the maximum value (not the reference one)
+                brewer.vehicle.ai_set_speed(self.max_speed_in_ms, mode="limit")
+                brewer.vehicle.ai_drive_in_lane(True)
+                brewer.vehicle.ai_set_waypoint(waypoint_goal.name)
 
             while True:
                 # idx += 1
@@ -250,6 +259,12 @@ class SBSTSUT(SUT):
                 assert self._is_the_car_moving(last_state), "Car is not moving fast enough " + str(sim_data_collector.name)
 
                 assert (not last_state.is_oob), "Car drove out of the lane " + str(sim_data_collector.name)
+
+                if self.dave2:
+                    img = vehicle_state_reader.sensors['cam_center']['colour'].convert('RGB')
+                    # TODO
+                    steering_angle, throttle = predict.predict(img, last_state)
+                    self.vehicle.control(throttle=throttle, steering=steering_angle, brake=0)
 
                 beamng.step(steps)
 
@@ -276,16 +291,17 @@ class SBSTSUT(SUT):
 
             self.end_iteration()
 
-        # Build a time series for the distances and OOB percentage based on
-        # simulation states.
+        # Build a time series for the distances, OOB percentages, and steering
+        # angles based on simulation states.
         states = sim_data_collector.get_simulation_data().states
         timestamps = np.zeros(len(states))
-        signals = np.zeros(shape=(3, len(states)))
+        signals = np.zeros(shape=(4, len(states)))
         for i, state in enumerate(states):
             timestamps[i] = state.timer
             signals[0, i] = state.oob_percentage
             signals[1, i] = state.oob_distance_left
             signals[2, i] = state.oob_distance_right
+            signals[3, i] = state.steering
 
         # Prepare the final input form as well.
         input_signals = np.zeros(shape=(2, len(nodes)))
@@ -293,7 +309,7 @@ class SBSTSUT(SUT):
             input_signals[0, i] = point[0]
             input_signals[1, i] = point[1]
 
-        return input_signals, SUTOutput(signals, timestamps, None)
+        return input_signals, SUTOutput(signals, timestamps, {"simulation_time": timestamps[-1]}, None)
 
     def _execute_test(self, test):
         denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
@@ -342,4 +358,4 @@ class SBSTSUT_validator(SUT):
         denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
         valid = sbst_validate_test(test_to_road_points(denormalized, self.step_length, self.map_size), self.map_size)
         test.input_denormalized = denormalized
-        return SUTOutput(np.array([valid]), None, None)
+        return SUTOutput(np.array([valid]), None, None, None)

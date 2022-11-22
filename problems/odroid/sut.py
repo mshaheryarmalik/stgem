@@ -76,6 +76,6 @@ class OdroidSUT(SUT):
 
         distances = np.sum((self.dataX - test)**2, axis=1)
         retdata = self.dataY[np.argmin(distances)]
-        output = SUTOutput(retdata, None, None)
+        output = SUTOutput(retdata, None, None, None)
         return output
 

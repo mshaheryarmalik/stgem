@@ -44,5 +44,5 @@ class MO3D(SUT):
 
         test.input_denormalized = denormalized
 
-        return SUTOutput(np.asarray([h1, h2, h3]), None, None)
+        return SUTOutput(np.asarray([h1, h2, h3]), None, None, None)
 
