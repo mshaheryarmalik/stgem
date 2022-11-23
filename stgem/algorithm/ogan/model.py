@@ -34,8 +34,7 @@ class OGAN_ModelSkeleton(ModelSkeleton):
         return result.cpu().detach().numpy()
 
     def generate_test(self, N=1, device=None):
-        """
-        Generate N random tests.
+        """Generate N random tests.
 
         Args:
           N (int):      Number of tests to be generated.
@@ -60,8 +59,7 @@ class OGAN_ModelSkeleton(ModelSkeleton):
         return self.modelD(test_tensor).cpu().detach().numpy()
 
     def predict_objective(self, test, device=None):
-        """
-        Predicts the objective function value of the given tests.
+        """Predicts the objective function value of the given tests.
 
         Args:
           test (np.ndarray): Array of shape (N, self.input_ndimension).
@@ -189,13 +187,6 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
         except:
             raise
 
-        # Setup loss saving.
-        self.losses_D = []
-        self.losses_G = []
-        # We set single = True in case setup is called repeatedly.
-        self.perf.save_history("discriminator_loss", self.losses_D, single=True)
-        self.perf.save_history("generator_loss", self.losses_G, single=True)
-
     @classmethod
     def setup_from_skeleton(C, skeleton, search_space, device, logger=None, use_previous_rng=False):
         model = C(skeleton.parameters)
@@ -216,8 +207,7 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
         self._initialize()
 
     def train_with_batch(self, dataX, dataY, train_settings=None):
-        """
-        Train the OGAN with a batch of training data.
+        """Train the OGAN with a batch of training data.
 
         Args:
           dataX (np.ndarray): Array of tests of shape
@@ -235,7 +225,10 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
 
                                  The default for each missing key is 1. Keys
                                  not found above are ignored.
-        """
+
+        Returns:
+            D_losses (list): List of discriminator losses observed.
+            G_losses (list): List of generator losses observed."""
 
         if self.modelG is None or self.modelD is None:
             raise Exception("No machine learning models available. Has the model been setup correctly?")
@@ -262,18 +255,17 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
         # We want the discriminator to learn the mapping from tests to test
         # outputs.
         self.modelD.train(True)
-        losses = []
+        D_losses = []
         for _ in range(discriminator_epochs):
             D_loss = self.lossD(self.modelD(dataX), dataY)
-            losses.append(D_loss.cpu().detach().numpy().item())
+            D_losses.append(D_loss.cpu().detach().numpy().item())
             self.optimizerD.zero_grad()
             D_loss.backward()
             self.optimizerD.step()
 
-        self.losses_D.append(losses)
-        m = np.mean(losses)
+        m = np.mean(D_losses)
         if discriminator_epochs > 0:
-            self.log("Discriminator epochs {}, Loss: {} -> {} (mean {})".format(discriminator_epochs, losses[0], losses[-1], m))
+            self.log("Discriminator epochs {}, Loss: {} -> {} (mean {})".format(discriminator_epochs, D_losses[0], D_losses[-1], m))
 
         self.modelD.train(False)
 
@@ -313,19 +305,18 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
         # initialized only for the parameters of 'self.modelG' (see the
         # initialization of 'self.modelG').
 
-        losses = []
+        G_losses = []
         for n in range(0, self.noise_batch_size, generator_batch_size):
             outputs = self.modelD(self.modelG(inputs[n:n+generator_batch_size]))
             G_loss = self.lossG(outputs, fake_label[:outputs.shape[0]])
-            losses.append(G_loss.cpu().detach().numpy().item())
+            G_losses.append(G_loss.cpu().detach().numpy().item())
             self.optimizerG.zero_grad()
             G_loss.backward()
             self.optimizerG.step()
 
-        self.losses_G.append(losses)
-        m = np.mean(losses)
+        m = np.mean(G_losses)
         if self.noise_batch_size > 0:
-            self.log("Generator steps {}, Loss: {} -> {}, mean {}".format(self.noise_batch_size//generator_batch_size + 1, losses[0], losses[-1], m))
+            self.log("Generator steps {}, Loss: {} -> {}, mean {}".format(self.noise_batch_size//generator_batch_size + 1, G_losses[0], G_losses[-1], m))
 
         self.modelG.train(False)
 
@@ -336,9 +327,10 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
         self.modelD.train(training_D)
         self.modelG.train(training_G)
 
+        return D_losses, G_losses
+
     def generate_test(self, N=1):
-        """
-        Generate N random tests.
+        """Generate N random tests.
 
         Args:
           N (int):      Number of tests to be generated.
@@ -355,8 +347,7 @@ class OGAN_Model(Model,OGAN_ModelSkeleton):
             raise
 
     def predict_objective(self, test):
-        """
-        Predicts the objective function value of the given tests.
+        """Predicts the objective function value of the given tests.
 
         Args:
           test (np.ndarray): Array of shape (N, self.input_ndimension).

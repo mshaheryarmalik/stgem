@@ -5,26 +5,21 @@ documentation if you make changes to Algorithm!
 
 import copy
 
-from stgem.performance import PerformanceData
-
 class Algorithm:
-    """
-    Base class for all test suite generation algorithms.
-    """
+    """Base class for all test suite generation algorithms."""
 
     default_parameters = {}
 
     def __init__(self, model_factory=None, model=None, models=None, parameters=None):
-        if sum([model is not None, models is not None, model_factory is not None])>1:
-            raise TypeError("You can provide only one of these input parameters:  model_factory, model,  models")
+        if sum([model is not None, models is not None, model_factory is not None]) > 1:
+            raise TypeError("You can provide only one of these input parameters: model_factory, model, models")
         if not models:
-            models=[]
+            models = []
 
-        self.model= model
-        self.models= models
+        self.model = model
+        self.models = models
         self.model_factory = model_factory
         self.search_space = None
-        self.perf = PerformanceData()
 
         if parameters is None:
             parameters = {}
@@ -83,21 +78,23 @@ class Algorithm:
         pass
 
     def train(self, active_outputs, test_repository, budget_remaining):
-        self.perf.timer_start("training")
+        performance = test_repository.performance(test_repository.current_test)
+        performance.timer_start("training")
         self.do_train(active_outputs, test_repository, budget_remaining)
-        self.perf.save_history("training_time", self.perf.timer_reset("training"))
+        performance.record("training_time", performance.timer_reset("training"))
 
     def do_train(self, active_outputs, test_repository, budget_remaining):
         raise NotImplementedError
 
     def generate_next_test(self, active_outputs, test_repository, budget_remaining):
-        self.perf.timer_start("generation")
+        performance = test_repository.performance(test_repository.current_test)
+        performance.timer_start("generation")
         try:
             r = self.do_generate_next_test(active_outputs, test_repository, budget_remaining)
         except:
             raise
         finally:
-            self.perf.save_history("generation_time", self.perf.timer_reset("generation"))
+            performance.record("generation_time", performance.timer_reset("generation"))
 
         return r
 
@@ -109,3 +106,4 @@ class Algorithm:
         algorithm will no longer be used."""
 
         pass
+

@@ -168,3 +168,5 @@ class OGANK_Model(AlgModel,OGANK_ModelSkeleton):
 
         gloss = self.gan.fit(noise, yGen, epochs=train_settings["generator_epochs"], verbose=True)
 
+        return [], []
+

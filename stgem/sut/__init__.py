@@ -14,8 +14,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from stgem.performance import PerformanceData
-
 @dataclass
 class SUTInput:
     inputs: ...
@@ -78,7 +76,6 @@ class SUT:
         if not "output_type" in self.parameters:
             self.parameters["output_type"] = None
 
-        self.perf = PerformanceData()
         self.base_has_been_setup = False
 
     def __getattr__(self, name):

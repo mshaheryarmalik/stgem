@@ -17,7 +17,7 @@
     * Control System Toolbox: F16 (ARCH-COMP-2021)
     * Deep Learning Toolbox: SC (ARCH-COMP-2021)
 * Make sure to select symbolic link creation in the installer.
-* After the installation has completed, run `python3 setup.py install` in `/usr/local/MATLAB/R2021b/extern/engines/python` (this is the default installation location; note version differences).
+* After the installation has completed, run `python3 setup.py install` in `/usr/local/MATLAB/R2021b/extern/engines/python` (this is the default installation location; note version differences). If you are running this step as a nonroot user, you might need to (temporarily) set write permissions to the directiories `build` and `dist`.
 * Make sure the package `libpython3` is installed in Ubuntu.
 * If everything installed correctly, running `import matlab; import matlab.engine` in Python should execute without errors.
 * Notice that MATLAB support for Linux is flaky. For example, running several MATLAB instances in parallel computation might lead to silent crashes.

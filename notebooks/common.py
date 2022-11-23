@@ -65,18 +65,18 @@ def falsification_rate(experiment):
 
 def times(replica):
     t = 0
-    for step in replica.step_results:
-        perf = step.algorithm_performance
+    for i in range(replica.test_repository.tests):
+        performance = replica.test_repository.performance(i)
         try:
-            t += sum(perf.get_history("execution_time"))
+            t += performance.obtain("execution_time")
         except:
             pass
         try:
-            t += sum(perf.get_history("generation_time"))
+            t += performance.obtain("generation_time")
         except:
             pass
         try:
-            t += sum(perf.get_history("training_time"))
+            t += performance.obtain("training_time")
         except:
             pass
 

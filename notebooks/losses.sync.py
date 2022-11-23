@@ -120,7 +120,9 @@ for idx in range(0, no_of_models):
 
 # %%
 epochs = model.train_settings["discriminator_epochs"]
-data = np.array(result.step_results[1].model_performance[objective_idx].histories["discriminator_loss"]).reshape(-1)
+step_tests = result.step_results[1].parameters["tests_executed"]
+data = [result.test_repository.performance(i).obtain("discriminator_loss")[objective_idx] for i in step_tests]
+data = np.array(data).reshape(-1)
 fig = plt.figure()
 plt.plot(np.arange(1, epochs + 1), data)
 
@@ -225,6 +227,7 @@ model.train_with_batch(X, Y, train_settings=model.parameters["train_settings"])
 
 # %%
 batch_size = 500
+# TODO: This needs to be updated to use the latest performance records. What does this do?
 A = model.perf.histories["generator_loss"][-1][0]
 B = model.perf.histories["generator_loss"][-1][-1]
 print("training loss: {} -> {}".format(A, B))
