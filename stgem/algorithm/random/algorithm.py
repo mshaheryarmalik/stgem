@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import numpy as np
 
 from stgem.algorithm import Algorithm
@@ -12,6 +9,9 @@ class Random(Algorithm):
         pass
 
     def do_generate_next_test(self, active_outputs, test_repository, budget_remaining):
+        # PerformanceRecordHandler for the current test.
+        performance = test_repository.performance(test_repository.current_test)
+
         rounds = 0
         invalid = 0
         # Select a model randomly and generate a random valid test for it.
@@ -28,8 +28,8 @@ class Random(Algorithm):
 
         # Save information on how many tests needed to be generated etc.
         # -----------------------------------------------------------------
-        self.perf.save_history("N_tests_generated", rounds)
-        self.perf.save_history("N_invalid_tests_generated", invalid)
+        performance.record("N_tests_generated", rounds)
+        performance.record("N_invalid_tests_generated", invalid)
 
         return new_test
 

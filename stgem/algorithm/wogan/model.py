@@ -160,18 +160,6 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
         critic_parameters = {k[7:]:v for k, v in self.parameters.items() if k.startswith("critic")}
         self.optimizerC = critic_optimizer_class(self.modelC.parameters(), **algorithm.filter_arguments(critic_parameters, critic_optimizer_class))
 
-        # Setup loss saving etc.
-        self.losses_A = []
-        self.losses_C = []
-        self.gradient_penalties = []
-        self.losses_G = []
-
-        # We set single = True in case setup is called repeatedly.
-        self.perf.save_history("analyzer_loss", self.losses_A, single=True)
-        self.perf.save_history("critic_loss", self.losses_C, single=True)
-        self.perf.save_history("gradient_penalty", self.gradient_penalties, single=True)
-        self.perf.save_history("generator_loss", self.losses_G, single=True)
-
         # Restore RNG state.
         if use_previous_rng:
             torch.random.set_rng_state(current_rng_state)
@@ -198,8 +186,7 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
         return skeleton
 
     def train_analyzer_with_batch(self, data_X, data_Y, train_settings):
-        """
-        Train the analyzer part of the model with a batch of training data.
+        """Train the analyzer part of the model with a batch of training data.
 
         Args:
           data_X (np.ndarray):   Array of tests of shape
@@ -214,7 +201,9 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
 
                                  The default for each missing key is 1. Keys
                                  not found above are ignored.
-        """
+
+        Returns:
+            losses (list): List of analyzer losses observed."""
 
         losses = []
         for _ in range(train_settings["analyzer_epochs"]):
@@ -222,12 +211,12 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
             losses.append(loss)
 
         m = np.mean(losses)
-        self.losses_A.append(losses)
         self.log("Analyzer epochs {}, Loss: {} -> {} (mean {})".format(train_settings["analyzer_epochs"], losses[0], losses[-1], m))
 
+        return losses
+
     def train_with_batch(self, data_X, train_settings=None):
-        """
-        Train the WGAN with a batch of training data.
+        """Train the WGAN with a batch of training data.
 
         Args:
           data_X (np.ndarray):   Array of tests of shape
@@ -244,7 +233,12 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
 
                                  The default for each missing key is 1. Keys
                                  not found above are ignored.
-        """
+
+        Returns:
+            C_losses (list):            List of critic losses observed.
+            G_losses (list):            List of generator losses observed.
+            gradient_penalties: (list): List of gradient penalties critic
+                                        losses observed."""
 
         if train_settings is None:
             train_settings = self.default_parameters["train_settings"]
@@ -262,8 +256,8 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
         # Train the critic.
         # ---------------------------------------------------------------------
         self.modelC.train(True)
-        losses = torch.zeros(critic_steps)
-        gradient_penalties = torch.zeros(critic_steps)
+        C_losses = []
+        gradient_penalties = []
         for m in range(critic_steps):
             # Here the mini batch size of the WGAN-GP is set to be the number
             # of training samples for the critic
@@ -304,17 +298,15 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
             # gradient_penalty = ((torch.linalg.norm(gradients, dim=1) - 1)**2).mean()
 
             C_loss = fake_loss - real_loss + self.gp_coefficient*gradient_penalty
-            losses[m] = C_loss
-            gradient_penalties[m] = self.gp_coefficient*gradient_penalty
+            C_losses.append(C_loss.item())
+            gradient_penalties.append(self.gp_coefficient*gradient_penalty.item())
             self.optimizerC.zero_grad()
             C_loss.backward()
             self.optimizerC.step()
 
-        self.losses_C.append(losses)
-        self.gradient_penalties += gradient_penalties
-        m1 = losses.mean()
-        m2 = gradient_penalties.mean()
-        self.log("Critic steps {}, Loss: {} -> {} (mean {}), GP: {} -> {} (mean {})".format(critic_steps, losses[0], losses[-1], m1, gradient_penalties[0], gradient_penalties[-1], m2))
+        m1 = np.mean(C_losses)
+        m2 = np.mean(gradient_penalties)
+        self.log("Critic steps {}, Loss: {} -> {} (mean {}), GP: {} -> {} (mean {})".format(critic_steps, C_losses[0], C_losses[-1], m1, gradient_penalties[0], gradient_penalties[-1], m2))
 
         self.modelC.train(False)
 
@@ -324,21 +316,20 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
         # Train the generator.
         # ---------------------------------------------------------------------
         self.modelG.train(True)
-        losses = torch.zeros(generator_steps)
+        G_losses = []
         noise_batch_size = self.noise_batch_size
         for m in range(generator_steps):
             noise = (2*torch.rand(size=(noise_batch_size, self.modelG.input_shape)) - 1).to(self.device)
             outputs = self.modelC(self.modelG(noise))
 
             G_loss = -outputs.mean(0)
-            losses[m] = G_loss
+            G_losses.append(G_loss.item())
             self.optimizerG.zero_grad()
             G_loss.backward()
             self.optimizerG.step()
 
-        m = losses.mean()
-        self.losses_G.append(losses)
-        self.log("Generator steps {}, Loss: {} -> {} (mean {})".format(generator_steps, losses[0], losses[-1], m))
+        m = np.mean(G_losses)
+        self.log("Generator steps {}, Loss: {} -> {} (mean {})".format(generator_steps, G_losses[0], G_losses[-1], m))
 
         self.modelG.train(False)
 
@@ -365,6 +356,8 @@ class WOGAN_Model(Model,WOGAN_ModelSkeleton):
         # Restore the training modes.
         self.modelC.train(training_C)
         self.modelG.train(training_G)
+
+        return C_losses, G_losses, gradient_penalties
 
     def generate_test(self, N=1):
         """

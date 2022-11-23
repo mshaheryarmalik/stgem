@@ -5,9 +5,7 @@ import numpy as np
 from stgem.algorithm import Algorithm
 
 class OGAN(Algorithm):
-    """
-    Implements the online generative adversarial network algorithm.
-    """
+    """Implements the online generative adversarial network algorithm."""
 
     # Do not change the defaults
     default_parameters = {
@@ -24,6 +22,13 @@ class OGAN(Algorithm):
         self.model_trained = [0 for _ in range(self.N_models)] # keeps track how many tests were generated when a model was previously trained
 
     def do_train(self, active_outputs, test_repository, budget_remaining):
+        # PerformanceRecordHandler for the current test.
+        performance = test_repository.performance(test_repository.current_test)
+        discriminator_losses = [[] for _ in range(self.N_models)]
+        generator_losses = [[] for _ in range(self.N_models)]
+        performance.record("discriminator_loss", discriminator_losses)
+        performance.record("generator_loss", generator_losses)
+
         # Take into account how many tests a previous step (usually random
         # search) has generated.
         self.tests_generated = test_repository.tests
@@ -52,10 +57,12 @@ class OGAN(Algorithm):
                         train_settings = self.models[i].train_settings_init
                     else:
                         train_settings = self.models[i].train_settings
-                    self.models[i].train_with_batch(dataX,
-                                                    dataY,
-                                                    train_settings=train_settings,
-                                                    )
+                    D_losses, G_losses = self.models[i].train_with_batch(dataX,
+                                                                         dataY,
+                                                                         train_settings=train_settings,
+                                                                        )
+                    discriminator_losses[i].append(D_losses)
+                    generator_losses[i].append(G_losses)
                 self.model_trained[i] = self.tests_generated
         self.first_training = False
 
@@ -66,6 +73,9 @@ class OGAN(Algorithm):
         N_generated = 0
         N_invalid = 0
         self.log("Generating using OGAN models {}.".format(",".join(str(m + 1) for m in active_outputs)))
+
+        # PerformanceRecordHandler for the current test.
+        performance = test_repository.performance(test_repository.current_test)
 
         while True:
             # TODO: Avoid selecting similar or same tests.
@@ -112,8 +122,8 @@ class OGAN(Algorithm):
 
         # Save information on how many tests needed to be generated etc.
         # -----------------------------------------------------------------
-        self.perf.save_history("N_tests_generated", N_generated)
-        self.perf.save_history("N_invalid_tests_generated", N_invalid)
+        performance.record("N_tests_generated", N_generated)
+        performance.record("N_invalid_tests_generated", N_invalid)
 
         best_test = heap[0][3]
         best_model = heap[0][2]

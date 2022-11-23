@@ -1,7 +1,5 @@
 import copy
 
-from stgem.performance import PerformanceData
-
 """
 Currently the use_previous_rng parameter is used so that the setup method can
 be called several times without the RNG being advanced. This is especially
@@ -82,8 +80,6 @@ class Model(ModelSkeleton):
         self.device = device
         self.logger = logger
         self.log = lambda msg: (self.logger("model", msg) if logger is not None else None)
-
-        self.perf = PerformanceData()
 
     @classmethod
     def setup_from_skeleton(C, skeleton, search_space, device, logger=None, use_previous_rng=False):

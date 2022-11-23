@@ -103,6 +103,17 @@ class WOGAN(Algorithm):
         return sample_X
 
     def do_train(self, active_outputs, test_repository, budget_remaining):
+        # PerformanceRecordHandler for the current test.
+        performance = test_repository.performance(test_repository.current_test)
+        analyzer_losses = [[] for _ in range(self.N_models)]
+        critic_losses = [[] for _ in range(self.N_models)]
+        generator_losses = [[] for _ in range(self.N_models)]
+        gradient_penalties = [[] for _ in range(self.N_models)]
+        performance.record("analyzer_loss", analyzer_losses)
+        performance.record("critic_loss", critic_losses)
+        performance.record("generator_loss", generator_losses)
+        performance.record("gradient_penalty", gradient_penalties)
+
         if self.first_training:
             if self.shift_function == "linear":
                 # We increase the shift linearly according to the given initial and
@@ -111,7 +122,7 @@ class WOGAN(Algorithm):
                 beta = self.shift_function_parameters["final"]
                 self.shift = lambda x: alpha * x + beta
 
-        # Take into account how many tests a previous step (usually random
+        # Take into account how many tests a previous step (usually a random
         # search) has generated.
         tests_generated = test_repository.tests
 
@@ -136,10 +147,11 @@ class WOGAN(Algorithm):
                 train_settings = self.models[i].train_settings_init if self.first_training else self.models[i].train_settings
                 for _ in range(epochs):
                     self.log("Training analyzer {}...".format(i + 1))
-                    self.models[i].train_analyzer_with_batch(dataX,
-                                                             dataY,
-                                                             train_settings=train_settings
-                                                            )
+                    losses = self.models[i].train_analyzer_with_batch(dataX,
+                                                                      dataY,
+                                                                      train_settings=train_settings
+                                                                     )
+                    analyzer_losses[i].append(losses)
 
                     # Train the WGAN.
                     self.log("Training the WGAN model {}...".format(i + 1))
@@ -162,9 +174,12 @@ class WOGAN(Algorithm):
                                                        self.test_bins[i],
                                                        self.shift(budget_remaining),
                                                       )
-                    self.models[i].train_with_batch(train_X,
-                                                    train_settings=train_settings
-                                                   )
+                    C_losses, G_losses, gps = self.models[i].train_with_batch(train_X,
+                                                                              train_settings=train_settings
+                                                                             )
+                    critic_losses[i].append(C_losses)
+                    generator_losses[i].append(G_losses)
+                    gradient_penalties[i].append(gps)
 
                 self.model_trained[i] = tests_generated
 
@@ -187,6 +202,9 @@ class WOGAN(Algorithm):
         N_generated = 0
         N_invalid = 0
         self.log("Generating using WOGAN models {}.".format(",".join(str(m + 1) for m in active_outputs)))
+
+        # PerformanceRecordHandler for the current test.
+        performance = test_repository.performance(test_repository.current_test)
 
         while True:
             # TODO: Avoid selecting similar or same tests.
@@ -233,8 +251,8 @@ class WOGAN(Algorithm):
 
         # Save information on how many tests needed to be generated etc.
         # -----------------------------------------------------------------
-        self.perf.save_history("N_tests_generated", N_generated)
-        self.perf.save_history("N_invalid_tests_generated", N_invalid)
+        performance.record("N_tests_generated", N_generated)
+        performance.record("N_invalid_tests_generated", N_invalid)
 
         best_test = heap[0][3]
         best_model = heap[0][2]

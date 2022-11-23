@@ -20,14 +20,12 @@ class StepResult:
         self.test_repository = test_repository
         self.success = success
         self.parameters = parameters
-        self.algorithm_performance = None
-        self.model_performance = None
-        self.models  = []
+        self.models = []
         self.final_model = None
 
 class STGEMResult:
 
-    def __init__(self, description, sut_name, sut_parameters, seed, test_repository, step_results, sut_performance):
+    def __init__(self, description, sut_name, sut_parameters, seed, test_repository, step_results):
         self.timestamp = datetime.datetime.now()
         self.description = description
         self.sut_name = sut_name
@@ -35,7 +33,6 @@ class STGEMResult:
         self.seed = seed
         self.step_results = step_results
         self.test_repository = test_repository
-        self.sut_performance = sut_performance
 
     @staticmethod
     def restore_from_file(file_name: str):
@@ -97,6 +94,8 @@ class Search(Step):
     def run(self) -> StepResult:
         self.budget.update_threshold(self.budget_threshold)
 
+        # This stores the test indices that were executed during this step.
+        test_idx = []
         # A list for saving model skeletons.
         model_skeletons = []
 
@@ -112,11 +111,17 @@ class Search(Step):
             i = 0
             while self.budget.remaining() > 0:
                 self.log("Budget remaining {}.".format(self.budget.remaining()))
+
+                # Create a new test repository record to be filled.
+                performance = self.test_repository.new_record()
+
+                # TODO: discard the current test and results if we're running
+                # out of budget during a step
+
                 self.algorithm.train(self.objective_selector.select(), self.test_repository, self.budget.remaining())
-                self.budget.consume("training_time", self.algorithm.perf.get_history("training_time")[-1])
+                self.budget.consume("training_time", performance.obtain("training_time"))
                 if not self.budget.remaining() > 0: break
 
-                # TODO: Should we catch any exceptions here?
                 self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
                 could_generate = True
                 try:
@@ -133,31 +138,40 @@ class Search(Step):
                     # problem, so we do not exit completely.
                     could_generate = False
 
-                self.budget.consume("generation_time", self.algorithm.perf.get_history("generation_time")[-1])
+                self.budget.consume("generation_time", performance.obtain("generation_time"))
                 if not self.budget.remaining() > 0: break
                 if could_generate:
                     self.log("Generated test {}.".format(next_test))
-
                     self.log("Executing the test...")
-                    self.algorithm.perf.timer_start("execution")
+
+                    performance.timer_start("execution")
                     sut_input = SUTInput(next_test, None, None)
-                    sut_result = self.sut.execute_test(sut_input)
-                    self.algorithm.perf.save_history("execution_time", self.algorithm.perf.timer_reset("execution"))
+                    sut_output = self.sut.execute_test(sut_input)
+                    performance.record("execution_time", performance.timer_reset("execution"))
+
+                    self.test_repository.record_input(sut_input)
+                    self.test_repository.record_output(sut_output)
+
                     self.budget.consume("executions")
-                    self.budget.consume("execution_time", self.algorithm.perf.get_history("execution_time")[-1])
-                    self.budget.consume(sut_result)
+                    self.budget.consume("execution_time", performance.obtain("execution_time"))
+                    self.budget.consume(sut_output)
+
                     self.log("Input to the SUT: {}".format(sut_input))
-                    self.log("Result from the SUT: {}".format(sut_result))
-                    output = [objective(sut_input, sut_result) for objective in self.objective_funcs]
-                    self.log("The actual objective: {}".format(output))
+                    self.log("Output from the SUT: {}".format(sut_output))
+
+                    objectives = [objective(sut_input, sut_output) for objective in self.objective_funcs]
+                    self.test_repository.record_objectives(objectives)
+                    idx = self.test_repository.finalize_record()
+                    test_idx.append(idx)
+
+                    self.log("The actual objective: {}".format(objectives))
 
                     # TODO: Argmin does not take different scales into account.
-                    self.objective_selector.update(np.argmin(output))
-                    self.test_repository.record(sut_input, sut_result, output)
+                    self.objective_selector.update(np.argmin(objectives))
 
                     if not self.success and self.test_repository.minimum_objective <= 0.0:
-                        self.log("First success at test {}.".format(i + 1))
                         self.success = True
+                        self.log("First success at test {}.".format(i + 1))
                 else:
                     self.log("Encountered a problem with test generation. Skipping to next training phase.")
 
@@ -178,11 +192,11 @@ class Search(Step):
         # Report results.
         self.log("Step minimum objective component: {}".format(self.test_repository.minimum_objective))
 
-        result = self._generate_step_result(model_skeletons)
+        result = self._generate_step_result(test_idx, model_skeletons)
 
         return result
 
-    def _generate_step_result(self, model_skeletons):
+    def _generate_step_result(self, test_idx, model_skeletons):
         # Save certain parameters in the StepResult object.
         parameters = {}
         parameters["algorithm_name"] = self.algorithm.__class__.__name__
@@ -193,11 +207,10 @@ class Search(Step):
         parameters["objective"] = [copy.deepcopy(objective.parameters) for objective in self.objective_funcs]
         parameters["objective_selector_name"] = self.objective_selector.__class__.__name__
         parameters["objective_selector"] = copy.deepcopy(self.objective_selector.parameters)
+        parameters["executed_tests"] = test_idx
 
         # Build the StepResult object.
         step_result = StepResult(self.test_repository, self.success, parameters)
-        step_result.algorithm_performance = self.algorithm.perf
-        step_result.model_performance = [self.algorithm.models[i].perf for i in range(self.algorithm.N_models)]
         if self.results_include_models:
             step_result.models = model_skeletons
             step_result.final_models = [model.skeletonize() for model in self.algorithm.models]
@@ -226,6 +239,22 @@ class Load(Step):
         self.recompute_objective = recompute_objective
 
     def run(self, results_include_models=False, results_checkpoint_period=1) -> StepResult:
+
+        """
+        Notice that below we obtain the training time and generation time of
+        the loaded test and use it to consume budget and populate training and
+        generation times of the loaded test in the test repository. This might
+        not make sense in every context. For example if the loaded test was
+        generated using OGAN and loaded as a random initial data, then the
+        training and generation times are too high. Thus this class is mostly
+        meant to load pregenerated random data and then the training and
+        generation times make sense. If the training and generation time do not
+        make sense, the user can set self.consume_budget to False.
+        """
+
+        # This stores the test indices that were executed during this step.
+        test_idx = []
+
         try:
             raw_data = STGEMResult.restore_from_file(self.file_name)
         except:
@@ -252,6 +281,7 @@ class Load(Step):
             if self.budget.remaining() == 0: break
             self.log("Budget remaining {}.".format(self.budget.remaining()))
             X, Z, Y = raw_data.test_repository.get(i)
+            old_performance = raw_data.test_repository.performance(i)
 
             if len(X.inputs) != self.search_space.input_dimension:
                 raise ValueError("Loaded sample input dimension {} does not match SUT input dimension {}".format(len(X.inputs), self.search_space.input_dimension))
@@ -264,14 +294,9 @@ class Load(Step):
 
             # Consume the budget if requested.
             if self.consume_budget:
-                # TODO: Redesign PerformanceData handling to allow fetching of
-                # these times.
-                training_time = 0
-                generation_time = 0
-                execution_time = 0
-                self.budget.consume("training_time", training_time)
-                self.budget.consume("generation_time", generation_time)
-                self.budget.consume("execution_time", execution_time)
+                self.budget.consume("training_time", old_performance.obtain("training_time"))
+                self.budget.consume("generation_time", old_performance.obtain("generation_time"))
+                self.budget.consume("execution_time", old_performance.obtain("execution_time"))
                 self.budget.consume("executions")
                 self.budget.consume(Z)
 
@@ -279,7 +304,17 @@ class Load(Step):
             if self.recompute_objective:
                 Y = [objective(X, Z) for objective in self.objective_funcs]
 
-            self.test_repository.record(X, Z, Y)
+            # Record the test and its performance into the test repository.
+            performance = self.test_repository.new_record()
+            self.test_repository.record_input(X)
+            self.test_repository.record_output(Z)
+            self.test_repository.record_objectives(Y)
+            performance.record("training_time", old_performance.obtain("training_time"))
+            performance.record("generation_time", old_performance.obtain("generation_time"))
+            performance.record("execution_time", old_performance.obtain("execution_time"))
+            idx = self.test_repository.finalize_record()
+            test_idx.append(idx)
+
             self.log("Loaded randomly a test with input")
             self.log(str(X))
             self.log("and output")
@@ -300,6 +335,7 @@ class Load(Step):
         parameters["load_range"] = self.load_range
         parameters["consume_budget"] = self.consume_budget
         parameters["recompute_objective"] = self.recompute_objective
+        parameters["executed_tests"] = test_idx
 
         # Build StepResult object with test_repository
         step_result = StepResult(self.test_repository, success, parameters)
@@ -395,7 +431,7 @@ class STGEM:
         self.setup_steps()
 
     def _generate_result(self, step_results):
-        return STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results, self.sut.perf)
+        return STGEMResult(self.description, self.sut.__class__.__name__, copy.deepcopy(self.sut.parameters), self.seed, self.test_repository, step_results)
 
     def _run(self) -> STGEMResult:
         # Running this assumes that setup has been run.
