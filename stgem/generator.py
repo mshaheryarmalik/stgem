@@ -167,17 +167,23 @@ class Search(Step):
                     self.budget.consume("executions")
 
                     self.log("Input to the SUT: {}".format(sut_input))
-                    self.log("Output from the SUT: {}".format(sut_output))
 
-                    objectives = [objective(sut_input, sut_output) for objective in self.objective_funcs]
-                    self.test_repository.record_objectives(objectives)
+                    if sut_output.error is None:
+                        self.log("Output from the SUT: {}".format(sut_output))
+
+                        objectives = [objective(sut_input, sut_output) for objective in self.objective_funcs]
+                        self.test_repository.record_objectives(objectives)
+
+                        self.log("The actual objective: {}".format(objectives))
+
+                        # TODO: Argmin does not take different scales into account.
+                        self.objective_selector.update(np.argmin(objectives))
+                    else:
+                        self.log("An error '{}' occurred during the test execution. No output available.".format(sut_output.error))
+                        self.test_repository.record_objectives([])
+
                     idx = self.test_repository.finalize_record()
                     test_idx.append(idx)
-
-                    self.log("The actual objective: {}".format(objectives))
-
-                    # TODO: Argmin does not take different scales into account.
-                    self.objective_selector.update(np.argmin(objectives))
 
                     if not self.success and self.test_repository.minimum_objective <= 0.0:
                         self.success = True
@@ -314,7 +320,7 @@ class Load(Step):
                 self.budget.consume(Z)
 
             # Recompute the objective of requested.
-            if self.recompute_objective:
+            if self.recompute_objective and Z.error is not None:
                 Y = [objective(X, Z) for objective in self.objective_funcs]
 
             # Record the test and its performance into the test repository.
@@ -330,9 +336,12 @@ class Load(Step):
 
             self.log("Loaded randomly a test with input")
             self.log(str(X))
-            self.log("and output")
-            self.log(str(Z))
-            self.log("and objective {}.".format(Y))
+            if Z.error is not None:
+                self.log("and output")
+                self.log(str(Z))
+                self.log("and objective {}.".format(Y))
+            else:
+                self.log("which failed to execute and produce output.")
 
         if self.mode == "initial":
             self.log("Loaded initial {} tests from the result file {}.".format(self.load_range, self.file_name))
