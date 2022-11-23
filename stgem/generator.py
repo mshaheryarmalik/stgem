@@ -106,8 +106,11 @@ class Search(Step):
         if not (self.mode == "stop_at_first_objective" and self.test_repository.minimum_objective <= 0.0):
             self.success = False
 
-            # TODO: We should check if the budget was exhausted during the test
-            # generation and discard the final test if this is so.
+            # Below we omit including a test into the test repository if the
+            # budget was exhausted during training, generation, or test
+            # execution. We do not care for the special case where the budget
+            # is exactly 0 as this is unlikely.
+
             i = 0
             while self.budget.remaining() > 0:
                 self.log("Budget remaining {}.".format(self.budget.remaining()))
@@ -115,12 +118,12 @@ class Search(Step):
                 # Create a new test repository record to be filled.
                 performance = self.test_repository.new_record()
 
-                # TODO: discard the current test and results if we're running
-                # out of budget during a step
-
                 self.algorithm.train(self.objective_selector.select(), self.test_repository, self.budget.remaining())
                 self.budget.consume("training_time", performance.obtain("training_time"))
-                if not self.budget.remaining() > 0: break
+                if not self.budget.remaining() > 0:
+                    self.log("Ran out of budget during training. Discarding the test.")
+                    self.test_repository.discard_record()
+                    break
 
                 self.log("Starting to generate test {}.".format(self.test_repository.tests + 1))
                 could_generate = True
@@ -139,7 +142,10 @@ class Search(Step):
                     could_generate = False
 
                 self.budget.consume("generation_time", performance.obtain("generation_time"))
-                if not self.budget.remaining() > 0: break
+                if not self.budget.remaining() > 0:
+                    self.log("Ran out of budget during test generation. Discarding the test.")
+                    self.test_repository.discard_record()
+                    break
                 if could_generate:
                     self.log("Generated test {}.".format(next_test))
                     self.log("Executing the test...")
@@ -152,9 +158,13 @@ class Search(Step):
                     self.test_repository.record_input(sut_input)
                     self.test_repository.record_output(sut_output)
 
-                    self.budget.consume("executions")
                     self.budget.consume("execution_time", performance.obtain("execution_time"))
                     self.budget.consume(sut_output)
+                    if not self.budget.remaining() > 0:
+                        self.log("Ran out of budget during test execution. Discarding the test.")
+                        self.test_repository.discard_record()
+                        break
+                    self.budget.consume("executions")
 
                     self.log("Input to the SUT: {}".format(sut_input))
                     self.log("Output from the SUT: {}".format(sut_output))
@@ -297,6 +307,9 @@ class Load(Step):
                 self.budget.consume("training_time", old_performance.obtain("training_time"))
                 self.budget.consume("generation_time", old_performance.obtain("generation_time"))
                 self.budget.consume("execution_time", old_performance.obtain("execution_time"))
+                if not self.budget.remaining() > 0:
+                    self.log("Ran out of budget during training, generation, or execution. Discarding the test.")
+                    break
                 self.budget.consume("executions")
                 self.budget.consume(Z)
 
