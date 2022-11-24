@@ -33,17 +33,18 @@ from shapely.geometry import Point
 from stgem.sut import SUT, SUTOutput
 from util import test_to_road_points, frechet_distance, sbst_validate_test
 
-from self_driving.beamng_brewer import BeamNGBrewer
-from self_driving.beamng_car_cameras import BeamNGCarCameras
-from self_driving.beamng_tig_maps import maps, LevelsFolder
-from self_driving.beamng_waypoint import BeamNGWaypoint
-from self_driving.nvidia_prediction import NvidiaPrediction
-from self_driving.simulation_data_collector import SimulationDataCollector
-from self_driving.utils import get_node_coords, points_distance
-from self_driving.vehicle_state_reader import VehicleStateReader
+if __name__ == "__main__":
+    from self_driving.beamng_brewer import BeamNGBrewer
+    from self_driving.beamng_car_cameras import BeamNGCarCameras
+    from self_driving.beamng_tig_maps import maps, LevelsFolder
+    from self_driving.beamng_waypoint import BeamNGWaypoint
+    from self_driving.nvidia_prediction import NvidiaPrediction
+    from self_driving.simulation_data_collector import SimulationDataCollector
+    from self_driving.utils import get_node_coords, points_distance
+    from self_driving.vehicle_state_reader import VehicleStateReader
 
-from code_pipeline.tests_generation import RoadTestFactory
-from code_pipeline.validation import TestValidator
+    from code_pipeline.tests_generation import RoadTestFactory
+    from code_pipeline.validation import TestValidator
 
 class SBSTSUT(SUT):
     """A class for the SBST SUT which uses an input representation based on a
