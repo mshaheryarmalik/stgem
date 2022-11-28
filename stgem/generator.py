@@ -320,7 +320,7 @@ class Load(Step):
                 self.budget.consume(Z)
 
             # Recompute the objective of requested.
-            if self.recompute_objective and Z.error is not None:
+            if self.recompute_objective and Z.error is None:
                 Y = [objective(X, Z) for objective in self.objective_funcs]
 
             # Record the test and its performance into the test repository.
