@@ -67,7 +67,7 @@ class ScaledDistance(Objective):
         # for the right distance, so this is a sort of compromise.
         alpha = 1.70
         L = (np.clip(r.outputs[1], -alpha, 2) + alpha) / (2 + alpha)
-        R = (np.clip(r.outputs[1], -alpha, 2) + alpha) / (2 + alpha)
+        R = (np.clip(r.outputs[2], -alpha, 2) + alpha) / (2 + alpha)
 
         return min(np.min(L), np.min(R))
 
