@@ -1,0 +1,196 @@
+/*---------------------------------*- C++ -*----------------------------------*\
+filetype dictionary; coding utf-8; version 0.1; local --; purpose --;
+\*----------------------------------------------------------------------------*/
+_environment
+{
+    libSource                 D:\Shaheryar\EDISS\MDU\Thesis\STGEM\problems\osp\gunnerus-dp\fmus;
+}
+systemStructure
+{
+    connections
+    {
+        thruster_dynamics_to_vessel_model
+        {
+            source
+            {
+                component        thruster_dynamics;
+                connector        thruster_dynamics_thrust;
+            }
+            target
+            {
+                component        vessel_model;
+                connector        vessel_model_thrust;
+            }
+        }
+        current_model_to_vessel_model
+        {
+            source
+            {
+                component        current_model;
+                connector        current_model_current_velocity;
+            }
+            target
+            {
+                component        vessel_model;
+                connector        vessel_model_current_velocity;
+            }
+        }
+        vessel_model_to_control_system_communication
+        {
+            source
+            {
+                component        vessel_model;
+                connector        vessel_model_position_3dof;
+            }
+            target
+            {
+                component        control_system_communication;
+                connector        control_system_communication_position_3dof;
+            }
+        }
+        vessel_model_to_control_system_communication_02
+        {
+            source
+            {
+                component        vessel_model;
+                connector        vessel_model_velocity;
+            }
+            target
+            {
+                component        control_system_communication;
+                connector        control_system_communication_velocity;
+            }
+        }
+        vessel_model_to_control_system_communication_03
+        {
+            source
+            {
+                component        vessel_model;
+                connector        vessel_model_acceleration;
+            }
+            target
+            {
+                component        control_system_communication;
+                connector        control_system_communication_acceleration;
+            }
+        }
+        control_system_communication_to_thruster_dynamics
+        {
+            source
+            {
+                component        control_system_communication;
+                connector        control_system_communication_thrust_command;
+            }
+            target
+            {
+                component        thruster_dynamics;
+                connector        thruster_dynamics_thrust_command;
+            }
+        }
+    }
+    components
+    {
+        thruster_dynamics
+        {
+            connectors
+            {
+                thruster_dynamics_thrust
+                {
+                    variableGroup        thrust;
+                    type        output;
+                }
+                thruster_dynamics_thrust_command
+                {
+                    variableGroup        thrust_command;
+                    type        input;
+                }
+            }
+            fmu               ThrusterDynamics.fmu;
+            stepSize          0.1;
+        }
+        current_model
+        {
+            connectors
+            {
+                current_model_current_velocity
+                {
+                    variableGroup        current_velocity;
+                    type        output;
+                }
+            }
+            fmu               CurrentModel.fmu;
+            stepSize          0.1;
+        }
+        vessel_model
+        {
+            connectors
+            {
+                vessel_model_thrust
+                {
+                    variableGroup        thrust;
+                    type        input;
+                }
+                vessel_model_current_velocity
+                {
+                    variableGroup        current_velocity;
+                    type        input;
+                }
+                vessel_model_position_3dof
+                {
+                    variableGroup        position_3dof;
+                    type        output;
+                }
+                vessel_model_velocity
+                {
+                    variableGroup        velocity;
+                    type        output;
+                }
+                vessel_model_acceleration
+                {
+                    variableGroup        acceleration;
+                    type        output;
+                }
+            }
+            fmu               VesselModel.fmu;
+            stepSize          0.1;
+        }
+        control_system_communication
+        {
+            connectors
+            {
+                control_system_communication_position_3dof
+                {
+                    variableGroup        position_3dof;
+                    type        input;
+                }
+                control_system_communication_velocity
+                {
+                    variableGroup        velocity;
+                    type        input;
+                }
+                control_system_communication_acceleration
+                {
+                    variableGroup        acceleration;
+                    type        input;
+                }
+                control_system_communication_thrust_command
+                {
+                    variableGroup        thrust_command;
+                    type        output;
+                }
+            }
+            fmu               ControlSystemCommunication.fmu;
+            stepSize          0.1;
+        }
+    }
+}
+run
+{
+    simulation
+    {
+        name                  OspSystemStructure;
+        startTime             0.0;
+        baseStepSize          0.01;
+        algorithm             fixedStep;
+    }
+}
