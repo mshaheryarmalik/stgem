@@ -1,0 +1,50 @@
+/*---------------------------------*- C++ -*----------------------------------*\
+filetype dictionary; coding utf-8; version 0.1; local --; purpose --;
+\*----------------------------------------------------------------------------*/
+_environment
+{
+    CASEDIR                   cases;
+    DUMPDIR                   dump;
+    LOGDIR                    logs;
+    RESULTDIR                 results;
+    TEMPLATEDIR               template;
+}
+_layers
+{
+    box_size
+    {
+        _sampling
+        {
+            _type             fixed;
+            _names
+            (
+                box_size_x       box_size_y
+            );
+            _values
+            (
+                (
+                     30.0    40.0    50.0
+                )
+                (
+                    -30.0   -40.0   -50.0
+                )
+            );
+        }
+        _commands
+        {
+            prepare
+            (
+                'copy %TEMPLATEDIR%\caseDict .'
+                'dictParser caseDict --log logs\dictParser.log --log-level INFO'
+                'ospCaseBuilder parsed.caseDict --log logs\ospCaseBuilder.log --log-level INFO'
+            );
+            run
+            (
+                'cosim run OspSystemStructure.xml -b 0 -d 15000'
+            );
+            post
+            (
+            );
+        }
+    }
+}
