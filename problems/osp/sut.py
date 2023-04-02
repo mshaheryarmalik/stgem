@@ -2,6 +2,7 @@ import math
 import numpy as np
 import inspect
 from stgem.sut import SUT, SUTOutput
+from utils import *
 
 
 class OSPSUT(SUT):
@@ -13,29 +14,29 @@ class OSPSUT(SUT):
     def __init__(self, parameters=None):
         super().__init__(parameters)
 
-        # TODO : Define WaveForm variables range
+        # TODO : Define correct current velocity variable ranges
         self.input_range = [[-15, 15], [-15, 15], [-15, 15], [-15, 15], [-15, 15], [-15, 15]]
         self.output_range = [[0, 350], [0, 350], [0, 350], [0, 350], [0, 350], [0, 350]]
         self.input_type = "vector"
         self.output_type = "vector"
+        self.case_number = 0
 
     def _execute_test(self, test):
-        # TODO
-        # Get test case from SUTInput object
-        # Extract the required information
-        # Prepare for OSP simulation
-        # Run OSP simulation
-        # Process the results and return results
+        # Get test case from SUTInput object and extract the required information
+        current_velocity = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
 
-        denormalized = self.descale(test.inputs.reshape(1, -1), self.input_range).reshape(-1)
         output = []
         error = None
-        # Add a exception handler
+        # Exception handler
         try:
-            output = self.function(denormalized)
+            # Run OSP simulation
+            sim_result = execute_test_case(self.case_number, current_velocity)
+            # TODO: Process the results and extract current velocity as outputs
+            output = sim_result
+            self.case_number = self.case_number + 1
         except Exception as err:
             error = err
 
-        test.input_denormalized = denormalized
+        test.input_denormalized = current_velocity
 
         return SUTOutput(np.asarray(output), None, None, error)

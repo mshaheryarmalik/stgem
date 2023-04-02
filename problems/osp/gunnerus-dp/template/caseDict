@@ -4,8 +4,7 @@ filetype dictionary; coding utf-8; version 0.1; local --; purpose --;
 #include paramDict
 _environment
 {
-    libSource                 C:/Dev/stgem_fork_mshaheryarmalik/problems/osp/gunnerus-dp/fmus;
-    //libSource                 D:/Shaheryar/EDISS/MDU/Thesis/STGEM/problems/osp/gunnerus-dp/fmus;
+    libSource                 D:/Shaheryar/EDISS/MDU/Thesis/STGEMv1/problems/osp/gunnerus-dp/fmus;
 }
 systemStructure
 {

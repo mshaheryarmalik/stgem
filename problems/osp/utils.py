@@ -12,11 +12,9 @@ from pathlib import Path
 from typing import Dict, List
 from farn.core import Case, Parameter
 
-cases: Cases = Cases()
-
 command_sets: Dict[str, List[str]] = {
     "prepare": [
-        "copy ../gunnerus-dp/caseDict .",
+        "copy ..\\gunnerus-dp\\template\\caseDict .",
         # copy a (case-agnostic) ospx config file from a template directory into the case folder
         "dictParser caseDict",  # parse the ospx config file. This will make it case-specific
         "ospCaseBuilder parsed.caseDict",  # build the (case-specific) OspSystemStructure.xml
@@ -31,18 +29,18 @@ command_sets: Dict[str, List[str]] = {
 }
 
 
-def add_test_case(case_name, case_parameters):
-    global cases
-    case_name: str = case_name
+def execute_test_case(case_name, case_parameters):
+    cases: Cases = Cases()
+    case_name = "test_" + case_name
     case_folder: Path = Path("./cases") / case_name
 
     case_parameters: List[Parameter] = [
-        Parameter("x1", case_parameters[0]),
-        Parameter("x2", case_parameters[1]),
-        Parameter("x3", case_parameters[2]),
-        Parameter("x4", case_parameters[3]),
-        Parameter("x5", case_parameters[4]),
-        Parameter("x6", case_parameters[5])
+        Parameter("Current_Velocity[0]", case_parameters[0]),  # TODO: Check names
+        Parameter("Current_Velocity[1]", case_parameters[1]),
+        Parameter("Current_Velocity[2]", case_parameters[2]),
+        Parameter("Current_Velocity[3]", case_parameters[3]),
+        Parameter("Current_Velocity[4]", case_parameters[4]),
+        Parameter("Current_Velocity[5]", case_parameters[5])
     ]
 
     case: Case = Case(
@@ -53,9 +51,12 @@ def add_test_case(case_name, case_parameters):
         command_sets=command_sets,
     )
     cases.append(case)
+    execute_osp_commands(cases)
+    result = post_processing(cases)
+    return result
 
 
-def execute_osp_commands():
+def execute_osp_commands(cases):
     global command_sets
 
     _ = create_case_folders(cases)
@@ -77,7 +78,7 @@ def execute_osp_commands():
     )
 
 
-def post_processing():
+def post_processing(cases):
     # @NOTE: Adjust 'component_name' and 'variable_name' to what is defined in your (FMU) model
     # @NOTE: 'y' is just an example. Add mappings for more column names / variables as you like and need.
     mapping: Dict[str, Dict[str, Any]] = {
@@ -120,5 +121,6 @@ def post_processing():
                 series[name].loc[index] = value
 
     df: DataFrame = DataFrame(data=series)
+    # df.set_index("path", inplace=True)  # optional. Makes the 'path' column the DataFrame's index
 
-    df.set_index("path", inplace=True)  # optional. Makes the 'path' column the DataFrame's index
+    return df

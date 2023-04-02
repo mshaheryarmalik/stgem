@@ -1,0 +1,127 @@
+2023-03-31 01:02:05 INFO     Successfully set up farn environment.
+2023-03-31 01:02:05 INFO     Run sampling of farnDict...
+2023-03-31 01:02:05 INFO     Successfully ran sampling of farnDict.
+2023-03-31 01:02:05 INFO     Save sampled farn dict farnDict...
+2023-03-31 01:02:05 INFO     Saved sampled farn dict in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\sampled.farnDict.
+2023-03-31 01:02:05 INFO     List all valid cases..
+2023-03-31 01:02:05 INFO     Successfully listed 3 valid cases. 0 invalid case was excluded.
+2023-03-31 01:02:05 INFO     Successfully finished farn.
+
+2023-03-31 01:02:05 INFO     Successfully set up farn environment.
+2023-03-31 01:02:05 INFO     List all valid cases..
+2023-03-31 01:02:05 INFO     Successfully listed 3 valid cases. 0 invalid case was excluded.
+2023-03-31 01:02:05 INFO     Create case folder structure...
+2023-03-31 01:02:05 INFO     Successfully created 3 case folders.
+2023-03-31 01:02:05 INFO     Create case-specific paramDict files in all case folders...
+2023-03-31 01:02:05 INFO     Successfully created 3 paramDict files in 3 case folders.
+2023-03-31 01:02:05 INFO     Remove old case list files...
+2023-03-31 01:02:05 INFO     Successfully removed old case list files.
+2023-03-31 01:02:05 INFO     Create case list file 'D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\caseList', containing all case folders.
+2023-03-31 01:02:05 INFO     Create case list file 'D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\caseList_level_00', containing the case folders of level 0.
+2023-03-31 01:02:05 INFO     Successfully created following case list files:
+ 	caseList
+	caseList_level_00
+2023-03-31 01:02:05 INFO     Successfully finished farn.
+
+2023-03-31 01:02:06 INFO     Successfully set up farn environment.
+2023-03-31 01:02:06 INFO     List all valid cases..
+2023-03-31 01:02:06 INFO     Successfully listed 3 valid cases. 0 invalid case was excluded.
+2023-03-31 01:02:06 INFO     Execute command set 'prepare' in all layers where 'prepare' is defined...
+2023-03-31 01:02:06 INFO     Execute "copy %TEMPL..t ." in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+2023-03-31 01:02:06 INFO     Execute "dictParser ..NFO" in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+2023-03-31 01:02:06 INFO     Execute "ospCaseBuil..NFO" in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+2023-03-31 01:02:07 INFO     from execution of ospCaseBuilder parsed.caseDict --log logs\ospCaseBuilder.log --log-level INFO in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+INFO     Start ospCaseBuilder.py with following arguments:
+	 case_dict_file: 		parsed.caseDict
+	 inspect: 				False
+	 graph: 			False
+	 clean: 			False
+
+INFO     reading parsed.caseDict
+INFO     reading simulation properties
+INFO     Set up OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+INFO     read components from case dict
+INFO     BoxReference.fmu: read modelDescription.xml
+INFO     ReferenceModel.fmu: read modelDescription.xml
+INFO     DPController.fmu: read modelDescription.xml
+INFO     ThrusterDynamics.fmu: read modelDescription.xml
+INFO     CurrentModel.fmu: read modelDescription.xml
+INFO     VesselModel.fmu: read modelDescription.xml
+INFO     read connections from case dict
+INFO     Write OspSystemStructure.xml file for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+INFO     Write SystemStructure.ssd file for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+INFO     Write statistics dict for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+INFO     Write watch dict for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+
+2023-03-31 01:02:07 INFO     Execute "copy %TEMPL..t ." in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+2023-03-31 01:02:07 INFO     Execute "dictParser ..NFO" in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+2023-03-31 01:02:07 INFO     Execute "ospCaseBuil..NFO" in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+2023-03-31 01:02:07 INFO     from execution of ospCaseBuilder parsed.caseDict --log logs\ospCaseBuilder.log --log-level INFO in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+INFO     Start ospCaseBuilder.py with following arguments:
+	 case_dict_file: 		parsed.caseDict
+	 inspect: 				False
+	 graph: 			False
+	 clean: 			False
+
+INFO     reading parsed.caseDict
+INFO     reading simulation properties
+INFO     Set up OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+INFO     read components from case dict
+INFO     BoxReference.fmu: read modelDescription.xml
+INFO     ReferenceModel.fmu: read modelDescription.xml
+INFO     DPController.fmu: read modelDescription.xml
+INFO     ThrusterDynamics.fmu: read modelDescription.xml
+INFO     CurrentModel.fmu: read modelDescription.xml
+INFO     VesselModel.fmu: read modelDescription.xml
+INFO     read connections from case dict
+INFO     Write OspSystemStructure.xml file for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+INFO     Write SystemStructure.ssd file for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+INFO     Write statistics dict for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+INFO     Write watch dict for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+
+2023-03-31 01:02:07 INFO     Execute "copy %TEMPL..t ." in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+2023-03-31 01:02:07 INFO     Execute "dictParser ..NFO" in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+2023-03-31 01:02:08 INFO     Execute "ospCaseBuil..NFO" in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+2023-03-31 01:02:08 INFO     from execution of ospCaseBuilder parsed.caseDict --log logs\ospCaseBuilder.log --log-level INFO in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+INFO     Start ospCaseBuilder.py with following arguments:
+	 case_dict_file: 		parsed.caseDict
+	 inspect: 				False
+	 graph: 			False
+	 clean: 			False
+
+INFO     reading parsed.caseDict
+INFO     reading simulation properties
+INFO     Set up OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+INFO     read components from case dict
+INFO     BoxReference.fmu: read modelDescription.xml
+INFO     ReferenceModel.fmu: read modelDescription.xml
+INFO     DPController.fmu: read modelDescription.xml
+INFO     ThrusterDynamics.fmu: read modelDescription.xml
+INFO     CurrentModel.fmu: read modelDescription.xml
+INFO     VesselModel.fmu: read modelDescription.xml
+INFO     read connections from case dict
+INFO     Write OspSystemStructure.xml file for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+INFO     Write SystemStructure.ssd file for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+INFO     Write statistics dict for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+INFO     Write watch dict for OSP simulation case 'OspSystemStructure' in case folder: D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+
+2023-03-31 01:02:08 INFO     Successfully executed command set 'prepare' in 3 case folders.
+2023-03-31 01:02:08 INFO     Successfully finished farn.
+
+2023-03-31 01:02:08 INFO     Successfully set up farn environment.
+2023-03-31 01:02:08 INFO     List all valid cases..
+2023-03-31 01:02:08 INFO     Successfully listed 3 valid cases. 0 invalid case was excluded.
+2023-03-31 01:02:08 INFO     Execute command set 'run' in all layers where 'run' is defined...
+2023-03-31 01:02:08 INFO     Execute "cosim run O..000" in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_0
+2023-03-31 01:03:03 INFO     Execute "cosim run O..000" in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_1
+2023-03-31 01:03:56 INFO     Execute "cosim run O..000" in D:\Shaheryar\EDISS\MDU\Thesis\STGEMv1\problems\osp\gunnerus-dp\cases\box_size_2
+2023-03-31 01:04:49 INFO     Successfully executed command set 'run' in 3 case folders.
+2023-03-31 01:04:49 INFO     Successfully finished farn.
+
+2023-03-31 01:04:50 INFO     Successfully set up farn environment.
+2023-03-31 01:04:50 INFO     List all valid cases..
+2023-03-31 01:04:50 INFO     Successfully listed 3 valid cases. 0 invalid case was excluded.
+2023-03-31 01:04:50 INFO     Execute command set 'post' in all layers where 'post' is defined...
+2023-03-31 01:04:50 INFO     Successfully executed command set 'post' in 3 case folders.
+2023-03-31 01:04:50 INFO     Successfully finished farn.
+
