@@ -14,9 +14,10 @@ class OSPSUT(SUT):
     def __init__(self, parameters=None):
         super().__init__(parameters)
 
-        # TODO : Define correct current velocity variable ranges
-        self.input_range = [[-15, 15], [-15, 15], [-15, 15], [-15, 15], [-15, 15], [-15, 15]]
-        self.output_range = [[0, 350], [0, 350], [0, 350], [0, 350], [0, 350], [0, 350]]
+        # Current velocity variable ranges
+        self.input_range = [[0, 10], [0, 10]]  # [0, 10], [0, 1], [0, 1], [0, 1]
+        self.output_range = [[0, 5]]  # Max distance b/w targeted position and actual position
+        # Desired_Position and Vessel_Position
         self.input_type = "vector"
         self.output_type = "vector"
         self.case_number = 0
@@ -30,9 +31,7 @@ class OSPSUT(SUT):
         # Exception handler
         try:
             # Run OSP simulation
-            sim_result = execute_test_case(self.case_number, current_velocity)
-            # TODO: Process the results and extract current velocity as outputs
-            output = sim_result
+            output = execute_test_case(self.case_number, current_velocity)
             self.case_number = self.case_number + 1
         except Exception as err:
             error = err

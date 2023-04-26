@@ -16,11 +16,11 @@ class TestOSP(unittest.TestCase):
             description="test_models",
             sut=OSPSUT(),
             objectives=[Minimize(selected=[0], scale=True),
-                        Minimize(selected=[1], scale=True),
-                        Minimize(selected=[2], scale=True),
-                        Minimize(selected=[3], scale=True),
-                        Minimize(selected=[4], scale=True),
-                        Minimize(selected=[5], scale=True)
+                        Minimize(selected=[1], scale=True)
+                        # Minimize(selected=[2], scale=True),
+                        # Minimize(selected=[3], scale=True),
+                        # Minimize(selected=[4], scale=True),
+                        # Minimize(selected=[5], scale=True)
                         ],
             objective_selector=ObjectiveSelectorMAB(warm_up=10),
             steps=[
@@ -40,11 +40,7 @@ class TestOSP(unittest.TestCase):
             description="test_models",
             sut=OSPSUT(),
             objectives=[Minimize(selected=[0], scale=True),
-                        Minimize(selected=[1], scale=True),
-                        Minimize(selected=[2], scale=True),
-                        Minimize(selected=[3], scale=True),
-                        Minimize(selected=[4], scale=True),
-                        Minimize(selected=[5], scale=True)
+                        Minimize(selected=[1], scale=True)
                         ],
             objective_selector=ObjectiveSelectorMAB(warm_up=10),
             steps=[
@@ -64,11 +60,7 @@ class TestOSP(unittest.TestCase):
             description="test_factory",
             sut=OSPSUT(),
             objectives=[Minimize(selected=[0], scale=True),
-                        Minimize(selected=[1], scale=True),
-                        Minimize(selected=[2], scale=True),
-                        Minimize(selected=[3], scale=True),
-                        Minimize(selected=[4], scale=True),
-                        Minimize(selected=[5], scale=True)
+                        Minimize(selected=[1], scale=True)
                         ],
             objective_selector=ObjectiveSelectorMAB(warm_up=10),
             steps=[

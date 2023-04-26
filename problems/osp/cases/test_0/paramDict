@@ -1,0 +1,39 @@
+/*---------------------------------*- C++ -*----------------------------------*\
+filetype dictionary; coding utf-8; version 0.1; local --; purpose --;
+\*----------------------------------------------------------------------------*/
+current_velocity0             5.828980373753698;
+current_velocity1             3.6032820607776594;
+_case
+{
+    case                      test_0;
+    layer                     '';
+    level                     0;
+    index                     0;
+    path                      cases\test_0;
+    is_leaf                   true;
+    no_of_samples             0;
+    condition
+    {
+    }
+    parameters
+    {
+        current_velocity0        5.828980373753698;
+        current_velocity1        3.6032820607776594;
+    }
+    commands
+    {
+        prepare
+        (
+            'copy ..\..\gunnerus-dp\template\caseDict .'    'dictParser caseDict'    'ospCaseBuilder parsed.caseDict'
+        );
+        run
+        (
+            'cosim run OspSystemStructure.xml -b 0 -d 3600'
+        );
+        post
+        (
+            'watchCosim -d -p watchDict'
+        );
+    }
+    status                    CaseStatus.NONE;
+}

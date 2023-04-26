@@ -140,41 +140,6 @@ systemStructure
                     type        output;
                 }
             }
-            initialize
-            {
-                pos_d1[0]
-                {
-                    start               $box_size_x;
-                }
-                pos_d1[1]
-                {
-                    start               0.0;
-                }
-                pos_d_additional1[0]
-                {
-                    start               0.0;
-                }
-                pos_d_additional1[1]
-                {
-                    start               $box_size_y;
-                }
-                pos_d_additional3[0]
-                {
-                    start               "-1.0 * $box_size_x";
-                }
-                pos_d_additional3[1]
-                {
-                    start               0.0;
-                }
-                pos_d_additional4[0]
-                {
-                    start               0.0;
-                }
-                pos_d_additional4[1]
-                {
-                    start               "-1.0 * $box_size_y";
-                }
-            }
             fmu               BoxReference.fmu;
             stepSize          0.1;
         }
@@ -298,6 +263,17 @@ systemStructure
                 {
                     variableGroup        current_velocity;
                     type        input;
+                }
+            }
+            initialize
+            {
+                Current_Velocity[1]
+                {
+                    start               $current_velocity0;
+                }
+                Current_Velocity[2]
+                {
+                    start               $current_velocity1;
                 }
             }
             fmu               VesselModel.fmu;

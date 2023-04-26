@@ -1,0 +1,4233 @@
+/*---------------------------------*- C++ -*----------------------------------*\
+filetype dictionary; coding utf-8; version 0.1; local --; purpose --;
+\*----------------------------------------------------------------------------*/
+Time
+{
+    latestValue               3600.0;
+    firstValue                0.0;
+    mean                      1800.0;
+    stdev                     1039.2593516538593;
+    min                       0.0;
+    max                       3600.0;
+}
+StepCount
+{
+    latestValue               36000;
+    firstValue                0;
+    mean                      18000.0;
+    stdev                     10392.593516538593;
+    min                       0;
+    max                       36000;
+}
+box_reference|Position_Setpoint[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      16.66620371656343;
+    stdev                     19.720187685226133;
+    min                       0.0;
+    max                       40.0;
+}
+box_reference|Position_Setpoint[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      -16.66620371656343;
+    stdev                     19.720187685226133;
+    min                       -40.0;
+    max                       0.0;
+}
+box_reference|Position_Setpoint[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      -0.21816060664981524;
+    stdev                     0.35178017307538734;
+    min                       -0.7854;
+    max                       0.0;
+}
+box_reference|Eta_desired2.Before
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|Eta_desired3.Before
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|Eta_desired4.Before
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|Eta_desired5.Before
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|Eta_desired6.Before
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|Eta_desired7.Before
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|Eta_desired8.Before
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d1[0]
+{
+    latestValue               40.0;
+    firstValue                40.0;
+    mean                      40.0;
+    stdev                     0.0;
+    min                       40.0;
+    max                       40.0;
+}
+box_reference|pos_d1[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d1[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional1[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional1[1]
+{
+    latestValue               -40.0;
+    firstValue                -40.0;
+    mean                      -40.0;
+    stdev                     0.0;
+    min                       -40.0;
+    max                       -40.0;
+}
+box_reference|pos_d_additional1[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional2[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional2[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional2[2]
+{
+    latestValue               -0.7854;
+    firstValue                -0.7854;
+    mean                      -0.7853999999999998;
+    stdev                     2.220446049250313e-16;
+    min                       -0.7854;
+    max                       -0.7854;
+}
+box_reference|pos_d_additional3[0]
+{
+    latestValue               -40.0;
+    firstValue                -40.0;
+    mean                      -40.0;
+    stdev                     0.0;
+    min                       -40.0;
+    max                       -40.0;
+}
+box_reference|pos_d_additional3[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional3[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional4[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional4[1]
+{
+    latestValue               40.0;
+    firstValue                40.0;
+    mean                      40.0;
+    stdev                     0.0;
+    min                       40.0;
+    max                       40.0;
+}
+box_reference|pos_d_additional4[2]
+{
+    latestValue               0.7854;
+    firstValue                0.7854;
+    mean                      0.7853999999999998;
+    stdev                     2.220446049250313e-16;
+    min                       0.7854;
+    max                       0.7854;
+}
+box_reference|pos_d_additional5[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional5[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional5[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional6[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional6[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional6[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional7[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional7[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_d_additional7[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_init[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_init[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|pos_init[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+box_reference|step_time1
+{
+    latestValue               500.0;
+    firstValue                500.0;
+    mean                      500.0;
+    stdev                     0.0;
+    min                       500.0;
+    max                       500.0;
+}
+box_reference|step_time2
+{
+    latestValue               1000.0;
+    firstValue                1000.0;
+    mean                      1000.0;
+    stdev                     0.0;
+    min                       1000.0;
+    max                       1000.0;
+}
+box_reference|step_time3
+{
+    latestValue               1500.0;
+    firstValue                1500.0;
+    mean                      1500.0;
+    stdev                     0.0;
+    min                       1500.0;
+    max                       1500.0;
+}
+box_reference|step_time4
+{
+    latestValue               2000.0;
+    firstValue                2000.0;
+    mean                      2000.0;
+    stdev                     0.0;
+    min                       2000.0;
+    max                       2000.0;
+}
+box_reference|step_time5
+{
+    latestValue               2500.0;
+    firstValue                2500.0;
+    mean                      2500.0;
+    stdev                     0.0;
+    min                       2500.0;
+    max                       2500.0;
+}
+box_reference|step_time6
+{
+    latestValue               3000.0;
+    firstValue                3000.0;
+    mean                      3000.0;
+    stdev                     0.0;
+    min                       3000.0;
+    max                       3000.0;
+}
+box_reference|step_time7
+{
+    latestValue               10500.0;
+    firstValue                10500.0;
+    mean                      10500.0;
+    stdev                     0.0;
+    min                       10500.0;
+    max                       10500.0;
+}
+box_reference|step_time8
+{
+    latestValue               12000.0;
+    firstValue                12000.0;
+    mean                      12000.0;
+    stdev                     0.0;
+    min                       12000.0;
+    max                       12000.0;
+}
+reference_model|Position_Setpoint[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      16.66620371656343;
+    stdev                     19.720187685226133;
+    min                       0.0;
+    max                       40.0;
+}
+reference_model|Position_Setpoint[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      -16.66620371656343;
+    stdev                     19.720187685226133;
+    min                       -40.0;
+    max                       0.0;
+}
+reference_model|Position_Setpoint[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      -0.21816060664981524;
+    stdev                     0.35178017307538734;
+    min                       -0.7854;
+    max                       0.0;
+}
+reference_model|Desired_Position[1]
+{
+    latestValue               1.02228e-07;
+    firstValue                0.0;
+    mean                      16.666204369902964;
+    stdev                     18.775735739528436;
+    min                       0.0;
+    max                       40.0;
+}
+reference_model|Desired_Position[2]
+{
+    latestValue               -5.29552e-05;
+    firstValue                0.0;
+    mean                      -16.666203195424526;
+    stdev                     18.77573678204848;
+    min                       -40.0;
+    max                       0.0;
+}
+reference_model|Desired_Position[3]
+{
+    latestValue               -1.55401e-05;
+    firstValue                0.0;
+    mean                      -0.21816017471551288;
+    stdev                     0.3261309354877779;
+    min                       -0.785358;
+    max                       0.0;
+}
+reference_model|Desired_Velocity[1]
+{
+    latestValue               -1.28813e-09;
+    firstValue                0.0;
+    mean                      -0.0013483001719024445;
+    stdev                     0.06505904707285536;
+    min                       -0.250135;
+    max                       0.352143;
+}
+reference_model|Desired_Velocity[2]
+{
+    latestValue               6.6194e-07;
+    firstValue                0.0;
+    mean                      -0.009097928056170884;
+    stdev                     0.072167047942239;
+    min                       -0.352143;
+    max                       0.27975;
+}
+reference_model|Desired_Velocity[3]
+{
+    latestValue               1.55401e-07;
+    firstValue                0.0;
+    mean                      -4.317879753359469e-09;
+    stdev                     0.0012297367304678975;
+    min                       -0.00580456;
+    max                       0.00580426;
+}
+reference_model|Desired_Acceleration[1]
+{
+    latestValue               1.62045e-11;
+    firstValue                0.0;
+    mean                      1.7188763271510675e-09;
+    stdev                     0.0018849880920454884;
+    min                       -0.0163944;
+    max                       0.0230549;
+}
+reference_model|Desired_Acceleration[2]
+{
+    latestValue               -8.27425e-09;
+    firstValue                0.0;
+    mean                      4.179156020372962e-09;
+    stdev                     0.0019219857865514548;
+    min                       -0.0230549;
+    max                       0.0164797;
+}
+reference_model|Desired_Acceleration[3]
+{
+    latestValue               -1.55401e-09;
+    firstValue                0.0;
+    mean                      4.30316905085777e-11;
+    stdev                     3.032501028231105e-05;
+    min                       -0.000365837;
+    max                       0.000365841;
+}
+reference_model|Af[0]
+{
+    latestValue               0.0125;
+    firstValue                0.0125;
+    mean                      0.0125;
+    stdev                     0.0;
+    min                       0.0125;
+    max                       0.0125;
+}
+reference_model|Af[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Af[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Af[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Af[4]
+{
+    latestValue               0.0125;
+    firstValue                0.0125;
+    mean                      0.0125;
+    stdev                     0.0;
+    min                       0.0125;
+    max                       0.0125;
+}
+reference_model|Af[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Af[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Af[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Af[8]
+{
+    latestValue               0.01;
+    firstValue                0.01;
+    mean                      0.01;
+    stdev                     0.0;
+    min                       0.01;
+    max                       0.01;
+}
+reference_model|Damping[0]
+{
+    latestValue               0.36;
+    firstValue                0.36;
+    mean                      0.36000000000000004;
+    stdev                     5.551115123125783e-17;
+    min                       0.36;
+    max                       0.36;
+}
+reference_model|Damping[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Damping[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Damping[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Damping[4]
+{
+    latestValue               0.36;
+    firstValue                0.36;
+    mean                      0.36000000000000004;
+    stdev                     5.551115123125783e-17;
+    min                       0.36;
+    max                       0.36;
+}
+reference_model|Damping[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Damping[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Damping[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Damping[8]
+{
+    latestValue               0.36;
+    firstValue                0.36;
+    mean                      0.36000000000000004;
+    stdev                     5.551115123125783e-17;
+    min                       0.36;
+    max                       0.36;
+}
+reference_model|Integrator.InitialCondition_2
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Position.InitialCondition
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Skew_symmetric_matrix.NegativeOne.Gain
+{
+    latestValue               -1.0;
+    firstValue                -1.0;
+    mean                      -1.0;
+    stdev                     0.0;
+    min                       -1.0;
+    max                       -1.0;
+}
+reference_model|Skew_symmetric_matrix.Zero.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Skew_symmetric_matrix.Zero1.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Skew_symmetric_matrix.Zero3.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Stiffness[0]
+{
+    latestValue               0.0225;
+    firstValue                0.0225;
+    mean                      0.022500000000000003;
+    stdev                     3.469446951953614e-18;
+    min                       0.0225;
+    max                       0.0225;
+}
+reference_model|Stiffness[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Stiffness[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Stiffness[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Stiffness[4]
+{
+    latestValue               0.0225;
+    firstValue                0.0225;
+    mean                      0.022500000000000003;
+    stdev                     3.469446951953614e-18;
+    min                       0.0225;
+    max                       0.0225;
+}
+reference_model|Stiffness[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Stiffness[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Stiffness[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Stiffness[8]
+{
+    latestValue               0.0225;
+    firstValue                0.0225;
+    mean                      0.022500000000000003;
+    stdev                     3.469446951953614e-18;
+    min                       0.0225;
+    max                       0.0225;
+}
+reference_model|Velocity.InitialCondition_1
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|Zero.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+reference_model|max_acc_d[0]
+{
+    latestValue               10.0;
+    firstValue                10.0;
+    mean                      10.0;
+    stdev                     0.0;
+    min                       10.0;
+    max                       10.0;
+}
+reference_model|max_acc_d[1]
+{
+    latestValue               10.0;
+    firstValue                10.0;
+    mean                      10.0;
+    stdev                     0.0;
+    min                       10.0;
+    max                       10.0;
+}
+reference_model|max_acc_d[2]
+{
+    latestValue               0.174533;
+    firstValue                0.174533;
+    mean                      0.17453299999999997;
+    stdev                     2.7755575615628914e-17;
+    min                       0.174533;
+    max                       0.174533;
+}
+reference_model|max_vel_d[0]
+{
+    latestValue               10.0;
+    firstValue                10.0;
+    mean                      10.0;
+    stdev                     0.0;
+    min                       10.0;
+    max                       10.0;
+}
+reference_model|max_vel_d[1]
+{
+    latestValue               10.0;
+    firstValue                10.0;
+    mean                      10.0;
+    stdev                     0.0;
+    min                       10.0;
+    max                       10.0;
+}
+reference_model|max_vel_d[2]
+{
+    latestValue               0.0872222;
+    firstValue                0.0872222;
+    mean                      0.08722220000000001;
+    stdev                     1.3877787807814457e-17;
+    min                       0.0872222;
+    max                       0.0872222;
+}
+dp_controller|Vessel_Position[1]
+{
+    latestValue               0.031324;
+    firstValue                0.0;
+    mean                      16.665844239286283;
+    stdev                     18.930424231463746;
+    min                       -2.5143;
+    max                       40.3284;
+}
+dp_controller|Vessel_Position[2]
+{
+    latestValue               0.00717983;
+    firstValue                0.0;
+    mean                      -16.666256769471193;
+    stdev                     19.016996426310662;
+    min                       -40.636;
+    max                       0.501088;
+}
+dp_controller|Vessel_Position[3]
+{
+    latestValue               1.0679e-05;
+    firstValue                0.0;
+    mean                      -0.21816021891829226;
+    stdev                     0.3272629248137227;
+    min                       -0.788201;
+    max                       0.0209442;
+}
+dp_controller|Vessel_Velocity[1]
+{
+    latestValue               6.05825e-05;
+    firstValue                0.0;
+    mean                      -0.0011846736964956758;
+    stdev                     0.0698681174181461;
+    min                       -0.342654;
+    max                       0.452742;
+}
+dp_controller|Vessel_Velocity[2]
+{
+    latestValue               -2.66362e-05;
+    firstValue                0.0;
+    mean                      -0.009052360306705746;
+    stdev                     0.08115631811086965;
+    min                       -0.405369;
+    max                       0.327556;
+}
+dp_controller|Vessel_Velocity[3]
+{
+    latestValue               -1.51016e-06;
+    firstValue                0.0;
+    mean                      2.742473761218956e-09;
+    stdev                     0.001292642198559715;
+    min                       -0.00692364;
+    max                       0.0065777;
+}
+dp_controller|Position_Setpoint[1]
+{
+    latestValue               1.02483e-07;
+    firstValue                0.0;
+    mean                      16.66620436990012;
+    stdev                     18.77573573953096;
+    min                       0.0;
+    max                       40.0;
+}
+dp_controller|Position_Setpoint[2]
+{
+    latestValue               -5.30877e-05;
+    firstValue                0.0;
+    mean                      -16.66620319395359;
+    stdev                     18.775736783354148;
+    min                       -40.0;
+    max                       0.0;
+}
+dp_controller|Position_Setpoint[3]
+{
+    latestValue               -1.55712e-05;
+    firstValue                0.0;
+    mean                      -0.21816017428385545;
+    stdev                     0.326130935776518;
+    min                       -0.785358;
+    max                       0.0;
+}
+dp_controller|Velocity_Setpoint[1]
+{
+    latestValue               -1.29138e-09;
+    firstValue                0.0;
+    mean                      -0.0013483001718666648;
+    stdev                     0.06505904707285609;
+    min                       -0.250135;
+    max                       0.352143;
+}
+dp_controller|Velocity_Setpoint[2]
+{
+    latestValue               6.63597e-07;
+    firstValue                0.0;
+    mean                      -0.009097928074557596;
+    stdev                     0.07216704793992093;
+    min                       -0.352143;
+    max                       0.27975;
+}
+dp_controller|Velocity_Setpoint[3]
+{
+    latestValue               1.55712e-07;
+    firstValue                0.0;
+    mean                      -4.3221963279097764e-09;
+    stdev                     0.0012297367304676095;
+    min                       -0.00580456;
+    max                       0.00580426;
+}
+dp_controller|Acceleration_Setpoint[1]
+{
+    latestValue               1.62455e-11;
+    firstValue                0.0;
+    mean                      1.7188758770434632e-09;
+    stdev                     0.0018849880920454884;
+    min                       -0.0163944;
+    max                       0.0230549;
+}
+dp_controller|Acceleration_Setpoint[2]
+{
+    latestValue               -8.29496e-09;
+    firstValue                0.0;
+    mean                      4.1793858542592e-09;
+    stdev                     0.0019219857865514537;
+    min                       -0.0230549;
+    max                       0.0164797;
+}
+dp_controller|Acceleration_Setpoint[3]
+{
+    latestValue               -1.55712e-09;
+    firstValue                0.0;
+    mean                      4.3074856253921725e-11;
+    stdev                     3.0325010282309884e-05;
+    min                       -0.000365837;
+    max                       0.000365841;
+}
+dp_controller|Commanded_Thrust[1]
+{
+    latestValue               -437.886;
+    firstValue                0.0;
+    mean                      1362.5105973891282;
+    stdev                     6305.488696627521;
+    min                       -37666.1;
+    max                       57879.2;
+}
+dp_controller|Commanded_Thrust[2]
+{
+    latestValue               -111.861;
+    firstValue                0.0;
+    mean                      -1483.031140290784;
+    stdev                     20554.716275786755;
+    min                       -109807.0;
+    max                       86636.4;
+}
+dp_controller|Commanded_Thrust[3]
+{
+    latestValue               -90.1797;
+    firstValue                0.0;
+    mean                      -914.8521248112206;
+    stdev                     38164.910816291456;
+    min                       -128410.0;
+    max                       227920.0;
+}
+dp_controller|D[0]
+{
+    latestValue               49000.0;
+    firstValue                49000.0;
+    mean                      49000.0;
+    stdev                     0.0;
+    min                       49000.0;
+    max                       49000.0;
+}
+dp_controller|D[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|D[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|D[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|D[4]
+{
+    latestValue               198000.0;
+    firstValue                198000.0;
+    mean                      198000.0;
+    stdev                     0.0;
+    min                       198000.0;
+    max                       198000.0;
+}
+dp_controller|D[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|D[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|D[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|D[8]
+{
+    latestValue               12153000.0;
+    firstValue                12153000.0;
+    mean                      12153000.0;
+    stdev                     0.0;
+    min                       12153000.0;
+    max                       12153000.0;
+}
+dp_controller|Integral_actionbias_compensation.Integral Contribution.InitialOutput[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Integral Contribution.InitialOutput[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Integral Contribution.InitialOutput[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Integrator1.InitialCondition[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Integrator1.InitialCondition[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Integrator1.InitialCondition[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Integrator4.InitialCondition[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Integrator4.InitialCondition[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Integrator4.InitialCondition[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Zero.Value[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Zero.Value[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.Zero.Value[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Integral_actionbias_compensation.inv_T_beta_c.Gain
+{
+    latestValue               0.2;
+    firstValue                0.2;
+    mean                      0.2;
+    stdev                     0.0;
+    min                       0.2;
+    max                       0.2;
+}
+dp_controller|Kd[0]
+{
+    latestValue               134023.0;
+    firstValue                134023.0;
+    mean                      134023.0;
+    stdev                     0.0;
+    min                       134023.0;
+    max                       134023.0;
+}
+dp_controller|Kd[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kd[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kd[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kd[4]
+{
+    latestValue               114958.0;
+    firstValue                114958.0;
+    mean                      114958.0;
+    stdev                     0.0;
+    min                       114958.0;
+    max                       114958.0;
+}
+dp_controller|Kd[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kd[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kd[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kd[8]
+{
+    latestValue               15670000.0;
+    firstValue                15670000.0;
+    mean                      15670000.0;
+    stdev                     0.0;
+    min                       15670000.0;
+    max                       15670000.0;
+}
+dp_controller|Ki[0]
+{
+    latestValue               -139.0;
+    firstValue                -139.0;
+    mean                      -139.0;
+    stdev                     0.0;
+    min                       -139.0;
+    max                       -139.0;
+}
+dp_controller|Ki[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Ki[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Ki[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Ki[4]
+{
+    latestValue               -256.079;
+    firstValue                -256.079;
+    mean                      -256.07900000000006;
+    stdev                     5.684341886080802e-14;
+    min                       -256.079;
+    max                       -256.079;
+}
+dp_controller|Ki[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Ki[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Ki[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Ki[8]
+{
+    latestValue               -113476.0;
+    firstValue                -113476.0;
+    mean                      -113476.0;
+    stdev                     0.0;
+    min                       -113476.0;
+    max                       -113476.0;
+}
+dp_controller|Kp[0]
+{
+    latestValue               19467.8;
+    firstValue                19467.8;
+    mean                      19467.799999999996;
+    stdev                     3.637978807091713e-12;
+    min                       19467.8;
+    max                       19467.8;
+}
+dp_controller|Kp[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kp[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kp[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kp[4]
+{
+    latestValue               22823.5;
+    firstValue                22823.5;
+    mean                      22823.5;
+    stdev                     0.0;
+    min                       22823.5;
+    max                       22823.5;
+}
+dp_controller|Kp[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kp[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kp[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Kp[8]
+{
+    latestValue               5056890.0;
+    firstValue                5056890.0;
+    mean                      5056890.0;
+    stdev                     0.0;
+    min                       5056890.0;
+    max                       5056890.0;
+}
+dp_controller|L1[0]
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+dp_controller|L1[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|L1[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|L1[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|L1[4]
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+dp_controller|L1[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|L1[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|L1[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|L1[8]
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+dp_controller|L2[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|L2[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|L2[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|M[0]
+{
+    latestValue               789000.0;
+    firstValue                789000.0;
+    mean                      789000.0;
+    stdev                     0.0;
+    min                       789000.0;
+    max                       789000.0;
+}
+dp_controller|M[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|M[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|M[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|M[4]
+{
+    latestValue               925000.0;
+    firstValue                925000.0;
+    mean                      925000.0;
+    stdev                     0.0;
+    min                       925000.0;
+    max                       925000.0;
+}
+dp_controller|M[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|M[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|M[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|M[8]
+{
+    latestValue               51237000.0;
+    firstValue                51237000.0;
+    mean                      51237000.0;
+    stdev                     0.0;
+    min                       51237000.0;
+    max                       51237000.0;
+}
+dp_controller|PDcontrol.tau_d.InitialOutput
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|PDcontrol.tau_p.InitialOutput
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|Ref__feedforward.Feed Forward Force.InitialOutput
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+dp_controller|q.Value
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+dp_controller|EnableIAction
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+dp_controller|EnablePDControl
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+dp_controller|EnableRefFF
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+thruster_dynamics|Commanded_Thrust[1]
+{
+    latestValue               -442.473;
+    firstValue                0.0;
+    mean                      1362.5227605512623;
+    stdev                     6305.485646022554;
+    min                       -37666.1;
+    max                       57879.2;
+}
+thruster_dynamics|Commanded_Thrust[2]
+{
+    latestValue               -112.169;
+    firstValue                0.0;
+    mean                      -1483.0280331270942;
+    stdev                     20554.716491514882;
+    min                       -109807.0;
+    max                       86636.4;
+}
+thruster_dynamics|Commanded_Thrust[3]
+{
+    latestValue               -89.8423;
+    firstValue                0.0;
+    mean                      -914.8496198891366;
+    stdev                     38164.91087337749;
+    min                       -128410.0;
+    max                       227920.0;
+}
+thruster_dynamics|Thrust[1]
+{
+    latestValue               -430.41;
+    firstValue                0.0;
+    mean                      1363.145191119097;
+    stdev                     6026.113164950217;
+    min                       -32280.7;
+    max                       50768.9;
+}
+thruster_dynamics|Thrust[2]
+{
+    latestValue               -105.826;
+    firstValue                0.0;
+    mean                      -1482.8750091256752;
+    stdev                     20342.009884231218;
+    min                       -108300.0;
+    max                       85728.5;
+}
+thruster_dynamics|Thrust[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+thruster_dynamics|Thrust[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+thruster_dynamics|Thrust[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+thruster_dynamics|Thrust[6]
+{
+    latestValue               -113.623;
+    firstValue                0.0;
+    mean                      -914.6866826246012;
+    stdev                     37767.65423802076;
+    min                       -127617.0;
+    max                       220089.0;
+}
+thruster_dynamics|Heave_Thrust.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+thruster_dynamics|Merge1.InitialOutput
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+thruster_dynamics|Pitch_Thrust.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+thruster_dynamics|Roll_Thrust.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+thruster_dynamics|Thruster_Dynamics.Surge_Thrust_Dynamics.A
+{
+    latestValue               -0.2;
+    firstValue                -0.2;
+    mean                      -0.2;
+    stdev                     0.0;
+    min                       -0.2;
+    max                       -0.2;
+}
+thruster_dynamics|Thruster_Dynamics.Surge_Thrust_Dynamics.C
+{
+    latestValue               0.2;
+    firstValue                0.2;
+    mean                      0.2;
+    stdev                     0.0;
+    min                       0.2;
+    max                       0.2;
+}
+thruster_dynamics|Thruster_Dynamics.Sway_Thrust_Dynamics.A
+{
+    latestValue               -0.2;
+    firstValue                -0.2;
+    mean                      -0.2;
+    stdev                     0.0;
+    min                       -0.2;
+    max                       -0.2;
+}
+thruster_dynamics|Thruster_Dynamics.Sway_Thrust_Dynamics.C
+{
+    latestValue               0.2;
+    firstValue                0.2;
+    mean                      0.2;
+    stdev                     0.0;
+    min                       0.2;
+    max                       0.2;
+}
+thruster_dynamics|Thruster_Dynamics.Yaw_Thrust_Dynamics.A
+{
+    latestValue               -0.2;
+    firstValue                -0.2;
+    mean                      -0.2;
+    stdev                     0.0;
+    min                       -0.2;
+    max                       -0.2;
+}
+thruster_dynamics|Thruster_Dynamics.Yaw_Thrust_Dynamics.C
+{
+    latestValue               0.2;
+    firstValue                0.2;
+    mean                      0.2;
+    stdev                     0.0;
+    min                       0.2;
+    max                       0.2;
+}
+thruster_dynamics|maxThrust[0]
+{
+    latestValue               10000000000.0;
+    firstValue                10000000000.0;
+    mean                      10000000000.0;
+    stdev                     0.0;
+    min                       10000000000.0;
+    max                       10000000000.0;
+}
+thruster_dynamics|maxThrust[1]
+{
+    latestValue               10000000000.0;
+    firstValue                10000000000.0;
+    mean                      10000000000.0;
+    stdev                     0.0;
+    min                       10000000000.0;
+    max                       10000000000.0;
+}
+thruster_dynamics|maxThrust[2]
+{
+    latestValue               100000000000.0;
+    firstValue                100000000000.0;
+    mean                      100000000000.0;
+    stdev                     0.0;
+    min                       100000000000.0;
+    max                       100000000000.0;
+}
+thruster_dynamics|enableDynamics
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+thruster_dynamics|enableSaturation
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+current_model|Current_Velocity[1]
+{
+    latestValue               0.00599438;
+    firstValue                0.0;
+    mean                      -0.026320491316217155;
+    stdev                     0.029739662625291124;
+    min                       -0.0977929;
+    max                       0.0252134;
+}
+current_model|Current_Velocity[2]
+{
+    latestValue               0.000440973;
+    firstValue                0.0;
+    mean                      -5.56907431240523e-05;
+    stdev                     0.00629422064005341;
+    min                       -0.00361856;
+    max                       0.0600834;
+}
+current_model|Current_Velocity[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_Velocity[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_Velocity[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_Velocity[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Dynamic direction.Band-Limited White Noise.White Noise.Mean
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Dynamic direction.Band-Limited White Noise.White Noise.StdDev
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+current_model|Current_calculation.Dynamic direction.Dir.InitialOutput
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Dynamic direction.Integrator.InitialCondition
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Dynamic velocity.Band-Limited White Noise.White Noise.Mean
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Dynamic velocity.Band-Limited White Noise.White Noise.StdDev
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+current_model|Current_calculation.Dynamic velocity.Integrator.InitialCondition
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Dynamic velocity.Vel.InitialOutput
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Integrator.InitialCondition
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Integrator1.InitialCondition
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Integrator2.InitialCondition
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|Current_calculation.Zero.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|current_change_time
+{
+    latestValue               5000.0;
+    firstValue                5000.0;
+    mean                      5000.0;
+    stdev                     0.0;
+    min                       5000.0;
+    max                       5000.0;
+}
+current_model|current_change_time_constant
+{
+    latestValue               30.0;
+    firstValue                30.0;
+    mean                      30.0;
+    stdev                     0.0;
+    min                       30.0;
+    max                       30.0;
+}
+current_model|current_direction
+{
+    latestValue               3.1416;
+    firstValue                3.1416;
+    mean                      3.141599999999999;
+    stdev                     8.881784197001252e-16;
+    min                       3.1416;
+    max                       3.1416;
+}
+current_model|current_direction2
+{
+    latestValue               1.5708;
+    firstValue                1.5708;
+    mean                      1.5707999999999995;
+    stdev                     4.440892098500626e-16;
+    min                       1.5708;
+    max                       1.5708;
+}
+current_model|current_direction_saturation
+{
+    latestValue               0.0873;
+    firstValue                0.0873;
+    mean                      0.0873;
+    stdev                     0.0;
+    min                       0.0873;
+    max                       0.0873;
+}
+current_model|current_mju_dir
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|current_mju_vel
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|current_profile[0]
+{
+    latestValue               -0.1;
+    firstValue                -0.1;
+    mean                      -0.1;
+    stdev                     0.0;
+    min                       -0.1;
+    max                       -0.1;
+}
+current_model|current_profile[1]
+{
+    latestValue               -0.1;
+    firstValue                -0.1;
+    mean                      -0.1;
+    stdev                     0.0;
+    min                       -0.1;
+    max                       -0.1;
+}
+current_model|current_profile[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|current_profile[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|current_profile[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|current_profile[5]
+{
+    latestValue               5.0;
+    firstValue                5.0;
+    mean                      5.0;
+    stdev                     0.0;
+    min                       5.0;
+    max                       5.0;
+}
+current_model|current_profile2[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|current_profile2[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|current_profile2[2]
+{
+    latestValue               0.025;
+    firstValue                0.025;
+    mean                      0.025;
+    stdev                     0.0;
+    min                       0.025;
+    max                       0.025;
+}
+current_model|current_profile2[3]
+{
+    latestValue               0.025;
+    firstValue                0.025;
+    mean                      0.025;
+    stdev                     0.0;
+    min                       0.025;
+    max                       0.025;
+}
+current_model|current_profile2[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+current_model|current_profile2[5]
+{
+    latestValue               5.0;
+    firstValue                5.0;
+    mean                      5.0;
+    stdev                     0.0;
+    min                       5.0;
+    max                       5.0;
+}
+current_model|current_velocity
+{
+    latestValue               0.1;
+    firstValue                0.1;
+    mean                      0.1;
+    stdev                     0.0;
+    min                       0.1;
+    max                       0.1;
+}
+current_model|current_velocity2
+{
+    latestValue               0.025;
+    firstValue                0.025;
+    mean                      0.025;
+    stdev                     0.0;
+    min                       0.025;
+    max                       0.025;
+}
+current_model|current_velocity_saturation
+{
+    latestValue               0.2;
+    firstValue                0.2;
+    mean                      0.2;
+    stdev                     0.0;
+    min                       0.2;
+    max                       0.2;
+}
+current_model|current_white_noise_power
+{
+    latestValue               1e-06;
+    firstValue                1e-06;
+    mean                      1.0000000000000002e-06;
+    stdev                     2.117582368135751e-22;
+    min                       1e-06;
+    max                       1e-06;
+}
+current_model|current_white_noise_power_velocity
+{
+    latestValue               1e-06;
+    firstValue                1e-06;
+    mean                      1.0000000000000002e-06;
+    stdev                     2.117582368135751e-22;
+    min                       1e-06;
+    max                       1e-06;
+}
+current_model|current_white_noise_seed
+{
+    latestValue               4321.0;
+    firstValue                4321.0;
+    mean                      4321.0;
+    stdev                     0.0;
+    min                       4321.0;
+    max                       4321.0;
+}
+current_model|current_white_noise_seed_veloicty
+{
+    latestValue               1234.0;
+    firstValue                1234.0;
+    mean                      1234.0;
+    stdev                     0.0;
+    min                       1234.0;
+    max                       1234.0;
+}
+current_model|enableCurrent
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+current_model|current_enable_varying_direction
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+current_model|current_enable_varying_velocity
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+vessel_model|Thrust[1]
+{
+    latestValue               -429.73;
+    firstValue                0.0;
+    mean                      1363.1571466203325;
+    stdev                     6026.110033571248;
+    min                       -32280.7;
+    max                       50768.9;
+}
+vessel_model|Thrust[2]
+{
+    latestValue               -105.553;
+    firstValue                0.0;
+    mean                      -1482.8720695962177;
+    stdev                     20342.010090868178;
+    min                       -108300.0;
+    max                       85728.5;
+}
+vessel_model|Thrust[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Thrust[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Thrust[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Thrust[6]
+{
+    latestValue               -114.593;
+    firstValue                0.0;
+    mean                      -914.6835265178262;
+    stdev                     37767.65430971017;
+    min                       -127617.0;
+    max                       220089.0;
+}
+vessel_model|Wave_Forces[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Wave_Forces[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Wave_Forces[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Wave_Forces[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Wave_Forces[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Wave_Forces[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Current_Velocity[1]
+{
+    latestValue               0.00565158;
+    firstValue                0.0;
+    mean                      -0.026320657822147556;
+    stdev                     0.029739498481023592;
+    min                       -0.0977929;
+    max                       0.0252134;
+}
+vessel_model|Current_Velocity[2]
+{
+    latestValue               0.000414498;
+    firstValue                0.0;
+    mean                      -5.570299203380453e-05;
+    stdev                     0.006294220102584917;
+    min                       -0.00361856;
+    max                       0.0600834;
+}
+vessel_model|Current_Velocity[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Current_Velocity[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Current_Velocity[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Current_Velocity[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Vessel_Position[1]
+{
+    latestValue               0.0313322;
+    firstValue                0.0;
+    mean                      16.665845109601;
+    stdev                     18.930423465981924;
+    min                       -2.5143;
+    max                       40.3284;
+}
+vessel_model|Vessel_Position[2]
+{
+    latestValue               0.0071741;
+    firstValue                0.0;
+    mean                      -16.66625657019618;
+    stdev                     19.016996600990375;
+    min                       -40.636;
+    max                       0.501088;
+}
+vessel_model|Vessel_Position[3]
+{
+    latestValue               2.01139e-06;
+    firstValue                0.0;
+    mean                      4.069774338861425e-08;
+    stdev                     2.670655876609357e-06;
+    min                       -1.09892e-05;
+    max                       3.21487e-05;
+}
+vessel_model|Vessel_Position[4]
+{
+    latestValue               -2.30931e-06;
+    firstValue                0.0;
+    mean                      -2.2733535762238835e-05;
+    stdev                     0.00035101184154250455;
+    min                       -0.00167235;
+    max                       0.0015925;
+}
+vessel_model|Vessel_Position[5]
+{
+    latestValue               1.58902e-07;
+    firstValue                0.0;
+    mean                      -1.7065940318618632e-08;
+    stdev                     1.0175715546459861e-07;
+    min                       -6.56179e-07;
+    max                       5.26138e-07;
+}
+vessel_model|Vessel_Position[6]
+{
+    latestValue               1.03889e-05;
+    firstValue                0.0;
+    mean                      -0.2181602186297197;
+    stdev                     0.3272629250060958;
+    min                       -0.788201;
+    max                       0.0209442;
+}
+vessel_model|Vessel_Velocity[1]
+{
+    latestValue               2.12999e-05;
+    firstValue                0.0;
+    mean                      -0.0011846731048482202;
+    stdev                     0.06986811742826816;
+    min                       -0.342654;
+    max                       0.452742;
+}
+vessel_model|Vessel_Velocity[2]
+{
+    latestValue               -3.05748e-05;
+    firstValue                0.0;
+    mean                      -0.009052361155982154;
+    stdev                     0.08115631801629941;
+    min                       -0.405369;
+    max                       0.327556;
+}
+vessel_model|Vessel_Velocity[3]
+{
+    latestValue               -7.5949e-07;
+    firstValue                0.0;
+    mean                      -2.808384575000317e-05;
+    stdev                     9.810586145163016e-05;
+    min                       -0.00067323;
+    max                       4.33565e-06;
+}
+vessel_model|Vessel_Velocity[4]
+{
+    latestValue               -3.00339e-08;
+    firstValue                0.0;
+    mean                      -6.103230050275157e-10;
+    stdev                     1.2236841951761138e-05;
+    min                       -0.000147531;
+    max                       0.000127524;
+}
+vessel_model|Vessel_Velocity[5]
+{
+    latestValue               -5.73109e-08;
+    firstValue                0.0;
+    mean                      2.220417729968004e-07;
+    stdev                     1.142290063813758e-06;
+    min                       -2.22659e-06;
+    max                       1.05714e-05;
+}
+vessel_model|Vessel_Velocity[6]
+{
+    latestValue               -1.38783e-06;
+    firstValue                0.0;
+    mean                      2.703923998659512e-09;
+    stdev                     0.0012926421985804903;
+    min                       -0.00692364;
+    max                       0.0065777;
+}
+vessel_model|Vessel_Acceleration[1]
+{
+    latestValue               -0.000190752;
+    firstValue                0.0;
+    mean                      1.5419441009985607e-08;
+    stdev                     0.0029335416308424755;
+    min                       -0.0261447;
+    max                       0.0347903;
+}
+vessel_model|Vessel_Acceleration[2]
+{
+    latestValue               -1.82995e-05;
+    firstValue                0.0;
+    mean                      -9.690096243528456e-08;
+    stdev                     0.002217344815437365;
+    min                       -0.0221277;
+    max                       0.0165992;
+}
+vessel_model|Vessel_Acceleration[3]
+{
+    latestValue               -2.76461e-06;
+    firstValue                0.0;
+    mean                      -2.018248723580871e-10;
+    stdev                     3.771027449583683e-06;
+    min                       -4.5212e-05;
+    max                       1.63743e-05;
+}
+vessel_model|Vessel_Acceleration[4]
+{
+    latestValue               1.42432e-08;
+    firstValue                0.0;
+    mean                      -1.466372293690115e-11;
+    stdev                     3.857054792995336e-06;
+    min                       -6.2319e-05;
+    max                       4.35308e-05;
+}
+vessel_model|Vessel_Acceleration[5]
+{
+    latestValue               -2.18385e-07;
+    firstValue                0.0;
+    mean                      -1.5434045318083216e-11;
+    stdev                     1.1598251135289028e-07;
+    min                       -6.1567e-07;
+    max                       1.00969e-06;
+}
+vessel_model|Vessel_Acceleration[6]
+{
+    latestValue               6.4287e-07;
+    firstValue                0.0;
+    mean                      -2.8973293921281384e-09;
+    stdev                     4.669422378607679e-05;
+    min                       -0.000619426;
+    max                       0.000493525;
+}
+vessel_model|Axc
+{
+    latestValue               106.0;
+    firstValue                106.0;
+    mean                      106.0;
+    stdev                     0.0;
+    min                       106.0;
+    max                       106.0;
+}
+vessel_model|Ayc
+{
+    latestValue               419.0;
+    firstValue                419.0;
+    mean                      419.0;
+    stdev                     0.0;
+    min                       419.0;
+    max                       419.0;
+}
+vessel_model|Bv[0]
+{
+    latestValue               44000.0;
+    firstValue                44000.0;
+    mean                      44000.0;
+    stdev                     0.0;
+    min                       44000.0;
+    max                       44000.0;
+}
+vessel_model|Bv[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[7]
+{
+    latestValue               177000.0;
+    firstValue                177000.0;
+    mean                      177000.0;
+    stdev                     0.0;
+    min                       177000.0;
+    max                       177000.0;
+}
+vessel_model|Bv[8]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[9]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[10]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[11]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[12]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[13]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[14]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[15]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[16]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[17]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[18]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[19]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[20]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[21]
+{
+    latestValue               686000.0;
+    firstValue                686000.0;
+    mean                      686000.0;
+    stdev                     0.0;
+    min                       686000.0;
+    max                       686000.0;
+}
+vessel_model|Bv[22]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[23]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[24]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[25]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[26]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[27]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[28]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[29]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[30]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[31]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[32]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[33]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[34]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Bv[35]
+{
+    latestValue               10259000.0;
+    firstValue                10259000.0;
+    mean                      10259000.0;
+    stdev                     0.0;
+    min                       10259000.0;
+    max                       10259000.0;
+}
+vessel_model|Cx
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+vessel_model|Cy
+{
+    latestValue               0.7812;
+    firstValue                0.7812;
+    mean                      0.7812;
+    stdev                     0.0;
+    min                       0.7812;
+    max                       0.7812;
+}
+vessel_model|Dp[0]
+{
+    latestValue               5300.0;
+    firstValue                5300.0;
+    mean                      5300.0;
+    stdev                     0.0;
+    min                       5300.0;
+    max                       5300.0;
+}
+vessel_model|Dp[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[7]
+{
+    latestValue               21100.0;
+    firstValue                21100.0;
+    mean                      21100.0;
+    stdev                     0.0;
+    min                       21100.0;
+    max                       21100.0;
+}
+vessel_model|Dp[8]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[9]
+{
+    latestValue               -20300.0;
+    firstValue                -20300.0;
+    mean                      -20300.0;
+    stdev                     0.0;
+    min                       -20300.0;
+    max                       -20300.0;
+}
+vessel_model|Dp[10]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[11]
+{
+    latestValue               294000.0;
+    firstValue                294000.0;
+    mean                      294000.0;
+    stdev                     0.0;
+    min                       294000.0;
+    max                       294000.0;
+}
+vessel_model|Dp[12]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[13]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[14]
+{
+    latestValue               1900.0;
+    firstValue                1900.0;
+    mean                      1900.0;
+    stdev                     0.0;
+    min                       1900.0;
+    max                       1900.0;
+}
+vessel_model|Dp[15]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[16]
+{
+    latestValue               -68400.0;
+    firstValue                -68400.0;
+    mean                      -68400.0;
+    stdev                     0.0;
+    min                       -68400.0;
+    max                       -68400.0;
+}
+vessel_model|Dp[17]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[18]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[19]
+{
+    latestValue               -20300.0;
+    firstValue                -20300.0;
+    mean                      -20300.0;
+    stdev                     0.0;
+    min                       -20300.0;
+    max                       -20300.0;
+}
+vessel_model|Dp[20]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[21]
+{
+    latestValue               7600.0;
+    firstValue                7600.0;
+    mean                      7600.0;
+    stdev                     0.0;
+    min                       7600.0;
+    max                       7600.0;
+}
+vessel_model|Dp[22]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[23]
+{
+    latestValue               -201300.0;
+    firstValue                -201300.0;
+    mean                      -201300.0;
+    stdev                     0.0;
+    min                       -201300.0;
+    max                       -201300.0;
+}
+vessel_model|Dp[24]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[25]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[26]
+{
+    latestValue               -68400.0;
+    firstValue                -68400.0;
+    mean                      -68400.0;
+    stdev                     0.0;
+    min                       -68400.0;
+    max                       -68400.0;
+}
+vessel_model|Dp[27]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[28]
+{
+    latestValue               819700.0;
+    firstValue                819700.0;
+    mean                      819700.0;
+    stdev                     0.0;
+    min                       819700.0;
+    max                       819700.0;
+}
+vessel_model|Dp[29]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[30]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[31]
+{
+    latestValue               294000.0;
+    firstValue                294000.0;
+    mean                      294000.0;
+    stdev                     0.0;
+    min                       294000.0;
+    max                       294000.0;
+}
+vessel_model|Dp[32]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[33]
+{
+    latestValue               -201300.0;
+    firstValue                -201300.0;
+    mean                      -201300.0;
+    stdev                     0.0;
+    min                       -201300.0;
+    max                       -201300.0;
+}
+vessel_model|Dp[34]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Dp[35]
+{
+    latestValue               1894400.0;
+    firstValue                1894400.0;
+    mean                      1894400.0;
+    stdev                     0.0;
+    min                       1894400.0;
+    max                       1894400.0;
+}
+vessel_model|G[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[7]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[8]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[9]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[10]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[11]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[12]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[13]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[14]
+{
+    latestValue               2440000.0;
+    firstValue                2440000.0;
+    mean                      2440000.0;
+    stdev                     0.0;
+    min                       2440000.0;
+    max                       2440000.0;
+}
+vessel_model|G[15]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[16]
+{
+    latestValue               1780000.0;
+    firstValue                1780000.0;
+    mean                      1780000.0;
+    stdev                     0.0;
+    min                       1780000.0;
+    max                       1780000.0;
+}
+vessel_model|G[17]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[18]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[19]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[20]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[21]
+{
+    latestValue               5110000.0;
+    firstValue                5110000.0;
+    mean                      5110000.0;
+    stdev                     0.0;
+    min                       5110000.0;
+    max                       5110000.0;
+}
+vessel_model|G[22]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[23]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[24]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[25]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[26]
+{
+    latestValue               1780000.0;
+    firstValue                1780000.0;
+    mean                      1780000.0;
+    stdev                     0.0;
+    min                       1780000.0;
+    max                       1780000.0;
+}
+vessel_model|G[27]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[28]
+{
+    latestValue               127370000.0;
+    firstValue                127370000.0;
+    mean                      127370000.0;
+    stdev                     0.0;
+    min                       127370000.0;
+    max                       127370000.0;
+}
+vessel_model|G[29]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[30]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[31]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[32]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[33]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[34]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|G[35]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Lpp
+{
+    latestValue               28.9;
+    firstValue                28.9;
+    mean                      28.89999999999999;
+    stdev                     7.105427357601002e-15;
+    min                       28.9;
+    max                       28.9;
+}
+vessel_model|Minv[0]
+{
+    latestValue               1.268e-06;
+    firstValue                1.268e-06;
+    mean                      1.268e-06;
+    stdev                     0.0;
+    min                       1.268e-06;
+    max                       1.268e-06;
+}
+vessel_model|Minv[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[6]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[7]
+{
+    latestValue               1.083e-06;
+    firstValue                1.083e-06;
+    mean                      1.0829999999999998e-06;
+    stdev                     2.117582368135751e-22;
+    min                       1.083e-06;
+    max                       1.083e-06;
+}
+vessel_model|Minv[8]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[9]
+{
+    latestValue               1.2e-08;
+    firstValue                1.2e-08;
+    mean                      1.2e-08;
+    stdev                     0.0;
+    min                       1.2e-08;
+    max                       1.2e-08;
+}
+vessel_model|Minv[10]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[11]
+{
+    latestValue               1e-09;
+    firstValue                1e-09;
+    mean                      1.0000000000000003e-09;
+    stdev                     2.0679515313825692e-25;
+    min                       1e-09;
+    max                       1e-09;
+}
+vessel_model|Minv[12]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[13]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[14]
+{
+    latestValue               5.92e-07;
+    firstValue                5.92e-07;
+    mean                      5.920000000000002e-07;
+    stdev                     2.117582368135751e-22;
+    min                       5.92e-07;
+    max                       5.92e-07;
+}
+vessel_model|Minv[15]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[16]
+{
+    latestValue               -1.3e-08;
+    firstValue                -1.3e-08;
+    mean                      -1.2999999999999999e-08;
+    stdev                     1.6543612251060553e-24;
+    min                       -1.3e-08;
+    max                       -1.3e-08;
+}
+vessel_model|Minv[17]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[18]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[19]
+{
+    latestValue               1.2e-08;
+    firstValue                1.2e-08;
+    mean                      1.2e-08;
+    stdev                     0.0;
+    min                       1.2e-08;
+    max                       1.2e-08;
+}
+vessel_model|Minv[20]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[21]
+{
+    latestValue               1e-07;
+    firstValue                1e-07;
+    mean                      9.999999999999997e-08;
+    stdev                     2.6469779601696886e-23;
+    min                       1e-07;
+    max                       1e-07;
+}
+vessel_model|Minv[22]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[23]
+{
+    latestValue               -1e-09;
+    firstValue                -1e-09;
+    mean                      -1.0000000000000003e-09;
+    stdev                     2.0679515313825692e-25;
+    min                       -1e-09;
+    max                       -1e-09;
+}
+vessel_model|Minv[24]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[25]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[26]
+{
+    latestValue               -1.3e-08;
+    firstValue                -1.3e-08;
+    mean                      -1.2999999999999999e-08;
+    stdev                     1.6543612251060553e-24;
+    min                       -1.3e-08;
+    max                       -1.3e-08;
+}
+vessel_model|Minv[27]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[28]
+{
+    latestValue               1.2e-08;
+    firstValue                1.2e-08;
+    mean                      1.2e-08;
+    stdev                     0.0;
+    min                       1.2e-08;
+    max                       1.2e-08;
+}
+vessel_model|Minv[29]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[30]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[31]
+{
+    latestValue               1e-09;
+    firstValue                1e-09;
+    mean                      1.0000000000000003e-09;
+    stdev                     2.0679515313825692e-25;
+    min                       1e-09;
+    max                       1e-09;
+}
+vessel_model|Minv[32]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[33]
+{
+    latestValue               -1e-09;
+    firstValue                -1e-09;
+    mean                      -1.0000000000000003e-09;
+    stdev                     2.0679515313825692e-25;
+    min                       -1e-09;
+    max                       -1e-09;
+}
+vessel_model|Minv[34]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|Minv[35]
+{
+    latestValue               2e-08;
+    firstValue                2e-08;
+    mean                      2.0000000000000004e-08;
+    stdev                     3.308722450212111e-24;
+    min                       2e-08;
+    max                       2e-08;
+}
+vessel_model|N
+{
+    latestValue               20.0;
+    firstValue                20.0;
+    mean                      20.0;
+    stdev                     0.0;
+    min                       20.0;
+    max                       20.0;
+}
+vessel_model|X_DOF_DP_model.Integrator1_.InitialCondition[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator1_.InitialCondition[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator1_.InitialCondition[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator1_.InitialCondition[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator1_.InitialCondition[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator1_.InitialCondition[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator2.InitialCondition[0]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator2.InitialCondition[1]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator2.InitialCondition[2]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator2.InitialCondition[3]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator2.InitialCondition[4]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Integrator2.InitialCondition[5]
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Rotate_yaw_T.Constant.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.Rotate_yaw_T.psi.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.X_DOF_transformation.Euler angles to attitude transformation matrix.Constant .Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|X_DOF_DP_model.X_DOF_transformation.Euler angles to attitude transformation matrix.Constant.Value
+{
+    latestValue               1.0;
+    firstValue                1.0;
+    mean                      1.0;
+    stdev                     0.0;
+    min                       1.0;
+    max                       1.0;
+}
+vessel_model|X_DOF_DP_model.zero.Value
+{
+    latestValue               0.0;
+    firstValue                0.0;
+    mean                      0.0;
+    stdev                     0.0;
+    min                       0.0;
+    max                       0.0;
+}
+vessel_model|rho
+{
+    latestValue               1025.0;
+    firstValue                1025.0;
+    mean                      1025.0;
+    stdev                     0.0;
+    min                       1025.0;
+    max                       1025.0;
+}
