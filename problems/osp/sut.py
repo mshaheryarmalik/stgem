@@ -31,7 +31,8 @@ class OSPSUT(SUT):
         # Exception handler
         try:
             # Run OSP simulation
-            output = execute_test_case(self.case_number, current_velocity)
+            sim_result = execute_test_case(self.case_number, current_velocity)
+            output.append(sim_result)
             self.case_number = self.case_number + 1
         except Exception as err:
             error = err
